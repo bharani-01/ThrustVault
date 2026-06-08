@@ -1,5 +1,10 @@
 # render.yaml — Render.com deployment configuration
 # Docs: https://render.com/docs/render-yaml-spec
+#
+# NOTE: If you already created the service manually in the Render dashboard,
+# go to Settings > Start Command and set it to:
+#   gunicorn server:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+# (Render defaults to 'gunicorn app:app' which won't work — our file is server.py)
 
 services:
   - type: web
@@ -9,11 +14,10 @@ services:
     startCommand: gunicorn server:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60
     plan: free
 
-    # Environment variables — set SUPABASE_URL and SUPABASE_ANON_KEY
-    # in the Render dashboard under Environment > Secret Files / Env Vars.
+    # Environment variables — set in the Render dashboard under Environment > Env Vars.
     # DO NOT commit your .env file — it is already in .gitignore.
     envVars:
       - key: SUPABASE_URL
-        sync: false          # Will be entered manually in the Render dashboard
+        sync: false
       - key: SUPABASE_ANON_KEY
-        sync: false          # Will be entered manually in the Render dashboard
+        sync: false
