@@ -1,0 +1,19 @@
+# render.yaml — Render.com deployment configuration
+# Docs: https://render.com/docs/render-yaml-spec
+
+services:
+  - type: web
+    name: thrustvault
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn server:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+    plan: free
+
+    # Environment variables — set SUPABASE_URL and SUPABASE_ANON_KEY
+    # in the Render dashboard under Environment > Secret Files / Env Vars.
+    # DO NOT commit your .env file — it is already in .gitignore.
+    envVars:
+      - key: SUPABASE_URL
+        sync: false          # Will be entered manually in the Render dashboard
+      - key: SUPABASE_ANON_KEY
+        sync: false          # Will be entered manually in the Render dashboard

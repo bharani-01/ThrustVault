@@ -1,2 +1,9 @@
-# This project runs on Python 3 using standard libraries.
-# No external dependencies (like flask, fastapi, dotenv, etc.) are required to run server.py.
+# ThrustVault - Python Dependencies
+# Used by Render.com (and local dev) to install dependencies.
+
+# Web framework — serves static files and /api/config endpoint
+flask==3.1.0
+
+# Production WSGI server — required by Render to run the app
+gunicorn==26.0.0
+
