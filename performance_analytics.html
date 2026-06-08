@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Analytics | ThrustVault</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Extra styles for performance analytics tab system and dataset creator */
+        .analytics-tabs {
+            display: flex;
+            gap: 12px;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 25px;
+            padding-bottom: 2px;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover {
+            color: var(--primary-color);
+        }
+        .tab-btn.active {
+            color: var(--primary-color);
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-color);
+            border-radius: 3px 3px 0 0;
+        }
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+        @media(min-width: 1024px) {
+            .analytics-grid {
+                grid-template-columns: 2fr 1fr;
+            }
+            .full-width-analytics {
+                grid-column: span 2;
+            }
+        }
+        .creator-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+        @media(min-width: 900px) {
+            .creator-grid {
+                grid-template-columns: 320px 1fr;
+            }
+        }
+        /* Category info badge under selects */
+        .cat-info-badge {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #eff6ff, #e0f2fe);
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            color: #1e40af;
+            margin-top: 4px;
+            animation: fadeIn 0.25s ease;
+        }
+        .cat-info-badge.visible { display: flex; }
+        .cat-info-badge i { flex-shrink: 0; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Motor select locked state */
+        select:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Dynamic table row inputs styling */
+        .creator-table input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: var(--radius-sm);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            box-sizing: border-box;
+            background: #ffffff;
+            color: var(--text-primary);
+        }
+        .creator-table input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+        }
+        .creator-table input[readonly] {
+            background: #f1f5f9;
+            border-color: #e2e8f0;
+            color: #475569;
+            cursor: not-allowed;
+        }
+        .creator-table th {
+            font-size: 0.8rem;
+            padding: 10px 8px;
+        }
+        .creator-table td {
+            padding: 6px 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <i data-lucide="aperture" class="spin-slow icon-primary"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>Thrust<span>Vault</span></h1>
+                        <p>Performance Analytics</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Widgets in Sidebar -->
+            <div class="sidebar-stats">
+                <div class="stat-card-mini">
+                    <div class="stat-icon"><i data-lucide="line-chart"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="total-test-runs-count">0</span>
+                        <span class="stat-label">Total Datasets</span>
+                    </div>
+                </div>
+                <div class="stat-card-mini">
+                    <div class="stat-icon"><i data-lucide="activity"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="total-data-points-count">0</span>
+                        <span class="stat-label">Recorded Steps</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="sidebar-nav">
+                <div class="sidebar-menu-links">
+                    <a id="nav-link-catalog" class="btn-sidebar-link" title="Catalog Dashboard" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="database"></i> Catalog Dashboard
+                    </a>
+                    <a href="performance_analytics.html" class="btn-sidebar-link active" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="trending-up"></i> Performance Analytics
+                    </a>
+                </div>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <div class="sidebar-user-profile">
+                    <div class="user-avatar" id="user-avatar-initials">U</div>
+                    <div class="user-info">
+                        <span class="user-email" id="session-email">user@thrustvault.com</span>
+                        <span class="badge-role" id="session-role">Guest</span>
+                    </div>
+                </div>
+                <button class="btn-logout-premium" id="btn-logout" title="Log Out">
+                    <i data-lucide="log-out"></i> Log Out
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="main-content-wrapper" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+            
+            <!-- TOPBAR -->
+            <header class="topbar">
+                <h2 style="font-family:'Outfit'; font-size:1.5rem; font-weight:700; display:flex; align-items:center; gap:10px;">
+                    <i data-lucide="trending-up" style="color:var(--primary-color); width: 28px; height: 28px;"></i>
+                    Calibration Curves & Analytics
+                </h2>
+            </header>
+
+            <!-- MAIN VIEWPORT -->
+            <main class="main-content" style="overflow-y:auto; padding:30px;">
+                
+                <!-- View Tabs -->
+                <div class="analytics-tabs">
+                    <button class="tab-btn active" id="tab-btn-visualizer"><i data-lucide="area-chart" style="width:16px; height:16px; vertical-align:middle; margin-right:4px;"></i> Curves Visualizer</button>
+                    <button class="tab-btn" id="tab-btn-creator" style="display:none;"><i data-lucide="file-plus" style="width:16px; height:16px; vertical-align:middle; margin-right:4px;"></i> Create Performance Dataset</button>
+                </div>
+
+                <!-- SECTION 1: CURVES VISUALIZER -->
+                <div class="tab-section" id="section-visualizer">
+                    <div class="analytics-grid">
+                        
+                        <!-- Main Curves Plot -->
+                        <div class="glass-panel" style="display:flex; flex-direction:column; gap:15px; min-height: 450px;">
+                            <div class="section-header" style="margin-bottom:0; justify-content:space-between; flex-wrap:wrap; gap:15px;">
+                                <h3><i data-lucide="line-chart"></i> Multi-Propeller Curve Plots</h3>
+                                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                                    <div class="filter-group" style="margin:0; flex-direction:column; align-items:flex-start; gap:4px;">
+                                        <label for="plot-category-select" style="font-size:0.8rem; font-weight:600;"><i data-lucide="layers"></i> Thrust Level:</label>
+                                        <select id="plot-category-select" style="padding:6px 12px; font-size:0.85rem; border-radius:6px; border:1px solid #cbd5e1; outline:none; cursor:pointer; min-width:185px;">
+                                            <option value="">-- Select Thrust Level --</option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-group" style="margin:0; flex-direction:column; align-items:flex-start; gap:4px;">
+                                        <label for="plot-motor-select" style="font-size:0.8rem; font-weight:600;"><i data-lucide="cpu"></i> Motor:</label>
+                                        <select id="plot-motor-select" disabled style="padding:6px 12px; font-size:0.85rem; border-radius:6px; border:1px solid #cbd5e1; outline:none; cursor:pointer; min-width:200px;">
+                                            <option value="">-- Select Thrust Level First --</option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-group" style="margin:0;">
+                                        <label for="plot-metric-select" style="font-size:0.8rem; font-weight:600;"><i data-lucide="sliders"></i> Y-Axis Metric:</label>
+                                        <select id="plot-metric-select" style="padding:6px 12px; font-size:0.85rem; border-radius:6px; border:1px solid #cbd5e1; outline:none; cursor:pointer;">
+                                            <option value="thrust">Thrust (g) vs. Throttle (%)</option>
+                                            <option value="efficiency">Efficiency (g/W) vs. Thrust (g)</option>
+                                            <option value="current">Current (A) vs. Throttle (%)</option>
+                                            <option value="rpm">RPM vs. Throttle (%)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Canvas wrapper -->
+                            <div style="flex:1; position:relative; min-height: 350px;">
+                                <canvas id="performanceCurveChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Test Configuration Metadata Details -->
+                        <div class="glass-panel" style="display:flex; flex-direction:column; gap:15px;">
+                            <div class="section-header">
+                                <h3><i data-lucide="layers"></i> Available Runs</h3>
+                            </div>
+                            <div id="test-runs-list" style="display:flex; flex-direction:column; gap:10px; overflow-y:auto; max-height: 400px; padding-right:4px;">
+                                <div style="color: #64748b; font-size: 0.85rem; text-align: center; padding: 20px 0;">
+                                    Select a motor to view test runs.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Data Points Specs Grid Table -->
+                        <div class="full-width-analytics glass-panel">
+                            <div class="table-header" style="padding-bottom:12px; border-bottom:1px solid #f1f5f9; margin-bottom:15px; justify-content:space-between; flex-wrap:wrap; gap:15px;">
+                                <div class="table-title">
+                                    <h3><i data-lucide="list"></i> Calibration Specs Grid</h3>
+                                    <span id="active-run-label" style="font-size:0.8rem; color:#64748b; font-weight:500; margin-left:10px;">Select a test run to inspect readings</span>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="motors-table" id="data-points-grid-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Throttle (%)</th>
+                                            <th>Voltage (V)</th>
+                                            <th>Current (A)</th>
+                                            <th>Power (W)</th>
+                                            <th>Thrust (g)</th>
+                                            <th>RPM</th>
+                                            <th>Efficiency (g/W)</th>
+                                            <th>Temperature (℃)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="data-points-grid-rows">
+                                        <tr>
+                                            <td colspan="8" style="text-align:center; color:#64748b; font-size:0.85rem; padding: 30px 0;">
+                                                No configuration selected. Choose a motor and click a test run.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- SECTION 2: DATASET CREATOR -->
+                <div class="tab-section" id="section-creator" style="display:none;">
+                    <form id="dataset-creator-form">
+                        <div class="creator-grid">
+                            
+                            <!-- Metadata Form Fields -->
+                            <div class="glass-panel" style="display:flex; flex-direction:column; gap:18px;">
+                                <h3 style="font-family:'Outfit'; font-size:1.15rem; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
+                                    <i data-lucide="info" style="color:var(--primary-color); width:18px;"></i>
+                                    Test Configuration
+                                </h3>
+                                
+                                <div class="form-group">
+                                    <label for="form-category-select">Thrust Level *</label>
+                                    <select id="form-category-select" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-family:'Inter'; font-size:0.9rem;">
+                                        <option value="">-- Select Thrust Level --</option>
+                                    </select>
+                                    <div class="cat-info-badge" id="form-cat-info-badge">
+                                        <i data-lucide="info" style="width:14px; height:14px;"></i>
+                                        <span id="form-cat-info-text"></span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-test-motor">Motor Model *</label>
+                                    <select id="form-test-motor" required disabled style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-family:'Inter'; font-size:0.9rem;">
+                                        <option value="">-- Select Thrust Level First --</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-test-propeller">Propeller Model *</label>
+                                    <input type="text" id="form-test-propeller" required placeholder="e.g. T-MOTOR 14*4.8CF">
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-test-esc">ESC Model</label>
+                                    <input type="text" id="form-test-esc" placeholder="e.g. Air 20A 3-4S ESC">
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-test-battery">Battery Spec</label>
+                                    <input type="text" id="form-test-battery" placeholder="e.g. 4S LiPo, 14.8V">
+                                </div>
+                                <div class="form-group">
+                                    <label for="form-test-tester">Test Conducted By</label>
+                                    <input type="text" id="form-test-tester" placeholder="e.g. Bala">
+                                </div>
+                            </div>
+
+                            <!-- Interactive Grid Table -->
+                            <div class="glass-panel" style="display:flex; flex-direction:column; gap:15px; min-width: 0;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                                    <h3 style="font-family:'Outfit'; font-size:1.15rem; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
+                                        <i data-lucide="table" style="color:var(--primary-color); width:18px;"></i>
+                                        Throttle Steps Calibration Table
+                                    </h3>
+                                    <button type="button" class="btn-outline-sm" id="btn-add-step-row" style="padding:6px 12px; font-size:0.8rem; display:flex; align-items:center; gap:6px;">
+                                        <i data-lucide="plus" style="width:14px;"></i> Add Throttle Step
+                                    </button>
+                                </div>
+
+                                <div class="table-responsive" style="max-height: 380px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;">
+                                    <table class="motors-table creator-table" style="margin:0;">
+                                        <thead style="position:sticky; top:0; background:#f8fafc; z-index:10; border-bottom:2px solid #e2e8f0;">
+                                            <tr>
+                                                <th style="width:80px;">Throttle (%)</th>
+                                                <th>Voltage (V)</th>
+                                                <th>Current (A)</th>
+                                                <th>Power (W)</th>
+                                                <th>Thrust (g)</th>
+                                                <th>RPM</th>
+                                                <th>Efficiency (g/W)</th>
+                                                <th>Temp (℃)</th>
+                                                <th style="width:40px; text-align:center;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="creator-table-rows">
+                                            <!-- Dynamic input rows added by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:10px; border-top:1px solid #f1f5f9; padding-top:15px;">
+                                    <button type="button" class="btn-secondary" id="btn-reset-creator" style="border-radius:8px;">Clear Dataset</button>
+                                    <button type="submit" class="btn-primary" style="border-radius:8px; display:flex; align-items:center; gap:8px;">
+                                        <i data-lucide="save" style="width:16px;"></i> Save Performance Dataset
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Dialog -->
+    <div class="modal-backdrop" id="confirm-modal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <h3 id="confirm-title">Are you sure?</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-close-trigger">Cancel</button>
+                <button class="btn-danger" id="btn-confirm-action">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Controller -->
+    <script src="performance_app.js"></script>
+</body>
+</html>
