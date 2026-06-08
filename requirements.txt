@@ -1,0 +1,2 @@
+# This project runs on Python 3 using standard libraries.
+# No external dependencies (like flask, fastapi, dotenv, etc.) are required to run server.py.
