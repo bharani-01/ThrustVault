@@ -11,6 +11,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set email display in footer
     const email = session.email || '';
     document.getElementById('session-email').textContent = email;
+
+    function logUserActivity(email, role, action, details) {
+        try {
+            const logs = JSON.parse(localStorage.getItem('thrustvault_global_activity_logs')) || [];
+            logs.push({
+                id: 'log-' + Math.random().toString(36).substr(2, 9),
+                email: email,
+                role: role,
+                action: action,
+                details: details,
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem('thrustvault_global_activity_logs', JSON.stringify(logs));
+        } catch (e) {
+            console.error("Error writing activity log:", e);
+        }
+    }
     const avatarInitials = document.getElementById('user-avatar-initials');
     if (avatarInitials && email) {
         avatarInitials.textContent = email.charAt(0).toUpperCase();
@@ -727,6 +744,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Logout and redirect helper
     function logoutAndRedirect() {
+        if (session) {
+            logUserActivity(session.email, session.role, 'Logout', 'Logged out successfully.');
+        }
         if (supabase) {
             supabase.auth.signOut().catch(e => console.error("SignOut error:", e));
         }

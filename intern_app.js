@@ -11,6 +11,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set email display in footer
     const email = session.email || '';
     document.getElementById('session-email').textContent = email;
+
+    function logUserActivity(email, role, action, details) {
+        try {
+            const logs = JSON.parse(localStorage.getItem('thrustvault_global_activity_logs')) || [];
+            logs.push({
+                id: 'log-' + Math.random().toString(36).substr(2, 9),
+                email: email,
+                role: role,
+                action: action,
+                details: details,
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem('thrustvault_global_activity_logs', JSON.stringify(logs));
+        } catch (e) {
+            console.error("Error writing activity log:", e);
+        }
+    }
     const avatarInitials = document.getElementById('user-avatar-initials');
     if (avatarInitials && email) {
         avatarInitials.textContent = email.charAt(0).toUpperCase();
@@ -425,6 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             .delete()
                             .eq('id', cat.id);
                         if (error) throw error;
+                        logUserActivity(session.email, session.role, 'Category Deleted', `Deleted category: ${cat.name}`);
                         
                         const remainingMotors = state.motors.filter(m => m.categoryId !== cat.id);
                         state.compareItems = state.compareItems.filter(id => remainingMotors.some(m => m.id === id));
@@ -587,6 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             .delete()
                             .eq('id', motorId);
                         if (error) throw error;
+                        logUserActivity(session.email, session.role, 'Motor Entry Deleted', `Deleted motor: ${motor.motor} (Brand: ${motor.company})`);
                         
                         state.compareItems = state.compareItems.filter(id => id !== motorId);
                         await fetchData();
@@ -1094,6 +1113,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (error) throw error;
             importCount++;
         }
+        logUserActivity(session.email, session.role, 'Imported Data', `Imported ${importCount} motor entries from CSV.`);
         alert(`Imported ${importCount} motor entries.`);
         await fetchData();
     }
@@ -1139,6 +1159,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (error) throw error;
             importCount++;
         }
+        logUserActivity(session.email, session.role, 'Imported Data', `Imported ${importCount} motor entries from JSON.`);
         alert(`Imported ${importCount} motor entries.`);
         await fetchData();
     }
@@ -1151,6 +1172,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const { data, error } = await supabase.from('categories').insert([{ name, description: desc }]).select();
             if (error) throw error;
+            logUserActivity(session.email, session.role, 'Category Created', `Created category: ${name}`);
             closeModal(elements.catModal);
             if (data && data[0]) { state.activeCategory = data[0].id; }
             await fetchData();
@@ -1175,9 +1197,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (id) {
                 const { error } = await supabase.from('motors').update(motorData).eq('id', id);
                 if (error) throw error;
+                logUserActivity(session.email, session.role, 'Motor Entry Updated', `Updated motor: ${motorData.motor_name} (Brand: ${motorData.company})`);
             } else {
                 const { error } = await supabase.from('motors').insert([motorData]);
                 if (error) throw error;
+                logUserActivity(session.email, session.role, 'Motor Entry Created', `Added motor: ${motorData.motor_name} (Brand: ${motorData.company})`);
             }
             closeModal(elements.motorModal);
             await fetchData();
@@ -1200,6 +1224,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Logout and redirect helper
     function logoutAndRedirect() {
+        if (session) {
+            logUserActivity(session.email, session.role, 'Logout', 'Logged out successfully.');
+        }
         if (supabase) {
             supabase.auth.signOut().catch(e => console.error("SignOut error:", e));
         }

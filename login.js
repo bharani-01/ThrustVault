@@ -23,6 +23,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function logUserActivity(email, role, action, details) {
+        try {
+            const logs = JSON.parse(localStorage.getItem('thrustvault_global_activity_logs')) || [];
+            logs.push({
+                id: 'log-' + Math.random().toString(36).substr(2, 9),
+                email: email,
+                role: role,
+                action: action,
+                details: details,
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem('thrustvault_global_activity_logs', JSON.stringify(logs));
+        } catch (e) {
+            console.error("Error writing activity log:", e);
+        }
+    }
+
     loginForm.onsubmit = async (e) => {
         e.preventDefault();
         
@@ -69,6 +86,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     timestamp: new Date().getTime()
                 };
                 localStorage.setItem('thrustvault_session', JSON.stringify(session));
+
+                // Log login activity
+                logUserActivity(data.user.email, profile.role, 'Login', 'Logged in successfully.');
 
                 // Redirect based on role
                 if (profile.role === 'admin') {

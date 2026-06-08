@@ -11,6 +11,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set email display in footer
     const email = session.email || '';
     document.getElementById('session-email').textContent = email;
+
+    function logUserActivity(email, role, action, details) {
+        try {
+            const logs = JSON.parse(localStorage.getItem('thrustvault_global_activity_logs')) || [];
+            logs.push({
+                id: 'log-' + Math.random().toString(36).substr(2, 9),
+                email: email,
+                role: role,
+                action: action,
+                details: details,
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem('thrustvault_global_activity_logs', JSON.stringify(logs));
+        } catch (e) {
+            console.error("Error writing activity log:", e);
+        }
+    }
     const avatarInitials = document.getElementById('user-avatar-initials');
     if (avatarInitials && email) {
         avatarInitials.textContent = email.charAt(0).toUpperCase();
@@ -322,6 +339,65 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 permList.innerHTML = permsHtml;
+
+                // Populate Activity Logs
+                const logListEl = document.getElementById('profile-activity-log-list');
+                const allLogs = JSON.parse(localStorage.getItem('thrustvault_global_activity_logs')) || [];
+                const userLogs = allLogs.filter(log => log.email === targetUser.email)
+                                       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                if (userLogs.length === 0) {
+                    logListEl.innerHTML = `
+                        <div style="text-align: center; color: #64748b; font-size: 0.85rem; padding: 20px 0;">
+                            <i data-lucide="info" style="width: 20px; height: 20px; margin: 0 auto 8px; display: block; opacity: 0.5;"></i>
+                            No activity logged yet.
+                        </div>
+                    `;
+                } else {
+                    logListEl.innerHTML = userLogs.map(log => {
+                        const date = new Date(log.timestamp);
+                        const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                        const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                        
+                        let iconName = 'activity';
+                        let iconColor = '#64748b';
+                        if (log.action.includes('Login')) {
+                            iconName = 'log-in';
+                            iconColor = '#10b981';
+                        } else if (log.action.includes('Logout')) {
+                            iconName = 'log-out';
+                            iconColor = '#f59e0b';
+                        } else if (log.action.includes('Created') || log.action.includes('Added')) {
+                            iconName = 'plus-circle';
+                            iconColor = '#3b82f6';
+                        } else if (log.action.includes('Updated')) {
+                            iconName = 'edit-3';
+                            iconColor = '#8b5cf6';
+                        } else if (log.action.includes('Deleted')) {
+                            iconName = 'trash-2';
+                            iconColor = '#ef4444';
+                        } else if (log.action.includes('Imported')) {
+                            iconName = 'file-input';
+                            iconColor = '#6366f1';
+                        }
+                        
+                        return `
+                            <div style="display: flex; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; align-items: flex-start; margin-bottom: 8px;">
+                                <div style="background: ${iconColor}15; color: ${iconColor}; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                                    <i data-lucide="${iconName}" style="width: 14px; height: 14px;"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;">
+                                        <span style="font-weight: 600; font-size: 0.85rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${log.action}</span>
+                                        <span style="font-size: 0.75rem; color: #94a3b8; white-space: nowrap;">${dateStr}, ${timeStr}</span>
+                                    </div>
+                                    <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0 0; line-height: 1.3; word-break: break-word;">${log.details}</p>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+                
                 openModal(elements.userProfileModal);
                 lucide.createIcons();
             };
@@ -332,12 +408,15 @@ document.addEventListener('DOMContentLoaded', () => {
             select.onchange = async () => {
                 const userId = select.dataset.id;
                 const newRole = select.value;
+                const targetUser = state.users.find(x => x.id === userId);
+                const oldRole = targetUser ? targetUser.role : '';
                 try {
                     const { error } = await supabase
                         .from('user_profiles')
                         .update({ role: newRole })
                         .eq('id', userId);
                     if (error) throw error;
+                    logUserActivity(session.email, session.role, 'User Role Changed', `Changed role of ${targetUser ? targetUser.email : userId} from ${oldRole.toUpperCase()} to ${newRole.toUpperCase()}`);
                     await fetchUserAccounts();
                 } catch (err) {
                     alert("Failed to update user role: " + err.message);
@@ -360,6 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             user_id: userId
                         });
                         if (error) throw error;
+                        logUserActivity(session.email, session.role, 'User Account Deleted', `Deleted user account: ${targetUser.email}`);
                         await fetchUserAccounts();
                     } catch (err) {
                         alert("Failed to delete user profile: " + err.message);
@@ -388,6 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             elements.userForm.reset();
             alert("Successfully created user account!");
+            logUserActivity(session.email, session.role, 'User Account Created', `Created user account for ${email} with role ${role.toUpperCase()}`);
             await fetchUserAccounts();
         } catch (err) {
             console.error("Error creating user:", err);
@@ -497,6 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             .delete()
                             .eq('id', cat.id);
                         if (error) throw error;
+                        logUserActivity(session.email, session.role, 'Category Deleted', `Deleted category: ${cat.name}`);
                         
                         const remainingMotors = state.motors.filter(m => m.categoryId !== cat.id);
                         state.compareItems = state.compareItems.filter(id => remainingMotors.some(m => m.id === id));
@@ -659,6 +741,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             .delete()
                             .eq('id', motorId);
                         if (error) throw error;
+                        logUserActivity(session.email, session.role, 'Motor Entry Deleted', `Deleted motor: ${motor.motor} (Brand: ${motor.company})`);
                         
                         state.compareItems = state.compareItems.filter(id => id !== motorId);
                         await fetchData();
@@ -1166,6 +1249,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (error) throw error;
             importCount++;
         }
+        logUserActivity(session.email, session.role, 'Imported Data', `Imported ${importCount} motor entries from CSV.`);
         alert(`Imported ${importCount} motor entries.`);
         await fetchData();
     }
@@ -1211,6 +1295,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (error) throw error;
             importCount++;
         }
+        logUserActivity(session.email, session.role, 'Imported Data', `Imported ${importCount} motor entries from JSON.`);
         alert(`Imported ${importCount} motor entries.`);
         await fetchData();
     }
@@ -1223,6 +1308,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const { data, error } = await supabase.from('categories').insert([{ name, description: desc }]).select();
             if (error) throw error;
+            logUserActivity(session.email, session.role, 'Category Created', `Created category: ${name}`);
             closeModal(elements.catModal);
             if (data && data[0]) { state.activeCategory = data[0].id; }
             await fetchData();
@@ -1247,9 +1333,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (id) {
                 const { error } = await supabase.from('motors').update(motorData).eq('id', id);
                 if (error) throw error;
+                logUserActivity(session.email, session.role, 'Motor Entry Updated', `Updated motor: ${motorData.motor_name} (Brand: ${motorData.company})`);
             } else {
                 const { error } = await supabase.from('motors').insert([motorData]);
                 if (error) throw error;
+                logUserActivity(session.email, session.role, 'Motor Entry Created', `Added motor: ${motorData.motor_name} (Brand: ${motorData.company})`);
             }
             closeModal(elements.motorModal);
             await fetchData();
@@ -1267,6 +1355,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Logout
     elements.btnLogout.onclick = () => {
+        if (session) {
+            logUserActivity(session.email, session.role, 'Logout', 'Logged out successfully.');
+        }
         if (supabase) {
             supabase.auth.signOut().catch(e => console.error("Supabase signOut error:", e));
         }
@@ -1276,6 +1367,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Logout and redirect helper
     function logoutAndRedirect() {
+        if (session) {
+            logUserActivity(session.email, session.role, 'Logout', 'Logged out successfully.');
+        }
         if (supabase) {
             supabase.auth.signOut().catch(e => console.error("SignOut error:", e));
         }
