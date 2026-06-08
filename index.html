@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThrustVault | Professional Drone Motor Database</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="landing-body">
+    <!-- Header/Navbar -->
+    <header class="landing-header">
+        <div class="logo-container">
+            <div class="logo-icon">
+                <i data-lucide="aperture" class="spin-slow icon-primary" style="width:28px; height:28px;"></i>
+            </div>
+            <div class="logo-text">
+                <h1>Thrust<span>Vault</span></h1>
+                <p>Drone Motor Database</p>
+            </div>
+        </div>
+        <div>
+            <a href="login.html" class="btn-primary">Sign In <i data-lucide="log-in"></i></a>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="landing-hero">
+        <div class="hero-content">
+            <span class="badge-hero"><i data-lucide="shield-check"></i> Verified Spec Catalog</span>
+            <h2>The Analytics Engine for <span>Professional Drone Motors</span></h2>
+            <p>Compare thrust capacity, ESC compatibility, and propeller efficiency. Custom engineered views for engineers, builders, and administrators.</p>
+            
+            <div class="hero-ctas">
+                <a href="login.html" class="btn-hero-primary">Access Database Console <i data-lucide="arrow-right"></i></a>
+            </div>
+        </div>
+        
+        <div class="hero-visual">
+            <div class="visual-card glass-panel animate-float">
+                <div class="card-header">
+                    <i data-lucide="git-compare" class="visual-icon"></i>
+                    <h4>Multi-Role Access Control</h4>
+                </div>
+                <p>Enforce data integrity. Guest readers, Intern editors, and Admins can log in securely to manage or view specs.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="landing-features">
+        <h3 class="section-title">Engineered Capabilities</h3>
+        <div class="features-grid">
+            <div class="feature-card glass-panel">
+                <div class="feature-icon"><i data-lucide="sliders"></i></div>
+                <h4>Spec Filters & Sorting</h4>
+                <p>Sort motors by Name, Brand, or Thrust. Filter dynamically by brand based on active thrust classes.</p>
+            </div>
+            
+            <div class="feature-card glass-panel">
+                <div class="feature-icon"><i data-lucide="git-compare"></i></div>
+                <h4>Side-by-Side Comparison</h4>
+                <p>Select up to 3 motors and compare recommended ESCs, propeller fits, and product links instantly.</p>
+            </div>
+            
+            <div class="feature-card glass-panel">
+                <div class="feature-icon"><i data-lucide="bar-chart-2"></i></div>
+                <h4>Visual Analytics</h4>
+                <p>Real-time brand distributions and maximum thrust charts powered by Chart.js.</p>
+            </div>
+            
+            <div class="feature-card glass-panel">
+                <div class="feature-icon"><i data-lucide="file-output"></i></div>
+                <h4>Data Operations</h4>
+                <p>Seamless JSON & CSV catalog exporting, template downloading, and batch importing.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <p>&copy; 2026 ThrustVault. Developed for professional UAV development teams.</p>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

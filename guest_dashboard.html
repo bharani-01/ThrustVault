@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guest Vault | ThrustVault</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <i data-lucide="aperture" class="spin-slow icon-primary"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>Thrust<span>Vault</span></h1>
+                        <p>Guest Access Console</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Widgets in Sidebar -->
+            <div class="sidebar-stats">
+                <div class="stat-card-mini">
+                    <div class="stat-icon"><i data-lucide="database"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="total-motors-count">0</span>
+                        <span class="stat-label">Total Motors</span>
+                    </div>
+                </div>
+                <div class="stat-card-mini">
+                    <div class="stat-icon"><i data-lucide="layers"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="total-categories-count">0</span>
+                        <span class="stat-label">Thrust Levels</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Categories (Thrust Levels) -->
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">
+                    <span>Thrust Categories</span>
+                </div>
+                <div class="category-list" id="category-list-container">
+                    <!-- Dynamic Category Tabs -->
+                </div>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <div class="sidebar-user-profile">
+                    <div class="user-avatar" id="user-avatar-initials">G</div>
+                    <div class="user-info">
+                        <span class="user-email" id="session-email">guest@thrustvault.com</span>
+                        <span class="badge-role role-guest">Guest</span>
+                    </div>
+                </div>
+                <button class="btn-logout-premium" id="btn-logout" title="Log Out">
+                    <i data-lucide="log-out"></i> Log Out
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Area -->
+        <main class="main-content">
+            <!-- Alert Banner for Guest Role -->
+            <div class="banner-alert info">
+                <i data-lucide="info"></i>
+                <span><strong>Guest Mode:</strong> You have read-only access. Log in as an Intern or Admin to modify specifications.</span>
+            </div>
+
+            <!-- Top Bar / Navigation -->
+            <header class="topbar">
+                <div class="search-container">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Search by Motor, Manufacturer, ESC, Propeller...">
+                    <button id="search-clear" class="search-clear-btn" style="display: none;">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+
+                <div class="topbar-actions">
+                    <!-- Export Actions only for guest -->
+                    <div class="dropdown">
+                        <button class="btn-outline dropdown-toggle" id="import-export-toggle">
+                            <i data-lucide="file-output"></i> Export Catalog
+                            <i data-lucide="chevron-down" class="chevron"></i>
+                        </button>
+                        <div class="dropdown-menu" id="import-export-menu">
+                            <button class="dropdown-item" id="btn-export-csv">
+                                <i data-lucide="file-spreadsheet"></i> Export to CSV
+                            </button>
+                            <button class="dropdown-item" id="btn-export-json">
+                                <i data-lucide="download"></i> Export to JSON
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="content-body">
+                <!-- Banner showing selected thrust category details -->
+                <section class="category-header-panel">
+                    <div class="category-header-info">
+                        <div class="badge-accent" id="category-badge">Loading...</div>
+                        <h2 id="active-category-title">Loading Class</h2>
+                        <p id="active-category-desc">...</p>
+                    </div>
+                    
+                    <div class="category-quick-stats">
+                        <div class="quick-stat-item">
+                            <span class="value" id="category-motors-count">0</span>
+                            <span class="label">Motors</span>
+                        </div>
+                        <div class="quick-stat-item">
+                            <span class="value" id="category-avg-thrust">N/A</span>
+                            <span class="label">Avg Thrust Max</span>
+                        </div>
+                        <div class="quick-stat-item">
+                            <span class="value" id="category-top-company">N/A</span>
+                            <span class="label">Leading Brand</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Visualization Panel -->
+                <section class="stats-visualization-section glass-panel">
+                    <div class="section-header">
+                        <h3><i data-lucide="pie-chart"></i> Category Distribution & Insights</h3>
+                    </div>
+                    <div class="stats-grid-visuals" id="stats-visual-container">
+                        <div class="chart-container">
+                            <canvas id="manufacturerChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="thrustDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+
+
+                <!-- Motors Data Grid Panel -->
+                <section class="motors-table-panel glass-panel">
+                    <div class="table-header">
+                        <div class="table-title">
+                            <h3>Motor Catalog</h3>
+                            <span id="filtered-count-badge" class="count-badge">0 displayed</span>
+                        </div>
+                        <div class="table-filters">
+                            <div class="filter-group">
+                                <label for="filter-company"><i data-lucide="filter"></i> Brand:</label>
+                                <select id="filter-company">
+                                    <option value="all">All Brands</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="sort-select"><i data-lucide="arrow-up-down"></i> Sort:</label>
+                                <select id="sort-select">
+                                    <option value="motor-asc">Motor Name (A-Z)</option>
+                                    <option value="motor-desc">Motor Name (Z-A)</option>
+                                    <option value="company-asc">Brand (A-Z)</option>
+                                    <option value="thrust-desc">Max Thrust (High to Low)</option>
+                                    <option value="thrust-asc">Max Thrust (Low to High)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modern Responsive Grid -->
+                    <div class="table-responsive">
+                        <table class="motors-table" id="motors-data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"><input type="checkbox" id="select-all-motors" title="Select All for comparison"></th>
+                                    <th>Motor Model</th>
+                                    <th>Manufacturer</th>
+                                    <th>Max Thrust</th>
+                                    <th>Recommended ESC</th>
+                                    <th>Recommended Propeller</th>
+                                    <th style="width: 140px; text-align: center;">Reference Links</th>
+                                </tr>
+                            </thead>
+                            <tbody id="motors-list-rows">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="empty-state" id="table-empty-state" style="display: none;">
+                        <i data-lucide="info" class="empty-icon"></i>
+                        <h4>No Motors Found</h4>
+                        <p>No motors match your current search queries or filters.</p>
+                        <button class="btn-secondary-sm" id="btn-clear-filters">Clear Search & Filters</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Floating Motor Comparison Drawer -->
+    <div class="comparison-drawer" id="comparison-drawer">
+        <div class="drawer-header">
+            <div class="drawer-title">
+                <i data-lucide="git-compare"></i>
+                <h3>Compare Motors <span class="compare-count" id="compare-count">0 / 3</span></h3>
+            </div>
+            <div class="drawer-actions">
+                <button class="btn-text-sm" id="btn-clear-comparison">Clear All</button>
+                <button class="btn-primary-sm" id="btn-compare-now">Compare Side-by-Side</button>
+                <button class="btn-icon-smallClose" id="btn-close-comparison"><i data-lucide="x"></i></button>
+            </div>
+        </div>
+        <div class="drawer-content" id="compare-items-container">
+            <!-- Selected items injected here -->
+        </div>
+    </div>
+
+    <!-- Comparison Modal -->
+    <div class="modal-backdrop" id="comparison-modal">
+        <div class="modal-container comparison-modal-container">
+            <div class="modal-header">
+                <h3><i data-lucide="git-compare"></i> Side-by-Side Specifications Comparison</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="comparison-table-wrapper">
+                    <table class="comparison-result-table" id="comparison-result-table">
+                        <!-- Dynamic comparison result -->
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-close-trigger">Close Comparison</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App JavaScript -->
+    <script src="guest_app.js?v=1.2"></script>
+</body>
+</html>
