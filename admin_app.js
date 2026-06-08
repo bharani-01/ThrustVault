@@ -1344,6 +1344,20 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) { alert("Failed to save motor: " + err.message); }
     };
 
+    elements.btnAddMotor.onclick = () => {
+        elements.motorForm.reset();
+        document.getElementById('modal-title').innerHTML = `<i data-lucide="plus-circle"></i> Add New Motor Entry`;
+        document.getElementById('form-motor-index').value = '';
+        document.getElementById('form-motor-category').value = state.activeCategory || '';
+        openModal(elements.motorModal);
+        lucide.createIcons();
+    };
+
+    elements.btnAddCat.onclick = () => {
+        elements.catForm.reset();
+        openModal(elements.catModal);
+    };
+
     function openModal(modal) { modal.classList.add('show'); }
     function closeModal(modal) { modal.classList.remove('show'); }
     document.querySelectorAll('.modal-close-trigger').forEach(btn => {
