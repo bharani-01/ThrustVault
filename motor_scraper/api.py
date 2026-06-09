@@ -96,16 +96,20 @@ def run_scrape_job(job_id: str, motor_query: str, sources: list[str], use_groq: 
         if motor_query:
             log_msg(f"🧠 Query tokens: {_tokenize(motor_query)}", "info")
 
+        import concurrent.futures
+
         all_motors: list[dict] = []
         all_performance: list[dict] = []
 
-        for src in sources:
+        def scrape_source(src):
             log_msg(f"🔍 Scraping [{src}]...", "source")
+            src_motors = []
+            src_performance = []
             try:
                 scraper = _get_scraper(src)
                 if scraper is None:
                     log_msg(f"⚠ Unknown source: {src}", "warn")
-                    continue
+                    return src_motors, src_performance
 
                 # Pass query so scrapers can use site search URLs
                 raw = scraper.scrape(query=motor_query)
@@ -132,9 +136,9 @@ def run_scrape_job(job_id: str, motor_query: str, sources: list[str], use_groq: 
 
                 for record in raw:
                     if "throttle" in record or record.get("source") == "rcbenchmark":
-                        all_performance.append(record)
+                        src_performance.append(record)
                     else:
-                        all_motors.append(record)
+                        src_motors.append(record)
 
             except Exception as e:
                 # Show root cause (unwrap RetryError if present)
@@ -144,7 +148,15 @@ def run_scrape_job(job_id: str, motor_query: str, sources: list[str], use_groq: 
                     log_msg(f"  ❌ [{src}] {type(root).__name__}: {root}", "error")
                 else:
                     log_msg(f"  ❌ [{src}] {type(e).__name__}: {e}", "error")
+            return src_motors, src_performance
 
+        # 1. Run sources in parallel
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(sources)) as executor:
+            future_to_src = {executor.submit(scrape_source, src): src for src in sources}
+            for future in concurrent.futures.as_completed(future_to_src):
+                src_motors, src_performance = future.result()
+                all_motors.extend(src_motors)
+                all_performance.extend(src_performance)
 
         # Normalize
         log_msg(f"⚙ Normalizing {len(all_motors)} motor records...", "info")
@@ -155,14 +167,27 @@ def run_scrape_job(job_id: str, motor_query: str, sources: list[str], use_groq: 
         # Groq enrichment
         if use_groq and all_motors:
             log_msg("🤖 Running Groq AI enrichment...", "ai")
-            enriched = 0
-            for i, motor in enumerate(all_motors):
-                if not motor.get("max_thrust") or not motor.get("company"):
-                    all_motors[i] = groq_parser.enrich_motor_record(motor)
-                    enriched += 1
-                    if enriched % 5 == 0:
-                        log_msg(f"  → Enriched {enriched} motors...", "ai")
-            log_msg(f"  ✅ Groq enriched {enriched} motors", "success")
+            indices_to_enrich = [
+                i for i, m in enumerate(all_motors)
+                if not m.get("max_thrust") or not m.get("company")
+            ]
+            if indices_to_enrich:
+                def enrich_single(idx):
+                    return idx, groq_parser.enrich_motor_record(all_motors[idx])
+
+                max_workers = min(10, len(indices_to_enrich))
+                with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    futures = [executor.submit(enrich_single, idx) for idx in indices_to_enrich]
+                    enriched_count = 0
+                    for future in concurrent.futures.as_completed(futures):
+                        idx, enriched_record = future.result()
+                        all_motors[idx] = enriched_record
+                        enriched_count += 1
+                        if enriched_count % 5 == 0:
+                            log_msg(f"  → Enriched {enriched_count} motors...", "ai")
+                log_msg(f"  ✅ Groq enriched {enriched_count} motors", "success")
+            else:
+                log_msg("  ✅ No motors required Groq enrichment", "success")
 
             # AI summary
             if all_motors:

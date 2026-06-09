@@ -26,7 +26,10 @@ from tenacity import (
 
 from utils.logger import get_logger
 from utils.rate_limiter import wait_for_domain
-from config import CURL_IMPERSONATE, MAX_RETRIES, REQUEST_TIMEOUT
+from config import (
+    CURL_IMPERSONATE, MAX_RETRIES, REQUEST_TIMEOUT,
+    PLAYWRIGHT_GOTO_TIMEOUT, PLAYWRIGHT_SELECTOR_TIMEOUT
+)
 
 log = get_logger(__name__)
 
@@ -183,9 +186,9 @@ class BaseScraper(ABC):
                 page = ctx.new_page()
                 if use_stealth:
                     stealth_sync(page)
-                page.goto(url, wait_until="domcontentloaded", timeout=20000)
+                page.goto(url, wait_until="domcontentloaded", timeout=PLAYWRIGHT_GOTO_TIMEOUT)
                 if wait_selector:
-                    page.wait_for_selector(wait_selector, timeout=15000)
+                    page.wait_for_selector(wait_selector, timeout=PLAYWRIGHT_SELECTOR_TIMEOUT)
                 html = page.content()
                 browser.close()
                 log.debug(f"[{self.name}] Playwright OK: {url}")

@@ -73,22 +73,39 @@ class TMotorScraper(BaseScraper):
                 products = soup.select("li.card-list-item")
                 log.info(f"[tmotor] Search '{search_query}': found {len(products)} candidate product pages")
 
+                # Pre-filter candidate pages
+                candidates = []
                 for idx, item in enumerate(products):
-                    try:
-                        name_el = item.select_one("h4 a, p.trending-item-title a, a[href]")
-                        if not name_el:
-                            continue
-                        href = name_el.get("href", "")
-                        link = href if href.startswith("http") else (self.base_url + "/" + href if href else "")
-                        if not link:
-                            continue
+                    name_el = item.select_one("h4 a, p.trending-item-title a, a[href]")
+                    if not name_el:
+                        continue
+                    name = name_el.get_text(strip=True)
+                    href = name_el.get("href", "")
+                    link = href if href.startswith("http") else (self.base_url + "/" + href if href else "")
+                    if not link:
+                        continue
+                    if self._is_candidate_match(query, name, link):
+                        candidates.append((link, name))
+                    else:
+                        log.debug(f"[tmotor] Pre-filtered (skipped): {name}")
 
-                        log.info(f"[tmotor] Deep-scraping detail page [{idx+1}/{len(products)}]: {link}")
-                        motor_records, perf_points = self._scrape_detail_page(link, target_kv=target_kv)
-                        results.extend(motor_records)
-                        results.extend(perf_points)
-                    except Exception as e:
-                        log.error(f"[tmotor] Detail scrape error: {e}")
+                log.info(f"[tmotor] After pre-filtering: {len(candidates)}/{len(products)} candidates remain")
+
+                # Deep-scraping details concurrently
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(candidates))) as executor:
+                    future_to_link = {
+                        executor.submit(self._scrape_detail_page, link, target_kv): link
+                        for link, name in candidates
+                    }
+                    for future in concurrent.futures.as_completed(future_to_link):
+                        link = future_to_link[future]
+                        try:
+                            motor_records, perf_points = future.result()
+                            results.extend(motor_records)
+                            results.extend(perf_points)
+                        except Exception as e:
+                            log.error(f"[tmotor] Detail scrape error for {link}: {e}")
 
             # If search returned nothing, also try the most relevant category as fallback
             if not results:
@@ -475,3 +492,41 @@ class TMotorScraper(BaseScraper):
             except Exception as e:
                 log.debug(f"[tmotor] Basic parse error: {e}")
         return motors
+
+    def _is_candidate_match(self, query: str, name: str, link: str) -> bool:
+        if not query.strip():
+            return True
+
+        name_lower = name.lower()
+        link_lower = link.lower()
+
+        # Extract model terms from query (terms that are NOT just KV numbers or KV labels)
+        import re
+        # Clean KV patterns
+        q_clean = re.sub(r'\b\d{3,5}\s*kv\b', '', query, flags=re.IGNORECASE)
+        q_clean = re.sub(r'\bkv\s*\d{3,5}\b', '', q_clean, flags=re.IGNORECASE)
+        q_clean = re.sub(r'[-/]\d{3,5}\s*kv\b', '', q_clean, flags=re.IGNORECASE)
+        q_clean = re.sub(r'[-/]kv\s*\d{3,5}\b', '', q_clean, flags=re.IGNORECASE)
+        q_clean = q_clean.lower().strip()
+
+        # Get tokens from q_clean
+        tokens = re.split(r'[\s\-_/]+', q_clean)
+        tokens = [t.strip() for t in tokens if len(t.strip()) >= 2]
+
+        # If no tokens left after removing KV, just use the original query tokens
+        if not tokens:
+            tokens = [t.strip() for t in re.split(r'[\s\-_/]+', query.lower()) if len(t.strip()) >= 2]
+
+        # Check if ANY of the model tokens appear in candidate name or link
+        for tok in tokens:
+            if tok in name_lower or tok in link_lower:
+                return True
+
+        # Also check if the candidate name has the stator size if it's in the query
+        # E.g. search "MN3508" -> candidate "MN3508" has "3508"
+        nums = re.findall(r'\b\d{4}\b', query)
+        for num in nums:
+            if num in name_lower or num in link_lower:
+                return True
+
+        return False

@@ -21,11 +21,13 @@ OUTPUT_DIR = BASE_DIR / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 # ─── HTTP settings ────────────────────────────────────────────────────────
-CURL_IMPERSONATE   = "chrome120"   # Browser fingerprint to impersonate
-REQUEST_DELAY_MIN  = 1.5           # seconds (min wait between requests per domain)
-REQUEST_DELAY_MAX  = 4.0           # seconds
-MAX_RETRIES        = 3
-REQUEST_TIMEOUT    = 30            # seconds
+CURL_IMPERSONATE            = "chrome120"   # Browser fingerprint to impersonate
+REQUEST_DELAY_MIN           = float(os.getenv("REQUEST_DELAY_MIN", "0.1"))           # seconds (min wait between requests per domain)
+REQUEST_DELAY_MAX           = float(os.getenv("REQUEST_DELAY_MAX", "0.3"))           # seconds
+MAX_RETRIES                 = 3
+REQUEST_TIMEOUT             = 30            # seconds
+PLAYWRIGHT_GOTO_TIMEOUT     = int(os.getenv("PLAYWRIGHT_GOTO_TIMEOUT", "12000"))     # milliseconds
+PLAYWRIGHT_SELECTOR_TIMEOUT = int(os.getenv("PLAYWRIGHT_SELECTOR_TIMEOUT", "8000")) # milliseconds
 
 # ─── Available scraper sources ────────────────────────────────────────────
 SOURCES = {

@@ -30,6 +30,16 @@ class RCBenchmarkScraper(BaseScraper):
         csv_links = self._find_csv_links()
         log.info(f"[rcbenchmark] Found {len(csv_links)} CSV files")
 
+        if query.strip():
+            filtered = []
+            for url, label in csv_links:
+                if self._is_candidate_match(query, label, url):
+                    filtered.append((url, label))
+                else:
+                    log.debug(f"[rcbenchmark] Pre-filtered (skipped): {label}")
+            log.info(f"[rcbenchmark] After pre-filtering: {len(filtered)}/{len(csv_links)} CSVs remain")
+            csv_links = filtered
+
         for url, label in csv_links:
             log.info(f"[rcbenchmark] Downloading: {label} → {url}")
             html = self.fetch(url)
@@ -98,3 +108,41 @@ class RCBenchmarkScraper(BaseScraper):
         except Exception as e:
             log.warning(f"[rcbenchmark] CSV parse error for {label}: {e}")
         return records
+
+    def _is_candidate_match(self, query: str, name: str, link: str) -> bool:
+        if not query.strip():
+            return True
+
+        name_lower = name.lower()
+        link_lower = link.lower()
+
+        # Extract model terms from query (terms that are NOT just KV numbers or KV labels)
+        import re
+        # Clean KV patterns
+        q_clean = re.sub(r'\b\d{3,5}\s*kv\b', '', query, flags=re.IGNORECASE)
+        q_clean = re.sub(r'\bkv\s*\d{3,5}\b', '', q_clean, flags=re.IGNORECASE)
+        q_clean = re.sub(r'[-/]\d{3,5}\s*kv\b', '', q_clean, flags=re.IGNORECASE)
+        q_clean = re.sub(r'[-/]kv\s*\d{3,5}\b', '', q_clean, flags=re.IGNORECASE)
+        q_clean = q_clean.lower().strip()
+
+        # Get tokens from q_clean
+        tokens = re.split(r'[\s\-_/]+', q_clean)
+        tokens = [t.strip() for t in tokens if len(t.strip()) >= 2]
+
+        # If no tokens left after removing KV, just use the original query tokens
+        if not tokens:
+            tokens = [t.strip() for t in re.split(r'[\s\-_/]+', query.lower()) if len(t.strip()) >= 2]
+
+        # Check if ANY of the model tokens appear in candidate name or link
+        for tok in tokens:
+            if tok in name_lower or tok in link_lower:
+                return True
+
+        # Also check if the candidate name has the stator size if it's in the query
+        # E.g. search "MN3508" -> candidate "MN3508" has "3508"
+        nums = re.findall(r'\b\d{4}\b', query)
+        for num in nums:
+            if num in name_lower or num in link_lower:
+                return True
+
+        return False
