@@ -94,12 +94,13 @@
         <main class="main-content">
             <!-- Top Bar / Navigation -->
             <header class="topbar">
-                <div class="search-container">
+                <div class="search-container" style="position:relative;">
                     <i data-lucide="search" class="search-icon"></i>
-                    <input type="text" id="search-input" placeholder="Search by Motor, Manufacturer, ESC, Propeller...">
+                    <input type="text" id="search-input" placeholder="Search by Motor, Manufacturer, ESC, Propeller..." autocomplete="off">
                     <button id="search-clear" class="search-clear-btn" style="display: none;">
                         <i data-lucide="x"></i>
                     </button>
+                    <div id="search-suggestions" class="search-suggestions-dropdown" style="display:none;"></div>
                 </div>
 
                 <div class="topbar-actions">
@@ -608,6 +609,6 @@
     </div>
 
     <!-- JavaScript -->
-    <script src="intern_app.js?v=1.3"></script>
+    <script src="intern_app.js?v=1.4"></script>
 </body>
 </html>

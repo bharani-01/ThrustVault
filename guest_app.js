@@ -708,14 +708,150 @@ document.addEventListener('DOMContentLoaded', () => {
         state.searchQuery = e.target.value;
         elements.searchClear.style.display = state.searchQuery ? 'block' : 'none';
         renderMainContent();
+        showSearchSuggestions(state.searchQuery);
     });
-    
+
+    // =========================================================================
+    // SMART SEARCH SUGGESTIONS
+    // =========================================================================
+    const suggestionsEl = document.getElementById('search-suggestions');
+    let activeSuggestionIndex = -1;
+
+    function levenshtein(a, b) {
+        const m = a.length, n = b.length;
+        const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+        for (let j = 0; j <= n; j++) dp[0][j] = j;
+        for (let i = 1; i <= m; i++) {
+            for (let j = 1; j <= n; j++) {
+                dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+            }
+        }
+        return dp[m][n];
+    }
+
+    function scoreMotor(motor, query) {
+        const q = query.toLowerCase().trim();
+        if (!q) return -1;
+        const fields = [motor.motor || '', motor.company || '', motor.esc || '', motor.prop || ''];
+        const haystack = fields.join(' ').toLowerCase();
+        const motorLower = (motor.motor || '').toLowerCase();
+        const companyLower = (motor.company || '').toLowerCase();
+        let score = 0;
+        if (motorLower.startsWith(q)) score += 100;
+        else if (motorLower.includes(q)) score += 70;
+        else if (companyLower.includes(q)) score += 50;
+        else if (haystack.includes(q)) score += 30;
+        const queryTokens = q.split(/\s+/);
+        const motorTokens = haystack.split(/\s+/);
+        queryTokens.forEach(qt => {
+            if (!qt) return;
+            motorTokens.forEach(mt => {
+                if (mt.startsWith(qt)) score += 20;
+                else if (mt.includes(qt)) score += 10;
+                else {
+                    const maxDist = qt.length > 7 ? 2 : qt.length > 4 ? 1 : 0;
+                    const dist = levenshtein(qt, mt.substring(0, qt.length + 2));
+                    if (dist <= maxDist) score += Math.max(5, 12 - dist * 4);
+                }
+            });
+        });
+        return score;
+    }
+
+    function escH(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    function highlightMatch(text, query) {
+        if (!query || !text) return escH(text || '');
+        const escaped = escH(text);
+        const q = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return escaped.replace(new RegExp(`(${q})`, 'gi'), '<mark>$1</mark>');
+    }
+
+    function showSearchSuggestions(query) {
+        activeSuggestionIndex = -1;
+        const q = (query || '').trim();
+        if (q.length < 1) { suggestionsEl.style.display = 'none'; return; }
+
+        const scored = state.motors
+            .map(m => { const cat = state.categories.find(c => c.id === m.categoryId); return { motor: m, cat, score: scoreMotor(m, q) }; })
+            .filter(x => x.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 8);
+
+        if (scored.length === 0) {
+            suggestionsEl.innerHTML = `<div class="suggestion-no-results">No motors match "<strong>${escH(q)}</strong>"</div>`;
+            suggestionsEl.style.display = 'block';
+            return;
+        }
+
+        const items = scored.map((x, idx) => {
+            const { motor: m, cat } = x;
+            const catName = cat ? cat.name : 'Uncategorized';
+            const initials = (m.motor || '?').charAt(0).toUpperCase();
+            return `<div class="suggestion-item" data-idx="${idx}" data-motor-id="${escH(m.id)}" data-cat-id="${escH(m.categoryId)}">
+                <div class="suggestion-item-icon">${initials}</div>
+                <div class="suggestion-item-body">
+                    <div class="suggestion-motor-name">${highlightMatch(m.motor, q)}</div>
+                    <div class="suggestion-motor-meta">${highlightMatch(m.company, q)}${m.esc ? ' &nbsp;·&nbsp; ESC: ' + escH(m.esc) : ''}</div>
+                </div>
+                <span class="suggestion-thrust-badge">${escH(catName)}</span>
+            </div>`;
+        }).join('');
+
+        suggestionsEl.innerHTML = `<div class="suggestion-header">Suggestions &nbsp;·&nbsp; ${scored.length} match${scored.length !== 1 ? 'es' : ''} across all categories</div>${items}`;
+        suggestionsEl.style.display = 'block';
+
+        suggestionsEl.querySelectorAll('.suggestion-item').forEach(item => {
+            item.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                const catId = item.dataset.catId;
+                const motorName = scored[parseInt(item.dataset.idx)].motor.motor;
+                if (catId && catId !== state.activeCategory) {
+                    state.activeCategory = catId;
+                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                    const catBtn = document.querySelector(`.category-btn[data-cat-id="${catId}"]`);
+                    if (catBtn) catBtn.classList.add('active');
+                }
+                elements.searchInput.value = motorName;
+                state.searchQuery = motorName;
+                elements.searchClear.style.display = 'block';
+                suggestionsEl.style.display = 'none';
+                renderMainContent();
+            });
+        });
+    }
+
+    elements.searchInput.addEventListener('keydown', (e) => {
+        const items = suggestionsEl.querySelectorAll('.suggestion-item');
+        if (suggestionsEl.style.display === 'none' || items.length === 0) return;
+        if (e.key === 'ArrowDown') { e.preventDefault(); activeSuggestionIndex = Math.min(activeSuggestionIndex + 1, items.length - 1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); activeSuggestionIndex = Math.max(activeSuggestionIndex - 1, -1); }
+        else if (e.key === 'Enter' && activeSuggestionIndex >= 0) { e.preventDefault(); items[activeSuggestionIndex].dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); return; }
+        else if (e.key === 'Escape') { suggestionsEl.style.display = 'none'; activeSuggestionIndex = -1; return; }
+        items.forEach((item, i) => item.classList.toggle('active', i === activeSuggestionIndex));
+        if (activeSuggestionIndex >= 0) items[activeSuggestionIndex].scrollIntoView({ block: 'nearest' });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!elements.searchInput.contains(e.target) && !suggestionsEl.contains(e.target)) {
+            suggestionsEl.style.display = 'none'; activeSuggestionIndex = -1;
+        }
+    });
+
+    elements.searchInput.addEventListener('focus', () => {
+        if (elements.searchInput.value.trim().length >= 1) showSearchSuggestions(elements.searchInput.value);
+    });
+
     elements.searchClear.addEventListener('click', () => {
         state.searchQuery = '';
         elements.searchInput.value = '';
         elements.searchClear.style.display = 'none';
+        suggestionsEl.style.display = 'none';
+        activeSuggestionIndex = -1;
         renderMainContent();
     });
+
+
 
     elements.filterCompanySelect.addEventListener('change', (e) => {
         state.filterCompany = e.target.value;
