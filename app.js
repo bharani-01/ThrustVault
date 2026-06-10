@@ -880,6 +880,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = e.target.files[0];
         if (!file) return;
 
+        // Strict file extension and size validation
+        const allowedExtensions = ['.xlsx', '.xls', '.json', '.csv'];
+        const fileNameLower = file.name.toLowerCase();
+        const hasValidExt = allowedExtensions.some(ext => fileNameLower.endsWith(ext));
+        if (!hasValidExt) {
+            alert("Security Error: Only spreadsheet files (.xlsx, .xls, .csv, .json) are allowed.");
+            e.target.value = '';
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            alert("Security Error: File size exceeds the 5MB limit.");
+            e.target.value = '';
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = async (evt) => {
             const content = evt.target.result;

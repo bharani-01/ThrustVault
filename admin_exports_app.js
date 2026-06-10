@@ -16,6 +16,27 @@ document.addEventListener('DOMContentLoaded', () => {
         avatarInitials.textContent = email.charAt(0).toUpperCase();
     }
 
+    // XSS Escaping and URL Sanitization Utilities
+    function escapeHTML(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function sanitizeUrl(url) {
+        if (!url) return '';
+        const trimmed = url.trim();
+        if (/^(https?:\/\/|\/)/i.test(trimmed)) {
+            return trimmed;
+        }
+        return '#';
+    }
+
+
     lucide.createIcons();
 
     let state = {
@@ -181,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         elements.catMotorsListSelector.innerHTML = filteredMotors.map(m => {
-            return `<label><input type="checkbox" name="cat-selected-motors" value="${m.id}" checked> ${m.motor_name} (${m.company} - ${m.max_thrust || 'No Thrust'})</label>`;
+            return `<label><input type="checkbox" name="cat-selected-motors" value="${m.id}" checked> ${escapeHTML(m.motor_name)} (${escapeHTML(m.company)} - ${escapeHTML(m.max_thrust || 'No Thrust')})</label>`;
         }).join('');
 
         if (filteredMotors.length === 0) {
@@ -215,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const motor = state.motors.find(m => m.id === run.motor_id);
             const motorName = motor ? motor.motor_name : 'Unknown Motor';
             const dateStr = new Date(run.tested_at).toLocaleDateString();
-            return `<label><input type="checkbox" name="telemetry-selected-runs" value="${run.id}" checked> <strong>${motorName}</strong> — Prop: ${run.propeller_model || 'N/A'} (${run.test_conducted_by || 'Unknown'} - ${dateStr})</label>`;
+            return `<label><input type="checkbox" name="telemetry-selected-runs" value="${run.id}" checked> <strong>${escapeHTML(motorName)}</strong> — Prop: ${escapeHTML(run.propeller_model || 'N/A')} (${escapeHTML(run.test_conducted_by || 'Unknown')} - ${dateStr})</label>`;
         }).join('');
 
         if (filteredRuns.length === 0) {

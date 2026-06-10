@@ -41,3 +41,14 @@ ALTER TABLE public.motor_test_data_points
     ADD CONSTRAINT chk_positive_thrust CHECK (thrust_g >= 0),
     ADD CONSTRAINT chk_positive_rpm CHECK (rpm >= 0),
     ADD CONSTRAINT chk_positive_efficiency CHECK (efficiency >= 0);
+
+-- 5. Enforce URL constraints on the motors table
+-- Validate that reference links start with http:// or https:// (or are empty/null)
+ALTER TABLE public.motors 
+    DROP CONSTRAINT IF EXISTS chk_link_motor,
+    DROP CONSTRAINT IF EXISTS chk_link_esc,
+    DROP CONSTRAINT IF EXISTS chk_link_propeller,
+    ADD CONSTRAINT chk_link_motor CHECK (link_motor IS NULL OR link_motor = '' OR link_motor ~* '^https?://'),
+    ADD CONSTRAINT chk_link_esc CHECK (link_esc IS NULL OR link_esc = '' OR link_esc ~* '^https?://'),
+    ADD CONSTRAINT chk_link_propeller CHECK (link_propeller IS NULL OR link_propeller = '' OR link_propeller ~* '^https?://');
+

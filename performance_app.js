@@ -19,6 +19,27 @@ document.addEventListener('DOMContentLoaded', () => {
     roleBadge.textContent = session.role.charAt(0).toUpperCase() + session.role.slice(1);
     roleBadge.className = `badge-role role-${session.role}`;
 
+    // XSS Escaping and URL Sanitization Utilities
+    function escapeHTML(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function sanitizeUrl(url) {
+        if (!url) return '';
+        const trimmed = url.trim();
+        if (/^(https?:\/\/|\/)/i.test(trimmed)) {
+            return trimmed;
+        }
+        return '#';
+    }
+
+
     // Enable/Disable creator views based on role
     const isWriter = session.role === 'admin' || session.role === 'intern';
     const tabBtnCreator = document.getElementById('tab-btn-creator');
@@ -381,6 +402,21 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.btnImportFile.onchange = (e) => {
             const file = e.target.files[0];
             if (!file) return;
+
+            // Strict file extension and size validation
+            const allowedExtensions = ['.xlsx', '.xls', '.json', '.csv'];
+            const fileNameLower = file.name.toLowerCase();
+            const hasValidExt = allowedExtensions.some(ext => fileNameLower.endsWith(ext));
+            if (!hasValidExt) {
+                alert("Security Error: Only spreadsheet files (.xlsx, .xls, .csv, .json) are allowed.");
+                e.target.value = '';
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                alert("Security Error: File size exceeds the 5MB limit.");
+                e.target.value = '';
+                return;
+            }
 
             const reader = new FileReader();
             reader.onload = (evt) => {
@@ -937,7 +973,7 @@ document.addEventListener('DOMContentLoaded', () => {
             motorDropdownOptionsHtml += `<optgroup label="${label}">`;
             const catMotors = state.motorsByCat[cat.id] || [];
             catMotors.forEach(m => {
-                motorDropdownOptionsHtml += `<option value="${m.id}">${m.company} - ${m.motor_name}</option>`;
+                motorDropdownOptionsHtml += `<option value="${m.id}">${escapeHTML(m.company)} - ${escapeHTML(m.motor_name)}</option>`;
             });
             motorDropdownOptionsHtml += `</optgroup>`;
         });
@@ -952,16 +988,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td style="text-align:center; padding:10px 4px;">
                     <input type="checkbox" class="bulk-run-import-check" data-run-index="${index}" checked style="width:16px; height:16px; cursor:pointer;">
                 </td>
-                <td style="font-weight:600; font-family:'Outfit'; color:#0f172a; padding:10px 8px;">${run.motorModel}</td>
+                <td style="font-weight:600; font-family:'Outfit'; color:#0f172a; padding:10px 8px;">${escapeHTML(run.motorModel)}</td>
                 <td style="padding:10px 8px;">
                     <select class="bulk-run-motor-select" data-run-index="${index}" style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1; font-family:'Inter'; font-size:0.8rem; background:#ffffff;">
                         ${motorDropdownOptionsHtml}
                     </select>
                 </td>
-                <td style="padding:10px 8px;">${run.propellerModel}</td>
-                <td style="padding:10px 8px;">${run.metadata.esc_model || '—'}</td>
-                <td style="padding:10px 8px;">${run.metadata.battery_info || '—'}</td>
-                <td style="padding:10px 8px;">${run.metadata.test_conducted_by || '—'}</td>
+                <td style="padding:10px 8px;">${escapeHTML(run.propellerModel)}</td>
+                <td style="padding:10px 8px;">${escapeHTML(run.metadata.esc_model || '—')}</td>
+                <td style="padding:10px 8px;">${escapeHTML(run.metadata.battery_info || '—')}</td>
+                <td style="padding:10px 8px;">${escapeHTML(run.metadata.test_conducted_by || '—')}</td>
                 <td style="text-align:center; font-weight:600; padding:10px 8px;">${rowCount}</td>
                 <td style="text-align:center; padding:10px 8px;">
                     <button type="button" class="btn-outline-sm btn-run-keep-editing" data-run-index="${index}" style="padding:4px 8px; font-size:0.75rem; border-radius:4px; display:inline-flex; align-items:center; gap:2px; font-family:'Inter'; font-weight:500;">
@@ -1826,7 +1862,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return `
                     <div class="glass-panel btn-sidebar-link ${isSelected ? 'active' : ''}" data-id="${run.id}" style="cursor:pointer; display:flex; flex-direction:column; gap:8px; align-items:start; padding:12px; margin-bottom:8px; width:100%; border:1px solid ${isSelected ? 'var(--primary-color)' : '#cbd5e1'};">
                         <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                            <span style="font-weight:700; font-family:'Outfit'; font-size:0.9rem; color:#0f172a; word-break:break-all;">${displayProp} ${badgeHtml}</span>
+                            <span style="font-weight:700; font-family:'Outfit'; font-size:0.9rem; color:#0f172a; word-break:break-all;">${escapeHTML(displayProp)} ${badgeHtml}</span>
                             <div style="display:flex; align-items:center; gap:6px;">
                                 <span style="font-size:0.75rem; color:#94a3b8;">${date}</span>
                                 ${isWriter ? `
@@ -1837,9 +1873,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>
                         <div style="font-size:0.8rem; color:#64748b; display:flex; flex-direction:column; gap:2px; text-align:left;">
-                            <span><strong>ESC:</strong> ${run.esc_model || '-'}</span>
-                            <span><strong>Battery:</strong> ${run.battery_info || '-'}</span>
-                            <span><strong>Tester:</strong> ${run.test_conducted_by || '-'}</span>
+                            <span><strong>ESC:</strong> ${escapeHTML(run.esc_model || '-')}</span>
+                            <span><strong>Battery:</strong> ${escapeHTML(run.battery_info || '-')}</span>
+                            <span><strong>Tester:</strong> ${escapeHTML(run.test_conducted_by || '-')}</span>
                         </div>
                     </div>
                 `;

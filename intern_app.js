@@ -12,6 +12,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const email = session.email || '';
     document.getElementById('session-email').textContent = email;
 
+    // XSS Escaping and URL Sanitization Utilities
+    function escapeHTML(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function sanitizeUrl(url) {
+        if (!url) return '';
+        const trimmed = url.trim();
+        if (/^(https?:\/\/|\/)/i.test(trimmed)) {
+            return trimmed;
+        }
+        return '#';
+    }
+
+
     function logUserActivity(email, role, action, details) {
         try {
             const logs = JSON.parse(localStorage.getItem('thrustvault_global_activity_logs')) || [];
@@ -562,23 +583,23 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const links = [];
             if (m.linkMotor) {
-                links.push(`<a href="${m.linkMotor}" target="_blank" title="Motor Specs"><i data-lucide="cpu"></i></a>`);
+                links.push(`<a href="${sanitizeUrl(m.linkMotor)}" target="_blank" title="Motor Specs"><i data-lucide="cpu"></i></a>`);
             }
             if (m.linkEsc) {
-                links.push(`<a href="${m.linkEsc}" target="_blank" title="ESC Specs"><i data-lucide="zap"></i></a>`);
+                links.push(`<a href="${sanitizeUrl(m.linkEsc)}" target="_blank" title="ESC Specs"><i data-lucide="zap"></i></a>`);
             }
             if (m.linkProp) {
-                links.push(`<a href="${m.linkProp}" target="_blank" title="Propeller Specs"><i data-lucide="wind"></i></a>`);
+                links.push(`<a href="${sanitizeUrl(m.linkProp)}" target="_blank" title="Propeller Specs"><i data-lucide="wind"></i></a>`);
             }
             const linksHtml = links.length > 0 ? links.join(' ') : '-';
             
             tr.innerHTML = `
                 <td><input type="checkbox" class="compare-cb" data-id="${m.id}" ${isChecked ? 'checked' : ''}></td>
-                <td><a href="#" class="motor-profile-link" data-id="${m.id}"><strong>${m.motor}</strong></a></td>
-                <td>${m.company}</td>
-                <td><span class="badge-thrust">${m.thrust}</span></td>
-                <td>${m.esc || '-'}</td>
-                <td>${m.prop || '-'}</td>
+                <td><a href="#" class="motor-profile-link" data-id="${m.id}"><strong>${escapeHTML(m.motor)}</strong></a></td>
+                <td>${escapeHTML(m.company)}</td>
+                <td><span class="badge-thrust">${escapeHTML(m.thrust)}</span></td>
+                <td>${escapeHTML(m.esc || '-')}</td>
+                <td>${escapeHTML(m.prop || '-')}</td>
                 <td><div class="action-links">${linksHtml}</div></td>
                 <td class="row-actions">
                     <button class="btn-edit" data-id="${m.id}" title="Edit Specifications"><i data-lucide="edit-2"></i></button>
@@ -1108,6 +1129,22 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.fileImportInput.onchange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
+        
+        // Strict file extension and size validation
+        const allowedExtensions = ['.xlsx', '.xls', '.json', '.csv'];
+        const fileNameLower = file.name.toLowerCase();
+        const hasValidExt = allowedExtensions.some(ext => fileNameLower.endsWith(ext));
+        if (!hasValidExt) {
+            alert("Security Error: Only spreadsheet files (.xlsx, .xls, .csv, .json) are allowed.");
+            e.target.value = '';
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            alert("Security Error: File size exceeds the 5MB limit.");
+            e.target.value = '';
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = async (evt) => {
             try {

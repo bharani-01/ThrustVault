@@ -29,6 +29,16 @@ CREATE TABLE IF NOT EXISTS motors (
 -- Safe migration for existing setups
 ALTER TABLE motors ADD COLUMN IF NOT EXISTS custom_parameters JSONB DEFAULT '{}'::jsonb;
 
+-- Enforce URL constraints on reference links
+ALTER TABLE public.motors 
+    DROP CONSTRAINT IF EXISTS chk_link_motor,
+    DROP CONSTRAINT IF EXISTS chk_link_esc,
+    DROP CONSTRAINT IF EXISTS chk_link_propeller,
+    ADD CONSTRAINT chk_link_motor CHECK (link_motor IS NULL OR link_motor = '' OR link_motor ~* '^https?://'),
+    ADD CONSTRAINT chk_link_esc CHECK (link_esc IS NULL OR link_esc = '' OR link_esc ~* '^https?://'),
+    ADD CONSTRAINT chk_link_propeller CHECK (link_propeller IS NULL OR link_propeller = '' OR link_propeller ~* '^https?://');
+
+
 
 -- Remove deprecated password column if it exists in public.user_profiles
 DO $$ 
