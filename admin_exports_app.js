@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         telemetryExportFormat: document.getElementById('telemetry-export-format'),
 
         sidebarMotorsCount: document.getElementById('sidebar-motors-count'),
-        sidebarTestRunsCount: document.getElementById('sidebar-test-runs-count'),
+        sidebarCategoriesCount: document.getElementById('sidebar-categories-count'),
         btnLogout: document.getElementById('btn-logout'),
 
         // Live Preview Panel
@@ -629,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .order('tested_at', { ascending: false });
             if (runError) throw runError;
             state.testRuns = testRuns || [];
-            elements.sidebarTestRunsCount.textContent = state.testRuns.length;
+            if (elements.sidebarCategoriesCount) elements.sidebarCategoriesCount.textContent = state.categories.length;
 
             // Render Selectors initial state
             renderMotorsSelector();

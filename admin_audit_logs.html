@@ -10,16 +10,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    <!-- Supabase JS Client (for sidebar stats) -->
+    <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="style.css">
     <style>
-        .audit-dashboard-grid {
+        .content-body {
+            flex: 1;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 24px;
             padding: 24px;
-            overflow-y: auto;
-            flex: 1;
         }
 
         .metrics-grid {
@@ -200,6 +202,27 @@
             font-size: 0.85rem;
             color: var(--text-secondary);
         }
+
+        /* Custom Scrollbar for Table Scroll (both axes) */
+        .table-responsive::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        .table-responsive::-webkit-scrollbar-track {
+            background: rgba(241, 245, 249, 0.5);
+            border-radius: 4px;
+        }
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
     </style>
 </head>
 <body>
@@ -208,19 +231,45 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo-container">
-                    <div class="logo-icon"><i data-lucide="shield-check" style="width:28px; height:28px;"></i></div>
+                    <div class="logo-icon">
+                        <i data-lucide="aperture" class="spin-slow icon-primary"></i>
+                    </div>
                     <div class="logo-text">
                         <h1>Thrust<span>Vault</span></h1>
-                        <p>Advanced Security Control</p>
+                        <p>Administrator Console</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Widgets in Sidebar -->
+            <div class="sidebar-stats">
+                <div class="stat-card-mini">
+                    <div class="stat-icon"><i data-lucide="database"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="total-motors-count">—</span>
+                        <span class="stat-label">Total Motors</span>
+                    </div>
+                </div>
+                <div class="stat-card-mini">
+                    <div class="stat-icon"><i data-lucide="layers"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="total-categories-count">—</span>
+                        <span class="stat-label">Thrust Levels</span>
                     </div>
                 </div>
             </div>
 
             <!-- Navigation Links -->
             <nav class="sidebar-nav">
-                <div class="sidebar-menu-links" style="display: flex; flex-direction: column; gap: 8px;">
+                <div class="sidebar-menu-links">
                     <a href="admin_dashboard.html" class="btn-sidebar-link" title="Catalog Dashboard" style="text-decoration: none; box-sizing: border-box;">
                         <i data-lucide="database"></i> Catalog Dashboard
+                    </a>
+                    <a href="admin_dashboard.html" class="btn-sidebar-link" title="User Management" style="text-decoration: none; box-sizing: border-box;" onclick="sessionStorage.setItem('adminView','users');">
+                        <i data-lucide="users"></i> User Management
+                    </a>
+                    <a href="admin_dashboard.html" class="btn-sidebar-link" title="Schema Customizer" style="text-decoration: none; box-sizing: border-box;" onclick="sessionStorage.setItem('adminView','schema');">
+                        <i data-lucide="settings"></i> Schema Customizer
                     </a>
                     <a href="performance_analytics.html" class="btn-sidebar-link" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
                         <i data-lucide="trending-up"></i> Performance Analytics
@@ -240,7 +289,7 @@
                     <div class="user-avatar" id="user-avatar-initials">A</div>
                     <div class="user-info">
                         <span class="user-email" id="session-email">admin@thrustvault.com</span>
-                        <span class="badge-role role-admin">Admin</span>
+                        <span class="badge-role role-admin" id="session-role-badge">Admin</span>
                     </div>
                 </div>
                 <button class="btn-logout-premium" id="btn-logout" title="Log Out">
@@ -250,7 +299,7 @@
         </aside>
 
         <!-- Main Content Viewport -->
-        <div class="main-content-wrapper" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+        <main class="main-content">
             <header class="topbar">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <i data-lucide="shield-alert" style="color: var(--primary-color); width: 24px; height: 24px;"></i>
@@ -258,7 +307,7 @@
                 </div>
             </header>
 
-            <div class="audit-dashboard-grid">
+            <div class="content-body">
                 <!-- Metrics Summary Cards -->
                 <div class="metrics-grid">
                     <div class="metric-card-premium">
@@ -315,11 +364,11 @@
                 </form>
 
                 <!-- Data Table Panel -->
-                <div class="glass-panel" style="padding:0; overflow:hidden; border-radius:12px; border: 1px solid rgba(226, 232, 240, 0.8);">
-                    <div style="overflow-x:auto;">
-                        <table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">
+                <div class="glass-panel" style="padding:0; overflow:hidden; border-radius:12px; border: 1px solid rgba(226, 232, 240, 0.8); width:100%; flex-shrink:0;">
+                    <div class="table-responsive" style="overflow-x:auto; overflow-y:auto; max-height:calc(100vh - 380px); width:100%;">
+                        <table style="width:100%; min-width:1200px; border-collapse:collapse; font-size:0.85rem; text-align:left;">
                             <thead>
-                                <tr style="background:#f1f5f9; border-bottom:1px solid #cbd5e1; font-family:'Outfit'; font-weight:600; color:#334155;">
+                                <tr style="background:#f1f5f9; border-bottom:1px solid #cbd5e1; font-family:'Outfit'; font-weight:600; color:#334155; position:sticky; top:0; z-index:2;">
                                     <th style="padding:14px 16px; width:170px;">Timestamp (Local)</th>
                                     <th style="padding:14px 16px;">Email</th>
                                     <th style="padding:14px 16px; width:70px;">Role</th>
@@ -348,7 +397,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 
     <!-- UI Logic Controller -->

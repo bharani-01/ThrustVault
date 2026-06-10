@@ -69,6 +69,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     let supabase = null;
+    let profileUserEmail = null;
+    let profileBackTarget = 'users';
+    let currentUserLogs = [];
 
     // DOM Elements
     const elements = {
@@ -99,7 +102,21 @@ document.addEventListener('DOMContentLoaded', () => {
         catModal: document.getElementById('category-modal'),
         confirmModal: document.getElementById('confirm-modal'),
         comparisonModal: document.getElementById('comparison-modal'),
-        userProfileModal: document.getElementById('user-profile-modal'),
+        profileViewSection: document.getElementById('profile-view-section'),
+        btnProfileBack: document.getElementById('btn-profile-back'),
+        profileActivitySearch: document.getElementById('profile-activity-search'),
+        profileActivityFilter: document.getElementById('profile-activity-filter'),
+        profileTotalOps: document.getElementById('profile-total-ops'),
+        profileTotalMutations: document.getElementById('profile-total-mutations'),
+        fullProfileAvatar: document.getElementById('full-profile-avatar'),
+        fullProfileEmail: document.getElementById('full-profile-email'),
+        fullProfileRoleBadge: document.getElementById('full-profile-role-badge'),
+        fullProfileUid: document.getElementById('full-profile-uid'),
+        btnCopyFullProfileUid: document.getElementById('btn-copy-full-profile-uid'),
+        fullProfileCreatedAt: document.getElementById('full-profile-created-at'),
+        fullProfilePermissionsList: document.getElementById('full-profile-permissions-list'),
+        fullProfileActivityContainer: document.getElementById('full-profile-activity-container'),
+        profileActivityEmpty: document.getElementById('profile-activity-empty'),
         comparisonDrawer: document.getElementById('comparison-drawer'),
         compareItemsContainer: document.getElementById('compare-items-container'),
         compareCount: document.getElementById('compare-count'),
@@ -238,8 +255,11 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.btnShowCatalog.onclick = () => {
         elements.btnShowCatalog.classList.add('active');
         elements.btnShowUsers.classList.remove('active');
+        elements.btnShowSchema.classList.remove('active');
         elements.catalogViewSection.style.display = 'flex';
         elements.usersViewSection.style.display = 'none';
+        elements.schemaViewSection.style.display = 'none';
+        elements.profileViewSection.style.display = 'none';
         elements.catNavTitle.style.display = 'flex';
         elements.catList.style.display = 'flex';
         renderApp();
@@ -248,8 +268,11 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.btnShowUsers.onclick = () => {
         elements.btnShowUsers.classList.add('active');
         elements.btnShowCatalog.classList.remove('active');
+        elements.btnShowSchema.classList.remove('active');
         elements.catalogViewSection.style.display = 'none';
         elements.usersViewSection.style.display = 'block';
+        elements.schemaViewSection.style.display = 'none';
+        elements.profileViewSection.style.display = 'none';
         elements.catNavTitle.style.display = 'none';
         elements.catList.style.display = 'none';
         fetchUserAccounts();
@@ -301,137 +324,13 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.usersTableBody.appendChild(tr);
         });
 
-        // Bind view profile click
+        // Bind view profile click to transition to full-page user profile
         elements.usersTableBody.querySelectorAll('.btn-view-profile').forEach(btn => {
             btn.onclick = () => {
                 const userId = btn.dataset.id;
                 const targetUser = state.users.find(x => x.id === userId);
                 if (!targetUser) return;
-                
-                // Set text fields
-                document.getElementById('profile-email').textContent = targetUser.email;
-                document.getElementById('profile-uid').textContent = targetUser.id;
-                document.getElementById('profile-created-at').textContent = new Date(targetUser.created_at).toLocaleDateString(undefined, {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                
-                // Set Avatar Initial
-                const initial = targetUser.email.charAt(0).toUpperCase();
-                document.getElementById('profile-avatar').textContent = initial;
-                
-                // Set Badge
-                const roleBadge = document.getElementById('profile-role-badge');
-                roleBadge.className = `badge-role role-${targetUser.role}`;
-                roleBadge.textContent = targetUser.role.charAt(0).toUpperCase() + targetUser.role.slice(1);
-                
-                // Copy UID Action
-                const btnCopy = document.getElementById('btn-copy-profile-uid');
-                btnCopy.onclick = () => {
-                    navigator.clipboard.writeText(targetUser.id).then(() => {
-                        const originalHtml = btnCopy.innerHTML;
-                        btnCopy.innerHTML = '<i data-lucide="check" style="width: 14px; height: 14px; color: #059669;"></i>';
-                        lucide.createIcons();
-                        setTimeout(() => {
-                            btnCopy.innerHTML = originalHtml;
-                            lucide.createIcons();
-                        }, 2000);
-                    });
-                };
-                
-                // Populate Permissions List
-                const permList = document.getElementById('profile-permissions-list');
-                let permsHtml = '';
-                
-                const checkIcon = `<span style="color: #059669; font-weight: bold; margin-right: 8px; font-size: 1rem;">✓</span>`;
-                const crossIcon = `<span style="color: #e11d48; font-weight: bold; margin-right: 8px; font-size: 1rem;">✗</span>`;
-                
-                if (targetUser.role === 'admin') {
-                    permsHtml = `
-                        <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Access motor catalog</div>
-                        <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Add, edit, or delete motors</div>
-                        <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Add, edit, or delete categories</div>
-                        <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Administer user roles & registrations</div>
-                    `;
-                } else if (targetUser.role === 'intern') {
-                    permsHtml = `
-                        <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Access motor catalog</div>
-                        <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Add, edit, or delete motors</div>
-                        <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Add, edit, or delete categories</div>
-                        <div style="display: flex; align-items: center; font-size: 0.85rem; color: #64748b; text-decoration: line-through;">${crossIcon} Administer user roles & registrations</div>
-                    `;
-                } else {
-                    permsHtml = `
-                        <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Access motor catalog</div>
-                        <div style="display: flex; align-items: center; font-size: 0.85rem; color: #64748b; text-decoration: line-through;">${crossIcon} Add, edit, or delete motors</div>
-                        <div style="display: flex; align-items: center; font-size: 0.85rem; color: #64748b; text-decoration: line-through;">${crossIcon} Add, edit, or delete categories</div>
-                        <div style="display: flex; align-items: center; font-size: 0.85rem; color: #64748b; text-decoration: line-through;">${crossIcon} Administer user roles & registrations</div>
-                    `;
-                }
-                
-                permList.innerHTML = permsHtml;
-
-                // Populate Activity Logs
-                const logListEl = document.getElementById('profile-activity-log-list');
-                const allLogs = JSON.parse(localStorage.getItem('thrustvault_global_activity_logs')) || [];
-                const userLogs = allLogs.filter(log => log.email === targetUser.email)
-                                       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                
-                if (userLogs.length === 0) {
-                    logListEl.innerHTML = `
-                        <div style="text-align: center; color: #64748b; font-size: 0.85rem; padding: 20px 0;">
-                            <i data-lucide="info" style="width: 20px; height: 20px; margin: 0 auto 8px; display: block; opacity: 0.5;"></i>
-                            No activity logged yet.
-                        </div>
-                    `;
-                } else {
-                    logListEl.innerHTML = userLogs.map(log => {
-                        const date = new Date(log.timestamp);
-                        const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-                        const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                        
-                        let iconName = 'activity';
-                        let iconColor = '#64748b';
-                        if (log.action.includes('Login')) {
-                            iconName = 'log-in';
-                            iconColor = '#10b981';
-                        } else if (log.action.includes('Logout')) {
-                            iconName = 'log-out';
-                            iconColor = '#f59e0b';
-                        } else if (log.action.includes('Created') || log.action.includes('Added')) {
-                            iconName = 'plus-circle';
-                            iconColor = '#3b82f6';
-                        } else if (log.action.includes('Updated')) {
-                            iconName = 'edit-3';
-                            iconColor = '#8b5cf6';
-                        } else if (log.action.includes('Deleted')) {
-                            iconName = 'trash-2';
-                            iconColor = '#ef4444';
-                        } else if (log.action.includes('Imported')) {
-                            iconName = 'file-input';
-                            iconColor = '#6366f1';
-                        }
-                        
-                        return `
-                            <div style="display: flex; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; align-items: flex-start; margin-bottom: 8px;">
-                                <div style="background: ${iconColor}15; color: ${iconColor}; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
-                                    <i data-lucide="${iconName}" style="width: 14px; height: 14px;"></i>
-                                </div>
-                                <div style="flex: 1; min-width: 0;">
-                                    <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;">
-                                        <span style="font-weight: 600; font-size: 0.85rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${log.action}</span>
-                                        <span style="font-size: 0.75rem; color: #94a3b8; white-space: nowrap;">${dateStr}, ${timeStr}</span>
-                                    </div>
-                                    <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0 0; line-height: 1.3; word-break: break-word;">${log.details}</p>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                }
-                
-                openModal(elements.userProfileModal);
-                lucide.createIcons();
+                showUserProfile(targetUser, 'users');
             };
         });
 
@@ -480,6 +379,355 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         });
         lucide.createIcons();
+    }
+
+    // Navigate to full-page User Profile
+    async function showUserProfile(targetUser, backTarget = 'users') {
+        profileUserEmail = targetUser.email;
+        profileBackTarget = backTarget;
+
+        // Reset search/filter inputs
+        elements.profileActivitySearch.value = '';
+        elements.profileActivityFilter.value = 'all';
+
+        // Hide other navigation menus and main sections
+        elements.btnShowCatalog.classList.remove('active');
+        elements.btnShowUsers.classList.remove('active');
+        elements.btnShowSchema.classList.remove('active');
+        
+        elements.catalogViewSection.style.display = 'none';
+        elements.usersViewSection.style.display = 'none';
+        elements.schemaViewSection.style.display = 'none';
+        elements.catNavTitle.style.display = 'none';
+        elements.catList.style.display = 'none';
+        
+        // Show profile section
+        elements.profileViewSection.style.display = 'block';
+
+        // Set User Details
+        elements.fullProfileEmail.textContent = targetUser.email;
+        elements.fullProfileUid.textContent = targetUser.id;
+        
+        const registeredDate = new Date(targetUser.created_at || targetUser.createdDate || Date.now());
+        elements.fullProfileCreatedAt.textContent = registeredDate.toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        // Set Avatar Initial
+        const initial = targetUser.email.charAt(0).toUpperCase();
+        elements.fullProfileAvatar.textContent = initial;
+
+        // Set Badge
+        elements.fullProfileRoleBadge.className = `badge-role role-${targetUser.role}`;
+        elements.fullProfileRoleBadge.textContent = targetUser.role.charAt(0).toUpperCase() + targetUser.role.slice(1);
+
+        // Copy UID Action
+        elements.btnCopyFullProfileUid.onclick = () => {
+            navigator.clipboard.writeText(targetUser.id).then(() => {
+                const originalHtml = elements.btnCopyFullProfileUid.innerHTML;
+                elements.btnCopyFullProfileUid.innerHTML = '<i data-lucide="check" style="width: 14px; height: 14px; color: #059669;"></i>';
+                lucide.createIcons();
+                setTimeout(() => {
+                    elements.btnCopyFullProfileUid.innerHTML = originalHtml;
+                    lucide.createIcons();
+                }, 2000);
+            });
+        };
+
+        // Populate Permissions List
+        const checkIcon = `<span style="color: #059669; font-weight: 700; margin-right: 8px; font-size: 1rem; font-family: monospace;">+</span>`;
+        const crossIcon = `<span style="color: #e11d48; font-weight: 700; margin-right: 8px; font-size: 1rem; font-family: monospace;">-</span>`;
+        
+        let permsHtml = '';
+        if (targetUser.role === 'admin') {
+            permsHtml = `
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Access motor catalog</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Add, edit, or delete motors</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Add, edit, or delete categories</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Administer user roles & registrations</div>
+            `;
+        } else if (targetUser.role === 'intern') {
+            permsHtml = `
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Access motor catalog</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Add, edit, or delete motors</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Add, edit, or delete categories</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #64748b; text-decoration: line-through;">${crossIcon} Administer user roles & registrations</div>
+            `;
+        } else {
+            permsHtml = `
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Access motor catalog</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #64748b; text-decoration: line-through;">${crossIcon} Add, edit, or delete motors</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #64748b; text-decoration: line-through;">${crossIcon} Add, edit, or delete categories</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #64748b; text-decoration: line-through;">${crossIcon} Administer user roles & registrations</div>
+            `;
+        }
+        elements.fullProfilePermissionsList.innerHTML = permsHtml;
+
+        // Fetch user activities
+        currentUserLogs = [];
+        try {
+            // Fetch from audit logs proxy API endpoint (which retrieves from Supabase secondary logs database)
+            const response = await fetch('/api/audit-logs');
+            if (response.ok) {
+                const logs = await response.json();
+                currentUserLogs = logs.filter(log => log.email && log.email.toLowerCase() === targetUser.email.toLowerCase());
+            }
+        } catch (e) {
+            console.warn("Failed to retrieve audit logs from secondary Supabase database, using local logs fallback:", e);
+        }
+
+        // If proxy database logs are empty, fallback to localStorage logs
+        if (currentUserLogs.length === 0) {
+            const localLogs = JSON.parse(localStorage.getItem('thrustvault_global_activity_logs')) || [];
+            currentUserLogs = localLogs.filter(log => log.email && log.email.toLowerCase() === targetUser.email.toLowerCase())
+                                      .map(log => ({
+                                          timestamp: log.timestamp,
+                                          route: log.details || '',
+                                          method: 'LOCAL',
+                                          action: log.action || 'Logged Action',
+                                          status: 200,
+                                          ip_address: '127.0.0.1',
+                                          location: 'Local Cache',
+                                          risk_level: 'info',
+                                          details: log.details || ''
+                                      }));
+        }
+
+        // Sort descending by timestamp
+        currentUserLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        // ---- Calculate metrics ----
+        elements.profileTotalOps.textContent = currentUserLogs.length;
+
+        // Mutations
+        const mutations = currentUserLogs.filter(log => {
+            const actionText = (log.action || log.route || '').toLowerCase();
+            return actionText.includes('create') || actionText.includes('add') || actionText.includes('update') ||
+                   actionText.includes('delete') || actionText.includes('import') || actionText.includes('write') ||
+                   (log.method && ['POST', 'PUT', 'DELETE'].includes(log.method.toUpperCase()));
+        });
+        elements.profileTotalMutations.textContent = mutations.length;
+
+        // Logins
+        const logins = currentUserLogs.filter(log => {
+            const t = (log.action || log.route || '').toLowerCase();
+            return t.includes('login') || t.includes('session start');
+        });
+        const loginEl = document.getElementById('profile-total-logins');
+        if (loginEl) loginEl.textContent = logins.length;
+
+        // Catalog changes
+        const catalogChanges = currentUserLogs.filter(log => {
+            const t = (log.action || log.route || '').toLowerCase();
+            return (t.includes('motor') || t.includes('category') || t.includes('thrust') || t.includes('import') || t.includes('export')) && !t.includes('schema');
+        });
+        const catalogEl = document.getElementById('profile-catalog-changes');
+        if (catalogEl) catalogEl.textContent = catalogChanges.length;
+
+        // Last active timestamp
+        const lastActiveEl = document.getElementById('full-profile-last-active');
+        if (lastActiveEl && currentUserLogs.length > 0) {
+            const latestLog = currentUserLogs[0]; // already sorted desc
+            const latestDate = new Date(latestLog.timestamp);
+            lastActiveEl.textContent = latestDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + latestDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        } else if (lastActiveEl) {
+            lastActiveEl.textContent = 'No activity recorded';
+        }
+
+        // ---- Activity Breakdown Donut Chart ----
+        renderProfileBreakdownChart();
+
+        // Render activity logs
+        renderProfileLogs();
+        lucide.createIcons();
+    }
+
+    let profileActivityChartInstance = null;
+    function renderProfileBreakdownChart() {
+        const canvas = document.getElementById('profileActivityChart');
+        const legend = document.getElementById('profile-breakdown-legend');
+        if (!canvas) return;
+
+        // Categorize
+        const loginCount = currentUserLogs.filter(l => {
+            const t = (l.action || l.route || '').toLowerCase();
+            return t.includes('login') || t.includes('logout') || t.includes('session');
+        }).length;
+        const catalogCount = currentUserLogs.filter(l => {
+            const t = (l.action || l.route || '').toLowerCase();
+            return (t.includes('motor') || t.includes('category') || t.includes('import') || t.includes('export')) && !t.includes('schema') && !t.includes('user') && !t.includes('login');
+        }).length;
+        const schemaCount = currentUserLogs.filter(l => {
+            const t = (l.action || l.route || '').toLowerCase();
+            return t.includes('schema') || t.includes('custom parameter');
+        }).length;
+        const userOpsCount = currentUserLogs.filter(l => {
+            const t = (l.action || l.route || '').toLowerCase();
+            return t.includes('user') || t.includes('role') || t.includes('registration');
+        }).length;
+        const otherCount = Math.max(0, currentUserLogs.length - loginCount - catalogCount - schemaCount - userOpsCount);
+
+        const labels = ['Logins/Sessions', 'Catalog Actions', 'Schema Changes', 'User Operations', 'Other'];
+        const data = [loginCount, catalogCount, schemaCount, userOpsCount, otherCount];
+        const colors = ['#8b5cf6', '#2563eb', '#f59e0b', '#ef4444', '#94a3b8'];
+        const bgColors = ['#f5f3ff', '#eff6ff', '#fffbeb', '#fee2e2', '#f8fafc'];
+
+        // Destroy previous instance
+        if (profileActivityChartInstance) {
+            profileActivityChartInstance.destroy();
+            profileActivityChartInstance = null;
+        }
+
+        if (currentUserLogs.length === 0) {
+            if (legend) legend.innerHTML = '<div style="font-size:0.8rem; color:#94a3b8; text-align:center;">No activity data to chart</div>';
+            return;
+        }
+
+        profileActivityChartInstance = new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                labels,
+                datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff', hoverOffset: 6 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '68%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.label}: ${ctx.raw} (${currentUserLogs.length > 0 ? Math.round(ctx.raw / currentUserLogs.length * 100) : 0}%)`
+                        }
+                    }
+                }
+            }
+        });
+
+        // Render legend
+        if (legend) {
+            legend.innerHTML = labels.map((label, i) => data[i] > 0 ? `
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.79rem;">
+                    <span style="display:flex; align-items:center; gap:7px;">
+                        <span style="width:10px; height:10px; border-radius:50%; background:${colors[i]}; display:inline-block; flex-shrink:0;"></span>
+                        <span style="color:#475569;">${label}</span>
+                    </span>
+                    <span style="font-weight:700; color:#0f172a;">${data[i]}</span>
+                </div>
+            ` : '').join('');
+        }
+    }
+
+    // Render activity list with search and filter
+    function renderProfileLogs() {
+        const query = elements.profileActivitySearch.value.trim().toLowerCase();
+        const filterVal = elements.profileActivityFilter.value;
+
+        const filtered = currentUserLogs.filter(log => {
+            // Apply search filter
+            if (query) {
+                const actionMatch = log.action && log.action.toLowerCase().includes(query);
+                const routeMatch = log.route && log.route.toLowerCase().includes(query);
+                const detailsMatch = log.details && log.details.toLowerCase().includes(query);
+                const ipMatch = log.ip_address && log.ip_address.toLowerCase().includes(query);
+                const locationMatch = log.location && log.location.toLowerCase().includes(query);
+                if (!actionMatch && !routeMatch && !detailsMatch && !ipMatch && !locationMatch) return false;
+            }
+
+            // Apply category filter
+            const actionText = (log.action || log.route || '').toLowerCase();
+            if (filterVal === 'logins') {
+                if (!actionText.includes('login') && !actionText.includes('logout') && !actionText.includes('session')) return false;
+            } else if (filterVal === 'catalog') {
+                const isCatalog = actionText.includes('motor') || actionText.includes('category') || actionText.includes('thrust') || actionText.includes('xlsx') || actionText.includes('template');
+                const isSchema = actionText.includes('schema') || actionText.includes('custom parameter');
+                if (!isCatalog || isSchema) return false;
+            } else if (filterVal === 'schema') {
+                if (!actionText.includes('schema') && !actionText.includes('custom parameter')) return false;
+            } else if (filterVal === 'users') {
+                if (!actionText.includes('user') && !actionText.includes('role') && !actionText.includes('profile') && !actionText.includes('registration')) return false;
+            } else if (filterVal === 'suspicious') {
+                if (log.risk_level !== 'suspicious') return false;
+            }
+
+            return true;
+        });
+
+        // Update count badge
+        const countBadge = document.getElementById('profile-log-count-badge');
+        if (countBadge) countBadge.textContent = filtered.length + ' events';
+
+        if (filtered.length === 0) {
+            elements.fullProfileActivityContainer.style.display = 'none';
+            elements.profileActivityEmpty.style.display = 'flex';
+            elements.profileActivityEmpty.style.flexDirection = 'column';
+            elements.profileActivityEmpty.style.alignItems = 'center';
+            return;
+        }
+
+        elements.fullProfileActivityContainer.style.display = 'flex';
+        elements.profileActivityEmpty.style.display = 'none';
+
+        elements.fullProfileActivityContainer.innerHTML = filtered.map(log => {
+            const date = new Date(log.timestamp);
+            const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+            const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            
+            let iconName = 'activity';
+            let iconColor = '#64748b'; // slate
+            const actionText = (log.action || log.route || '').toLowerCase();
+
+            if (actionText.includes('login')) {
+                iconName = 'log-in';
+                iconColor = '#10b981'; // green
+            } else if (actionText.includes('logout')) {
+                iconName = 'log-out';
+                iconColor = '#f59e0b'; // amber
+            } else if (actionText.includes('create') || actionText.includes('add') || actionText.includes('new')) {
+                iconName = 'plus-circle';
+                iconColor = '#2563eb'; // blue
+            } else if (actionText.includes('update') || actionText.includes('edit')) {
+                iconName = 'edit-3';
+                iconColor = '#8b5cf6'; // purple
+            } else if (actionText.includes('delete') || actionText.includes('remove')) {
+                iconName = 'trash-2';
+                iconColor = '#ef4444'; // red
+            } else if (actionText.includes('import')) {
+                iconName = 'file-input';
+                iconColor = '#6366f1'; // indigo
+            } else if (actionText.includes('export')) {
+                iconName = 'download';
+                iconColor = '#06b6d4'; // cyan
+            }
+
+            const badgeHtml = log.risk_level === 'suspicious' ? 
+                `<span class="badge-role" style="background:#ffe4e6; color:#e11d48; font-weight:700; margin-left:6px; font-size:0.65rem; padding:2px 6px;">Suspicious</span>` : '';
+
+            const detailsText = log.details || log.route || 'No details provided.';
+
+            return `
+                <div style="display: flex; gap: 14px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; align-items: flex-start;">
+                    <div style="background: ${iconColor}15; color: ${iconColor}; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                        <i data-lucide="${iconName}" style="width: 16px; height: 16px;"></i>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+                            <span style="font-weight: 600; font-size: 0.9rem; color: #0f172a; display: flex; align-items: center; gap: 4px;">
+                                ${log.action || log.method || 'User Event'} ${badgeHtml}
+                            </span>
+                            <span style="font-size: 0.75rem; color: #94a3b8; white-space: nowrap;">${dateStr} @ ${timeStr}</span>
+                        </div>
+                        <p style="font-size: 0.85rem; color: #475569; margin: 4px 0 0 0; line-height: 1.4; word-break: break-word;">${detailsText}</p>
+                        <div style="display: flex; gap: 12px; margin-top: 6px; font-size: 0.75rem; color: #94a3b8;">
+                            <span><i data-lucide="hash" style="width:12px; height:12px; vertical-align:middle; margin-right:2px;"></i> IP: ${log.ip_address || 'N/A'}</span>
+                            <span><i data-lucide="map-pin" style="width:12px; height:12px; vertical-align:middle; margin-right:2px;"></i> Location: ${log.location || 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     // Add New User profile via RPC function (creates in auth.users securely)
@@ -959,7 +1207,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${selected.map(m => {
                             const val = m.custom_parameters && m.custom_parameters[f.field_key] !== undefined ? m.custom_parameters[f.field_key] : '-';
                             if (f.field_type === 'boolean') {
-                                return `<td>${val === true || val === 'true' ? 'Yes ✓' : 'No ✗'}</td>`;
+                                return `<td>${val === true || val === 'true' ? '<span style="color:#059669;font-weight:700;">Yes</span>' : '<span style="color:#e11d48;font-weight:700;">No</span>'}</td>`;
                             }
                             return `<td>${val} ${val !== '-' && f.field_unit && val !== '' ? f.field_unit : ''}</td>`;
                         }).join('')}
@@ -1581,6 +1829,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.catalogViewSection.style.display = 'none';
         elements.usersViewSection.style.display = 'none';
         elements.schemaViewSection.style.display = 'block';
+        elements.profileViewSection.style.display = 'none';
         elements.catNavTitle.style.display = 'none';
         elements.catList.style.display = 'none';
         renderSchemaBuilder();
@@ -2057,8 +2306,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentRpm: null
     };
 
-    // Bind back button
-    const backBtn = document.getElementById('btn-profile-back');
+    // Bind motor profile overlay back button
+    const backBtn = document.getElementById('btn-motor-profile-back');
     if (backBtn) {
         backBtn.onclick = () => {
             const overlay = document.getElementById('motor-profile-overlay');
@@ -2435,6 +2684,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Bind Profile View Search and Filter Controls
+    elements.profileActivitySearch.oninput = () => {
+        renderProfileLogs();
+        lucide.createIcons();
+    };
+
+    elements.profileActivityFilter.onchange = () => {
+        renderProfileLogs();
+        lucide.createIcons();
+    };
+
+    elements.btnProfileBack.onclick = () => {
+        if (profileBackTarget === 'catalog') {
+            elements.btnShowCatalog.click();
+        } else {
+            elements.btnShowUsers.click();
+        }
+    };
+
+    // Sidebar Profile Click Trigger
+    const sidebarProfileCard = document.querySelector('.sidebar-user-profile');
+    if (sidebarProfileCard) {
+        sidebarProfileCard.style.cursor = 'pointer';
+        sidebarProfileCard.title = 'View My Profile';
+        sidebarProfileCard.onclick = () => {
+            const myUser = state.users.find(x => x.email === session.email) || {
+                email: session.email,
+                role: session.role,
+                id: session.uid || 'My Session UID',
+                created_at: new Date(session.timestamp || Date.now()).toISOString()
+            };
+            showUserProfile(myUser, 'catalog');
+        };
+    }
+
     // Init App
     async function init() {
         try {
@@ -2480,6 +2764,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             await fetchData();
+
+            // Auto-switch to view requested by cross-page nav links (e.g., "User Management" from exports page)
+            const requestedView = sessionStorage.getItem('adminView');
+            if (requestedView) {
+                sessionStorage.removeItem('adminView');
+                if (requestedView === 'users' && elements.btnShowUsers) {
+                    setTimeout(() => elements.btnShowUsers.click(), 300);
+                } else if (requestedView === 'schema' && elements.btnShowSchema) {
+                    setTimeout(() => elements.btnShowSchema.click(), 300);
+                }
+            }
         } catch (e) {
             console.error("Initialization failed", e);
             await logoutAndRedirect();

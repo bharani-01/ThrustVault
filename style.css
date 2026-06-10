@@ -1867,9 +1867,13 @@ button:active { transform: scale(0.98); }
     font-weight: 500;
     color: var(--text-secondary);
     transition: all 0.2s;
-    display: inline-flex;
+    display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 10px;
+    text-decoration: none;
+    box-sizing: border-box;
+    white-space: nowrap;
 }
 .btn-sidebar-link:hover {
     background: var(--bg-base);

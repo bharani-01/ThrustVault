@@ -208,24 +208,30 @@
                 <div class="stat-card-mini">
                     <div class="stat-icon"><i data-lucide="database"></i></div>
                     <div class="stat-info">
-                        <span class="stat-val" id="sidebar-motors-count">0</span>
+                        <span class="stat-val" id="sidebar-motors-count">—</span>
                         <span class="stat-label">Total Motors</span>
                     </div>
                 </div>
                 <div class="stat-card-mini">
-                    <div class="stat-icon"><i data-lucide="line-chart"></i></div>
+                    <div class="stat-icon"><i data-lucide="layers"></i></div>
                     <div class="stat-info">
-                        <span class="stat-val" id="sidebar-test-runs-count">0</span>
-                        <span class="stat-label">Telemetry Runs</span>
+                        <span class="stat-val" id="sidebar-categories-count">—</span>
+                        <span class="stat-label">Thrust Levels</span>
                     </div>
                 </div>
             </div>
 
             <!-- Navigation Links -->
             <nav class="sidebar-nav">
-                <div class="sidebar-menu-links" style="display: flex; flex-direction: column; gap: 8px;">
+                <div class="sidebar-menu-links">
                     <a href="admin_dashboard.html" class="btn-sidebar-link" title="Catalog Dashboard" style="text-decoration: none; box-sizing: border-box;">
                         <i data-lucide="database"></i> Catalog Dashboard
+                    </a>
+                    <a href="admin_dashboard.html#users" class="btn-sidebar-link" title="User Management" style="text-decoration: none; box-sizing: border-box;" onclick="sessionStorage.setItem('adminView','users');">
+                        <i data-lucide="users"></i> User Management
+                    </a>
+                    <a href="admin_dashboard.html#schema" class="btn-sidebar-link" title="Schema Customizer" style="text-decoration: none; box-sizing: border-box;" onclick="sessionStorage.setItem('adminView','schema');">
+                        <i data-lucide="settings"></i> Schema Customizer
                     </a>
                     <a href="performance_analytics.html" class="btn-sidebar-link" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
                         <i data-lucide="trending-up"></i> Performance Analytics

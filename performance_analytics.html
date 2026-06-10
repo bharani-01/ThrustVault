@@ -147,7 +147,7 @@
                     </div>
                     <div class="logo-text">
                         <h1>Thrust<span>Vault</span></h1>
-                        <p>Performance Analytics</p>
+                        <p>Administrator Console</p>
                     </div>
                 </div>
             </div>
@@ -155,17 +155,17 @@
             <!-- Stats Widgets in Sidebar -->
             <div class="sidebar-stats">
                 <div class="stat-card-mini">
-                    <div class="stat-icon"><i data-lucide="line-chart"></i></div>
+                    <div class="stat-icon"><i data-lucide="database"></i></div>
                     <div class="stat-info">
-                        <span class="stat-val" id="total-test-runs-count">0</span>
-                        <span class="stat-label">Total Datasets</span>
+                        <span class="stat-val" id="total-motors-count">—</span>
+                        <span class="stat-label">Total Motors</span>
                     </div>
                 </div>
                 <div class="stat-card-mini">
-                    <div class="stat-icon"><i data-lucide="activity"></i></div>
+                    <div class="stat-icon"><i data-lucide="layers"></i></div>
                     <div class="stat-info">
-                        <span class="stat-val" id="total-data-points-count">0</span>
-                        <span class="stat-label">Recorded Steps</span>
+                        <span class="stat-val" id="total-categories-count">—</span>
+                        <span class="stat-label">Thrust Levels</span>
                     </div>
                 </div>
             </div>
@@ -173,11 +173,23 @@
             <!-- Navigation Links -->
             <nav class="sidebar-nav">
                 <div class="sidebar-menu-links">
-                    <a id="nav-link-catalog" class="btn-sidebar-link" title="Catalog Dashboard" style="text-decoration: none; box-sizing: border-box;">
+                    <a href="admin_dashboard.html" id="nav-link-catalog" class="btn-sidebar-link" title="Catalog Dashboard" style="text-decoration: none; box-sizing: border-box;">
                         <i data-lucide="database"></i> Catalog Dashboard
+                    </a>
+                    <a href="admin_dashboard.html#users" class="btn-sidebar-link" title="User Management" style="text-decoration: none; box-sizing: border-box;" onclick="sessionStorage.setItem('adminView','users');">
+                        <i data-lucide="users"></i> User Management
+                    </a>
+                    <a href="admin_dashboard.html#schema" class="btn-sidebar-link" title="Schema Customizer" style="text-decoration: none; box-sizing: border-box;" onclick="sessionStorage.setItem('adminView','schema');">
+                        <i data-lucide="settings"></i> Schema Customizer
                     </a>
                     <a href="performance_analytics.html" class="btn-sidebar-link active" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
                         <i data-lucide="trending-up"></i> Performance Analytics
+                    </a>
+                    <a href="admin_exports.html" class="btn-sidebar-link" title="Data Exporter" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="download"></i> Data Exporter
+                    </a>
+                    <a href="admin_audit_logs.html" class="btn-sidebar-link" title="Audit Logs" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="shield-alert"></i> Audit Logs
                     </a>
                 </div>
             </nav>
@@ -185,10 +197,10 @@
             <!-- Sidebar Footer -->
             <div class="sidebar-footer">
                 <div class="sidebar-user-profile">
-                    <div class="user-avatar" id="user-avatar-initials">U</div>
+                    <div class="user-avatar" id="user-avatar-initials">A</div>
                     <div class="user-info">
-                        <span class="user-email" id="session-email">user@thrustvault.com</span>
-                        <span class="badge-role" id="session-role">Guest</span>
+                        <span class="user-email" id="session-email">admin@thrustvault.com</span>
+                        <span class="badge-role role-admin" id="session-role-badge">Admin</span>
                     </div>
                 </div>
                 <button class="btn-logout-premium" id="btn-logout" title="Log Out">

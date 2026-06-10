@@ -816,7 +816,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${selected.map(m => {
                             const val = m.custom_parameters && m.custom_parameters[f.field_key] !== undefined ? m.custom_parameters[f.field_key] : '-';
                             if (f.field_type === 'boolean') {
-                                return `<td>${val === true || val === 'true' ? 'Yes ✓' : 'No ✗'}</td>`;
+                                return `<td>${val === true || val === 'true' ? '<span style="color:#059669;font-weight:700;">Yes</span>' : '<span style="color:#e11d48;font-weight:700;">No</span>'}</td>`;
                             }
                             return `<td>${val} ${val !== '-' && f.field_unit && val !== '' ? f.field_unit : ''}</td>`;
                         }).join('')}

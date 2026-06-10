@@ -15,9 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (avatarInitials && email) {
         avatarInitials.textContent = email.charAt(0).toUpperCase();
     }
-    const roleBadge = document.getElementById('session-role');
-    roleBadge.textContent = session.role.charAt(0).toUpperCase() + session.role.slice(1);
-    roleBadge.className = `badge-role role-${session.role}`;
+    const roleBadge = document.getElementById('session-role-badge');
+    if (roleBadge) {
+        roleBadge.textContent = session.role.charAt(0).toUpperCase() + session.role.slice(1);
+        roleBadge.className = `badge-role role-${session.role}`;
+    }
 
     // XSS Escaping and URL Sanitization Utilities
     function escapeHTML(str) {
@@ -48,25 +50,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Setup catalog link based on role
-    const navLinkCatalog = document.getElementById('nav-link-catalog');
-    if (session.role === 'admin') {
-        navLinkCatalog.href = 'admin_dashboard.html';
-        
-        // Add link to Exporter
-        const sidebarMenu = document.querySelector('.sidebar-menu-links');
-        if (sidebarMenu) {
-            const exporterLink = document.createElement('a');
-            exporterLink.href = 'admin_exports.html';
-            exporterLink.className = 'btn-sidebar-link';
-            exporterLink.title = 'Data Exporter';
-            exporterLink.style.cssText = 'text-decoration: none; box-sizing: border-box;';
-            exporterLink.innerHTML = '<i data-lucide="download"></i> Data Exporter';
-            sidebarMenu.appendChild(exporterLink);
+    const sidebarMenu = document.querySelector('.sidebar-menu-links');
+    if (session.role === 'admin' && sidebarMenu) {
+        sidebarMenu.innerHTML = `
+            <a href="admin_dashboard.html" class="btn-sidebar-link" title="Catalog Dashboard" style="text-decoration: none; box-sizing: border-box;">
+                <i data-lucide="database"></i> Catalog Dashboard
+            </a>
+            <a href="admin_dashboard.html#users" class="btn-sidebar-link" title="User Management" style="text-decoration: none; box-sizing: border-box;">
+                <i data-lucide="users"></i> User Management
+            </a>
+            <a href="admin_dashboard.html#schema" class="btn-sidebar-link" title="Template & Schema Customizer" style="text-decoration: none; box-sizing: border-box;">
+                <i data-lucide="settings"></i> Schema Customizer
+            </a>
+            <a href="performance_analytics.html" class="btn-sidebar-link active" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
+                <i data-lucide="trending-up"></i> Performance Analytics
+            </a>
+            <a href="admin_exports.html" class="btn-sidebar-link" title="Data Exporter" style="text-decoration: none; box-sizing: border-box;">
+                <i data-lucide="download"></i> Data Exporter
+            </a>
+            <a href="admin_audit_logs.html" class="btn-sidebar-link" title="Audit Logs" style="text-decoration: none; box-sizing: border-box;">
+                <i data-lucide="shield-alert"></i> Audit Logs
+            </a>
+        `;
+    } else {
+        const navLinkCatalog = document.getElementById('nav-link-catalog');
+        if (navLinkCatalog) {
+            if (session.role === 'intern') {
+                navLinkCatalog.href = 'intern_dashboard.html';
+            } else if (session.role === 'guest') {
+                navLinkCatalog.href = 'guest_dashboard.html';
+            }
         }
-    } else if (session.role === 'intern') {
-        navLinkCatalog.href = 'intern_dashboard.html';
-    } else if (session.role === 'guest') {
-        navLinkCatalog.href = 'guest_dashboard.html';
     }
 
     lucide.createIcons();
@@ -1748,6 +1762,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             state.categories = categories || [];
             state.allMotors  = motors || [];
+
+            // Update sidebar stats
+            const mEl = document.getElementById('total-motors-count');
+            const cEl = document.getElementById('total-categories-count');
+            if (mEl) mEl.textContent = state.allMotors.length;
+            if (cEl) cEl.textContent = state.categories.length;
 
             // Build lookup map: categoryId → [motors]
             state.motorsByCat = {};

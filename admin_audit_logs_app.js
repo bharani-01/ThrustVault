@@ -15,6 +15,31 @@ document.addEventListener('DOMContentLoaded', () => {
     if (avatarInitials && email) {
         avatarInitials.textContent = email.charAt(0).toUpperCase();
     }
+    // Populate role badge
+    const roleBadge = document.getElementById('session-role-badge');
+    if (roleBadge && session.role) {
+        roleBadge.textContent = session.role.charAt(0).toUpperCase() + session.role.slice(1);
+        roleBadge.className = `badge-role role-${session.role}`;
+    }
+
+    // Populate sidebar stats (motors + categories count)
+    (async () => {
+        try {
+            const res = await fetch('/api/config');
+            const config = await res.json();
+            const sb = window.supabase ? window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY) : null;
+            if (sb) {
+                const [mRes, cRes] = await Promise.all([
+                    sb.from('motors').select('id', { count: 'exact', head: true }),
+                    sb.from('categories').select('id', { count: 'exact', head: true })
+                ]);
+                const mEl = document.getElementById('total-motors-count');
+                const cEl = document.getElementById('total-categories-count');
+                if (mEl) mEl.textContent = mRes.count ?? '—';
+                if (cEl) cEl.textContent = cRes.count ?? '—';
+            }
+        } catch(e) { /* stats are optional */ }
+    })();
 
     // XSS Escaping Utilities
     function escapeHTML(str) {

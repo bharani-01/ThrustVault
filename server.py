@@ -187,7 +187,20 @@ def add_security_headers_and_log(response):
         except Exception:
             pass
             
-    if not route.startswith('/api/audit-logs') and not route.startswith('/static') and not route.endswith('.ico'):
+    is_static_asset = (
+        route.endswith('.js') or 
+        route.endswith('.css') or 
+        route.startswith('/libs/') or 
+        route.startswith('/static/') or 
+        route.endswith('.ico') or 
+        route.endswith('.png') or 
+        route.endswith('.jpg') or 
+        route.endswith('.jpeg') or 
+        route.endswith('.svg') or
+        route.endswith('.gif')
+    )
+            
+    if not route.startswith('/api/audit-logs') and not is_static_asset:
         details = None
         if status == 301 or status == 302:
             details = f"Redirected to {response.headers.get('Location', '')}"

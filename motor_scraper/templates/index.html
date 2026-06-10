@@ -356,7 +356,7 @@
     <!-- Header -->
     <header>
       <div class="logo">
-        <div class="logo-icon">🚁</div>
+        <div class="logo-icon"></div>
         <div>
           <div class="logo-text">Thrust<span>Vault</span></div>
           <div class="logo-sub">Drone Motor Intelligence Scraper</div>
@@ -371,13 +371,13 @@
 
       <div class="search-row">
         <div class="search-input-wrap">
-          <span class="search-icon">🔍</span>
+          <span class="search-icon"></span>
           <input id="motorInput" type="text"
             placeholder="e.g. T-Motor F60, EMAX 2207, 2306 2750KV..."
             autocomplete="off" />
         </div>
         <button class="scrape-btn" id="scrapeBtn" onclick="startScrape()">
-          <span class="btn-icon">⚡</span>
+          <span class="btn-icon"></span>
           <div class="btn-spinner"></div>
           <span class="btn-label">Scrape Now</span>
         </button>
@@ -391,7 +391,7 @@
         <div class="source-chip active" data-source="emax"        onclick="toggleSource(this)"><span class="chip-dot"></span>EMAX</div>
         <div class="source-chip active" data-source="speedybee"   onclick="toggleSource(this)"><span class="chip-dot"></span>SpeedyBee</div>
         <div class="source-chip active" data-source="rcbenchmark" onclick="toggleSource(this)"><span class="chip-dot"></span>RCBenchmark</div>
-        <div class="source-chip active" data-source="google" onclick="toggleSource(this)" title="Universal web search: DuckDuckGo → Bing → manufacturer sites"><span class="chip-dot"></span>🦆 Web Search</div>
+        <div class="source-chip active" data-source="google" onclick="toggleSource(this)" title="Universal web search: DuckDuckGo → Bing → manufacturer sites"><span class="chip-dot"></span> Web Search</div>
       </div>
 
       <!-- Options -->
@@ -399,7 +399,7 @@
         <label class="toggle-wrap">
           <input type="checkbox" id="groqToggle" checked />
           <div class="toggle-pill"></div>
-          <span class="toggle-label">🤖 <b>Groq AI</b> enrichment</span>
+          <span class="toggle-label"> <b>Groq AI</b> enrichment</span>
         </label>
       </div>
     </div>
@@ -440,7 +440,7 @@
         </div>
         <div id="logOutput">
           <div class="empty-state">
-            <div class="empty-icon">📡</div>
+            <div class="empty-icon"></div>
             <div class="empty-title">No scrape running</div>
             <div class="empty-sub">Enter a motor name and click Scrape Now</div>
           </div>
@@ -450,9 +450,9 @@
       <!-- Results -->
       <div class="results-panel">
         <div class="results-header">
-          <span style="font-size:14px; font-weight:600;">🏎 Results</span>
+          <span style="font-size:14px; font-weight:600;"> Results</span>
           <button id="downloadBtn" class="scrape-btn" style="margin-left: 16px; padding: 6px 14px; font-size: 13px; display: none; background: linear-gradient(135deg, var(--green), #059669); color: #fff;" onclick="downloadCSV()">
-            📥 Download Reference CSV
+             Download Reference CSV
           </button>
           <div class="results-count">
             <b id="resultCount">0</b> motors found
@@ -461,14 +461,14 @@
 
         <!-- AI Summary -->
         <div id="aiSummaryBox">
-          <div class="ai-label">🤖 AI Summary · Groq llama3-70b</div>
+          <div class="ai-label"> AI Summary · Groq llama3-70b</div>
           <div id="aiSummaryText"></div>
         </div>
 
         <!-- Motor cards -->
         <div id="motorCards">
           <div class="empty-state">
-            <div class="empty-icon">🚁</div>
+            <div class="empty-icon"></div>
             <div class="empty-title">Results will appear here</div>
             <div class="empty-sub">Live results stream in as each source is scraped</div>
           </div>
@@ -477,7 +477,7 @@
         <!-- Performance table container -->
         <div id="performanceSection" style="display: none; border-top: 1px solid var(--border); padding: 16px;">
           <div style="font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--green); display: flex; align-items: center; gap: 6px;">
-            📊 Performance Test Data Points
+             Performance Test Data Points
           </div>
           <div id="performanceGroupedContainer" style="display: flex; flex-direction: column; gap: 16px;">
             <!-- Grouped by motor and propeller -->
@@ -569,22 +569,22 @@
 
       let specs = '';
       if (thrust) specs += `<span class="spec-pill spec-thrust">⬆ ${escHtml(thrust)}</span>`;
-      if (kv)     specs += `<span class="spec-pill spec-kv">⚡ ${escHtml(kv)}</span>`;
-      if (stator) specs += `<span class="spec-pill spec-stator">📐 ${escHtml(stator)}</span>`;
-      if (esc)    specs += `<span class="spec-pill spec-esc">🔧 ESC: ${escHtml(esc)}</span>`;
-      if (prop)   specs += `<span class="spec-pill spec-prop">🪁 ${escHtml(prop)}</span>`;
+      if (kv)     specs += `<span class="spec-pill spec-kv"> ${escHtml(kv)}</span>`;
+      if (stator) specs += `<span class="spec-pill spec-stator"> ${escHtml(stator)}</span>`;
+      if (esc)    specs += `<span class="spec-pill spec-esc"> ESC: ${escHtml(esc)}</span>`;
+      if (prop)   specs += `<span class="spec-pill spec-prop"> ${escHtml(prop)}</span>`;
 
       let detailGrid = '';
       if (resistance || dimensions || shaft || weight || cells || current || power) {
         detailGrid = `
           <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px 16px; margin: 12px 0; padding: 10px 14px; background: var(--bg3); border: 1px dashed var(--border); border-radius: 8px; font-size: 12px; color: var(--text-dim);">
-            ${dimensions ? `<div>📐 <b>Size:</b> ${escHtml(dimensions)}</div>` : ''}
-            ${shaft ? `<div>🔩 <b>Shaft:</b> ${escHtml(shaft)}</div>` : ''}
-            ${weight ? `<div>⚖️ <b>Weight:</b> ${escHtml(weight)}</div>` : ''}
-            ${cells ? `<div>🔋 <b>Cells:</b> ${escHtml(cells)}</div>` : ''}
-            ${resistance ? `<div>🔌 <b>Resistance:</b> ${escHtml(resistance)}</div>` : ''}
-            ${current ? `<div>⚡ <b>Max Current:</b> ${escHtml(current)}</div>` : ''}
-            ${power ? `<div>🔥 <b>Max Power:</b> ${escHtml(power)}</div>` : ''}
+            ${dimensions ? `<div> <b>Size:</b> ${escHtml(dimensions)}</div>` : ''}
+            ${shaft ? `<div> <b>Shaft:</b> ${escHtml(shaft)}</div>` : ''}
+            ${weight ? `<div> <b>Weight:</b> ${escHtml(weight)}</div>` : ''}
+            ${cells ? `<div> <b>Cells:</b> ${escHtml(cells)}</div>` : ''}
+            ${resistance ? `<div> <b>Resistance:</b> ${escHtml(resistance)}</div>` : ''}
+            ${current ? `<div> <b>Max Current:</b> ${escHtml(current)}</div>` : ''}
+            ${power ? `<div> <b>Max Power:</b> ${escHtml(power)}</div>` : ''}
           </div>
         `;
       }
@@ -624,9 +624,9 @@
       if (link || linkEsc || linkProp) {
         linksHtml = `
           <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; font-size: 12px;">
-            ${link ? `<a class="motor-link" href="${escHtml(link)}" target="_blank" rel="noopener">🔗 Motor Page ↗</a>` : ''}
-            ${linkEsc ? `<a class="motor-link" href="${escHtml(linkEsc)}" target="_blank" rel="noopener" style="color: var(--purple);">🔗 ESC Proof Link ↗</a>` : ''}
-            ${linkProp ? `<a class="motor-link" href="${escHtml(linkProp)}" target="_blank" rel="noopener" style="color: var(--pink);">🔗 Prop Proof Link ↗</a>` : ''}
+            ${link ? `<a class="motor-link" href="${escHtml(link)}" target="_blank" rel="noopener"> Motor Page ↗</a>` : ''}
+            ${linkEsc ? `<a class="motor-link" href="${escHtml(linkEsc)}" target="_blank" rel="noopener" style="color: var(--purple);"> ESC Proof Link ↗</a>` : ''}
+            ${linkProp ? `<a class="motor-link" href="${escHtml(linkProp)}" target="_blank" rel="noopener" style="color: var(--pink);"> Prop Proof Link ↗</a>` : ''}
           </div>
         `;
       }
@@ -746,7 +746,7 @@
         const d = JSON.parse(e.data);
         addLog(d.message, d.level || 'info');
         // Count sources
-        if (d.message && d.message.startsWith('🔍 Scraping')) {
+        if (d.message && d.message.startsWith(' Scraping')) {
           sourcesScraped++;
           updateStats(motorsFound, perfFound, sourcesScraped);
         }
@@ -764,7 +764,7 @@
         if (motors.length === 0 && perfs.length === 0) {
           container.innerHTML = `
             <div class="empty-state">
-              <div class="empty-icon">🔍</div>
+              <div class="empty-icon"></div>
               <div class="empty-title">No results found</div>
               <div class="empty-sub">Try a different motor name or select more sources</div>
             </div>`;
@@ -809,7 +809,7 @@
             
             const motorHeader = document.createElement('div');
             motorHeader.style.cssText = 'background: var(--surface); padding: 12px 16px; font-weight: 600; font-size: 13.5px; border-bottom: 1px solid var(--border); color: var(--cyan); display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;';
-            motorHeader.innerHTML = `<span>🤖 Motor: <b>${escHtml(motor)}</b></span> <span style="font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">Collapse ▲</span>`;
+            motorHeader.innerHTML = `<span> Motor: <b>${escHtml(motor)}</b></span> <span style="font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">Collapse ▲</span>`;
             
             const motorContent = document.createElement('div');
             motorContent.className = 'motor-group-content';
@@ -831,7 +831,7 @@
               
               const propHeader = document.createElement('div');
               propHeader.style.cssText = 'padding: 10px 14px; font-weight: 600; font-size: 12.5px; background: var(--surface2); color: var(--text-dim); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border);';
-              propHeader.innerHTML = `<span>🪁 Propeller: <b>${escHtml(prop)}</b></span> <span class="badge" style="font-size: 10px; padding: 2px 8px; background: var(--green-dim); color: var(--green); margin-left: auto;">${props[prop].length} steps</span>`;
+              propHeader.innerHTML = `<span> Propeller: <b>${escHtml(prop)}</b></span> <span class="badge" style="font-size: 10px; padding: 2px 8px; background: var(--green-dim); color: var(--green); margin-left: auto;">${props[prop].length} steps</span>`;
               
               const tableWrap = document.createElement('div');
               tableWrap.style.cssText = 'overflow-x: auto;';
@@ -910,7 +910,7 @@
         setRunning(false);
         stopTimer();
         es.close();
-        addLog('✅ Scrape complete!', 'success');
+        addLog(' Scrape complete!', 'success');
       });
 
       es.addEventListener('error', e => {
