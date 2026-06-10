@@ -137,7 +137,7 @@ def run_simulation_and_verification():
                 eff = round(t / p, 2) if p > 0 else 0.0
                 
                 raw_throttle = float(dp["throttle"]) if dp["throttle"] is not None else 0.0
-                throttle = raw_throttle / 100.0 if raw_throttle > 1.0 else raw_throttle
+                throttle = round(raw_throttle * 100.0) if raw_throttle <= 1.0 else raw_throttle
 
                 row_vals = [
                     throttle,
@@ -188,7 +188,14 @@ def run_simulation_and_verification():
                         continue
                     
                     try:
-                        if abs(float(v_sim) - float(v_tmpl)) < 0.02:
+                        val_sim = float(v_sim)
+                        val_tmpl = float(v_tmpl)
+                        if c_idx == 0:  # Throttle column: normalize to fractions
+                            if val_sim > 1.0:
+                                val_sim /= 100.0
+                            if val_tmpl > 1.0:
+                                val_tmpl /= 100.0
+                        if abs(val_sim - val_tmpl) < 0.02:
                             continue
                     except (ValueError, TypeError):
                         pass

@@ -574,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             tr.innerHTML = `
                 <td><input type="checkbox" class="compare-cb" data-id="${m.id}" ${isChecked ? 'checked' : ''}></td>
-                <td><strong>${m.motor}</strong></td>
+                <td><a href="#" class="motor-profile-link" data-id="${m.id}"><strong>${m.motor}</strong></a></td>
                 <td>${m.company}</td>
                 <td><span class="badge-thrust">${m.thrust}</span></td>
                 <td>${m.esc || '-'}</td>
@@ -657,6 +657,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderCustomFieldsInMotorForm(m);
                 openModal(elements.motorModal);
                 lucide.createIcons();
+            };
+        });
+
+        // Motor profile click handlers
+        elements.motorsTableBody.querySelectorAll('.motor-profile-link').forEach(link => {
+            link.onclick = (e) => {
+                e.preventDefault();
+                showMotorProfile(link.dataset.id);
             };
         });
     }
@@ -1746,6 +1754,392 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&apos;');
+    }
+
+    // =========================================================================
+    // MOTOR PROFILE & TELEMETRY CHARTS CONTROLLER
+    // =========================================================================
+    let profileCharts = {
+        thrustEff: null,
+        currentRpm: null
+    };
+
+    // Bind back button
+    const backBtn = document.getElementById('btn-profile-back');
+    if (backBtn) {
+        backBtn.onclick = () => {
+            const overlay = document.getElementById('motor-profile-overlay');
+            overlay.style.display = 'none';
+            if (profileCharts.thrustEff) {
+                profileCharts.thrustEff.destroy();
+                profileCharts.thrustEff = null;
+            }
+            if (profileCharts.currentRpm) {
+                profileCharts.currentRpm.destroy();
+                profileCharts.currentRpm = null;
+            }
+        };
+    }
+
+    async function showMotorProfile(motorId) {
+        const m = state.motors.find(x => x.id === motorId);
+        if (!m) return;
+
+        const overlay = document.getElementById('motor-profile-overlay');
+        overlay.style.display = 'flex';
+
+        document.getElementById('profile-motor-name').textContent = m.motor;
+        document.getElementById('profile-brand-badge').textContent = m.company;
+        
+        const cat = state.categories.find(c => c.id === m.categoryId);
+        document.getElementById('profile-category-badge').textContent = cat ? `${cat.name} Class` : 'N/A';
+
+        document.getElementById('profile-spec-company').textContent = m.company;
+        document.getElementById('profile-spec-thrust').textContent = m.thrust;
+        document.getElementById('profile-spec-esc').textContent = m.esc || '-';
+        document.getElementById('profile-spec-prop').textContent = m.prop || '-';
+
+        // Custom parameters
+        const customTableBody = document.getElementById('profile-custom-specs-table');
+        customTableBody.innerHTML = '';
+        const customCard = document.getElementById('profile-custom-specs-card');
+        
+        if (state.customSchema && state.customSchema.length > 0) {
+            let hasCustomData = false;
+            state.customSchema.forEach(field => {
+                const val = m.custom_parameters ? m.custom_parameters[field.key] : null;
+                if (val !== undefined && val !== null && val !== '') {
+                    hasCustomData = true;
+                    const tr = document.createElement('tr');
+                    const label = field.label;
+                    const unit = field.unit ? ` ${field.unit}` : '';
+                    tr.innerHTML = `
+                        <td>${label}</td>
+                        <td>${val}${unit}</td>
+                    `;
+                    customTableBody.appendChild(tr);
+                }
+            });
+            customCard.style.display = hasCustomData ? 'block' : 'none';
+        } else {
+            customCard.style.display = 'none';
+        }
+
+        // Links
+        const linksContainer = document.getElementById('profile-links-container');
+        linksContainer.innerHTML = '';
+        let hasLinks = false;
+
+        const linkConfigs = [
+            { url: m.linkMotor, title: 'Official Motor Specs', icon: 'cpu' },
+            { url: m.linkEsc, title: 'Recommended ESC Specs', icon: 'zap' },
+            { url: m.linkProp, title: 'Recommended Prop Specs', icon: 'wind' }
+        ];
+
+        linkConfigs.forEach(cfg => {
+            if (cfg.url) {
+                hasLinks = true;
+                const a = document.createElement('a');
+                a.href = cfg.url;
+                a.target = '_blank';
+                a.className = 'profile-link-btn';
+                a.innerHTML = `
+                    <span><i data-lucide="${cfg.icon}"></i> ${cfg.title}</span>
+                    <i data-lucide="arrow-up-right" class="arrow-icon"></i>
+                `;
+                linksContainer.appendChild(a);
+            }
+        });
+
+        if (!hasLinks) {
+            linksContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.88rem; font-style: italic;">No reference links available.</div>';
+        }
+
+        // Fetch runs
+        const runsList = document.getElementById('profile-test-runs-list');
+        runsList.innerHTML = '<div style="color:var(--text-muted); font-size:0.9rem; padding:10px;">Loading runs...</div>';
+
+        const telemetryCard = document.getElementById('profile-telemetry-details-card');
+        const telemetryEmpty = document.getElementById('profile-telemetry-empty-state');
+        telemetryCard.style.display = 'none';
+        telemetryEmpty.style.display = 'block';
+
+        document.getElementById('profile-stat-runs').textContent = '0';
+        document.getElementById('profile-stat-max-thrust').textContent = '-';
+        document.getElementById('profile-stat-avg-eff').textContent = '-';
+
+        if (profileCharts.thrustEff) {
+            profileCharts.thrustEff.destroy();
+            profileCharts.thrustEff = null;
+        }
+        if (profileCharts.currentRpm) {
+            profileCharts.currentRpm.destroy();
+            profileCharts.currentRpm = null;
+        }
+
+        try {
+            const { data: runs, error: runsError } = await supabase
+                .from('motor_test_runs')
+                .select('*')
+                .eq('motor_id', motorId)
+                .order('tested_at', { ascending: false });
+
+            if (runsError) throw runsError;
+
+            if (!runs || runs.length === 0) {
+                runsList.innerHTML = '<div style="color:var(--text-muted); font-size:0.9rem; padding:10px; font-style:italic;">No test runs found.</div>';
+                lucide.createIcons();
+                return;
+            }
+
+            const runIds = runs.map(r => r.id);
+            const { data: dataPoints, error: pointsError } = await supabase
+                .from('motor_test_data_points')
+                .select('*')
+                .in('test_run_id', runIds)
+                .order('throttle', { ascending: true });
+
+            if (pointsError) throw pointsError;
+
+            const pointsByRun = {};
+            dataPoints.forEach(pt => {
+                if (!pointsByRun[pt.test_run_id]) {
+                    pointsByRun[pt.test_run_id] = [];
+                }
+                pointsByRun[pt.test_run_id].push(pt);
+            });
+
+            document.getElementById('profile-stat-runs').textContent = runs.length;
+            
+            let maxThrustVal = 0;
+            let sumEff = 0;
+            let countEff = 0;
+
+            dataPoints.forEach(pt => {
+                const thrustG = parseFloat(pt.thrust_g) || 0;
+                if (thrustG > maxThrustVal) maxThrustVal = thrustG;
+
+                const eff = parseFloat(pt.efficiency) || 0;
+                if (eff > 0) {
+                    sumEff += eff;
+                    countEff++;
+                }
+            });
+
+            document.getElementById('profile-stat-max-thrust').textContent = maxThrustVal > 0 ? `${(maxThrustVal / 1000).toFixed(2)} kg` : '-';
+            document.getElementById('profile-stat-avg-eff').textContent = countEff > 0 ? `${(sumEff / countEff).toFixed(2)} g/W` : '-';
+
+            runsList.innerHTML = '';
+            runs.forEach((run, index) => {
+                const runPts = pointsByRun[run.id] || [];
+                const testedDate = new Date(run.tested_at).toLocaleDateString();
+                const div = document.createElement('div');
+                div.className = `test-run-item ${index === 0 ? 'active' : ''}`;
+                div.dataset.id = run.id;
+                div.innerHTML = `
+                    <div class="test-run-info">
+                        <div class="test-run-title">${run.propeller_model} prop / ${run.esc_model || 'No ESC'}</div>
+                        <div class="test-run-meta">
+                            <span><i data-lucide="zap"></i> ${run.battery_info || 'No Battery'}</span>
+                            <span><i data-lucide="calendar"></i> ${testedDate}</span>
+                        </div>
+                    </div>
+                    <div class="test-run-tester">${run.test_conducted_by || 'Unknown'}</div>
+                `;
+
+                div.onclick = () => {
+                    runsList.querySelectorAll('.test-run-item').forEach(item => item.classList.remove('active'));
+                    div.classList.add('active');
+                    renderActiveRun(run, runPts);
+                };
+
+                runsList.appendChild(div);
+            });
+
+            if (runs.length > 0) {
+                renderActiveRun(runs[0], pointsByRun[runs[0].id] || []);
+            }
+
+        } catch (e) {
+            console.error("Error loading profile data:", e);
+            runsList.innerHTML = '<div style="color:var(--danger-color); font-size:0.9rem; padding:10px;">Error loading telemetry.</div>';
+        }
+
+        lucide.createIcons();
+    }
+
+    function renderActiveRun(run, dataPoints) {
+        const telemetryCard = document.getElementById('profile-telemetry-details-card');
+        const telemetryEmpty = document.getElementById('profile-telemetry-empty-state');
+        
+        telemetryCard.style.display = 'block';
+        telemetryEmpty.style.display = 'none';
+
+        const testedDate = new Date(run.tested_at).toLocaleString();
+        document.getElementById('active-run-title').textContent = `Run Telemetry: ${run.propeller_model} Prop / ${run.esc_model || 'No ESC'}`;
+        document.getElementById('active-run-meta').textContent = `Conducted by ${run.test_conducted_by || 'Unknown'} on ${testedDate}. Setup: ${run.battery_info || 'Unknown'}.`;
+
+        const tbody = document.getElementById('profile-telemetry-rows');
+        tbody.innerHTML = '';
+        
+        dataPoints.forEach(pt => {
+            const tr = document.createElement('tr');
+            let throttlePercent = parseFloat(pt.throttle);
+            if (throttlePercent <= 1.0) {
+                throttlePercent = Math.round(throttlePercent * 100);
+            } else {
+                throttlePercent = Math.round(throttlePercent);
+            }
+            
+            const eff = parseFloat(pt.efficiency) || 0;
+            const temp = parseFloat(pt.temperature);
+            const tempStr = (pt.temperature !== null && pt.temperature !== undefined) ? `${temp.toFixed(1)}` : '-';
+            
+            tr.innerHTML = `
+                <td><strong>${throttlePercent}%</strong></td>
+                <td>${parseFloat(pt.voltage || 0).toFixed(1)} V</td>
+                <td>${parseFloat(pt.current || 0).toFixed(1)} A</td>
+                <td>${parseFloat(pt.power || 0).toFixed(0)} W</td>
+                <td><strong>${parseFloat(pt.thrust_g || 0).toFixed(0)} g</strong></td>
+                <td>${parseFloat(pt.rpm || 0).toFixed(0)}</td>
+                <td>${eff > 0 ? eff.toFixed(2) : '-'}</td>
+                <td>${tempStr}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        renderTelemetryCharts(dataPoints);
+    }
+
+    function renderTelemetryCharts(dataPoints) {
+        if (profileCharts.thrustEff) {
+            profileCharts.thrustEff.destroy();
+            profileCharts.thrustEff = null;
+        }
+        if (profileCharts.currentRpm) {
+            profileCharts.currentRpm.destroy();
+            profileCharts.currentRpm = null;
+        }
+
+        const labels = dataPoints.map(pt => {
+            let throttle = parseFloat(pt.throttle);
+            return throttle <= 1.0 ? `${Math.round(throttle * 100)}%` : `${Math.round(throttle)}%`;
+        });
+        const thrusts = dataPoints.map(pt => parseFloat(pt.thrust_g) || 0);
+        const efficiencies = dataPoints.map(pt => parseFloat(pt.efficiency) || 0);
+        const currents = dataPoints.map(pt => parseFloat(pt.current) || 0);
+        const rpms = dataPoints.map(pt => parseFloat(pt.rpm) || 0);
+
+        const ctx1 = document.getElementById('profileThrustEffChart');
+        if (ctx1) {
+            profileCharts.thrustEff = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Thrust (g)',
+                            data: thrusts,
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.05)',
+                            yAxisID: 'yThrust',
+                            tension: 0.2,
+                            fill: true
+                        },
+                        {
+                            label: 'Efficiency (g/W)',
+                            data: efficiencies,
+                            borderColor: '#10b981',
+                            backgroundColor: 'transparent',
+                            yAxisID: 'yEff',
+                            tension: 0.2,
+                            borderDash: [5, 5]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        yThrust: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { display: true, text: 'Thrust (g)', font: { family: 'Inter', weight: '600', size: 10 } },
+                            grid: { color: '#f1f5f9' }
+                        },
+                        yEff: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: { display: true, text: 'Efficiency (g/W)', font: { family: 'Inter', weight: '600', size: 10 } },
+                            grid: { drawOnChartArea: false }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { boxWidth: 12, font: { family: 'Inter', size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        const ctx2 = document.getElementById('profileCurrentRpmChart');
+        if (ctx2) {
+            profileCharts.currentRpm = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Current (A)',
+                            data: currents,
+                            borderColor: '#f43f5e',
+                            backgroundColor: 'rgba(244, 63, 94, 0.05)',
+                            yAxisID: 'yCurrent',
+                            tension: 0.2,
+                            fill: true
+                        },
+                        {
+                            label: 'RPM',
+                            data: rpms,
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'transparent',
+                            yAxisID: 'yRpm',
+                            tension: 0.2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        yCurrent: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { display: true, text: 'Current (A)', font: { family: 'Inter', weight: '600', size: 10 } },
+                            grid: { color: '#f1f5f9' }
+                        },
+                        yRpm: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: { display: true, text: 'RPM', font: { family: 'Inter', weight: '600', size: 10 } },
+                            grid: { drawOnChartArea: false }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { boxWidth: 12, font: { family: 'Inter', size: 10 } } }
+                    }
+                }
+            });
+        }
     }
 
     // Init App

@@ -86,6 +86,105 @@
         .checkbox-container-scroll label input[type="checkbox"] {
             cursor: pointer;
         }
+
+        /* Premium Download Modal Styles */
+        .download-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .download-modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .download-modal-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 16px;
+            padding: 35px;
+            width: 380px;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15), 
+                        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            color: var(--text-primary);
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .download-modal-overlay.show .download-modal-card {
+            transform: scale(1);
+        }
+        .download-modal-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: var(--radius-full);
+            background: rgba(37, 99, 235, 0.08);
+            border: 1px solid rgba(37, 99, 235, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+        .download-modal-icon i {
+            width: 32px;
+            height: 32px;
+        }
+        .spin-animation {
+            animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .download-modal-card h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .download-modal-card p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            height: 20px;
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(226, 232, 240, 0.8);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border-radius: var(--radius-full);
+            transition: width 0.25s ease-out;
+        }
+        .progress-percent {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
     </style>
 </head>
 <body>
@@ -189,8 +288,44 @@
                             </div>
 
                             <div class="form-group">
+                                <label for="cat-search-input">Search Motor Name</label>
+                                <input type="text" id="cat-search-input" placeholder="e.g. U15, KDE, MN..." style="width:100%; box-sizing:border-box;">
+                            </div>
+
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                                <div class="form-group">
+                                    <label for="cat-brand-select">Manufacturer Brand</label>
+                                    <select id="cat-brand-select" style="width:100%;">
+                                        <option value="all">All Brands</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Max Thrust Range (kg)</label>
+                                    <div style="display:flex; gap:6px;">
+                                        <input type="number" id="cat-thrust-min" placeholder="Min" step="0.1" min="0" style="width:50%; box-sizing:border-box;">
+                                        <input type="number" id="cat-thrust-max" placeholder="Max" step="0.1" min="0" style="width:50%; box-sizing:border-box;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <span class="form-section-title" style="margin-bottom:0;"><i data-lucide="check-square" style="width:14px; height:14px; vertical-align:middle; margin-right:4px;"></i> Motors to Export</span>
+                                    <div style="display:flex; gap:6px; align-items:center;">
+                                        <button type="button" id="btn-cat-select-all" style="font-size:0.75rem; color:var(--primary-color); border:none; background:none; cursor:pointer; font-weight:600; padding:0;">All</button>
+                                        <span style="font-size:0.7rem; color:var(--text-muted);">|</span>
+                                        <button type="button" id="btn-cat-clear-all" style="font-size:0.75rem; color:var(--text-muted); border:none; background:none; cursor:pointer; font-weight:600; padding:0;">None</button>
+                                    </div>
+                                </div>
+                                <div class="checkbox-container-scroll" id="cat-motors-list-selector" style="max-height:150px;">
+                                    <!-- Dynamic list of motors with checkboxes -->
+                                    <span style="font-size:0.8rem; color:var(--text-muted); text-align:center; padding:10px;">Loading motors list...</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
                                 <span class="form-section-title"><i data-lucide="sliders"></i> Columns to Include</span>
-                                <div class="checkbox-container-scroll" id="cat-columns-selector">
+                                <div class="checkbox-container-scroll" id="cat-columns-selector" style="max-height:150px;">
                                     <label><input type="checkbox" value="category" checked> Category Name</label>
                                     <label><input type="checkbox" value="motor" checked> Motor Model Name</label>
                                     <label><input type="checkbox" value="company" checked> Manufacturer / Company</label>
@@ -228,16 +363,28 @@
 
                         <form id="telemetry-export-form" style="display:flex; flex-direction:column; gap:16px;">
                             <div class="form-group">
-                                <label for="telemetry-motor-select">Select Motor & Test Run</label>
-                                <select id="telemetry-motor-select" style="width:100%;">
-                                    <option value="all">All Telemetry Datasets (Full Export)</option>
-                                    <!-- Dynamic test runs -->
-                                </select>
+                                <label for="telemetry-search-input">Search Runs</label>
+                                <input type="text" id="telemetry-search-input" placeholder="e.g. Bala, KV380, Prop..." style="width:100%; box-sizing:border-box;">
+                            </div>
+
+                            <div class="form-group">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <span class="form-section-title" style="margin-bottom:0;"><i data-lucide="check-square" style="width:14px; height:14px; vertical-align:middle; margin-right:4px;"></i> Select Test Runs</span>
+                                    <div style="display:flex; gap:6px; align-items:center;">
+                                        <button type="button" id="btn-telemetry-select-all" style="font-size:0.75rem; color:#10b981; border:none; background:none; cursor:pointer; font-weight:600; padding:0;">All</button>
+                                        <span style="font-size:0.7rem; color:var(--text-muted);">|</span>
+                                        <button type="button" id="btn-telemetry-clear-all" style="font-size:0.75rem; color:var(--text-muted); border:none; background:none; cursor:pointer; font-weight:600; padding:0;">None</button>
+                                    </div>
+                                </div>
+                                <div class="checkbox-container-scroll" id="telemetry-runs-list-selector" style="max-height:180px;">
+                                    <!-- Dynamic list of test runs with checkboxes -->
+                                    <span style="font-size:0.8rem; color:var(--text-muted); text-align:center; padding:10px;">Loading test runs...</span>
+                                </div>
                             </div>
 
                             <div class="form-group">
                                 <span class="form-section-title"><i data-lucide="sliders"></i> Columns to Include</span>
-                                <div class="checkbox-container-scroll" id="telemetry-columns-selector">
+                                <div class="checkbox-container-scroll" id="telemetry-columns-selector" style="max-height:150px;">
                                     <label><input type="checkbox" value="motor_name" checked> Associated Motor Model</label>
                                     <label><input type="checkbox" value="propeller" checked> Propeller Model Used</label>
                                     <label><input type="checkbox" value="esc" checked> ESC Model Used</label>
@@ -271,8 +418,48 @@
                         </form>
                     </div>
                 </div>
+
+                <!-- LIVE FILE PREVIEW PANEL -->
+                <div class="glass-panel" id="preview-panel" style="padding:24px; display:flex; flex-direction:column; gap:16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:12px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <i data-lucide="eye" style="color:var(--primary-color); width:24px; height:24px;"></i>
+                            <h3 style="font-family:'Outfit', sans-serif; font-size:1.2rem; font-weight:700; margin:0;">Live Download Preview</h3>
+                        </div>
+                        <span class="badge-role" id="preview-record-count" style="background-color:rgba(37,99,235,0.1); color:var(--primary-color); font-weight:600; border-radius:12px; padding:4px 12px; font-size:0.75rem;">0 Items Selected</span>
+                    </div>
+
+                    <!-- Tabs for format preview -->
+                    <div style="display:flex; gap:10px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+                        <button type="button" class="btn-sidebar-link active" id="tab-preview-catalog" style="padding:6px 12px; font-size:0.8rem; border-radius:var(--radius-sm); cursor:pointer; text-decoration:none; display:inline-block;">Catalog Preview</button>
+                        <button type="button" class="btn-sidebar-link" id="tab-preview-telemetry" style="padding:6px 12px; font-size:0.8rem; border-radius:var(--radius-sm); cursor:pointer; text-decoration:none; display:inline-block; background:none;">Telemetry Preview</button>
+                    </div>
+
+                    <!-- Tab details -->
+                    <div style="background:#0f172a; color:#94a3b8; border-radius:var(--radius-md); padding:16px; font-family:'Courier New', Courier, monospace; font-size:0.85rem; overflow:auto; max-height:250px; white-space:pre;" id="preview-content-box">
+                        <!-- Simulated preview snippet -->
+                        <span style="color:#64748b;">Select some records/test runs above to view the preview snippet...</span>
+                    </div>
+                </div>
+
             </div>
         </main>
+    </div>
+
+    <!-- Beautiful Glassmorphic Download Progress Modal -->
+    <div id="download-progress-modal" class="download-modal-overlay">
+        <div class="download-modal-card">
+            <div class="download-modal-icon">
+                <i data-lucide="loader-2" class="spin-animation"></i>
+            </div>
+            <h3 id="download-modal-title">Preparing Export</h3>
+            <p id="download-modal-status">Fetching data points from ThrustVault...</p>
+            
+            <div class="progress-bar-container">
+                <div id="download-progress-bar" class="progress-bar-fill"></div>
+            </div>
+            <span id="download-progress-percent" class="progress-percent">0%</span>
+        </div>
     </div>
 
     <!-- Controller JS -->

@@ -689,6 +689,153 @@
         </div>
     </div>
 
+    <!-- Motor Profile View Overlay -->
+    <div class="motor-profile-overlay" id="motor-profile-overlay" style="display: none;">
+        <div class="profile-header-bar">
+            <button class="btn-profile-back" id="btn-profile-back">
+                <i data-lucide="arrow-left"></i> Back to Catalog
+            </button>
+            <div class="profile-header-title-container">
+                <h2 id="profile-motor-name">Motor Model Name</h2>
+                <div class="profile-header-badges">
+                    <span class="badge-profile-brand" id="profile-brand-badge">Brand</span>
+                    <span class="badge-profile-category" id="profile-category-badge">Category</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-content-grid">
+            <!-- Left Side: Motor Specifications -->
+            <div class="profile-left-column">
+                <!-- Core Specs Card -->
+                <div class="profile-card">
+                    <h3><i data-lucide="info"></i> Specifications</h3>
+                    <table class="profile-specs-table">
+                        <tbody>
+                            <tr>
+                                <td>Manufacturer</td>
+                                <td id="profile-spec-company">-</td>
+                            </tr>
+                            <tr>
+                                <td>Max Thrust</td>
+                                <td id="profile-spec-thrust">-</td>
+                            </tr>
+                            <tr>
+                                <td>Recommended ESC</td>
+                                <td id="profile-spec-esc">-</td>
+                            </tr>
+                            <tr>
+                                <td>Recommended Propeller</td>
+                                <td id="profile-spec-prop">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Custom Parameters Card -->
+                <div class="profile-card" id="profile-custom-specs-card">
+                    <h3><i data-lucide="sliders"></i> Custom Specifications</h3>
+                    <table class="profile-specs-table" id="profile-custom-specs-table">
+                        <tbody>
+                            <!-- Dynamic custom specifications -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Reference Links Card -->
+                <div class="profile-card">
+                    <h3><i data-lucide="link"></i> Reference Documentation</h3>
+                    <div class="profile-links-container" id="profile-links-container">
+                        <!-- Links -->
+                    </div>
+                </div>
+
+                <!-- Summary Stats Card -->
+                <div class="profile-card">
+                    <h3><i data-lucide="activity"></i> Testing Summary</h3>
+                    <div class="profile-stats-grid">
+                        <div class="profile-stat-box">
+                            <span class="stat-number" id="profile-stat-runs">0</span>
+                            <span class="stat-desc">Test Runs</span>
+                        </div>
+                        <div class="profile-stat-box">
+                            <span class="stat-number" id="profile-stat-max-thrust">-</span>
+                            <span class="stat-desc">Max Thrust</span>
+                        </div>
+                        <div class="profile-stat-box">
+                            <span class="stat-number" id="profile-stat-avg-eff">-</span>
+                            <span class="stat-desc">Avg Efficiency</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Test Telemetry Results -->
+            <div class="profile-right-column">
+                <!-- Test Runs Panel -->
+                <div class="profile-card">
+                    <h3><i data-lucide="history"></i> Telemetry Test Runs</h3>
+                    <div class="test-runs-list" id="profile-test-runs-list">
+                        <!-- Dynamic list of test runs -->
+                    </div>
+                </div>
+
+                <!-- Active Run Telemetry Analytics -->
+                <div class="profile-card telemetry-details-card" id="profile-telemetry-details-card" style="display: none;">
+                    <div class="telemetry-details-header">
+                        <div>
+                            <h4 id="active-run-title">Telemetry Run Details</h4>
+                            <p id="active-run-meta">Conducted by... on...</p>
+                        </div>
+                    </div>
+
+                    <!-- Chart Visualizations -->
+                    <div class="telemetry-charts-grid">
+                        <div class="profile-chart-container">
+                            <h5>Thrust & Efficiency vs Throttle</h5>
+                            <canvas id="profileThrustEffChart"></canvas>
+                        </div>
+                        <div class="profile-chart-container">
+                            <h5>Current & RPM vs Throttle</h5>
+                            <canvas id="profileCurrentRpmChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Telemetry Data Table -->
+                    <div style="margin-top: 25px;">
+                        <h5>Raw Telemetry Data Points</h5>
+                        <div class="table-responsive">
+                            <table class="motors-table profile-telemetry-table">
+                                <thead>
+                                    <tr>
+                                        <th>Throttle (%)</th>
+                                        <th>Voltage (V)</th>
+                                        <th>Current (A)</th>
+                                        <th>Power (W)</th>
+                                        <th>Thrust (g)</th>
+                                        <th>RPM</th>
+                                        <th>Efficiency (g/W)</th>
+                                        <th>Temp (°C)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="profile-telemetry-rows">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State for Telemetry -->
+                <div class="profile-card text-center" id="profile-telemetry-empty-state" style="padding: 40px;">
+                    <i data-lucide="database-backup" style="width: 48px; height: 48px; opacity: 0.5; margin-bottom: 15px; display: inline-block;"></i>
+                    <h4>No Telemetry Test Data Available</h4>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 5px;">This motor does not have any recorded performance telemetry test runs in the database.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript -->
     <script src="admin_app.js?v=1.4"></script>
 </body>
