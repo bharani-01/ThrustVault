@@ -752,6 +752,8 @@ document.addEventListener('DOMContentLoaded', () => {
             supabase.auth.signOut().catch(e => console.error("SignOut error:", e));
         }
         localStorage.removeItem('thrustvault_session');
+        // Clear cookie
+        document.cookie = 'thrustvault_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict; Secure';
         window.location.href = 'index.html';
     }
 

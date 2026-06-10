@@ -119,6 +119,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     timestamp: new Date().getTime()
                 };
                 localStorage.setItem('thrustvault_session', JSON.stringify(session));
+                
+                // Set secure server-readable cookie for dashboard route verification
+                const cookieValue = encodeURIComponent(JSON.stringify({
+                    email: data.user.email,
+                    role: profile.role,
+                    timestamp: new Date().getTime()
+                }));
+                document.cookie = `thrustvault_session=${cookieValue}; path=/; max-age=86400; SameSite=Strict; Secure`;
+
                 logUserActivity(data.user.email, profile.role, 'Login', 'Logged in successfully.');
 
                 if (profile.role === 'admin') {
