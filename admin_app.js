@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
         motors: [],
         categories: [],
         users: [],
+        accessRequests: [],
         activeCategory: null,
         searchQuery: '',
         filterCompany: 'all',
@@ -93,8 +94,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Multi-view navigation
         btnShowCatalog: document.getElementById('btn-show-catalog'),
         btnShowUsers: document.getElementById('btn-show-users'),
+        btnShowRequests: document.getElementById('btn-show-requests'),
         catalogViewSection: document.getElementById('catalog-view-section'),
         usersViewSection: document.getElementById('users-view-section'),
+        requestsViewSection: document.getElementById('requests-view-section'),
+        requestsTableBody: document.getElementById('access-requests-list-rows'),
+        requestsEmptyState: document.getElementById('requests-empty-state'),
+        requestsSearch: document.getElementById('requests-search-input'),
+        requestsFilterStatus: document.getElementById('requests-filter-status'),
+        requestsPendingBadge: document.getElementById('requests-pending-badge'),
         catNavTitle: document.getElementById('cat-nav-title'),
         
         // Modals & Drawers
@@ -255,9 +263,11 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.btnShowCatalog.onclick = () => {
         elements.btnShowCatalog.classList.add('active');
         elements.btnShowUsers.classList.remove('active');
+        elements.btnShowRequests.classList.remove('active');
         elements.btnShowSchema.classList.remove('active');
         elements.catalogViewSection.style.display = 'flex';
         elements.usersViewSection.style.display = 'none';
+        elements.requestsViewSection.style.display = 'none';
         elements.schemaViewSection.style.display = 'none';
         elements.profileViewSection.style.display = 'none';
         elements.catNavTitle.style.display = 'flex';
@@ -268,14 +278,32 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.btnShowUsers.onclick = () => {
         elements.btnShowUsers.classList.add('active');
         elements.btnShowCatalog.classList.remove('active');
+        elements.btnShowRequests.classList.remove('active');
         elements.btnShowSchema.classList.remove('active');
         elements.catalogViewSection.style.display = 'none';
         elements.usersViewSection.style.display = 'block';
+        elements.requestsViewSection.style.display = 'none';
         elements.schemaViewSection.style.display = 'none';
         elements.profileViewSection.style.display = 'none';
         elements.catNavTitle.style.display = 'none';
         elements.catList.style.display = 'none';
         fetchUserAccounts();
+        lucide.createIcons();
+    };
+
+    elements.btnShowRequests.onclick = () => {
+        elements.btnShowRequests.classList.add('active');
+        elements.btnShowCatalog.classList.remove('active');
+        elements.btnShowUsers.classList.remove('active');
+        elements.btnShowSchema.classList.remove('active');
+        elements.catalogViewSection.style.display = 'none';
+        elements.usersViewSection.style.display = 'none';
+        elements.requestsViewSection.style.display = 'block';
+        elements.schemaViewSection.style.display = 'none';
+        elements.profileViewSection.style.display = 'none';
+        elements.catNavTitle.style.display = 'none';
+        elements.catList.style.display = 'none';
+        fetchAccessRequests();
         lucide.createIcons();
     };
 
@@ -381,6 +409,412 @@ document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
     }
 
+    // =========================================================================
+    // ACCESS REQUESTS FETCHING, RENDERING & ACTIONS
+    // =========================================================================
+
+    async function fetchAccessRequests() {
+        try {
+            const { data: requests, error } = await supabase
+                .from('access_requests')
+                .select('*')
+                .order('created_at', { ascending: false });
+            
+            if (error) throw error;
+            state.accessRequests = requests || [];
+            
+            // Render the access requests list
+            renderAccessRequestsList();
+            
+            // Update stats counters
+            updateAccessRequestsCounters();
+        } catch (err) {
+            console.error("Error fetching access requests:", err);
+        }
+    }
+
+    function updateAccessRequestsCounters() {
+        const total = state.accessRequests.length;
+        const pending = state.accessRequests.filter(r => r.status === 'pending').length;
+        const approved = state.accessRequests.filter(r => r.status === 'approved').length;
+        const rejected = state.accessRequests.filter(r => r.status === 'rejected').length;
+
+        const totalEl = document.getElementById('req-stat-total');
+        const pendingEl = document.getElementById('req-stat-pending');
+        const approvedEl = document.getElementById('req-stat-approved');
+        const rejectedEl = document.getElementById('req-stat-rejected');
+
+        if (totalEl) totalEl.textContent = total;
+        if (pendingEl) pendingEl.textContent = pending;
+        if (approvedEl) approvedEl.textContent = approved;
+        if (rejectedEl) rejectedEl.textContent = rejected;
+
+        // Update sidebar pending badge
+        if (elements.requestsPendingBadge) {
+            if (pending > 0) {
+                elements.requestsPendingBadge.style.display = 'inline-block';
+                elements.requestsPendingBadge.textContent = pending;
+            } else {
+                elements.requestsPendingBadge.style.display = 'none';
+            }
+        }
+    }
+
+    function renderAccessRequestsList() {
+        if (!elements.requestsTableBody) return;
+        elements.requestsTableBody.innerHTML = '';
+        
+        const filterStatus = elements.requestsFilterStatus.value;
+        const searchQuery = elements.requestsSearch.value.trim().toLowerCase();
+        
+        const filtered = state.accessRequests.filter(r => {
+            const matchesStatus = filterStatus === 'all' || r.status === filterStatus;
+            const matchesSearch = !searchQuery || 
+                                 (r.full_name && r.full_name.toLowerCase().includes(searchQuery)) ||
+                                 (r.email && r.email.toLowerCase().includes(searchQuery)) ||
+                                 (r.justification && r.justification.toLowerCase().includes(searchQuery));
+            return matchesStatus && matchesSearch;
+        });
+
+        if (filtered.length === 0) {
+            elements.requestsEmptyState.style.display = 'block';
+            elements.requestsTableBody.closest('table').style.display = 'none';
+        } else {
+            elements.requestsEmptyState.style.display = 'none';
+            elements.requestsTableBody.closest('table').style.display = 'table';
+            
+            filtered.forEach(r => {
+                const tr = document.createElement('tr');
+                const createdDate = new Date(r.created_at).toLocaleDateString() + ' ' + new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                // Role badge
+                let roleClass = 'role-guest';
+                let roleLabel = 'Guest';
+                if (r.requested_role === 'admin') {
+                    roleClass = 'role-admin';
+                    roleLabel = 'Admin';
+                } else if (r.requested_role === 'intern') {
+                    roleClass = 'role-intern';
+                    roleLabel = 'Intern';
+                }
+                
+                // Status badge
+                let statusStyle = '';
+                if (r.status === 'pending') {
+                    statusStyle = 'background: #fffbeb; color: #d97706; border: 1px solid #fde68a; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; display: inline-block;';
+                } else if (r.status === 'approved') {
+                    statusStyle = 'background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; display: inline-block;';
+                } else if (r.status === 'rejected') {
+                    statusStyle = 'background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; display: inline-block;';
+                }
+
+                // Actions cell
+                let actionsHtml = '';
+                if (r.status === 'pending') {
+                    actionsHtml = `
+                        <button class="btn-primary-sm btn-auto-confirm-req" data-id="${r.id}" title="Auto Confirm with Default Password" style="background-color: #059669; color: white; border: none; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                            <i data-lucide="zap" style="width: 12px; height: 12px;"></i> Auto Confirm
+                        </button>
+                        <button class="btn-primary-sm btn-approve-req" data-id="${r.id}" title="Approve Request" style="background-color: #2563eb; color: white; border: none; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                            <i data-lucide="check" style="width: 12px; height: 12px;"></i> Approve
+                        </button>
+                        <button class="btn-delete-sm btn-reject-req" data-id="${r.id}" title="Reject Request" style="background-color: #e11d48; color: white; border: none; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                            <i data-lucide="x" style="width: 12px; height: 12px;"></i> Reject
+                        </button>
+                    `;
+                } else if (r.status === 'approved') {
+                    actionsHtml = `<span style="color: #64748b; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px; font-weight: 500;"><i data-lucide="lock" style="width: 14px;"></i> Completed</span>`;
+                } else if (r.status === 'rejected') {
+                    actionsHtml = `<span style="color: #94a3b8; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px; font-weight: 500;"><i data-lucide="slash" style="width: 14px;"></i> Rejected</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td><strong>${escapeHTML(r.full_name)}</strong></td>
+                    <td><a href="mailto:${r.email}" style="color: var(--primary-color); text-decoration: none;">${r.email}</a></td>
+                    <td><span class="badge-role ${roleClass}">${roleLabel}</span></td>
+                    <td style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHTML(r.justification)}">${escapeHTML(r.justification)}</td>
+                    <td>${createdDate}</td>
+                    <td><span style="${statusStyle}">${r.status.toUpperCase()}</span></td>
+                    <td class="row-actions" style="display:flex; gap:6px; justify-content:flex-end; align-items:center;">
+                        ${actionsHtml}
+                    </td>
+                `;
+                elements.requestsTableBody.appendChild(tr);
+            });
+            
+            // Bind action buttons
+            elements.requestsTableBody.querySelectorAll('.btn-auto-confirm-req').forEach(btn => {
+                btn.onclick = () => handleAccessRequestAction(btn.dataset.id, 'auto-approve');
+            });
+            elements.requestsTableBody.querySelectorAll('.btn-approve-req').forEach(btn => {
+                btn.onclick = () => handleAccessRequestAction(btn.dataset.id, 'approve');
+            });
+            elements.requestsTableBody.querySelectorAll('.btn-reject-req').forEach(btn => {
+                btn.onclick = () => handleAccessRequestAction(btn.dataset.id, 'reject');
+            });
+        }
+        lucide.createIcons();
+    }
+
+    async function handleAccessRequestAction(requestId, actionType) {
+        const req = state.accessRequests.find(r => r.id === requestId);
+        if (!req) return;
+
+        if (actionType === 'reject') {
+            const confirmReject = await customConfirm(
+                "Reject Access Request?",
+                `Are you sure you want to reject the access request from "${req.full_name}" (${req.email})?`
+            );
+            if (!confirmReject) return;
+
+            try {
+                // Update access_requests status
+                const { error: updateErr } = await supabase
+                    .from('access_requests')
+                    .update({ status: 'rejected' })
+                    .eq('id', requestId);
+                
+                if (updateErr) throw updateErr;
+
+                // Log activity
+                logUserActivity(session.email, session.role, 'Access Request Rejected', `Rejected access request from ${req.email}`);
+
+                // Send rejection email via backend Resend endpoint
+                try {
+                    await fetch('/api/send-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type: 'rejected',
+                            to: req.email,
+                            full_name: req.full_name
+                        })
+                    });
+                } catch (emailErr) {
+                    console.error("Failed to send rejection email notification:", emailErr);
+                }
+
+                alert("Access request successfully rejected.");
+                await fetchAccessRequests();
+            } catch (err) {
+                console.error("Rejection failed:", err);
+                alert("Failed to reject request: " + err.message);
+            }
+            return;
+        }
+
+        // Approval / Auto-Confirm logic
+        let password = '';
+        if (actionType === 'auto-approve') {
+            password = 'ThrustVault@Default2026!';
+        } else {
+            // Prompt admin for password, or generate a random one
+            const promptVal = prompt(
+                `Enter a password for "${req.email}" (min 6 characters), or leave empty to auto-generate a secure random password:`, 
+                "VaultWelcome2026!"
+            );
+            if (promptVal === null) return; // User cancelled prompt
+            
+            const trimmedPass = promptVal.trim();
+            if (trimmedPass === '') {
+                // Auto-generate random secure password
+                password = Math.random().toString(36).slice(-8) + 'V@' + Math.floor(Math.random() * 1000);
+            } else {
+                if (trimmedPass.length < 6) {
+                    alert("Password must be at least 6 characters long.");
+                    return;
+                }
+                password = trimmedPass;
+            }
+        }
+
+        try {
+            // Check if user account already exists in profiles
+            const { data: existingUser } = await supabase
+                .from('user_profiles')
+                .select('id')
+                .eq('email', req.email)
+                .maybeSingle();
+
+            if (existingUser) {
+                alert(`An active user profile already exists for "${req.email}". We will mark this request as completed.`);
+                // Just update status to approved
+                await supabase.from('access_requests').update({ status: 'approved' }).eq('id', requestId);
+                await fetchAccessRequests();
+                return;
+            }
+
+            // Show approval loading indicator
+            const btn = document.querySelector(`.row-actions button[data-id="${requestId}"]`);
+            if (btn) btn.textContent = 'Creating User...';
+
+            // 1. Create User in Auth & Profiles using RPC create_vault_user
+            const { data: newUid, error: createErr } = await supabase.rpc('create_vault_user', {
+                email_val: req.email,
+                password_val: password,
+                role_val: req.requested_role
+            });
+
+            if (createErr) throw createErr;
+
+            // 2. Generate Supabase password recovery reset link using the admin API
+            let resetLink = '';
+            try {
+                const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
+                    type: 'recovery',
+                    email: req.email,
+                    options: { redirectTo: window.location.origin + '/login' }
+                });
+                if (!linkErr && linkData && linkData.properties) {
+                    resetLink = linkData.properties.action_link;
+                }
+            } catch (err) {
+                console.warn("Failed to generate password recovery link via Supabase Admin API:", err);
+            }
+
+            // 3. Update request status in access_requests
+            const { error: updateErr } = await supabase
+                .from('access_requests')
+                .update({ status: 'approved' })
+                .eq('id', requestId);
+
+            if (updateErr) throw updateErr;
+
+            // 4. Log admin activity
+            logUserActivity(
+                session.email, 
+                session.role, 
+                'Access Request Approved', 
+                `Approved request for ${req.email} with role ${req.requested_role.toUpperCase()}`
+            );
+
+            // 5. Send approved email notification via backend Resend endpoint
+            try {
+                await fetch('/api/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'approved',
+                        to: req.email,
+                        full_name: req.full_name,
+                        requested_role: req.requested_role,
+                        reset_link: resetLink,
+                        temp_password: password
+                    })
+                });
+            } catch (emailErr) {
+                console.error("Failed to trigger approval email notification:", emailErr);
+            }
+
+            // 6. Display success modal/dialog
+            showApprovalSuccessModal(req.email, password, resetLink);
+
+            // Refresh requests list
+            await fetchAccessRequests();
+            await fetchUserAccounts(); // refresh user list too
+        } catch (err) {
+            console.error("Approval failed:", err);
+            alert("Failed to approve access request: " + err.message);
+            await fetchAccessRequests();
+        }
+    }
+
+    function showApprovalSuccessModal(email, password, resetLink) {
+        // Build a beautiful premium modal overlay dynamically
+        const modalId = 'dynamic-approval-success-modal';
+        let existing = document.getElementById(modalId);
+        if (existing) existing.remove();
+
+        const backdrop = document.createElement('div');
+        backdrop.id = modalId;
+        backdrop.className = 'modal-backdrop';
+        backdrop.style.display = 'flex';
+        backdrop.style.justifyContent = 'center';
+        backdrop.style.alignItems = 'center';
+        backdrop.style.zIndex = '99999';
+
+        const linkHtml = resetLink ? `
+            <div class="form-group" style="margin-top: 14px;">
+                <label>Set Password Link (Recovery Link)</label>
+                <div style="display: flex; gap: 8px; margin-top: 4px;">
+                    <input type="text" readonly value="${resetLink}" id="success-copy-link" style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; font-family: monospace; outline: none; background: #f8fafc;">
+                    <button id="btn-success-copy-link" class="btn-primary-sm" style="padding: 0 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i data-lucide="copy" style="width: 16px;"></i></button>
+                </div>
+            </div>
+        ` : '';
+
+        backdrop.innerHTML = `
+            <div class="modal-container" style="max-width: 480px; width: 90%; transform: scale(1.02); transition: transform 0.2s; box-shadow: var(--shadow-lg); background: white; border-radius: 12px;">
+                <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="display: flex; align-items: center; gap: 8px; font-family: 'Outfit'; color: #059669; font-size: 1.15rem; font-weight: 700; margin: 0;"><i data-lucide="check-circle" style="color: #059669; width: 20px; height: 20px;"></i> Access Approved Successfully</h3>
+                    <button class="btn-icon-close" id="btn-close-success-modal" style="background: none; border: none; cursor: pointer; color: #94a3b8;"><i data-lucide="x" style="width: 18px; height: 18px;"></i></button>
+                </div>
+                <div class="modal-body" style="padding: 20px;">
+                    <p style="font-size: 0.88rem; color: #475569; margin: 0 0 15px; line-height: 1.5;">
+                        User credentials have been created, and the onboarding email was successfully triggered. You can also manually copy the login details below:
+                    </p>
+                    
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label style="font-size: 0.78rem; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Applicant Email</label>
+                        <input type="text" readonly value="${email}" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; outline: none; background: #f8fafc; font-family: inherit;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label style="font-size: 0.78rem; font-weight: 600; color: #475569; display: block; margin-bottom: 4px;">Temporary Password</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" readonly value="${password}" id="success-copy-password" style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; font-family: monospace; outline: none; background: #f8fafc;">
+                            <button id="btn-success-copy-pass" class="btn-primary-sm" style="padding: 0 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: var(--primary-color); border: none; color: white; cursor: pointer;"><i data-lucide="copy" style="width: 15px;"></i></button>
+                        </div>
+                    </div>
+
+                    ${linkHtml}
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid #f1f5f9; padding: 15px 20px; text-align: right; background: #f8fafc; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+                    <button class="btn-secondary" id="btn-close-success-modal-footer" style="padding: 8px 16px; border-radius: 8px; cursor: pointer;">Dismiss</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(backdrop);
+        lucide.createIcons();
+
+        // Copy button event handlers
+        const copyPassBtn = document.getElementById('btn-success-copy-pass');
+        if (copyPassBtn) {
+            copyPassBtn.onclick = () => {
+                const passVal = document.getElementById('success-copy-password');
+                passVal.select();
+                document.execCommand('copy');
+                copyPassBtn.innerHTML = '<i data-lucide="check" style="width: 15px; color: #10b981;"></i>';
+                lucide.createIcons();
+                setTimeout(() => {
+                    copyPassBtn.innerHTML = '<i data-lucide="copy" style="width: 15px;"></i>';
+                    lucide.createIcons();
+                }, 2000);
+            };
+        }
+
+        const copyLinkBtn = document.getElementById('btn-success-copy-link');
+        if (copyLinkBtn) {
+            copyLinkBtn.onclick = () => {
+                const linkVal = document.getElementById('success-copy-link');
+                linkVal.select();
+                document.execCommand('copy');
+                copyLinkBtn.innerHTML = '<i data-lucide="check" style="width: 15px; color: #10b981;"></i>';
+                lucide.createIcons();
+                setTimeout(() => {
+                    copyLinkBtn.innerHTML = '<i data-lucide="copy" style="width: 15px;"></i>';
+                    lucide.createIcons();
+                }, 2000);
+            };
+        }
+
+        // Close handlers
+        const closeModal = () => backdrop.remove();
+        document.getElementById('btn-close-success-modal').onclick = closeModal;
+        document.getElementById('btn-close-success-modal-footer').onclick = closeModal;
+    }
+
     // Navigate to full-page User Profile
     async function showUserProfile(targetUser, backTarget = 'users') {
         profileUserEmail = targetUser.email;
@@ -393,10 +827,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Hide other navigation menus and main sections
         elements.btnShowCatalog.classList.remove('active');
         elements.btnShowUsers.classList.remove('active');
+        elements.btnShowRequests.classList.remove('active');
         elements.btnShowSchema.classList.remove('active');
         
         elements.catalogViewSection.style.display = 'none';
         elements.usersViewSection.style.display = 'none';
+        elements.requestsViewSection.style.display = 'none';
         elements.schemaViewSection.style.display = 'none';
         elements.catNavTitle.style.display = 'none';
         elements.catList.style.display = 'none';
@@ -2887,9 +3323,24 @@ document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
     };
 
+    // Bind Access Requests Search and Filter Controls
+    if (elements.requestsSearch) {
+        elements.requestsSearch.oninput = () => {
+            renderAccessRequestsList();
+        };
+    }
+
+    if (elements.requestsFilterStatus) {
+        elements.requestsFilterStatus.onchange = () => {
+            renderAccessRequestsList();
+        };
+    }
+
     elements.btnProfileBack.onclick = () => {
         if (profileBackTarget === 'catalog') {
             elements.btnShowCatalog.click();
+        } else if (profileBackTarget === 'requests') {
+            elements.btnShowRequests.click();
         } else {
             elements.btnShowUsers.click();
         }
@@ -2956,6 +3407,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             await fetchData();
+            await fetchAccessRequests();
 
             // Auto-switch to view requested by cross-page nav links (e.g., "User Management" from exports page)
             const requestedView = sessionStorage.getItem('adminView');
@@ -2965,6 +3417,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     setTimeout(() => elements.btnShowUsers.click(), 300);
                 } else if (requestedView === 'schema' && elements.btnShowSchema) {
                     setTimeout(() => elements.btnShowSchema.click(), 300);
+                } else if (requestedView === 'requests' && elements.btnShowRequests) {
+                    setTimeout(() => elements.btnShowRequests.click(), 300);
                 }
             }
         } catch (e) {

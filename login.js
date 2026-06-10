@@ -131,11 +131,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 logUserActivity(data.user.email, profile.role, 'Login', 'Logged in successfully.');
 
                 if (profile.role === 'admin') {
-                    window.location.href = 'admin_dashboard.html';
+                    window.location.href = 'admin_dashboard';
                 } else if (profile.role === 'intern') {
-                    window.location.href = 'intern_dashboard.html';
+                    window.location.href = 'intern_dashboard';
                 } else if (profile.role === 'guest') {
-                    window.location.href = 'guest_dashboard.html';
+                    window.location.href = 'guest_dashboard';
                 } else {
                     alert("Invalid role assigned to this account.");
                     await supabase.auth.signOut();
@@ -325,20 +325,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
     }
-
-    // Auto-fill credentials on click
-    document.querySelectorAll('.quick-credentials li').forEach(li => {
-        li.addEventListener('click', () => {
-            emailInput.value = li.dataset.email;
-            passwordInput.value = li.dataset.pass;
-
-            // Also fill forgot email input
-            const forgotEmailInput = document.getElementById('forgot-email');
-            if (forgotEmailInput) {
-                forgotEmailInput.value = li.dataset.email;
-            }
-        });
-    });
 
     init();
 });

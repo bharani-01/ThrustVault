@@ -62,16 +62,19 @@
                     <button class="btn-sidebar-link" id="btn-show-users" title="User Management">
                         <i data-lucide="users"></i> User Management
                     </button>
+                    <button class="btn-sidebar-link" id="btn-show-requests" title="Access Requests">
+                        <i data-lucide="user-check"></i> Access Requests <span id="requests-pending-badge" class="count-badge" style="background:#e11d48; color:#fff; display:none; margin-left: auto;">0</span>
+                    </button>
                     <button class="btn-sidebar-link" id="btn-show-schema" title="Template & Schema Customizer">
                         <i data-lucide="settings"></i> Schema Customizer
                     </button>
-                    <a href="performance_analytics.html" class="btn-sidebar-link" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
+                    <a href="performance_analytics" class="btn-sidebar-link" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
                         <i data-lucide="trending-up"></i> Performance Analytics
                     </a>
-                    <a href="admin_exports.html" class="btn-sidebar-link" title="Data Exporter" style="text-decoration: none; box-sizing: border-box;">
+                    <a href="admin_exports" class="btn-sidebar-link" title="Data Exporter" style="text-decoration: none; box-sizing: border-box;">
                         <i data-lucide="download"></i> Data Exporter
                     </a>
-                    <a href="admin_audit_logs.html" class="btn-sidebar-link" title="Audit Logs" style="text-decoration: none; box-sizing: border-box;">
+                    <a href="admin_audit_logs" class="btn-sidebar-link" title="Audit Logs" style="text-decoration: none; box-sizing: border-box;">
                         <i data-lucide="shield-alert"></i> Audit Logs
                     </a>
                 </div>
@@ -305,6 +308,93 @@
                                     <!-- Dynamic User lists -->
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- ADMIN ACCESS REQUESTS VIEWPORT -->
+            <main class="main-content" id="requests-view-section" style="display:none;">
+                <header class="topbar">
+                    <h2 style="font-family:'Outfit'; font-size:1.5rem; font-weight:700;"><i data-lucide="user-check" style="vertical-align:middle; margin-right:8px; color:var(--primary-color);"></i> Access Request Administration</h2>
+                </header>
+
+                <div class="content-body" style="display:flex; flex-direction:column; gap:20px; padding:24px; overflow-y:auto; flex:1;">
+                    <!-- Request Stats Cards -->
+                    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px;">
+                        <div class="glass-panel" style="padding:15px; border-radius:10px; display:flex; align-items:center; gap:12px; border-left:4px solid #2563eb;">
+                            <div style="width:36px; height:36px; background:#eff6ff; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#2563eb;"><i data-lucide="list"></i></div>
+                            <div>
+                                <div style="font-size:1.3rem; font-weight:800;" id="req-stat-total">0</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted);">Total Requests</div>
+                            </div>
+                        </div>
+                        <div class="glass-panel" style="padding:15px; border-radius:10px; display:flex; align-items:center; gap:12px; border-left:4px solid #d97706;">
+                            <div style="width:36px; height:36px; background:#fef3c7; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#d97706;"><i data-lucide="clock"></i></div>
+                            <div>
+                                <div style="font-size:1.3rem; font-weight:800;" id="req-stat-pending">0</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted);">Pending Review</div>
+                            </div>
+                        </div>
+                        <div class="glass-panel" style="padding:15px; border-radius:10px; display:flex; align-items:center; gap:12px; border-left:4px solid #059669;">
+                            <div style="width:36px; height:36px; background:#ecfdf5; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#059669;"><i data-lucide="check-circle"></i></div>
+                            <div>
+                                <div style="font-size:1.3rem; font-weight:800;" id="req-stat-approved">0</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted);">Approved</div>
+                            </div>
+                        </div>
+                        <div class="glass-panel" style="padding:15px; border-radius:10px; display:flex; align-items:center; gap:12px; border-left:4px solid #e11d48;">
+                            <div style="width:36px; height:36px; background:#fff1f2; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#e11d48;"><i data-lucide="x-circle"></i></div>
+                            <div>
+                                <div style="font-size:1.3rem; font-weight:800;" id="req-stat-rejected">0</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted);">Rejected</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search and Filters Panel -->
+                    <div class="glass-panel" style="padding:15px 20px; display:flex; justify-content:space-between; align-items:center; gap:20px; flex-wrap:wrap;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <h3 style="font-family:'Outfit'; font-size:1rem; margin:0;"><i data-lucide="sliders" style="vertical-align:middle; width:16px;"></i> Filters</h3>
+                        </div>
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <div style="position:relative;">
+                                <i data-lucide="search" style="width:14px; height:14px; position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
+                                <input type="text" id="requests-search-input" placeholder="Search applicant/email..." style="padding:8px 12px 8px 30px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-size:0.85rem; width:220px; font-family:inherit;">
+                            </div>
+                            <select id="requests-filter-status" style="padding:8px 12px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-size:0.85rem; background:white; cursor:pointer; font-family:inherit;">
+                                <option value="all">All Statuses</option>
+                                <option value="pending" selected>Pending Review</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Requests List Table -->
+                    <div class="glass-panel" style="padding:20px; border-radius:var(--radius-lg);">
+                        <div class="table-responsive">
+                            <table class="motors-table">
+                                <thead>
+                                    <tr>
+                                        <th>Applicant Name</th>
+                                        <th>Email Address</th>
+                                        <th>Requested Role</th>
+                                        <th>Justification</th>
+                                        <th>Requested Date</th>
+                                        <th>Status</th>
+                                        <th style="width:260px; text-align:right;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="access-requests-list-rows">
+                                    <!-- Dynamic rows loaded via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="empty-state" id="requests-empty-state" style="display: none; text-align: center; padding: 40px;">
+                            <i data-lucide="inbox" style="width:40px; height:40px; opacity:0.5; margin-bottom:10px;"></i>
+                            <h4>No Access Requests Found</h4>
+                            <p style="color:var(--text-muted); font-size:0.9rem;">No applications match the current filter criteria.</p>
                         </div>
                     </div>
                 </div>
@@ -910,5 +1000,7 @@
 
     <!-- JavaScript -->
     <script src="admin_app.js?v=1.7"></script>
+    <!-- Onboarding Tour -->
+    <script src="onboarding.js"></script>
 </body>
 </html>

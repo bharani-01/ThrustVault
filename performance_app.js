@@ -53,22 +53,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebarMenu = document.querySelector('.sidebar-menu-links');
     if (session.role === 'admin' && sidebarMenu) {
         sidebarMenu.innerHTML = `
-            <a href="admin_dashboard.html" class="btn-sidebar-link" title="Catalog Dashboard" style="text-decoration: none; box-sizing: border-box;">
+            <a href="admin_dashboard" class="btn-sidebar-link" title="Catalog Dashboard" style="text-decoration: none; box-sizing: border-box;">
                 <i data-lucide="database"></i> Catalog Dashboard
             </a>
-            <a href="admin_dashboard.html#users" class="btn-sidebar-link" title="User Management" style="text-decoration: none; box-sizing: border-box;">
+            <a href="admin_dashboard#users" class="btn-sidebar-link" title="User Management" style="text-decoration: none; box-sizing: border-box;">
                 <i data-lucide="users"></i> User Management
             </a>
-            <a href="admin_dashboard.html#schema" class="btn-sidebar-link" title="Template & Schema Customizer" style="text-decoration: none; box-sizing: border-box;">
+            <a href="admin_dashboard#schema" class="btn-sidebar-link" title="Template & Schema Customizer" style="text-decoration: none; box-sizing: border-box;">
                 <i data-lucide="settings"></i> Schema Customizer
             </a>
-            <a href="performance_analytics.html" class="btn-sidebar-link active" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
+            <a href="performance_analytics" class="btn-sidebar-link active" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
                 <i data-lucide="trending-up"></i> Performance Analytics
             </a>
-            <a href="admin_exports.html" class="btn-sidebar-link" title="Data Exporter" style="text-decoration: none; box-sizing: border-box;">
+            <a href="admin_exports" class="btn-sidebar-link" title="Data Exporter" style="text-decoration: none; box-sizing: border-box;">
                 <i data-lucide="download"></i> Data Exporter
             </a>
-            <a href="admin_audit_logs.html" class="btn-sidebar-link" title="Audit Logs" style="text-decoration: none; box-sizing: border-box;">
+            <a href="admin_audit_logs" class="btn-sidebar-link" title="Audit Logs" style="text-decoration: none; box-sizing: border-box;">
                 <i data-lucide="shield-alert"></i> Audit Logs
             </a>
         `;
@@ -76,9 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const navLinkCatalog = document.getElementById('nav-link-catalog');
         if (navLinkCatalog) {
             if (session.role === 'intern') {
-                navLinkCatalog.href = 'intern_dashboard.html';
+                navLinkCatalog.href = 'intern_dashboard';
             } else if (session.role === 'guest') {
-                navLinkCatalog.href = 'guest_dashboard.html';
+                navLinkCatalog.href = 'guest_dashboard';
             }
         }
     }

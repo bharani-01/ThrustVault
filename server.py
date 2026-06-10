@@ -264,6 +264,151 @@ def get_audit_logs():
         return jsonify([])
 
 
+# ---------------------------------------------------------------------------
+# Resend Email Sending API Endpoint (Admin & Request access flow)
+# ---------------------------------------------------------------------------
+@app.route('/api/send-email', methods=['POST'])
+def send_email_api():
+    data = request.get_json() or {}
+    email_type = data.get('type') # 'received', 'approved', 'rejected'
+    recipient = data.get('to')
+    
+    if not recipient or not email_type:
+        return jsonify({"success": False, "error": "Missing recipient or type"}), 400
+
+    # For approved or rejected emails, restrict to logged-in admin users
+    if email_type in ['approved', 'rejected']:
+        cookie_val = request.cookies.get('thrustvault_session')
+        if not cookie_val:
+            abort(403)
+        try:
+            session_data = json.loads(urllib.parse.unquote(cookie_val))
+            role = session_data.get('role')
+            if role != 'admin':
+                abort(403)
+        except Exception:
+            abort(403)
+            
+    resend_key = os.environ.get("RESEND_API_KEY", "")
+    if not resend_key or resend_key == "re_placeholder_key":
+        print("EMAIL SYSTEM WARNING: RESEND_API_KEY is not configured. Email skipped.")
+        return jsonify({"success": True, "message": "Email skipped (key missing)"})
+        
+    subject = ""
+    html_content = ""
+    
+    if email_type == 'received':
+        full_name = data.get('full_name', 'User')
+        role = data.get('requested_role', 'guest').upper()
+        subject = "ThrustVault Access Request Received"
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            <div style="text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 style="color: #2563eb; margin: 0; font-family: 'Outfit', sans-serif;">ThrustVault Access Request</h2>
+            </div>
+            <p>Hello {full_name},</p>
+            <p>Thank you for requesting access to the <strong>ThrustVault UAV Motor Database Console</strong>. We have received your request for the <strong>{role}</strong> role.</p>
+            <p>Our administrators are currently reviewing your application. You will receive an email notification once a decision has been made.</p>
+            <p style="margin-top: 30px; font-size: 0.82rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                This is an automated notification from ThrustVault. Please do not reply directly to this email.
+            </p>
+        </div>
+        """
+    elif email_type == 'approved':
+        full_name = data.get('full_name', 'User')
+        role = data.get('requested_role', 'guest').upper()
+        reset_link = data.get('reset_link', '')
+        temp_password = data.get('temp_password', '')
+        
+        subject = "ThrustVault Access Approved"
+        
+        link_section = ""
+        if reset_link:
+            link_section = f"""
+            <p style="margin: 25px 0; text-align: center;">
+                <a href="{reset_link}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Set Your Password & Login</a>
+            </p>
+            <p style="font-size: 0.85rem; color: #64748b; text-align: center;">If the button above does not work, copy and paste the following link into your browser:<br>
+            <a href="{reset_link}" style="color: #2563eb; word-break: break-all;">{reset_link}</a></p>
+            """
+        
+        pass_section = ""
+        if temp_password:
+            pass_section = f"""
+            <p>Alternatively, you can log in using the temporary credentials below:</p>
+            <table style="background-color: #f8fafc; padding: 15px; border-radius: 8px; width: 100%; border: 1px solid #e2e8f0; font-family: monospace; margin: 15px 0;">
+                <tr><td style="padding: 5px;"><strong>Email:</strong></td><td style="padding: 5px;">{recipient}</td></tr>
+                <tr><td style="padding: 5px;"><strong>Default Password:</strong></td><td style="padding: 5px;"><code>{temp_password}</code></td></tr>
+            </table>
+            """
+            
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            <div style="text-align: center; border-bottom: 2px solid #059669; padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 style="color: #059669; margin: 0; font-family: 'Outfit', sans-serif;">Access Request Approved 🎉</h2>
+            </div>
+            <p>Hello {full_name},</p>
+            <p>Great news! Your access request to the <strong>ThrustVault UAV Motor Database Console</strong> has been approved. You have been assigned the <strong>{role}</strong> role.</p>
+            {link_section}
+            {pass_section}
+            <p>Once you sign in, you can start using the drone motor database and analytics tools.</p>
+            <p style="margin-top: 30px; font-size: 0.82rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                This is an automated notification from ThrustVault. Please do not reply directly to this email.
+            </p>
+        </div>
+        """
+    elif email_type == 'rejected':
+        full_name = data.get('full_name', 'User')
+        subject = "ThrustVault Access Request Update"
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            <div style="text-align: center; border-bottom: 2px solid #e11d48; padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 style="color: #e11d48; margin: 0; font-family: 'Outfit', sans-serif;">Access Request Status</h2>
+            </div>
+            <p>Hello {full_name},</p>
+            <p>Thank you for your interest in the <strong>ThrustVault UAV Motor Database Console</strong>.</p>
+            <p>We have reviewed your request for database access. Unfortunately, your request has not been approved at this time.</p>
+            <p>If you believe this is in error or require further assistance, please contact the administrator.</p>
+            <p style="margin-top: 30px; font-size: 0.82rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                This is an automated notification from ThrustVault. Please do not reply directly to this email.
+            </p>
+        </div>
+        """
+        
+    # Send email via Resend API
+    url = "https://api.resend.com/emails"
+    headers = {
+        "Authorization": f"Bearer {resend_key}",
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    
+    payload = {
+        "from": "ThrustVault <onboarding@bharani-01.xyz>",
+        "to": [recipient],
+        "subject": subject,
+        "html": html_content
+    }
+    
+    try:
+        req_obj = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode('utf-8'),
+            headers=headers,
+            method='POST'
+        )
+        with urllib.request.urlopen(req_obj, timeout=5.0) as res_obj:
+            res_body = res_obj.read().decode()
+            return jsonify({"success": True, "resend": json.loads(res_body)})
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode()
+        print("EMAIL SENDING HTTP ERROR via Resend:", e.code, err_body)
+        return jsonify({"success": False, "error": f"HTTP {e.code}: {err_body}"})
+    except Exception as e:
+        print("EMAIL SENDING ERROR via Resend:", e)
+        return jsonify({"success": False, "error": str(e)})
+
+
 
 # ---------------------------------------------------------------------------
 # Server-Side Dashboard Session & Role Verification
@@ -271,7 +416,7 @@ def get_audit_logs():
 def verify_dashboard_access(required_role, filename):
     cookie_val = request.cookies.get('thrustvault_session')
     if not cookie_val:
-        return redirect('/login.html')
+        return redirect('/login')
     
     try:
         session_data = json.loads(urllib.parse.unquote(cookie_val))
@@ -281,29 +426,29 @@ def verify_dashboard_access(required_role, filename):
         # Enforce session validity within 24 hours (86400 seconds)
         current_time_ms = int(time.time() * 1000)
         if current_time_ms - timestamp > 86400 * 1000:
-            response = make_response(redirect('/login.html'))
+            response = make_response(redirect('/login'))
             response.set_cookie('thrustvault_session', '', expires=0, path='/')
             return response
             
         if role != required_role:
             if role == 'admin':
-                return redirect('/admin_dashboard.html')
+                return redirect('/admin_dashboard')
             elif role == 'intern':
-                return redirect('/intern_dashboard.html')
+                return redirect('/intern_dashboard')
             elif role == 'guest':
-                return redirect('/guest_dashboard.html')
+                return redirect('/guest_dashboard')
             else:
-                return redirect('/login.html')
+                return redirect('/login')
                 
         return send_from_directory('.', filename)
     except Exception as e:
         print("Error verifying session cookie:", e)
-        return redirect('/login.html')
+        return redirect('/login')
 
 def verify_dashboard_access_any(filename):
     cookie_val = request.cookies.get('thrustvault_session')
     if not cookie_val:
-        return redirect('/login.html')
+        return redirect('/login')
     
     try:
         session_data = json.loads(urllib.parse.unquote(cookie_val))
@@ -313,37 +458,46 @@ def verify_dashboard_access_any(filename):
         # Enforce session validity within 24 hours (86400 seconds)
         current_time_ms = int(time.time() * 1000)
         if current_time_ms - timestamp > 86400 * 1000:
-            response = make_response(redirect('/login.html'))
+            response = make_response(redirect('/login'))
             response.set_cookie('thrustvault_session', '', expires=0, path='/')
             return response
             
         if role not in ['admin', 'intern', 'guest']:
-            return redirect('/login.html')
+            return redirect('/login')
                 
         return send_from_directory('.', filename)
     except Exception as e:
         print("Error verifying session cookie:", e)
-        return redirect('/login.html')
+        return redirect('/login')
 
 # Explicit Dashboard and Scripts Routing
+@app.route('/admin_dashboard')
 @app.route('/admin_dashboard.html')
 def admin_dashboard():
+    if request.path.endswith('.html'):
+        return redirect('/admin_dashboard')
     return verify_dashboard_access('admin', 'admin_dashboard.html')
 
 @app.route('/admin_app.js')
 def admin_app_js():
     return verify_dashboard_access('admin', 'admin_app.js')
 
+@app.route('/admin_exports')
 @app.route('/admin_exports.html')
 def admin_exports():
+    if request.path.endswith('.html'):
+        return redirect('/admin_exports')
     return verify_dashboard_access('admin', 'admin_exports.html')
 
 @app.route('/admin_exports_app.js')
 def admin_exports_app_js():
     return verify_dashboard_access('admin', 'admin_exports_app.js')
 
+@app.route('/admin_audit_logs')
 @app.route('/admin_audit_logs.html')
 def admin_audit_logs():
+    if request.path.endswith('.html'):
+        return redirect('/admin_audit_logs')
     return verify_dashboard_access('admin', 'admin_audit_logs.html')
 
 @app.route('/admin_audit_logs_app.js')
@@ -351,24 +505,33 @@ def admin_audit_logs_app_js():
     return verify_dashboard_access('admin', 'admin_audit_logs_app.js')
 
 
+@app.route('/intern_dashboard')
 @app.route('/intern_dashboard.html')
 def intern_dashboard():
+    if request.path.endswith('.html'):
+        return redirect('/intern_dashboard')
     return verify_dashboard_access('intern', 'intern_dashboard.html')
 
 @app.route('/intern_app.js')
 def intern_app_js():
     return verify_dashboard_access('intern', 'intern_app.js')
 
+@app.route('/guest_dashboard')
 @app.route('/guest_dashboard.html')
 def guest_dashboard():
+    if request.path.endswith('.html'):
+        return redirect('/guest_dashboard')
     return verify_dashboard_access('guest', 'guest_dashboard.html')
 
 @app.route('/guest_app.js')
 def guest_app_js():
     return verify_dashboard_access('guest', 'guest_app.js')
 
+@app.route('/performance_analytics')
 @app.route('/performance_analytics.html')
 def performance_analytics():
+    if request.path.endswith('.html'):
+        return redirect('/performance_analytics')
     return verify_dashboard_access_any('performance_analytics.html')
 
 @app.route('/performance_app.js')
@@ -380,8 +543,32 @@ def performance_app_js():
 # Serve index.html at root
 # ---------------------------------------------------------------------------
 @app.route('/')
+@app.route('/index.html')
 def root():
+    if request.path.endswith('.html'):
+        return redirect('/')
     return send_from_directory('.', 'index.html')
+
+@app.route('/login')
+@app.route('/login.html')
+def login_page():
+    if request.path.endswith('.html'):
+        return redirect('/login')
+    return send_from_directory('.', 'login.html')
+
+@app.route('/request_access')
+@app.route('/request_access.html')
+def request_access_page():
+    if request.path.endswith('.html'):
+        return redirect('/request_access')
+    return send_from_directory('.', 'request_access.html')
+
+@app.route('/thrustvault_presentation')
+@app.route('/thrustvault_presentation.html')
+def presentation_page():
+    if request.path.endswith('.html'):
+        return redirect('/thrustvault_presentation')
+    return send_from_directory('.', 'thrustvault_presentation.html')
 
 
 # ---------------------------------------------------------------------------
@@ -400,6 +587,8 @@ def static_files(filename):
         'index.html',
         'login.html',
         'login.js',
+        'onboarding.js',
+        'request_access.html',
         'style.css',
         'thrustvault_presentation.html'
     }
