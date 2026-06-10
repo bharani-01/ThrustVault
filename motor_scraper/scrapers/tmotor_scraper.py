@@ -66,15 +66,22 @@ class TMotorScraper(BaseScraper):
                 search_query = query
 
         if query.strip():
-            log.info(f"[tmotor] Searching: {self.SEARCH_URL}?keywords={search_query}")
-            html = self.fetch(self.SEARCH_URL, params={"keywords": search_query})
+            # Strip brand prefix before sending to T-Motor's own search engine
+            # (T-Motor search works better with just model code: 'U7 V2.0' not 'T-Motor U7 V2.0')
+            store_query = re.sub(r'^t[-\s]motor\s*', '', search_query, flags=re.IGNORECASE).strip()
+            if not store_query:
+                store_query = search_query
+
+            log.info(f"[tmotor] Searching: {self.SEARCH_URL}?keywords={store_query}")
+            html = self.fetch(self.SEARCH_URL, params={"keywords": store_query})
             if html:
                 soup = self.parse(html)
                 products = soup.select("li.card-list-item")
-                log.info(f"[tmotor] Search '{search_query}': found {len(products)} candidate product pages")
+                log.info(f"[tmotor] Search '{store_query}': found {len(products)} candidate product pages")
 
                 # Pre-filter candidate pages
                 candidates = []
+                all_links = []  # keep ALL links as fallback
                 for idx, item in enumerate(products):
                     name_el = item.select_one("h4 a, p.trending-item-title a, a[href]")
                     if not name_el:
@@ -84,12 +91,20 @@ class TMotorScraper(BaseScraper):
                     link = href if href.startswith("http") else (self.base_url + "/" + href if href else "")
                     if not link:
                         continue
+                    all_links.append((link, name))
                     if self._is_candidate_match(query, name, link):
                         candidates.append((link, name))
+                        log.info(f"[tmotor] ✓ Accepted: {name}")
                     else:
-                        log.debug(f"[tmotor] Pre-filtered (skipped): {name}")
+                        log.info(f"[tmotor] ✗ Skipped:  {name}")
 
                 log.info(f"[tmotor] After pre-filtering: {len(candidates)}/{len(products)} candidates remain")
+
+                # ── Fallback: if pre-filter rejected everything but search returned results,
+                #    trust T-Motor's search engine and deep-scrape the top results directly.
+                if not candidates and all_links:
+                    log.info(f"[tmotor] Pre-filter too strict — falling back to top-5 search results")
+                    candidates = all_links[:5]
 
                 # Deep-scraping details concurrently
                 import concurrent.futures
@@ -126,6 +141,7 @@ class TMotorScraper(BaseScraper):
                             results.extend(perf_points)
                         except Exception as e:
                             log.error(f"[tmotor] Fallback detail scrape error: {e}")
+
 
             return results
 
@@ -371,12 +387,13 @@ class TMotorScraper(BaseScraper):
                 "link_esc":              link_esc,
                 "link_propeller":        link_prop,
                 "source":                "tmotor_official",
+                "kv_rating":             f"{sub_kv}KV" if sub_kv else "",
+                "stator_size":           f"{extracted_specs.get('Stator Diameter', '')}{extracted_specs.get('Stator Height', '')}".replace("mm", "").strip(),
                 # Additional detailed specs
                 "weight_g":              extracted_specs.get("Weight Excluding Cables") or extracted_specs.get("Weight") or "",
                 "internal_resistance":   extracted_specs.get("Internal Resistance") or "",
                 "dimensions":            extracted_specs.get("Motor Dimensions") or "",
                 "shaft_diameter":        extracted_specs.get("Shaft Diameter") or "",
-                "stator_size":           f"{extracted_specs.get('Stator Diameter', '')}{extracted_specs.get('Stator Height', '')}".replace("mm", "").strip(),
                 "battery_config":        extracted_specs.get("No.of Cells(Lipo)") or extracted_specs.get("Cells") or "",
                 "max_current":           extracted_specs.get("Max Continuous Current 180S") or extracted_specs.get("Max Current") or "",
                 "max_power":             extracted_specs.get("Max Power (180S)") or extracted_specs.get("Max Power") or "",
@@ -493,37 +510,51 @@ class TMotorScraper(BaseScraper):
                 log.debug(f"[tmotor] Basic parse error: {e}")
         return motors
 
+    # Noise words that appear in queries but not in T-Motor product titles
+    _NOISE = {"motor", "t", "tmotor", "brushless", "bldc", "uav", "drone", "v2.0", "ii", "pro", "lite", "plus"}
+
     def _is_candidate_match(self, query: str, name: str, link: str) -> bool:
+        """
+        Returns True if ANY meaningful model token from the query appears in
+        the candidate product name or URL.
+
+        Examples that should match:
+          'T-Motor U7 V2.0 KV420'  -> token 'u7'   in 'U7 V2.0 KV420'   ✓
+          'T-Motor MN3508 KV380'   -> token 'mn3508' in product name     ✓
+          'T-Motor P80 III KV100'  -> token 'p80'  in product name       ✓
+          'T-Motor U10 Plus KV80'  -> token 'u10'  in product name       ✓
+        """
         if not query.strip():
             return True
 
+        import re
         name_lower = name.lower()
         link_lower = link.lower()
 
-        # Extract model terms from query (terms that are NOT just KV numbers or KV labels)
-        import re
-        # Clean KV patterns
+        # Strip KV ratings from query
         q_clean = re.sub(r'\b\d{3,5}\s*kv\b', '', query, flags=re.IGNORECASE)
         q_clean = re.sub(r'\bkv\s*\d{3,5}\b', '', q_clean, flags=re.IGNORECASE)
         q_clean = re.sub(r'[-/]\d{3,5}\s*kv\b', '', q_clean, flags=re.IGNORECASE)
-        q_clean = re.sub(r'[-/]kv\s*\d{3,5}\b', '', q_clean, flags=re.IGNORECASE)
+        q_clean = re.sub(r'\(\d+[Ss]\)', '', q_clean)          # remove (12S), (6S)
         q_clean = q_clean.lower().strip()
 
-        # Get tokens from q_clean
-        tokens = re.split(r'[\s\-_/]+', q_clean)
-        tokens = [t.strip() for t in tokens if len(t.strip()) >= 2]
+        # Tokenize — keep version tokens like 'v2.0', model codes like 'mn3508'
+        parts = re.split(r'[\s\-_/]+', q_clean)
+        tokens = [t.strip() for t in parts if len(t.strip()) >= 2]
 
-        # If no tokens left after removing KV, just use the original query tokens
-        if not tokens:
-            tokens = [t.strip() for t in re.split(r'[\s\-_/]+', query.lower()) if len(t.strip()) >= 2]
+        # Filter noise words — keep only model-specific tokens
+        model_tokens = [t for t in tokens if t not in self._NOISE]
 
-        # Check if ANY of the model tokens appear in candidate name or link
-        for tok in tokens:
+        # If nothing meaningful is left, fall back to raw tokens
+        if not model_tokens:
+            model_tokens = tokens
+
+        # Match: ANY model token must appear in the candidate name or link
+        for tok in model_tokens:
             if tok in name_lower or tok in link_lower:
                 return True
 
-        # Also check if the candidate name has the stator size if it's in the query
-        # E.g. search "MN3508" -> candidate "MN3508" has "3508"
+        # Extra: match 4-digit stator codes (e.g. '3508' from 'MN3508')
         nums = re.findall(r'\b\d{4}\b', query)
         for num in nums:
             if num in name_lower or num in link_lower:

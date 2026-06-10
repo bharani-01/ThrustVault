@@ -1,9 +1,12 @@
 """
 scrapers/speedybee_scraper.py — Speedybee motor catalog scraper.
 
-Speedybee runs a Shopify store. Motor pages include specs in the description.
+Speedybee runs a Shopify store. Uses Shopify JSON API
+(/products.json) which works without HTML parsing.
 """
 
+import re
+import json
 from scrapers.base_scraper import BaseScraper
 from utils.logger import get_logger
 
@@ -14,77 +17,109 @@ class SpeedbeeeScraper(BaseScraper):
     name = "speedybee"
     base_url = "https://www.speedybee.com"
 
-    CATEGORY_URLS = [
-        "https://www.speedybee.com/collections/motors",
-        "https://www.speedybee.com/collections/esc",
-    ]
-
     def scrape(self, query: str = "") -> list[dict]:
         results = []
+        q_lower = query.lower().strip()
+        tokens = [t for t in re.split(r'[\s\-_/]+', q_lower) if len(t) >= 2] if q_lower else []
+
+        # Try Shopify suggest API first (fastest)
         if query.strip():
-            # Shopify search endpoint
-            search_url = f"{self.base_url}/search?q={query.replace(' ', '+')}&type=product"
-            log.info(f"[speedybee] Searching: {search_url}")
-            results.extend(self._scrape_collection(search_url, category="motor"))
-        else:
-            for cat_url in self.CATEGORY_URLS:
-                results.extend(self._scrape_collection(cat_url))
+            results.extend(self._suggest_search(query, tokens))
+
+        # Fallback: browse motors collection via JSON
+        if not results:
+            results.extend(self._browse_collection("motors", tokens))
+
         log.info(f"[speedybee] Total items: {len(results)}")
         return results
 
-    def _scrape_collection(self, url: str, category: str = "") -> list[dict]:
+    def _suggest_search(self, query: str, tokens: list) -> list[dict]:
+        url = (
+            f"{self.base_url}/search/suggest.json"
+            f"?q={query.replace(' ', '+')}"
+            f"&resources[type]=product&resources[limit]=50"
+        )
+        log.info(f"[speedybee] Suggest search: {url}")
+        html = self.fetch(url)
+        if not html:
+            return []
+        try:
+            data = json.loads(html)
+            products = (
+                data.get("resources", {})
+                    .get("results", {})
+                    .get("products", [])
+            )
+            log.info(f"[speedybee] Suggest: {len(products)} products")
+            return [r for r in (self._product_to_record(p) for p in products) if r]
+        except Exception as e:
+            log.debug(f"[speedybee] Suggest parse error: {e}")
+            return []
+
+    def _browse_collection(self, handle: str, tokens: list) -> list[dict]:
         items = []
         page = 1
-        if not category:
-            category = "esc" if "esc" in url else "motor"
-
-        while True:
-            separator = "&" if "?" in url else "?"
-            page_url = f"{url}{separator}page={page}"
-            log.info(f"[speedybee] Scraping {category} page {page}")
-            html = self.fetch(page_url)
+        while page <= 5:
+            url = f"{self.base_url}/collections/{handle}/products.json?limit=250&page={page}"
+            log.info(f"[speedybee] Collection '{handle}' page {page}")
+            html = self.fetch(url)
             if not html:
                 break
-
-            soup = self.parse(html)
-            products = soup.select(".product-item, .grid__item, .product-card")
-            if not products:
-                break
-
-            for item in products:
-                try:
-                    name_el  = item.select_one("h2, h3, .product-item__title, .card__heading, .full-unstyled-link")
-                    price_el = item.select_one(".price, .product-price, .price__regular")
-                    link_el  = item.select_one("a[href]")
-
-                    name  = name_el.get_text(strip=True)  if name_el  else ""
-                    price = price_el.get_text(strip=True) if price_el else ""
-                    href  = link_el.get("href", "")       if link_el  else ""
-                    link  = href if href.startswith("http") else self.base_url + href
-
-                    if not name:
+            try:
+                data = json.loads(html)
+                products = data.get("products", [])
+                if not products:
+                    break
+                for p in products:
+                    title = (p.get("title") or "").lower()
+                    if tokens and not any(t in title for t in tokens):
                         continue
-
-                    items.append({
-                        "category":              category,
-                        "motor_name":            name if category == "motor" else "",
-                        "company":               "Speedybee",
-                        "max_thrust":            "",
-                        "recommended_esc":       "",
-                        "recommended_propeller": "",
-                        "price":                 price,
-                        "link_motor":            link if category == "motor" else "",
-                        "link_esc":              link if category == "esc"   else "",
-                        "link_propeller":        "",
-                        "source":                "speedybee_official",
-                    })
-                except Exception as e:
-                    log.debug(f"[speedybee] Parse error: {e}")
-
-            log.info(f"[speedybee] Page {page}: {len(items)} items so far")
-            next_btn = soup.select_one("a[rel='next'], .pagination__next")
-            if not next_btn:
+                    record = self._product_to_record(p)
+                    if record:
+                        items.append(record)
+                if len(products) < 250:
+                    break
+            except Exception as e:
+                log.debug(f"[speedybee] Collection JSON error: {e}")
                 break
             page += 1
-
         return items
+
+    def _product_to_record(self, p: dict) -> dict | None:
+        try:
+            title = p.get("title", "")
+            handle = p.get("handle", "")
+            if not title:
+                return None
+            skip = ["prop", "battery", "charger", "frame", "stand", "cable"]
+            if any(s in title.lower() for s in skip):
+                return None
+            link = f"{self.base_url}/products/{handle}"
+            variants = p.get("variants", [])
+            price = f"${variants[0].get('price', '')}" if variants else ""
+            kv_m = re.search(r'(\d{3,5})\s*[Kk][Vv]', title)
+            kv = f"{kv_m.group(1)}KV" if kv_m else ""
+            is_esc = "esc" in title.lower()
+            cat = "esc" if is_esc else "motor"
+            return {
+                "category":              cat,
+                "motor_name":            title if cat == "motor" else "",
+                "company":               "SpeedyBee",
+                "max_thrust":            "",
+                "recommended_esc":       "",
+                "recommended_propeller": "",
+                "price":                 price,
+                "link_motor":            link if cat == "motor" else "",
+                "link_esc":              link if cat == "esc" else "",
+                "link_propeller":        "",
+                "source":                "speedybee_official",
+                "kv_rating":             kv,
+                "stator_size":           self._extract_stator(title),
+            }
+        except Exception as e:
+            log.debug(f"[speedybee] record error: {e}")
+            return None
+
+    def _extract_stator(self, text: str) -> str:
+        m = re.search(r'\b(\d{4})\b', text)
+        return m.group(1) if m else ""

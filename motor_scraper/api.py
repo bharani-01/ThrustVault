@@ -28,6 +28,18 @@ from parsers.motor_parser import normalize_batch
 from parsers.groq_parser import groq_parser
 from utils.dedup import dedup_motors
 
+# ── Pre-import all scrapers at startup (main thread) to avoid
+#    Python _ModuleLock deadlocks when threads import concurrently ──────────
+from scrapers.tmotor_scraper import TMotorScraper
+from scrapers.getfpv_scraper import GetFPVScraper
+from scrapers.rcbenchmark_scraper import RCBenchmarkScraper
+from scrapers.emax_scraper import EmaxScraper
+from scrapers.speedybee_scraper import SpeedbeeeScraper
+from scrapers.mad_scraper import MADScraper
+from scrapers.kdedirect_scraper import KDEDirectScraper
+from scrapers.sunnysky_scraper import SunnySkyScraper
+from scrapers.google.google_scraper import GoogleScraper
+
 log = get_logger("api")
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -38,44 +50,95 @@ app.config["SECRET_KEY"] = "thrustvault-scraper-2024"
 JOBS: dict[str, dict] = {}
 
 
-# ── Smart multi-term query matcher ────────────────────────────────────────
+# Words that appear in queries but rarely in product names — skip them in matching
+_NOISE_WORDS = {
+    "motor", "t", "tmotor", "brushless", "bldc", "uav", "drone",
+    "outrunner", "inrunner", "fpv", "multi", "rotor", "official"
+}
+
+
+import re as _re
+
+def _sanitize_query(query: str) -> str:
+    """
+    Strip annotation noise from motor queries before sending to scrapers.
+    Examples:
+      'T-Motor U7 V2.0 KV420 (*9.1 kg)'  → 'T-Motor U7 V2.0 KV420'
+      'MAD 5010 EEE V2.0 KV150 (12S)'    → 'MAD 5010 EEE V2.0 KV150'
+      'T-Motor U12 II KV60 — Alpha 120A'  → 'T-Motor U12 II KV60'
+      'KDE8218XF-120 (HE) — 30.5 Dual'   → 'KDE8218XF-120'
+    """
+    q = query.strip()
+    # Remove (*...) weight annotations
+    q = _re.sub(r'\(\*[^)]*\)', '', q)
+    # Remove (12S), (6S), (HE), (Pin), (No Pin) etc.
+    q = _re.sub(r'\([^)]{1,20}\)', '', q)
+    # Remove trailing — description (em-dash / en-dash / double-hyphen ONLY)
+    # Single hyphen must NOT be stripped — part of part numbers like KDE4215XF-465
+    q = _re.sub(r'\s*(?:—|–|--)\s*.+$', '', q)
+    # Remove trailing * marker
+    q = _re.sub(r'\s*\*\s*$', '', q)
+    # Collapse whitespace
+    q = _re.sub(r'\s+', ' ', q).strip()
+    return q
+
+
 def _tokenize(text: str) -> list[str]:
     """
     Break a motor name/query into searchable tokens.
-    e.g. 'MN3508 KV380' → ['mn3508', 'kv380', '380', '3508']
-         'MN3508-380KV' → ['mn3508', '380kv', '380', '3508']
+    e.g. 'MN3508 KV380'         → ['mn3508', 'kv380', '380', '3508']
+         'T-Motor U7 V2.0 KV420' → ['u7', 'v2.0', 'kv420', '420', '7']
     """
-    import re
-    text = text.lower()
-    # Split on spaces, dashes, underscores
-    parts = re.split(r'[\s\-_/]+', text)
+    text = _sanitize_query(text).lower()
+    # Split on spaces, dashes, underscores, slashes (but NOT dots — preserves 'v2.0')
+    parts = _re.split(r'[\s\-_/]+', text)
     tokens = set(parts)
-    # Also extract bare numbers (e.g. '380' from 'kv380' or '380kv')
+    # Also extract bare numbers (e.g. '420' from 'kv420' or '420kv')
     for p in parts:
-        nums = re.findall(r'\d+', p)
+        nums = _re.findall(r'\d+', p)
         tokens.update(nums)
-    return [t for t in tokens if t]
+    # Remove noise words and empty strings
+    return [t for t in tokens if t and t not in _NOISE_WORDS]
 
 
 def smart_match(query: str, candidate: str) -> bool:
     """
     Returns True if ALL meaningful tokens in the query appear in the candidate.
-    Handles: 'MN3508 KV380' matching 'MN3508-380KV', 'MN 3508 380 KV', etc.
-    Ignores pure KV/kv prefix tokens (too generic) unless paired with a number.
+    Handles:
+      'MN3508 KV380'  matching 'MN3508-380KV'  (reversed KV format)
+      'MAD 5008 KV240' matching 'MAD 5008 240KV' (same)
+    Skips single chars, noise words.
     """
-    import re
     if not query.strip():
         return True  # no query = match everything
 
     q_tokens = _tokenize(query)
     c_text   = candidate.lower()
 
-    # Every query token must appear somewhere in candidate text
     for tok in q_tokens:
         if len(tok) < 2:
             continue  # skip single chars
-        if tok not in c_text:
-            return False
+        if tok in _NOISE_WORDS:
+            continue  # skip brand/category noise
+        if tok in c_text:
+            continue  # direct hit
+
+        # Handle reversed KV formats:
+        #   query token 'kv380'  → also try '380kv', '380'
+        #   query token '380'    → also try 'kv380', '380kv'
+        kv_fwd = _re.match(r'^kv(\d+)$', tok)   # kv380 → 380
+        kv_rev = _re.match(r'^(\d+)kv$', tok)   # 380kv → 380
+        if kv_fwd:
+            num = kv_fwd.group(1)
+            if f"{num}kv" in c_text or num in c_text:
+                continue
+        elif kv_rev:
+            num = kv_rev.group(1)
+            if f"kv{num}" in c_text or num in c_text:
+                continue
+        else:
+            return False   # token not found in any form
+
     return True
 
 
@@ -91,6 +154,14 @@ def run_scrape_job(job_id: str, motor_query: str, sources: list[str], use_groq: 
         emit("log", {"message": msg, "level": level, "ts": datetime.now().strftime("%H:%M:%S")})
 
     try:
+        # ── Sanitize query first — strips (*9.1 kg), (12S), — Alpha 80A etc.
+        clean_query = _sanitize_query(motor_query)
+        if clean_query != motor_query:
+            log_msg(f"✂ Query cleaned: '{motor_query}' → '{clean_query}'", "info")
+            motor_query = clean_query
+            # Also update job so results/export reflect clean query
+            job["query"] = clean_query
+
         log_msg(f"🚀 Starting scrape for: '{motor_query}'", "info")
         log_msg(f"📡 Sources: {', '.join(sources)}", "info")
         if motor_query:
@@ -118,7 +189,8 @@ def run_scrape_job(job_id: str, motor_query: str, sources: list[str], use_groq: 
                 if motor_query.strip():
                     filtered = []
                     for r in raw:
-                        if "throttle" in r or r.get("source") == "rcbenchmark" or "label" in r:
+                        is_perf = "throttle" in r or r.get("source") == "rcbenchmark" or "label" in r
+                        if is_perf:
                             match_text = r.get("label", "")
                         else:
                             match_text = " ".join(filter(None, [
@@ -126,6 +198,8 @@ def run_scrape_job(job_id: str, motor_query: str, sources: list[str], use_groq: 
                                 r.get("name", ""),
                                 r.get("kv_rating", ""),
                                 r.get("stator_size", ""),
+                                r.get("source_url", ""),   # URL often contains model code
+                                r.get("link_motor", ""),   # same
                             ]))
                         if smart_match(motor_query, match_text):
                             filtered.append(r)
@@ -163,6 +237,23 @@ def run_scrape_job(job_id: str, motor_query: str, sources: list[str], use_groq: 
         all_motors = normalize_batch(all_motors)
         all_motors = dedup_motors(all_motors)
         log_msg(f"  → {len(all_motors)} unique motors after dedup", "info")
+
+        # Deduplicate performance points: T-Motor tables repeat each row 3×
+        seen_perf = set()
+        deduped_perf = []
+        for p in all_performance:
+            key = (
+                p.get("label", ""),
+                p.get("throttle"),
+                p.get("thrust_g"),
+                p.get("rpm"),
+            )
+            if key not in seen_perf:
+                seen_perf.add(key)
+                deduped_perf.append(p)
+        if len(deduped_perf) < len(all_performance):
+            log_msg(f"  → Deduped perf: {len(all_performance)} → {len(deduped_perf)} points", "info")
+        all_performance = deduped_perf
 
         # Groq enrichment
         if use_groq and all_motors:
@@ -218,25 +309,28 @@ def run_scrape_job(job_id: str, motor_query: str, sources: list[str], use_groq: 
 
 
 def _get_scraper(name: str):
+    """Return a fresh scraper instance for the given source name.
+    Classes are pre-imported at startup to avoid threading import deadlocks.
+    """
+    _registry = {
+        "tmotor":      TMotorScraper,
+        "getfpv":      GetFPVScraper,
+        "rcbenchmark": RCBenchmarkScraper,
+        "emax":        EmaxScraper,
+        "speedybee":   SpeedbeeeScraper,
+        "mad":         MADScraper,
+        "kdedirect":   KDEDirectScraper,
+        "sunnysky":    SunnySkyScraper,
+        "google":      GoogleScraper,
+    }
+    cls = _registry.get(name)
+    if cls is None:
+        return None
     try:
-        if name == "tmotor":
-            from scrapers.tmotor_scraper import TMotorScraper
-            return TMotorScraper()
-        elif name == "getfpv":
-            from scrapers.getfpv_scraper import GetFPVScraper
-            return GetFPVScraper()
-        elif name == "rcbenchmark":
-            from scrapers.rcbenchmark_scraper import RCBenchmarkScraper
-            return RCBenchmarkScraper()
-        elif name == "emax":
-            from scrapers.emax_scraper import EmaxScraper
-            return EmaxScraper()
-        elif name == "speedybee":
-            from scrapers.speedybee_scraper import SpeedbeeeScraper
-            return SpeedbeeeScraper()
+        return cls()
     except Exception as e:
-        log.error(f"Failed to load scraper {name}: {e}")
-    return None
+        log.error(f"Failed to instantiate scraper '{name}': {e}")
+        return None
 
 
 # ── Routes ─────────────────────────────────────────────────────────────────
@@ -249,7 +343,7 @@ def index():
 def start_scrape():
     data = request.get_json(silent=True) or {}
     motor_query = data.get("motor", "").strip()
-    sources     = data.get("sources", ["tmotor", "getfpv", "emax", "speedybee", "rcbenchmark"])
+    sources     = data.get("sources", ["tmotor", "getfpv", "emax", "speedybee", "rcbenchmark", "mad", "kdedirect", "sunnysky"])
     use_groq    = data.get("use_groq", True)
 
     job_id = str(uuid.uuid4())
@@ -359,6 +453,173 @@ def export_job_csv(job_id: str):
         headers={"Content-disposition": f"attachment; filename=motor_list_export.csv"}
     )
     return response
+
+
+# ── Batch scrape endpoint ───────────────────────────────────────────────────
+@app.route("/batch", methods=["POST"])
+def start_batch():
+    """
+    POST /batch
+    Body: { "motors": ["MN3508 KV380", "U7 V2.0 KV420", ...],
+            "sources": [...],
+            "use_groq": true }
+
+    OR pass raw text (one motor per line) as "text" key.
+    Returns: { "batch_id": ..., "jobs": {motor: job_id}, "total": N }
+    """
+    data = request.get_json(silent=True) or {}
+    sources  = data.get("sources",  ["tmotor", "getfpv", "emax", "speedybee", "rcbenchmark", "mad", "kdedirect", "sunnysky"])
+    use_groq = data.get("use_groq", False)          # default OFF for speed in batch mode
+
+    # Accept either a list or a raw text block
+    motors_list = data.get("motors", [])
+    raw_text    = data.get("text", "")
+
+    if raw_text and not motors_list:
+        motors_list = _parse_motor_list(raw_text)
+
+    if not motors_list:
+        return jsonify({"error": "No motors provided. Send 'motors' list or 'text' block."}), 400
+
+    batch_id = str(uuid.uuid4())[:8]
+    jobs = {}
+
+    for motor in motors_list:
+        motor = motor.strip()
+        if not motor:
+            continue
+        job_id = str(uuid.uuid4())
+        JOBS[job_id] = {
+            "queue":       queue.Queue(),
+            "results":     [],
+            "performance": [],
+            "status":      "running",
+            "query":       motor,
+            "batch_id":    batch_id,
+            "started_at":  datetime.now().isoformat(),
+        }
+        thread = threading.Thread(
+            target=run_scrape_job,
+            args=(job_id, motor, sources, use_groq),
+            daemon=True,
+        )
+        thread.start()
+        jobs[motor] = job_id
+
+    return jsonify({
+        "batch_id": batch_id,
+        "total":    len(jobs),
+        "jobs":     jobs,
+        "message":  f"Batch of {len(jobs)} motors started. Poll /batch/status/{batch_id} for progress.",
+    })
+
+
+@app.route("/batch/status/<batch_id>")
+def batch_status(batch_id: str):
+    """Returns aggregate status of all jobs belonging to a batch."""
+    batch_jobs = {jid: job for jid, job in JOBS.items() if job.get("batch_id") == batch_id}
+    if not batch_jobs:
+        return jsonify({"error": "Batch not found"}), 404
+
+    total    = len(batch_jobs)
+    done     = sum(1 for j in batch_jobs.values() if j["status"] == "done")
+    running  = sum(1 for j in batch_jobs.values() if j["status"] == "running")
+    errored  = sum(1 for j in batch_jobs.values() if j["status"] == "error")
+    found    = sum(len(j.get("results", [])) for j in batch_jobs.values())
+    perf_pts = sum(len(j.get("performance", [])) for j in batch_jobs.values())
+
+    return jsonify({
+        "batch_id":     batch_id,
+        "total":        total,
+        "done":         done,
+        "running":      running,
+        "errored":      errored,
+        "motors_found": found,
+        "perf_points":  perf_pts,
+        "complete":     done + errored == total,
+    })
+
+
+@app.route("/batch/export/<batch_id>")
+def batch_export(batch_id: str):
+    """Exports all results from a batch as a single CSV."""
+    import io, csv
+    batch_jobs = {jid: job for jid, job in JOBS.items() if job.get("batch_id") == batch_id}
+    if not batch_jobs:
+        return jsonify({"error": "Batch not found"}), 404
+
+    output = io.StringIO()
+    output.write('\ufeff')  # UTF-8 BOM for Excel
+    fieldnames = [
+        "Query", "MOTOR", "Company", "KV Rating", "Max Thrust",
+        "Recommended ESC", "Recommended Propeller",
+        "LINK - Motor", "LINK - ESC", "LINK - Propeller", "Source"
+    ]
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+
+    for job_id, job in batch_jobs.items():
+        query = job.get("query", "")
+        for m in job.get("results", []):
+            writer.writerow({
+                "Query":                 query,
+                "MOTOR":                 m.get("motor_name", ""),
+                "Company":               m.get("company", ""),
+                "KV Rating":             m.get("kv_rating", ""),
+                "Max Thrust":            m.get("max_thrust", ""),
+                "Recommended ESC":       m.get("recommended_esc", ""),
+                "Recommended Propeller": m.get("recommended_propeller", ""),
+                "LINK - Motor":          m.get("link_motor", ""),
+                "LINK - ESC":            m.get("link_esc", ""),
+                "LINK - Propeller":      m.get("link_propeller", ""),
+                "Source":                m.get("source", ""),
+            })
+
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=batch_{batch_id}_export.csv"}
+    )
+
+
+def _parse_motor_list(text: str) -> list[str]:
+    """
+    Parse a pasted motor list (like the user's catalog) into clean motor names.
+    Handles:
+      - "MN3508 KV380/KV580/KV700"  → ["MN3508 KV380", "MN3508 KV580", "MN3508 KV700"]
+      - "T-Motor U7 V2.0 KV420"     → ["T-Motor U7 V2.0 KV420"]
+      - "KDE4215XF-465"             → ["KDE4215XF-465"]
+      - Lines starting with headers like "MOTOR", "2KG Thrust..." → skipped
+    """
+    import re
+    motors = []
+    skip_patterns = re.compile(
+        r'^(motor|company|esc|propeller|\d+\s*kg\s*thrust|thrust\s*stand|#)',
+        re.IGNORECASE
+    )
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or skip_patterns.match(line):
+            continue
+        # Remove trailing annotations — only em-dash (—), en-dash (–), or double-hyphen (--)
+        # Single hyphen (-) must NOT be stripped — it's part of part numbers like KDE4215XF-465
+        line = re.sub(r'\s*(?:—|–|--)\s*.+$', '', line).strip()
+        line = re.sub(r'\s*\(\*[^)]+\)', '', line).strip()       # (*9.1 kg)
+        line = re.sub(r'\s*\(\d+[Ss]\)', '', line).strip()       # (12S), (6S)
+        line = re.sub(r'\s*\([A-Za-z][^)]{0,15}\)', '', line).strip()  # (HE), (Pin), (No Pin)
+
+        # Expand KV variants: "MN3508 KV380/KV580/KV700" → 3 motors
+        kv_variants = re.findall(r'[Kk][Vv]\s*(\d{2,5})', line)
+        base = re.sub(r'\s*[Kk][Vv][\d/\s]+.*$', '', line).strip()
+
+        if len(kv_variants) > 1:
+            for kv in kv_variants:
+                motors.append(f"{base} KV{kv}")
+        elif line:
+            motors.append(line)
+
+    return [m for m in motors if len(m) >= 3]
 
 
 if __name__ == "__main__":

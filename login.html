@@ -8,10 +8,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Lucide Icons CDN -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Supabase JS Client CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    <!-- Supabase JS Client -->
+    <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
@@ -29,31 +29,105 @@
                         <i data-lucide="aperture" class="spin-slow" style="width:30px; height:30px; color:#2563eb;"></i>
                     </div>
                 </div>
-                <h2>Welcome to <span>ThrustVault</span></h2>
-                <p>Sign in to access the UAV motor database console.</p>
+                <h2 id="login-card-title">Welcome to <span>ThrustVault</span></h2>
+                <p id="login-card-subtitle">Sign in to access the UAV motor database console.</p>
             </div>
             
-            <form id="login-form">
-                <div class="form-group">
-                    <label for="login-email">Email Address</label>
-                    <div class="input-with-icon">
-                        <input type="email" id="login-email" required placeholder="e.g. name@thrustvault.com">
-                        <i data-lucide="mail"></i>
+            <!-- View 1: Sign In -->
+            <div id="view-signin">
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email Address</label>
+                        <div class="input-with-icon">
+                            <input type="email" id="login-email" required placeholder="e.g. name@thrustvault.com">
+                            <i data-lucide="mail"></i>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="form-group" style="margin-top: 18px;">
-                    <label for="login-password">Password</label>
-                    <div class="input-with-icon">
-                        <input type="password" id="login-password" required placeholder="••••••••">
-                        <i data-lucide="lock"></i>
+                    
+                    <div class="form-group" style="margin-top: 18px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <label for="login-password">Password</label>
+                            <a href="#" id="link-goto-forgot" style="font-size:0.75rem; color:#2563eb; text-decoration:none; font-weight:500;">Forgot Password?</a>
+                        </div>
+                        <div class="input-with-icon" style="margin-top: 6px;">
+                            <input type="password" id="login-password" required placeholder="••••••••">
+                            <i data-lucide="lock"></i>
+                        </div>
                     </div>
-                </div>
-                
-                <button type="submit" class="login-btn" style="margin-top: 28px; width: 100%;">
-                    Sign In <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>
-                </button>
-            </form>
+                    
+                    <button type="submit" class="login-btn" style="margin-top: 28px; width: 100%;">
+                        Sign In <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- View 2: Forgot Password - Request OTP -->
+            <div id="view-forgot-email" style="display: none;">
+                <form id="forgot-email-form">
+                    <div class="form-group">
+                        <label for="forgot-email">Email Address</label>
+                        <div class="input-with-icon">
+                            <input type="email" id="forgot-email" required placeholder="e.g. name@thrustvault.com">
+                            <i data-lucide="mail"></i>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="login-btn" style="margin-top: 24px; width: 100%;">
+                        Send Verification Code <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+                    </button>
+                    
+                    <div style="text-align: center; margin-top: 18px;">
+                        <a href="#" class="link-back-to-login" style="font-size:0.8rem; color:#64748b; text-decoration:none; font-weight:500; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="arrow-left" style="width:14px; height:14px;"></i> Back to Sign In</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- View 3: Forgot Password - Verify OTP -->
+            <div id="view-forgot-otp" style="display: none;">
+                <form id="forgot-otp-form">
+                    <div class="form-group">
+                        <label for="forgot-otp">Verification Code (OTP)</label>
+                        <div class="input-with-icon">
+                            <input type="text" id="forgot-otp" required maxlength="6" placeholder="Enter 6-digit code" style="text-align: center; letter-spacing: 4px; font-weight: 700; font-size: 1.1rem;">
+                            <i data-lucide="shield-check"></i>
+                        </div>
+                        <p style="font-size:0.75rem; color:#64748b; margin-top:6px; text-align:center;">Enter the 6-digit verification code sent to your email.</p>
+                    </div>
+                    
+                    <button type="submit" class="login-btn" style="margin-top: 24px; width: 100%;">
+                        Verify Code <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+                    </button>
+                    
+                    <div style="display:flex; justify-content:space-between; margin-top:18px;">
+                        <a href="#" id="link-resend-otp" style="font-size:0.8rem; color:#2563eb; text-decoration:none; font-weight:500;">Resend Code</a>
+                        <a href="#" class="link-back-to-login" style="font-size:0.8rem; color:#64748b; text-decoration:none; font-weight:500; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="arrow-left" style="width:14px; height:14px;"></i> Cancel</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- View 4: Reset Password - Update Password -->
+            <div id="view-forgot-reset" style="display: none;">
+                <form id="forgot-reset-form">
+                    <div class="form-group">
+                        <label for="reset-password">New Password</label>
+                        <div class="input-with-icon">
+                            <input type="password" id="reset-password" required placeholder="Min 6 characters">
+                            <i data-lucide="lock"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 18px;">
+                        <label for="reset-password-confirm">Confirm New Password</label>
+                        <div class="input-with-icon">
+                            <input type="password" id="reset-password-confirm" required placeholder="Repeat new password">
+                            <i data-lucide="lock"></i>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="login-btn" style="margin-top: 28px; width: 100%;">
+                        Update Password & Log In <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                    </button>
+                </form>
             
             <div class="login-footer">
                 <a href="index.html" class="btn-text-sm" style="display: inline-flex; align-items: center; gap: 6px; color:#64748b; font-weight:500; text-decoration:none;"><i data-lucide="arrow-left" style="width:16px;"></i> Return to Landing</a>

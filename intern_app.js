@@ -117,7 +117,11 @@ document.addEventListener('DOMContentLoaded', () => {
         btnExportJSON: document.getElementById('btn-export-json'),
         btnImportTrigger: document.getElementById('btn-import-trigger'),
         fileImportInput: document.getElementById('file-import-input'),
-        btnDownloadTemplate: document.getElementById('btn-download-template')
+        btnDownloadTemplate: document.getElementById('btn-download-template'),
+        btnExportXlsx: document.getElementById('btn-export-xlsx'),
+        btnExportCustomTrigger: document.getElementById('btn-export-custom-trigger'),
+        customExportModal: document.getElementById('custom-export-modal'),
+        customExportForm: document.getElementById('custom-export-form')
     };
 
     // Static Verification Notes
@@ -372,8 +376,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 prop: m.recommended_propeller,
                 linkMotor: m.link_motor,
                 linkEsc: m.link_esc,
-                linkProp: m.link_propeller
+                linkProp: m.link_propeller,
+                custom_parameters: m.custom_parameters || {}
             }));
+            
+            // Fetch dynamic schema custom definitions
+            let customSchema = [];
+            try {
+                const { data, error } = await supabase
+                    .from('custom_specs_schema')
+                    .select('*')
+                    .order('created_at');
+                if (!error && data) {
+                    customSchema = data;
+                } else {
+                    throw error || new Error("Failed to load schema from Supabase");
+                }
+            } catch (err) {
+                console.warn("Falling back to localStorage for custom schema:", err);
+                customSchema = JSON.parse(localStorage.getItem('thrustvault_custom_specs')) || [];
+            }
+            state.customSchema = customSchema;
             
             if (state.categories.length > 0) {
                 if (!state.activeCategory || !state.categories.some(c => c.id === state.activeCategory)) {
@@ -631,6 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('form-motor-link').value = m.linkMotor || '';
                 document.getElementById('form-esc-link').value = m.linkEsc || '';
                 document.getElementById('form-prop-link').value = m.linkProp || '';
+                renderCustomFieldsInMotorForm(m);
                 openModal(elements.motorModal);
                 lucide.createIcons();
             };
@@ -754,6 +778,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.compareItems.length === 0) return;
         const selected = state.compareItems.map(id => state.motors.find(m => m.id === id)).filter(Boolean);
         
+        let customRowsHtml = '';
+        if (state.customSchema && state.customSchema.length > 0) {
+            state.customSchema.forEach(f => {
+                customRowsHtml += `
+                    <tr>
+                        <td><strong>${f.field_name}</strong></td>
+                        ${selected.map(m => {
+                            const val = m.custom_parameters && m.custom_parameters[f.field_key] !== undefined ? m.custom_parameters[f.field_key] : '-';
+                            if (f.field_type === 'boolean') {
+                                return `<td>${val === true || val === 'true' ? 'Yes ✓' : 'No ✗'}</td>`;
+                            }
+                            return `<td>${val} ${val !== '-' && f.field_unit && val !== '' ? f.field_unit : ''}</td>`;
+                        }).join('')}
+                    </tr>
+                `;
+            });
+        }
+
         elements.comparisonResultTable.innerHTML = `
             <thead>
                 <tr>
@@ -778,6 +820,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td><strong>Recommended Propeller</strong></td>
                     ${selected.map(m => `<td>${m.prop || '-'}</td>`).join('')}
                 </tr>
+                ${customRowsHtml}
                 <tr>
                     <td><strong>Reference Links</strong></td>
                     ${selected.map(m => `
@@ -971,7 +1014,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Exports & Imports
     elements.btnExportJSON.onclick = () => {
-        const backup = { categories: state.categories, motors: state.motors };
+        const backup = { categories: state.categories, motors: state.motors, customSchema: state.customSchema || [] };
         const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -983,11 +1026,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elements.btnExportCSV.onclick = () => {
         const headers = ['Category Name', 'Category Description', 'Motor Model Name', 'Manufacturer', 'Max Thrust', 'Recommended ESC', 'Recommended Propeller', 'Motor Link', 'ESC Link', 'Propeller Link'];
+        const customHeaders = (state.customSchema || []).map(f => `${f.field_name} [${f.field_key}]`);
+        const allHeaders = [...headers, ...customHeaders];
+        
         const rows = state.motors.map(m => {
             const cat = state.categories.find(c => c.id === m.categoryId);
-            return [cat ? cat.name : '', '', m.motor, m.company, m.thrust, m.esc || '', m.prop || '', m.linkMotor || '', m.linkEsc || '', m.linkProp || ''].map(val => `"${val.replace(/"/g, '""')}"`);
+            const row = [cat ? cat.name : '', '', m.motor, m.company, m.thrust, m.esc || '', m.prop || '', m.linkMotor || '', m.linkEsc || '', m.linkProp || ''];
+            
+            const customVals = m.custom_parameters || {};
+            (state.customSchema || []).forEach(f => {
+                row.push(customVals[f.field_key] !== undefined ? customVals[f.field_key] : '');
+            });
+            return row.map(val => `"${val.toString().replace(/"/g, '""')}"`);
         });
-        const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const csvContent = [allHeaders.join(','), ...rows.map(r => r.join(','))].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -997,17 +1049,51 @@ document.addEventListener('DOMContentLoaded', () => {
         URL.revokeObjectURL(url);
     };
 
+    elements.btnExportXlsx.onclick = () => {
+        const headers = ['Category Name', 'Category Description', 'Motor Model Name', 'Manufacturer', 'Max Thrust', 'Recommended ESC', 'Recommended Propeller', 'Motor Link', 'ESC Link', 'Propeller Link'];
+        const customHeaders = (state.customSchema || []).map(f => `${f.field_name} [${f.field_key}]`);
+        const allHeaders = [...headers, ...customHeaders];
+        
+        const rows = state.motors.map(m => {
+            const cat = state.categories.find(c => c.id === m.categoryId);
+            const row = [cat ? cat.name : '', cat ? cat.desc : '', m.motor, m.company, m.thrust, m.esc || '', m.prop || '', m.linkMotor || '', m.linkEsc || '', m.linkProp || ''];
+            
+            const customVals = m.custom_parameters || {};
+            (state.customSchema || []).forEach(f => {
+                row.push(customVals[f.field_key] !== undefined ? customVals[f.field_key] : '');
+            });
+            return row;
+        });
+        
+        const data = [allHeaders, ...rows];
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Catalog');
+        XLSX.writeFile(wb, `thrustvault_catalog_${new Date().toISOString().slice(0,10)}.xlsx`);
+        
+        logUserActivity(session.email, session.role, 'Exported Data', 'Exported full catalog as Excel workbook.');
+    };
+
     elements.btnDownloadTemplate.onclick = () => {
         const headers = ['Category Name', 'Category Description', 'Motor Model Name', 'Manufacturer', 'Max Thrust', 'Recommended ESC', 'Recommended Propeller', 'Motor Link', 'ESC Link', 'Propeller Link'];
-        const sample = ['2 kg', 'Cinematic drone motors', 'F60 Pro V', 'T-Motor', '2.1 kg', 'V45A ESC', 'T5143S Prop', 'https://...', '', ''];
-        const csvContent = [headers.join(','), sample.map(v => `"${v}"`).join(',')].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'thrustvault_import_template.csv';
-        a.click();
-        URL.revokeObjectURL(url);
+        const customHeaders = (state.customSchema || []).map(f => `${f.field_name} [${f.field_key}]`);
+        const allHeaders = [...headers, ...customHeaders];
+        
+        const sampleRow = ['2 kg', 'Cinematic drone motors', 'F60 Pro V', 'T-Motor', '2.1 kg', 'V45A ESC', 'T5143S Prop', 'https://...', '', ''];
+        
+        (state.customSchema || []).forEach(f => {
+            if (f.field_type === 'number') sampleRow.push('150');
+            else if (f.field_type === 'boolean') sampleRow.push('true');
+            else sampleRow.push('Sample');
+        });
+        
+        const data = [allHeaders, sampleRow];
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Template');
+        XLSX.writeFile(wb, 'thrustvault_import_template.xlsx');
+        
+        logUserActivity(session.email, session.role, 'Template Downloaded', 'Downloaded customized Excel import template.');
     };
 
     elements.btnImportTrigger.onclick = () => { elements.fileImportInput.click(); };
@@ -1016,19 +1102,29 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!file) return;
         const reader = new FileReader();
         reader.onload = async (evt) => {
-            const content = evt.target.result;
             try {
-                if (file.name.endsWith('.json')) {
-                    await importJSONData(JSON.parse(content));
-                } else if (file.name.endsWith('.csv')) {
-                    await importCSVData(content);
+                if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    await importExcelData(workbook);
+                } else {
+                    const content = evt.target.result;
+                    if (file.name.endsWith('.json')) {
+                        await importJSONData(JSON.parse(content));
+                    } else if (file.name.endsWith('.csv')) {
+                        await importCSVData(content);
+                    }
                 }
                 elements.fileImportInput.value = '';
             } catch (err) {
                 alert("Import failed: " + err.message);
             }
         };
-        reader.readAsText(file);
+        if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+            reader.readAsArrayBuffer(file);
+        } else {
+            reader.readAsText(file);
+        }
     };
 
     function parseCSV(text) {
@@ -1074,6 +1170,17 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error("Missing required headers.");
         }
         
+        // Map custom schema column indices
+        const customFieldMaps = [];
+        if (state.customSchema) {
+            state.customSchema.forEach(f => {
+                const idx = headers.findIndex(h => h === f.field_key.toLowerCase() || h.includes(`[${f.field_key.toLowerCase()}]`));
+                if (idx !== -1) {
+                    customFieldMaps.push({ key: f.field_key, idx: idx, type: f.field_type });
+                }
+            });
+        }
+        
         let importCount = 0;
         const categoryMap = {};
         state.categories.forEach(c => { categoryMap[c.name.toLowerCase()] = c.id; });
@@ -1098,6 +1205,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.categories.push({ id: categoryId, name: catName, desc: catDesc });
             }
             
+            const customParams = {};
+            customFieldMaps.forEach(m => {
+                const val = row[m.idx];
+                if (val !== undefined && val !== null) {
+                    if (m.type === 'number') {
+                        customParams[m.key] = parseFloat(val);
+                    } else if (m.type === 'boolean') {
+                        customParams[m.key] = val === true || val === 'true' || val === 1 || val === '1';
+                    } else {
+                        customParams[m.key] = val.toString().trim();
+                    }
+                }
+            });
+            
             const motorData = {
                 category_id: categoryId,
                 motor_name: row[nameIdx].trim(),
@@ -1107,7 +1228,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 recommended_propeller: propIdx !== -1 && row[propIdx] ? row[propIdx].trim() : null,
                 link_motor: linkMotorIdx !== -1 && row[linkMotorIdx] ? row[linkMotorIdx].trim() : null,
                 link_esc: linkEscIdx !== -1 && row[linkEscIdx] ? row[linkEscIdx].trim() : null,
-                link_propeller: linkPropIdx !== -1 && row[linkPropIdx] ? row[linkPropIdx].trim() : null
+                link_propeller: linkPropIdx !== -1 && row[linkPropIdx] ? row[linkPropIdx].trim() : null,
+                custom_parameters: customParams
             };
             const { error } = await supabase.from('motors').insert([motorData]);
             if (error) throw error;
@@ -1153,7 +1275,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 recommended_propeller: m.prop || m.recommended_propeller || null,
                 link_motor: m.linkMotor || m.link_motor || null,
                 link_esc: m.linkEsc || m.link_esc || null,
-                link_propeller: m.linkProp || m.link_propeller || null
+                link_propeller: m.linkProp || m.link_propeller || null,
+                custom_parameters: m.custom_parameters || {}
             };
             const { error } = await supabase.from('motors').insert([motorData]);
             if (error) throw error;
@@ -1182,6 +1305,22 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.motorForm.onsubmit = async (e) => {
         e.preventDefault();
         const id = document.getElementById('form-motor-index').value;
+        
+        // Collect custom parameters
+        const customInputs = document.querySelectorAll('.custom-field-input');
+        const customParams = {};
+        customInputs.forEach(input => {
+            const key = input.dataset.key;
+            const type = input.dataset.type;
+            if (type === 'boolean') {
+                customParams[key] = input.checked;
+            } else if (type === 'number') {
+                customParams[key] = input.value !== '' ? parseFloat(input.value) : null;
+            } else {
+                customParams[key] = input.value.trim() || null;
+            }
+        });
+
         const motorData = {
             motor_name: document.getElementById('form-motor-name').value.trim(),
             company: document.getElementById('form-motor-company').value.trim(),
@@ -1191,7 +1330,8 @@ document.addEventListener('DOMContentLoaded', () => {
             recommended_propeller: document.getElementById('form-motor-propeller').value.trim() || null,
             link_motor: document.getElementById('form-motor-link').value.trim() || null,
             link_esc: document.getElementById('form-esc-link').value.trim() || null,
-            link_propeller: document.getElementById('form-prop-link').value.trim() || null
+            link_propeller: document.getElementById('form-prop-link').value.trim() || null,
+            custom_parameters: customParams
         };
         try {
             if (id) {
@@ -1213,6 +1353,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-title').innerHTML = `<i data-lucide="plus-circle"></i> Add New Motor Entry`;
         document.getElementById('form-motor-index').value = '';
         document.getElementById('form-motor-category').value = state.activeCategory || '';
+        renderCustomFieldsInMotorForm();
         openModal(elements.motorModal);
         lucide.createIcons();
     };
@@ -1246,6 +1387,365 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         localStorage.removeItem('thrustvault_session');
         window.location.href = 'index.html';
+    }
+
+    function renderCustomFieldsInMotorForm(motorObj = null) {
+        const container = document.getElementById('modal-custom-fields-rows');
+        const section = document.getElementById('modal-custom-fields-section');
+        if (!container || !section) return;
+        container.innerHTML = '';
+        
+        if (state.customSchema && state.customSchema.length > 0) {
+            section.style.display = 'block';
+            const customVals = motorObj && motorObj.custom_parameters ? motorObj.custom_parameters : {};
+            
+            state.customSchema.forEach(f => {
+                const val = customVals[f.field_key] !== undefined ? customVals[f.field_key] : '';
+                const formGroup = document.createElement('div');
+                formGroup.className = 'form-group';
+                
+                let inputHtml = '';
+                if (f.field_type === 'boolean') {
+                    const isChecked = val === true || val === 'true';
+                    inputHtml = `
+                        <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                            <input type="checkbox" class="custom-field-input" data-key="${f.field_key}" data-type="boolean" ${isChecked ? 'checked' : ''}>
+                            <strong>${f.field_name}</strong> ${f.field_unit ? `(${f.field_unit})` : ''}
+                        </label>
+                    `;
+                } else {
+                    inputHtml = `
+                        <label for="custom-field-${f.field_key}"><strong>${f.field_name}</strong> ${f.field_unit ? `(${f.field_unit})` : ''}</label>
+                        <input type="${f.field_type === 'number' ? 'number' : 'text'}" id="custom-field-${f.field_key}" class="custom-field-input" data-key="${f.field_key}" data-type="${f.field_type}" value="${val}" placeholder="e.g. ${f.field_type === 'number' ? '120' : 'Cinematic'}">
+                    `;
+                }
+                formGroup.innerHTML = inputHtml;
+                container.appendChild(formGroup);
+            });
+        } else {
+            section.style.display = 'none';
+        }
+    }
+
+    async function importExcelData(workbook) {
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        if (rows.length < 2) throw new Error("Empty Excel sheet.");
+        
+        const headers = rows[0].map(h => h ? h.toString().trim() : '');
+        
+        const catNameIdx = headers.findIndex(h => h.toLowerCase() === 'category name');
+        const catDescIdx = headers.findIndex(h => h.toLowerCase() === 'category description');
+        const nameIdx = headers.findIndex(h => h.toLowerCase() === 'motor model name');
+        const companyIdx = headers.findIndex(h => h.toLowerCase() === 'manufacturer');
+        const thrustIdx = headers.findIndex(h => h.toLowerCase() === 'max thrust');
+        const escIdx = headers.findIndex(h => h.toLowerCase() === 'recommended esc');
+        const propIdx = headers.findIndex(h => h.toLowerCase() === 'recommended propeller');
+        const linkMotorIdx = headers.findIndex(h => h.toLowerCase() === 'motor link');
+        const linkEscIdx = headers.findIndex(h => h.toLowerCase() === 'esc link');
+        const linkPropIdx = headers.findIndex(h => h.toLowerCase() === 'propeller link');
+        
+        if (catNameIdx === -1 || nameIdx === -1 || companyIdx === -1 || thrustIdx === -1) {
+            throw new Error("Missing required column headers: Category Name, Motor Model Name, Manufacturer, Max Thrust.");
+        }
+        
+        // Map custom schema column indices
+        const customFieldMaps = [];
+        if (state.customSchema) {
+            state.customSchema.forEach(f => {
+                const idx = headers.findIndex(h => h.toLowerCase() === f.field_key.toLowerCase() || h.toLowerCase().includes(`[${f.field_key.toLowerCase()}]`));
+                if (idx !== -1) {
+                    customFieldMaps.push({ key: f.field_key, idx: idx, type: f.field_type });
+                }
+            });
+        }
+        
+        let importCount = 0;
+        const categoryMap = {};
+        state.categories.forEach(c => { categoryMap[c.name.toLowerCase()] = c.id; });
+        
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length < 4 || !row[nameIdx]) continue;
+            
+            const catName = row[catNameIdx] ? row[catNameIdx].toString().trim() : '';
+            if (!catName) continue;
+            
+            let categoryId = categoryMap[catName.toLowerCase()];
+            if (!categoryId) {
+                const catDesc = catDescIdx !== -1 && row[catDescIdx] ? row[catDescIdx].toString().trim() : '';
+                const { data, error } = await supabase
+                    .from('categories')
+                    .insert([{ name: catName, description: catDesc }])
+                    .select();
+                if (error) throw error;
+                categoryId = data[0].id;
+                categoryMap[catName.toLowerCase()] = categoryId;
+                state.categories.push({ id: categoryId, name: catName, desc: catDesc });
+            }
+            
+            // Extract custom parameters
+            const customParams = {};
+            customFieldMaps.forEach(m => {
+                const val = row[m.idx];
+                if (val !== undefined && val !== null) {
+                    if (m.type === 'number') {
+                        customParams[m.key] = val !== '' ? parseFloat(val) : null;
+                    } else if (m.type === 'boolean') {
+                        customParams[m.key] = val === true || val === 'true' || val === 1 || val === '1';
+                    } else {
+                        customParams[m.key] = val.toString().trim();
+                    }
+                }
+            });
+            
+            const motorData = {
+                category_id: categoryId,
+                motor_name: row[nameIdx].toString().trim(),
+                company: row[companyIdx].toString().trim(),
+                max_thrust: row[thrustIdx].toString().trim(),
+                recommended_esc: escIdx !== -1 && row[escIdx] ? row[escIdx].toString().trim() : null,
+                recommended_propeller: propIdx !== -1 && row[propIdx] ? row[propIdx].toString().trim() : null,
+                link_motor: linkMotorIdx !== -1 && row[linkMotorIdx] ? row[linkMotorIdx].toString().trim() : null,
+                link_esc: linkEscIdx !== -1 && row[linkEscIdx] ? row[linkEscIdx].toString().trim() : null,
+                link_propeller: linkPropIdx !== -1 && row[linkPropIdx] ? row[linkPropIdx].toString().trim() : null,
+                custom_parameters: customParams
+            };
+            
+            const { error } = await supabase.from('motors').insert([motorData]);
+            if (error) throw error;
+            importCount++;
+        }
+        logUserActivity(session.email, session.role, 'Imported Data', `Imported ${importCount} motor entries from Excel sheet.`);
+        alert(`Imported ${importCount} motor entries.`);
+        await fetchData();
+    }
+
+    elements.btnExportCustomTrigger.onclick = () => {
+        // Dynamically populate custom columns selector checkboxes
+        const selector = document.getElementById('export-columns-selector');
+        const coreCount = 7;
+        while(selector.children.length > coreCount) {
+            selector.removeChild(selector.lastChild);
+        }
+        
+        (state.customSchema || []).forEach(f => {
+            const label = document.createElement('label');
+            label.style.cssText = "display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;";
+            label.innerHTML = `<input type="checkbox" value="custom_${f.field_key}" checked> ${f.field_name}`;
+            selector.appendChild(label);
+        });
+        
+        openModal(elements.customExportModal);
+    };
+
+    elements.customExportForm.onsubmit = (e) => {
+        e.preventDefault();
+        const format = document.getElementById('export-format').value;
+        const checkedBoxes = Array.from(document.querySelectorAll('#export-columns-selector input[type="checkbox"]:checked')).map(cb => cb.value);
+        
+        if (checkedBoxes.length === 0) {
+            alert("Please select at least one column to include in the export.");
+            return;
+        }
+        
+        runCustomExport(format, checkedBoxes);
+        closeModal(elements.customExportModal);
+    };
+
+    function runCustomExport(format, columns) {
+        const cat = state.categories.find(c => c.id === state.activeCategory);
+        let exportMotors = state.motors;
+        if (cat) {
+            exportMotors = exportMotors.filter(m => m.categoryId === cat.id);
+        }
+        
+        if (state.filterCompany !== 'all') {
+            exportMotors = exportMotors.filter(m => m.company === state.filterCompany);
+        }
+        if (state.searchQuery) {
+            const q = state.searchQuery.toLowerCase();
+            exportMotors = exportMotors.filter(m => 
+                m.motor.toLowerCase().includes(q) || 
+                m.company.toLowerCase().includes(q)
+            );
+        }
+
+        const headers = [];
+        columns.forEach(col => {
+            if (col.startsWith('custom_')) {
+                const key = col.replace('custom_', '');
+                const f = state.customSchema.find(x => x.field_key === key);
+                headers.push(f ? f.field_name : key);
+            } else {
+                const headerMap = {
+                    category: 'Category Name',
+                    motor: 'Motor Model Name',
+                    company: 'Manufacturer',
+                    thrust: 'Max Thrust',
+                    esc: 'Recommended ESC',
+                    prop: 'Recommended Propeller',
+                    links: 'Reference Links'
+                };
+                headers.push(headerMap[col] || col);
+            }
+        });
+
+        if (format === 'json') {
+            const dataToExport = exportMotors.map(m => {
+                const row = {};
+                columns.forEach(col => {
+                    if (col.startsWith('custom_')) {
+                        const key = col.replace('custom_', '');
+                        row[key] = m.custom_parameters && m.custom_parameters[key] !== undefined ? m.custom_parameters[key] : null;
+                    } else if (col === 'category') {
+                        const c = state.categories.find(x => x.id === m.categoryId);
+                        row.category = c ? c.name : '';
+                    } else if (col === 'links') {
+                        row.motor_link = m.linkMotor || '';
+                        row.esc_link = m.linkEsc || '';
+                        row.prop_link = m.linkProp || '';
+                    } else {
+                        row[col] = m[col] || '';
+                    }
+                });
+                return row;
+            });
+            downloadFile(JSON.stringify(dataToExport, null, 2), 'application/json', 'json');
+        } 
+        else if (format === 'csv') {
+            const rows = exportMotors.map(m => {
+                return columns.map(col => {
+                    let val = '';
+                    if (col.startsWith('custom_')) {
+                        const key = col.replace('custom_', '');
+                        val = m.custom_parameters && m.custom_parameters[key] !== undefined ? m.custom_parameters[key] : '';
+                    } else if (col === 'category') {
+                        const c = state.categories.find(x => x.id === m.categoryId);
+                        val = c ? c.name : '';
+                    } else if (col === 'links') {
+                        val = [m.linkMotor, m.linkEsc, m.linkProp].filter(Boolean).join(' | ');
+                    } else {
+                        val = m[col] || '';
+                    }
+                    return `"${val.toString().replace(/"/g, '""')}"`;
+                });
+            });
+            const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            downloadFile(csv, 'text/csv;charset=utf-8;', 'csv');
+        }
+        else if (format === 'xlsx') {
+            const rows = exportMotors.map(m => {
+                return columns.map(col => {
+                    if (col.startsWith('custom_')) {
+                        const key = col.replace('custom_', '');
+                        return m.custom_parameters && m.custom_parameters[key] !== undefined ? m.custom_parameters[key] : '';
+                    } else if (col === 'category') {
+                        const c = state.categories.find(x => x.id === m.categoryId);
+                        return c ? c.name : '';
+                    } else if (col === 'links') {
+                        return [m.linkMotor, m.linkEsc, m.linkProp].filter(Boolean).join(', ');
+                    } else {
+                        return m[col] || '';
+                    }
+                });
+            });
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Custom Export');
+            XLSX.writeFile(wb, `thrustvault_export_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+        else if (format === 'xml') {
+            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<catalog>\n';
+            exportMotors.forEach(m => {
+                xml += '  <motor>\n';
+                columns.forEach(col => {
+                    let key = col;
+                    let val = '';
+                    if (col.startsWith('custom_')) {
+                        key = col.replace('custom_', '');
+                        val = m.custom_parameters && m.custom_parameters[key] !== undefined ? m.custom_parameters[key] : '';
+                    } else if (col === 'category') {
+                        const c = state.categories.find(x => x.id === m.categoryId);
+                        val = c ? c.name : '';
+                    } else if (col === 'links') {
+                        val = [m.linkMotor, m.linkEsc, m.linkProp].filter(Boolean).join(', ');
+                    } else {
+                        val = m[col] || '';
+                    }
+                    const xmlTag = key.replace(/[^a-zA-Z0-9_]/g, '_');
+                    xml += `    <${xmlTag}>${escapeXML(val)}</${xmlTag}>\n`;
+                });
+                xml += '  </motor>\n';
+            });
+            xml += '</catalog>';
+            downloadFile(xml, 'application/xml', 'xml');
+        }
+        else if (format === 'html') {
+            let html = '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<title>ThrustVault Export</title>\n<style>\n';
+            html += 'body { font-family: system-ui, sans-serif; background: #f8fafc; color: #0f172a; padding: 30px; }\n';
+            html += 'table { border-collapse: collapse; width: 100%; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; background: white; }\n';
+            html += 'th, td { border: 1px solid #e2e8f0; text-align: left; padding: 12px 16px; }\n';
+            html += 'th { background-color: #2563eb; color: white; font-weight: 600; }\n';
+            html += 'tr:nth-child(even) { background-color: #f8fafc; }\n';
+            html += 'h2 { font-size: 1.5rem; margin-bottom: 20px; }\n';
+            html += '</style>\n</head>\n<body>\n';
+            html += `<h2>ThrustVault Export — ${cat ? cat.name : 'All Categories'}</h2>\n<table>\n  <thead>\n    <tr>\n`;
+            
+            headers.forEach(h => {
+                html += `      <th>${h}</th>\n`;
+            });
+            html += '    </tr>\n  </thead>\n  <tbody>\n';
+            
+            exportMotors.forEach(m => {
+                html += '    <tr>\n';
+                columns.forEach(col => {
+                    let val = '';
+                    if (col.startsWith('custom_')) {
+                        const key = col.replace('custom_', '');
+                        val = m.custom_parameters && m.custom_parameters[key] !== undefined ? m.custom_parameters[key] : '';
+                    } else if (col === 'category') {
+                        const c = state.categories.find(x => x.id === m.categoryId);
+                        val = c ? c.name : '';
+                    } else if (col === 'links') {
+                        val = [
+                            m.linkMotor ? `<a href="${m.linkMotor}" target="_blank">Motor</a>` : '',
+                            m.linkEsc ? `<a href="${m.linkEsc}" target="_blank">ESC</a>` : '',
+                            m.linkProp ? `<a href="${m.linkProp}" target="_blank">Prop</a>` : ''
+                        ].filter(Boolean).join(' | ');
+                    } else {
+                        val = m[col] || '';
+                    }
+                    html += `      <td>${val}</td>\n`;
+                });
+                html += '    </tr>\n';
+            });
+            html += '  </tbody>\n</table>\n</body>\n</html>';
+            downloadFile(html, 'text/html;charset=utf-8;', 'html');
+        }
+        
+        logUserActivity(session.email, session.role, 'Exported Data', `Exported ${exportMotors.length} records customized as ${format.toUpperCase()}.`);
+    }
+
+    function downloadFile(content, mimeType, extension) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `thrustvault_export_${new Date().toISOString().slice(0,10)}.${extension}`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function escapeXML(str) {
+        if (str === null || str === undefined) return '';
+        return str.toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
     }
 
     // Init App

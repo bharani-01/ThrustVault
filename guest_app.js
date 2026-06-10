@@ -87,13 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Verification Notes
         verificationNotesSection: document.getElementById('verification-notes-section'),
         verificationNotesToggle: document.getElementById('verification-notes-toggle'),
-        verificationNotesBody: document.getElementById('verification-notes-rows'),
-        
-        // Data Operations Dropdown
-        importExportToggle: document.getElementById('import-export-toggle'),
-        importExportMenu: document.getElementById('import-export-menu'),
-        btnExportCSV: document.getElementById('btn-export-csv'),
-        btnExportJSON: document.getElementById('btn-export-json')
+        verificationNotesBody: document.getElementById('verification-notes-rows')
     };
 
     // Static Official Verification Notes mapping
@@ -184,8 +178,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 prop: m.recommended_propeller,
                 linkMotor: m.link_motor,
                 linkEsc: m.link_esc,
-                linkProp: m.link_propeller
+                linkProp: m.link_propeller,
+                custom_parameters: m.custom_parameters || {}
             }));
+
+            // Fetch dynamic schema custom definitions
+            let customSchema = [];
+            try {
+                const { data, error } = await supabase
+                    .from('custom_specs_schema')
+                    .select('*')
+                    .order('created_at');
+                if (!error && data) {
+                    customSchema = data;
+                } else {
+                    throw error || new Error("Failed to load schema from Supabase");
+                }
+            } catch (err) {
+                console.warn("Falling back to localStorage for custom schema:", err);
+                customSchema = JSON.parse(localStorage.getItem('thrustvault_custom_specs')) || [];
+            }
+            state.customSchema = customSchema;
             
             if (state.categories.length > 0) {
                 if (!state.activeCategory || !state.categories.some(c => c.id === state.activeCategory)) {
@@ -485,6 +498,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.compareItems.length === 0) return;
         const selected = state.compareItems.map(id => state.motors.find(m => m.id === id)).filter(Boolean);
         
+        let customRowsHtml = '';
+        if (state.customSchema && state.customSchema.length > 0) {
+            state.customSchema.forEach(f => {
+                customRowsHtml += `
+                    <tr>
+                        <td><strong>${f.field_name}</strong></td>
+                        ${selected.map(m => {
+                            const val = m.custom_parameters && m.custom_parameters[f.field_key] !== undefined ? m.custom_parameters[f.field_key] : '-';
+                            if (f.field_type === 'boolean') {
+                                return `<td>${val === true || val === 'true' ? 'Yes ✓' : 'No ✗'}</td>`;
+                            }
+                            return `<td>${val} ${val !== '-' && f.field_unit && val !== '' ? f.field_unit : ''}</td>`;
+                        }).join('')}
+                    </tr>
+                `;
+            });
+        }
+
         elements.comparisonResultTable.innerHTML = `
             <thead>
                 <tr>
@@ -509,6 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td><strong>Recommended Propeller</strong></td>
                     ${selected.map(m => `<td>${m.prop || '-'}</td>`).join('')}
                 </tr>
+                ${customRowsHtml}
                 <tr>
                     <td><strong>Reference Links</strong></td>
                     ${selected.map(m => `
@@ -690,45 +722,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
     }
-
-    elements.importExportToggle.onclick = (e) => {
-        e.stopPropagation();
-        elements.importExportMenu.classList.toggle('show');
-    };
-    
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.dropdown')) {
-            elements.importExportMenu.classList.remove('show');
-        }
-    });
-
-    // Exports
-    elements.btnExportJSON.onclick = () => {
-        const backup = { categories: state.categories, motors: state.motors };
-        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `thrustvault_backup_${new Date().toISOString().slice(0,10)}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-    };
-
-    elements.btnExportCSV.onclick = () => {
-        const headers = ['Category Name', 'Motor Model Name', 'Manufacturer', 'Max Thrust', 'Recommended ESC', 'Recommended Propeller', 'Motor Link', 'ESC Link', 'Propeller Link'];
-        const rows = state.motors.map(m => {
-            const cat = state.categories.find(c => c.id === m.categoryId);
-            return [cat ? cat.name : '', '', m.motor, m.company, m.thrust, m.esc || '', m.prop || '', m.linkMotor || '', m.linkEsc || '', m.linkProp || ''].map(val => `"${val.replace(/"/g, '""')}"`);
-        });
-        const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `thrustvault_catalog_${new Date().toISOString().slice(0,10)}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-    };
 
     // Modals
     function openModal(modal) { modal.classList.add('show'); }

@@ -8,12 +8,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Lucide Icons CDN -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Supabase JS Client CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    <!-- Chart.js -->
+    <script src="libs/chart.umd.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/chart.js';"></script>
+    <!-- Supabase JS Client -->
+    <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
+    <!-- SheetJS Excel/CSV Parser -->
+    <script src="libs/xlsx.full.min.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';"></script>
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="style.css">
     <style>
@@ -127,6 +129,10 @@
         }
         .creator-table td {
             padding: 6px 4px;
+        }
+        .btn-header-copy-down:hover {
+            background-color: #cbd5e1 !important;
+            color: var(--primary-color) !important;
         }
     </style>
 </head>
@@ -270,6 +276,18 @@
                                     <span id="active-run-label" style="font-size:0.8rem; color:#64748b; font-weight:500; margin-left:10px;">Select a test run to inspect readings</span>
                                 </div>
                             </div>
+                            
+                            <!-- Draft Banner Container -->
+                            <div id="draft-run-banner" style="display:none; padding:12px 16px; background:linear-gradient(135deg, #fef3c7, #fffbeb); border:1px solid #fde68a; border-radius:8px; color:#b45309; font-size:0.85rem; font-weight:500; margin-bottom:15px; justify-content:space-between; align-items:center; gap:12px; animation:fadeIn 0.2s ease;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <i data-lucide="alert-triangle" style="width:18px; height:18px; flex-shrink:0; color:#d97706;"></i>
+                                    <span>This is a <strong>Draft Run</strong> (Original unmatched motor: <strong id="draft-original-motor-label">--</strong>). Associate this run with a registered motor to finalize it.</span>
+                                </div>
+                                <button type="button" class="btn-primary" id="btn-trigger-finalize" style="padding:6px 12px; font-size:0.75rem; border-radius:6px; background:#d97706; border-color:#d97706; white-space:nowrap; display:flex; align-items:center; gap:4px; font-family:'Inter',sans-serif; font-weight:500; color:#ffffff;">
+                                    <i data-lucide="check-square" style="width:14px; height:14px;"></i> Finalize Draft
+                                </button>
+                            </div>
+
                             <div class="table-responsive">
                                 <table class="motors-table" id="data-points-grid-table">
                                     <thead>
@@ -351,23 +369,54 @@
                                         <i data-lucide="table" style="color:var(--primary-color); width:18px;"></i>
                                         Throttle Steps Calibration Table
                                     </h3>
-                                    <button type="button" class="btn-outline-sm" id="btn-add-step-row" style="padding:6px 12px; font-size:0.8rem; display:flex; align-items:center; gap:6px;">
-                                        <i data-lucide="plus" style="width:14px;"></i> Add Throttle Step
-                                    </button>
+                                    <div style="display:flex; gap:10px; align-items:center;">
+                                        <label class="btn-outline-sm" style="padding:6px 12px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; cursor:pointer; margin:0; font-family:'Inter',sans-serif; font-weight:500; border-radius:var(--radius-md);">
+                                            <i data-lucide="upload" style="width:14px; height:14px;"></i> Import Spreadsheet (XLSX, CSV)
+                                            <input type="file" id="btn-import-file" accept=".xlsx,.xls,.csv" style="display:none;">
+                                        </label>
+                                        <button type="button" class="btn-outline-sm" id="btn-add-step-row" style="padding:6px 12px; font-size:0.8rem; display:flex; align-items:center; gap:6px;">
+                                            <i data-lucide="plus" style="width:14px;"></i> Add Throttle Step
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div class="table-responsive" style="max-height: 380px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;">
                                     <table class="motors-table creator-table" style="margin:0;">
                                         <thead style="position:sticky; top:0; background:#f8fafc; z-index:10; border-bottom:2px solid #e2e8f0;">
-                                            <tr>
-                                                <th style="width:80px;">Throttle (%)</th>
-                                                <th>Voltage (V)</th>
-                                                <th>Current (A)</th>
-                                                <th>Power (W)</th>
-                                                <th>Thrust (g)</th>
-                                                <th>RPM</th>
-                                                <th>Efficiency (g/W)</th>
-                                                <th>Temp (℃)</th>
+                                            <tr id="creator-table-headers">
+                                                <th style="width:80px; white-space:nowrap;">Throttle (%)</th>
+                                                <th style="white-space:nowrap;">
+                                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
+                                                        <span>Voltage (V)</span>
+                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-voltage" title="Copy first row to all rows" style="border:none; background:none; padding:2px; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s;"><i data-lucide="chevron-down" style="width:14px; height:14px;"></i></button>
+                                                    </div>
+                                                </th>
+                                                <th style="white-space:nowrap;">
+                                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
+                                                        <span>Current (A)</span>
+                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-current" title="Copy first row to all rows" style="border:none; background:none; padding:2px; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s;"><i data-lucide="chevron-down" style="width:14px; height:14px;"></i></button>
+                                                    </div>
+                                                </th>
+                                                <th style="white-space:nowrap;">Power (W)</th>
+                                                <th style="white-space:nowrap;">
+                                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
+                                                        <span>Thrust (g)</span>
+                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-thrust" title="Copy first row to all rows" style="border:none; background:none; padding:2px; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s;"><i data-lucide="chevron-down" style="width:14px; height:14px;"></i></button>
+                                                    </div>
+                                                </th>
+                                                <th style="white-space:nowrap;">
+                                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
+                                                        <span>RPM</span>
+                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-rpm" title="Copy first row to all rows" style="border:none; background:none; padding:2px; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s;"><i data-lucide="chevron-down" style="width:14px; height:14px;"></i></button>
+                                                    </div>
+                                                </th>
+                                                <th style="white-space:nowrap;">Efficiency (g/W)</th>
+                                                <th style="white-space:nowrap;">
+                                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
+                                                        <span>Temp (℃)</span>
+                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-temp" title="Copy first row to all rows" style="border:none; background:none; padding:2px; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s;"><i data-lucide="chevron-down" style="width:14px; height:14px;"></i></button>
+                                                    </div>
+                                                </th>
                                                 <th style="width:40px; text-align:center;"></th>
                                             </tr>
                                         </thead>
@@ -406,6 +455,140 @@
             <div class="modal-footer">
                 <button class="btn-secondary modal-close-trigger">Cancel</button>
                 <button class="btn-danger" id="btn-confirm-action">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Multi-Run Selection Modal -->
+    <div class="modal-backdrop" id="multi-run-modal">
+        <div class="modal-container" style="max-width: 600px; width: 90%;">
+            <div class="modal-header">
+                <h3 style="font-family:'Outfit'; font-weight:700;"><i data-lucide="layers" style="color:var(--primary-color); vertical-align:middle; margin-right:6px; width:20px; height:20px; display:inline-block;"></i> Multiple Test Runs Detected</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:15px; color:#475569; font-size:0.9rem;">We found multiple test configurations in this spreadsheet. Please select which run you would like to map and import:</p>
+                <div id="multi-run-list" style="display:flex; flex-direction:column; gap:10px; max-height: 350px; overflow-y:auto; padding-right:4px;">
+                    <!-- Populated dynamically by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-close-trigger">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Column Mapping & Editing Modal -->
+    <div class="modal-backdrop" id="column-mapping-modal">
+        <div class="modal-container" style="max-width: 95%; width: 1200px; height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3 style="font-family:'Outfit'; font-weight:700;"><i data-lucide="edit" style="color:var(--primary-color); vertical-align:middle; margin-right:6px; width:20px; height:20px; display:inline-block;"></i> Map & Edit Spreadsheet Columns</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 20px;">
+                <p style="color:#475569; font-size:0.9rem; margin-bottom:15px;">
+                    We detected the columns shown below. Map each spreadsheet column to a standard field, metadata field, or custom field.
+                </p>
+                
+                <!-- Validation messages -->
+                <div id="mapping-validation-alert" style="display:none; padding:10px 15px; background-color:#fee2e2; border:1px solid #fecaca; border-radius:6px; color:#b91c1c; font-size:0.85rem; margin-bottom:15px; font-weight:500; align-items:center; gap:8px;">
+                    <i data-lucide="alert-circle" style="width:16px; height:16px; flex-shrink:0;"></i>
+                    <span id="mapping-validation-text"></span>
+                </div>
+
+                <!-- Table Preview Workspace -->
+                <div class="table-responsive" style="flex: 1; overflow: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+                    <table class="motors-table" style="margin:0; min-width: 100%; border-collapse: collapse;">
+                        <thead style="position:sticky; top:0; background:#f8fafc; z-index:10; border-bottom:2px solid #e2e8f0;" id="mapping-table-header">
+                            <!-- Populated by JS -->
+                        </thead>
+                        <tbody id="mapping-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer" style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #e2e8f0; padding-top:15px; margin-top:0;">
+                <span style="font-size:0.8rem; color:#64748b; font-weight:500;" id="mapping-info-summary"></span>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-secondary modal-close-trigger">Cancel</button>
+                    <button class="btn-primary" id="btn-confirm-mapping" disabled style="display:flex; align-items:center; gap:6px;">
+                        <i data-lucide="check" style="width:16px; height:16px;"></i> Confirm Import
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Import Preview Modal -->
+    <div class="modal-backdrop" id="bulk-preview-modal">
+        <div class="modal-container" style="max-width: 1100px; width: 95%; height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3 style="font-family:'Outfit'; font-weight:700;"><i data-lucide="clipboard-list" style="color:var(--primary-color); vertical-align:middle; margin-right:6px; width:20px; height:20px; display:inline-block;"></i> Bulk Import Preview</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 20px;">
+                <p style="color:#475569; font-size:0.9rem; margin-bottom:15px;">
+                    Review the detected test runs below. Match each run to a motor model from the database, or import them as drafts if the motor is unregistered.
+                </p>
+                <div class="table-responsive" style="border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
+                    <table class="motors-table" style="margin:0; min-width: 100%; border-collapse: collapse;">
+                        <thead style="position:sticky; top:0; background:#f8fafc; z-index:10; border-bottom:2px solid #e2e8f0;">
+                            <tr>
+                                <th style="width: 50px; text-align: center;">Import</th>
+                                <th>Motor Model (Sheet)</th>
+                                <th style="min-width: 250px;">Database Motor Match</th>
+                                <th>Propeller</th>
+                                <th>ESC</th>
+                                <th>Battery</th>
+                                <th>Tester</th>
+                                <th style="width: 80px; text-align: center;">Rows</th>
+                                <th style="width: 120px; text-align: center;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bulk-preview-list">
+                            <!-- Populated dynamically by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer" style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #e2e8f0; padding-top:15px; margin-top:0;">
+                <span style="font-size:0.85rem; color:#64748b; font-weight:500;" id="bulk-preview-summary">Ready to Import: 0 | Drafts: 0</span>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-secondary modal-close-trigger">Cancel</button>
+                    <button class="btn-primary" id="btn-bulk-save" style="display:flex; align-items:center; gap:6px;">
+                        <i data-lucide="save" style="width:16px; height:16px;"></i> Save & Import Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Finalize Draft Modal -->
+    <div class="modal-backdrop" id="finalize-draft-modal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <h3 style="font-family:'Outfit'; font-weight:700;"><i data-lucide="check-square" style="color:var(--primary-color); vertical-align:middle; margin-right:6px; width:20px; height:20px; display:inline-block;"></i> Finalize Draft Run</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="padding: 20px 0;">
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <div>
+                        <span style="font-size:0.8rem; color:#64748b; font-weight:600; text-transform:uppercase;">Original Motor Name (from Sheet):</span>
+                        <div id="finalize-original-motor-name" style="font-family:'Outfit'; font-weight:600; color:#0f172a; margin-top:4px; font-size:1rem; background:#f1f5f9; padding:8px 12px; border-radius:6px;">--</div>
+                    </div>
+                    
+                    <div class="form-group" style="margin:0;">
+                        <label for="finalize-motor-select" style="font-size:0.8rem; font-weight:600; margin-bottom:6px; display:block;">Select Registered Motor *</label>
+                        <select id="finalize-motor-select" style="width:100%; padding:8px 10px; border-radius:6px; border:1px solid #cbd5e1; outline:none; font-family:'Inter'; font-size:0.85rem; background:#ffffff;">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding-top:15px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:10px; margin-top:0;">
+                <button class="btn-secondary modal-close-trigger">Cancel</button>
+                <button class="btn-primary" id="btn-save-finalize">Save & Finalize</button>
             </div>
         </div>
     </div>

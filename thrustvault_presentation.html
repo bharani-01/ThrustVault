@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThrustVault Project Presentation</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-white: #ffffff;
+            --text-gray: #94a3b8;
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success-color: #10b981;
+            --accent-orange: #f97316;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-white);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Slide Container */
+        .presentation-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            position: relative;
+        }
+
+        .slide {
+            width: 100%;
+            max-width: 1100px;
+            height: 600px;
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            padding: 50px 60px;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Slide Headers */
+        .slide-header {
+            border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        .slide-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-white);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slide-header p {
+            color: var(--primary-color);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 1.05rem;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Slide Content Grid Layouts */
+        .slide-body {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        .content-column h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .content-column.left h3 {
+            color: var(--primary-color);
+        }
+
+        .content-column.right h3 {
+            color: var(--success-color);
+        }
+
+        ul.bullets-list {
+            list-style: none;
+        }
+
+        ul.bullets-list li {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: var(--text-gray);
+            margin-bottom: 15px;
+            position: relative;
+            padding-left: 24px;
+        }
+
+        ul.bullets-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            line-height: 1;
+            top: -2px;
+        }
+
+        .content-column.right ul.bullets-list li::before {
+            color: var(--success-color);
+        }
+
+        /* Tech Stack Columns */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            width: 100%;
+        }
+
+        .tech-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 24px 20px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .tech-box:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .tech-box h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .tech-box h4 {
+            font-size: 0.85rem;
+            color: var(--text-gray);
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .tech-box ul {
+            list-style: none;
+            text-align: left;
+        }
+
+        .tech-box ul li {
+            font-size: 0.8rem;
+            color: var(--text-gray);
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        /* Callout Box */
+        .callout-box {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 30px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .callout-box h3 {
+            color: var(--text-white);
+            margin-bottom: 12px;
+        }
+
+        .callout-box p {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--text-gray);
+            margin-bottom: 10px;
+        }
+
+        /* Slide Footers */
+        .slide-footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-gray);
+            font-size: 0.85rem;
+        }
+
+        /* Cover Slide */
+        .cover-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding-left: 20px;
+        }
+
+        .cover-body h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 4.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .cover-body h1 span {
+            color: var(--primary-color);
+        }
+
+        .cover-body h2 {
+            font-size: 1.8rem;
+            font-weight: 500;
+            color: var(--text-gray);
+            margin-bottom: 40px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .cover-meta {
+            font-size: 0.95rem;
+            color: var(--text-gray);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Navigation Bar */
+        .nav-bar {
+            height: 80px;
+            background-color: #0b0f19;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+        }
+
+        .nav-btn {
+            background-color: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-white);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .progress-dots {
+            display: flex;
+            gap: 10px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dot.active {
+            background-color: var(--primary-color);
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Slide Deck Workspace -->
+    <div class="presentation-container">
+
+        <!-- SLIDE 1: Cover -->
+        <div class="slide active" id="slide-1">
+            <div class="cover-body">
+                <h1>Thrust<span>Vault</span></h1>
+                <h2>UAV Powertrain Calibration & Analytics Console</h2>
+                <div class="cover-meta">
+                    <div>Project Presentation</div>
+                    <div>Enterprise UAV Powertrain Engineering Database</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: Vision & Objectives -->
+        <div class="slide" id="slide-2">
+            <div class="slide-header">
+                <h2><i data-lucide="target"></i> Project Vision & Objectives</h2>
+                <p>Background Context</p>
+            </div>
+            <div class="slide-body">
+                <div class="content-column left">
+                    <h3>The Engineering Challenge</h3>
+                    <ul class="bullets-list">
+                        <li>UAV powertrain calibration data is highly fragmented across testing labs.</li>
+                        <li>Rig-generated data (e.g. Rotrix) is nested, containing merged headers and multi-run tests.</li>
+                        <li>Manual copy-pasting of steps leads to human transcription errors.</li>
+                        <li>Lack of comparison tools makes it difficult to run propeller efficiency optimizations.</li>
+                    </ul>
+                </div>
+                <div class="content-column right">
+                    <h3>The ThrustVault Solution</h3>
+                    <ul class="bullets-list">
+                        <li><strong>Centralized Database:</strong> A single secure repository mapping motors and test runs.</li>
+                        <li><strong>Curves Visualizer:</strong> Dynamic tool comparing multi-propeller calibration curves.</li>
+                        <li><strong>Smart Ingestion:</strong> Interactive uploader that pre-resolves merges and maps headers.</li>
+                        <li><strong>Access Security:</strong> Role-based boundaries protecting catalog databases.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Slide 2 of 8</span>
+                <span>ThrustVault Product Overview</span>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: Architecture & Tech Stack -->
+        <div class="slide" id="slide-3">
+            <div class="slide-header">
+                <h2><i data-lucide="layers"></i> Architecture & Tech Stack</h2>
+                <p>System Layout</p>
+            </div>
+            <div class="slide-body full-width">
+                <div class="tech-grid">
+                    <div class="tech-box" style="border-color: var(--success-color);">
+                        <h3 style="color: var(--success-color);">Database Layer</h3>
+                        <h4>Supabase PostgreSQL</h4>
+                        <ul>
+                            <li>Relational tables tracking profiles, categories, motors, runs, and points.</li>
+                            <li>Foreign Key cascades for consistent deletions.</li>
+                            <li>JSONB extra_data column for flexible schema.</li>
+                        </ul>
+                    </div>
+                    <div class="tech-box" style="border-color: var(--primary-color);">
+                        <h3 style="color: var(--primary-color);">Backend</h3>
+                        <h4>Flask Web Services</h4>
+                        <ul>
+                            <li>Static server hosting the lightweight client application.</li>
+                            <li>Secure environment configuration bridging (/api/config).</li>
+                            <li>Simple, zero-maintenance local runtime.</li>
+                        </ul>
+                    </div>
+                    <div class="tech-box" style="border-color: var(--accent-orange);">
+                        <h3 style="color: var(--accent-orange);">Ingestion</h3>
+                        <h4>SheetJS Library</h4>
+                        <ul>
+                            <li>Client-side binary XLSX / XLS table reading.</li>
+                            <li>HTML-table-based XLS spreadsheet support.</li>
+                            <li>Merges resolving pass to fill-down spanning cells.</li>
+                        </ul>
+                    </div>
+                    <div class="tech-box" style="border-color: #8b5cf6;">
+                        <h3 style="color: #8b5cf6;">Frontend</h3>
+                        <h4>Vanilla JS & Chart.js</h4>
+                        <ul>
+                            <li>Fluid Single Page Application (SPA) loading.</li>
+                            <li>Comparative multi-propeller line chart plots.</li>
+                            <li>Dynamic metric selection (Thrust, Efficiency, Current, RPM).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Slide 3 of 8</span>
+                <span>ThrustVault Product Architecture</span>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: Interactive Motor Catalog -->
+        <div class="slide" id="slide-4">
+            <div class="slide-header">
+                <h2><i data-lucide="database"></i> UAV Motor Catalog</h2>
+                <p>Catalog Management</p>
+            </div>
+            <div class="slide-body">
+                <div class="content-column left">
+                    <h3>Key Catalog Features</h3>
+                    <ul class="bullets-list">
+                        <li>Motors are structured under thrust class categories (e.g. 5kg Class).</li>
+                        <li>Tracks precise motor specs: KV rating, Max Current, Max Thrust, Weight.</li>
+                        <li>Features real-time search, sorting, and dynamic category listing.</li>
+                        <li><strong>Action Protection:</strong> CRUD forms are restricted to Admin/Intern profiles; Guests are locked into read-only.</li>
+                    </ul>
+                </div>
+                <div class="content-column right">
+                    <div class="callout-box">
+                        <h3>Database Consistency</h3>
+                        <p>Database schema implements Foreign Key cascades. Deleting a Category or Motor automatically cleans up all child Test Runs and Data Points, avoiding orphan rows and database corruption.</p>
+                        <p>Sidebar counters automatically update stats (Total Runs, Recorded Steps) upon edits.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Slide 4 of 8</span>
+                <span>ThrustVault Product Overview</span>
+            </div>
+        </div>
+
+        <!-- SLIDE 5: Calibration Curves & Visualizer -->
+        <div class="slide" id="slide-5">
+            <div class="slide-header">
+                <h2><i data-lucide="trending-up"></i> Calibration Curves Visualizer</h2>
+                <p>Comparative Analytics</p>
+            </div>
+            <div class="slide-body">
+                <div class="content-column left">
+                    <div class="callout-box" style="border-left-color: var(--success-color);">
+                        <h3 style="color: var(--text-white);">Multi-Propeller Comparison</h3>
+                        <p>Visualizer overlays calibration curves for multiple propellers on a single interactive plot.</p>
+                        <p>Allows engineers to identify the optimal propeller size for desired thrust ranges and efficiency targets.</p>
+                        <p>Dynamic tooltips show exact metrics (e.g. 11.2 g/W at 1200g thrust).</p>
+                    </div>
+                </div>
+                <div class="content-column right">
+                    <h3>Interactive Y-Axis Metrics</h3>
+                    <ul class="bullets-list">
+                        <li><strong>Thrust (g) vs. Throttle (%)</strong> — Verifies linear response.</li>
+                        <li><strong>Efficiency (g/W) vs. Thrust (g)</strong> — Models battery life and flight ranges.</li>
+                        <li><strong>Current (A) vs. Throttle (%)</strong> — Informs ESC and wiring limits.</li>
+                        <li><strong>RPM vs. Throttle (%)</strong> — Validates propeller safety margins.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Slide 5 of 8</span>
+                <span>ThrustVault Product Overview</span>
+            </div>
+        </div>
+
+        <!-- SLIDE 6: Advanced Dataset Creator -->
+        <div class="slide" id="slide-6">
+            <div class="slide-header">
+                <h2><i data-lucide="edit-3"></i> Advanced Dataset Creator</h2>
+                <p>Smart Ingestion Engine</p>
+            </div>
+            <div class="slide-body">
+                <div class="content-column left">
+                    <h3>Spreadsheet Ingestion & Grouping</h3>
+                    <ul class="bullets-list">
+                        <li>Trims and decodes legacy `.xls` HTML table files, preventing CSV parsing errors.</li>
+                        <li>Resolves merged headers/types (rowspan merges) automatically.</li>
+                        <li>Groups rows by motor KV & propeller, displaying a **Multi-Run Selector** (e.g. splits 7 propeller tests in a single file).</li>
+                        <li>Supports clipboard copy-pasting (Ctrl+V) from Excel and Copy-Down tools.</li>
+                    </ul>
+                </div>
+                <div class="content-column right">
+                    <h3>Interactive Column Mapper Modal</h3>
+                    <ul class="bullets-list">
+                        <li>Opens a preview workspace for every uploaded file.</li>
+                        <li>Dropdown selects allow mapping columns to system fields, metadata, or ignoring them.</li>
+                        <li><strong>Custom Columns:</strong> Adds dynamic columns (e.g. vibration) saved to the database inside the JSONB `extra_data` column.</li>
+                        <li><strong>Validation:</strong> Ensures Throttle and Thrust are mapped, and blocks duplicated or empty column name mappings.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Slide 6 of 8</span>
+                <span>ThrustVault Product Ingestion</span>
+            </div>
+        </div>
+
+        <!-- SLIDE 7: Authentication & Verification Security -->
+        <div class="slide" id="slide-7">
+            <div class="slide-header">
+                <h2><i data-lucide="shield-check"></i> Security & Access Control</h2>
+                <p>Enterprise Protection</p>
+            </div>
+            <div class="slide-body">
+                <div class="content-column left">
+                    <h3>Role-Based Access Control (RBAC)</h3>
+                    <ul class="bullets-list">
+                        <li>Secured by Supabase native authentication with JSON Web Tokens (JWT).</li>
+                        <li>User profile roles dictate dashboard access:
+                            <br>• <strong>Admin:</strong> Full CRUD catalog & database management.
+                            <br>• <strong>Intern:</strong> Ingestion of test run datasets.
+                            <br>• <strong>Guest:</strong> Read-only curve plots & visualizer.
+                        </li>
+                        <li>Stores global user activity logs in localStorage.</li>
+                    </ul>
+                </div>
+                <div class="content-column right">
+                    <h3>Forgot Password OTP Flow</h3>
+                    <ul class="bullets-list">
+                        <li>A multi-view workflow contained directly inside the login card.</li>
+                        <li>Uses Supabase passwordless OTP: requests a secure 6-digit code via email.</li>
+                        <li>Verifies the code on-screen to create a temporary session.</li>
+                        <li>Allows resetting the password securely, then automatically log out to ensure fresh credentials.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Slide 7 of 8</span>
+                <span>ThrustVault Product Security</span>
+            </div>
+        </div>
+
+        <!-- SLIDE 8: Project Impact & Future Scope -->
+        <div class="slide" id="slide-8">
+            <div class="slide-header">
+                <h2><i data-lucide="award"></i> Project Impact & Roadmap</h2>
+                <p>Conclusion</p>
+            </div>
+            <div class="slide-body">
+                <div class="content-column left">
+                    <h3>Key Engineering Impact</h3>
+                    <ul class="bullets-list">
+                        <li><strong>Time Reductions:</strong> Data ingestion times reduced from minutes to single-click uploads.</li>
+                        <li><strong>Error Prevention:</strong> Schema constraints and validators block transcription errors.</li>
+                        <li><strong>Centralization:</strong> Historical curves are saved and searchable by engineers.</li>
+                        <li><strong>Robustness:</strong> Handles complex legacy test sheet structures cleanly.</li>
+                    </ul>
+                </div>
+                <div class="content-column right">
+                    <h3>Future Roadmap</h3>
+                    <ul class="bullets-list">
+                        <li><strong>Multi-Motor Overlay:</strong> Comparing performance curves of different motors together.</li>
+                        <li><strong>Export Services:</strong> Download formatted XLSX reports and PDF curves.</li>
+                        <li><strong>Hardware Ingestion:</strong> Connect directly to thrust test stand hardware via Bluetooth / Serial API for real-time live charting.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Slide 8 of 8</span>
+                <span>ThrustVault Project Summary</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Navigation Control Bar -->
+    <div class="nav-bar">
+        <button class="nav-btn" id="btn-prev" disabled>
+            <i data-lucide="chevron-left"></i> Previous Slide
+        </button>
+        <div class="progress-dots" id="dots-container">
+            <!-- Populated dynamically -->
+        </div>
+        <button class="nav-btn" id="btn-next">
+            Next Slide <i data-lucide="chevron-right"></i>
+        </button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+            const dotsContainer = document.getElementById('dots-container');
+            let currentIdx = 0;
+
+            // Generate progress dots
+            slides.forEach((_, idx) => {
+                const dot = document.createElement('div');
+                dot.className = `dot ${idx === 0 ? 'active' : ''}`;
+                dot.onclick = () => goToSlide(idx);
+                dotsContainer.appendChild(dot);
+            });
+
+            const dots = document.querySelectorAll('.dot');
+
+            function updateNavButtons() {
+                btnPrev.disabled = currentIdx === 0;
+                btnNext.disabled = currentIdx === slides.length - 1;
+                
+                dots.forEach((dot, idx) => {
+                    dot.classList.toggle('active', idx === currentIdx);
+                });
+            }
+
+            function goToSlide(idx) {
+                if (idx < 0 || idx >= slides.length) return;
+                
+                slides[currentIdx].classList.remove('active');
+                currentIdx = idx;
+                slides[currentIdx].classList.add('active');
+                
+                updateNavButtons();
+            }
+
+            btnPrev.onclick = () => goToSlide(currentIdx - 1);
+            btnNext.onclick = () => goToSlide(currentIdx + 1);
+
+            // Bind arrow keys for slide navigation
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight' || e.key === 'Space') {
+                    e.preventDefault();
+                    goToSlide(currentIdx + 1);
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    goToSlide(currentIdx - 1);
+                }
+            });
+
+            // Initialize Lucide
+            lucide.createIcons();
+            updateNavButtons();
+        });
+    </script>
+</body>
+</html>

@@ -11,7 +11,7 @@ Usage:
   python run.py --all --format both        # Output both CSV and JSON
   python run.py --all --dry-run            # Scrape but don't save files
 
-Available sources: tmotor, getfpv, rcbenchmark, emax, speedybee
+Available sources: tmotor, getfpv, rcbenchmark, emax, speedybee, mad, kdedirect, sunnysky
 """
 
 import sys
@@ -56,6 +56,15 @@ def get_scraper(name: str):
     elif name == "speedybee":
         from scrapers.speedybee_scraper import SpeedbeeeScraper
         return SpeedbeeeScraper()
+    elif name == "mad":
+        from scrapers.mad_scraper import MADScraper
+        return MADScraper()
+    elif name == "kdedirect":
+        from scrapers.kdedirect_scraper import KDEDirectScraper
+        return KDEDirectScraper()
+    elif name == "sunnysky":
+        from scrapers.sunnysky_scraper import SunnySkyScraper
+        return SunnySkyScraper()
     else:
         raise ValueError(f"Unknown source: '{name}'. Available: {list(SOURCES.keys())}")
 

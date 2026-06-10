@@ -8,12 +8,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Lucide Icons CDN -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Supabase JS Client CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    <!-- Chart.js -->
+    <script src="libs/chart.umd.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/chart.js';"></script>
+    <!-- Supabase JS Client -->
+    <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
+    <!-- SheetJS Library -->
+    <script src="libs/xlsx.full.min.js"></script>
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
@@ -60,8 +62,14 @@
                     <button class="btn-sidebar-link" id="btn-show-users" title="User Management">
                         <i data-lucide="users"></i> User Management
                     </button>
+                    <button class="btn-sidebar-link" id="btn-show-schema" title="Template & Schema Customizer">
+                        <i data-lucide="settings"></i> Schema Customizer
+                    </button>
                     <a href="performance_analytics.html" class="btn-sidebar-link" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
                         <i data-lucide="trending-up"></i> Performance Analytics
+                    </a>
+                    <a href="admin_exports.html" class="btn-sidebar-link" title="Data Exporter" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="download"></i> Data Exporter
                     </a>
                 </div>
 
@@ -120,13 +128,19 @@
                                 <button class="dropdown-item" id="btn-export-json">
                                     <i data-lucide="download"></i> Export to JSON
                                 </button>
+                                <button class="dropdown-item" id="btn-export-xlsx">
+                                    <i data-lucide="file-spreadsheet" style="color:#10b981;"></i> Export to Excel (.xlsx)
+                                </button>
+                                <button class="dropdown-item" id="btn-export-custom-trigger">
+                                    <i data-lucide="sliders" style="color:#2563eb;"></i> Custom Export...
+                                </button>
                                 <div class="dropdown-divider"></div>
                                 <button class="dropdown-item" id="btn-import-trigger">
                                     <i data-lucide="file-input"></i> Import Data
                                 </button>
-                                <input type="file" id="file-import-input" accept=".csv, .json" style="display: none;">
+                                <input type="file" id="file-import-input" accept=".csv, .json, .xlsx" style="display: none;">
                                 <button class="dropdown-item" id="btn-download-template">
-                                    <i data-lucide="help-circle"></i> Download CSV Template
+                                    <i data-lucide="download-cloud"></i> Download Excel Template (.xlsx)
                                 </button>
                             </div>
                         </div>
@@ -290,6 +304,52 @@
                     </div>
                 </div>
             </main>
+
+            <!-- ADMIN SCHEMA & TEMPLATE CUSTOMIZER VIEWPORT -->
+            <main class="main-content" id="schema-view-section" style="display:none;">
+                <header class="topbar">
+                    <h2 style="font-family:'Outfit'; font-size:1.5rem; font-weight:700;"><i data-lucide="settings" style="vertical-align:middle; margin-right:8px; color:var(--primary-color);"></i> Database Schema & Excel Template Customizer</h2>
+                    <button class="btn-primary" id="btn-add-schema-field">
+                        <i data-lucide="plus-circle"></i> Add Custom Parameter
+                    </button>
+                </header>
+
+                <div class="content-body" style="display:flex; flex-direction:column; gap:20px;">
+                    <!-- Info Banner -->
+                    <div class="banner-alert info" style="border-radius:var(--radius-lg); border-bottom:none; border:1px solid #bfdbfe;">
+                        <i data-lucide="info" style="width:20px; height:20px; flex-shrink:0;"></i>
+                        <div>
+                            <strong>Dynamic Catalog Customization</strong>: Defining custom fields below automatically adds new input controls to the motor editor form, appends column headers to Excel template downloads, and maps columns on batch XLSX uploads. Custom data is stored in the <code>custom_parameters</code> database payload.
+                        </div>
+                    </div>
+
+                    <!-- Custom Fields Table -->
+                    <div class="schema-table-container glass-panel">
+                        <h3 style="margin-bottom:15px; font-family:'Outfit'; font-size:1.1rem; display:flex; align-items:center; gap:8px;"><i data-lucide="sliders"></i> Active Custom Schema Parameters</h3>
+                        <div class="table-responsive">
+                            <table class="motors-table" id="schema-fields-table" style="display: table;">
+                                <thead>
+                                    <tr>
+                                        <th>Field Label</th>
+                                        <th>Field Key (Database)</th>
+                                        <th>Data Type</th>
+                                        <th>Measurement Unit</th>
+                                        <th style="width:100px; text-align:right;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="schema-fields-list-rows">
+                                    <!-- Dynamic rows loaded via admin_app.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="empty-state" id="schema-empty-state" style="display: none; text-align: center; padding: 30px;">
+                            <i data-lucide="settings" style="width:40px; height:40px; opacity:0.5; margin-bottom:10px;"></i>
+                            <h4>No Custom Parameters Defined</h4>
+                            <p style="color:var(--text-muted); font-size:0.9rem;">Only core fields are active. Click "Add Custom Parameter" to extend the motor database schema.</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
         </div>
     </div>
 
@@ -392,6 +452,14 @@
                         <div class="form-group">
                             <label for="form-prop-link">Propeller Product Link</label>
                             <input type="url" id="form-prop-link" placeholder="https://...">
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Custom Parameters Container -->
+                    <div id="modal-custom-fields-section" style="display:none; margin-top: 15px;">
+                        <h4 class="form-section-title" style="margin-top: 10px;"><i data-lucide="sliders"></i> Custom Specifications</h4>
+                        <div id="modal-custom-fields-rows" style="display:flex; flex-direction:column; gap:12px;">
+                            <!-- Injected dynamically based on active schema fields -->
                         </div>
                     </div>
                 </div>
@@ -522,6 +590,102 @@
             <div class="modal-footer" style="padding: 16px 28px 24px; border-top: 1px solid #f1f5f9; display: flex; gap: 12px; justify-content: flex-end; background: #f8fafc;">
                 <button class="btn-outline modal-close-trigger" style="border-radius: 8px; font-size: 0.85rem; padding: 8px 16px; cursor: pointer;">Close Profile</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Add Schema Field Modal -->
+    <div class="modal-backdrop" id="schema-field-modal">
+        <div class="modal-container modal-sm" style="width: 450px;">
+            <div class="modal-header">
+                <h3><i data-lucide="sliders"></i> Add Custom Parameter</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <form id="schema-field-form">
+                <div class="modal-body">
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label for="form-field-name">Field Label *</label>
+                        <input type="text" id="form-field-name" required placeholder="e.g. Weight (g), Stator Size">
+                    </div>
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label for="form-field-key">Field Key (Database) *</label>
+                        <input type="text" id="form-field-key" required placeholder="e.g. weight_g, stator_size" pattern="[a-z0-9_]+" title="Lowercase letters, numbers, and underscores only.">
+                    </div>
+                    <div class="form-row" style="margin-bottom:12px;">
+                        <div class="form-group">
+                            <label for="form-field-type">Data Type</label>
+                            <select id="form-field-type" required>
+                                <option value="text">Text (String)</option>
+                                <option value="number">Number</option>
+                                <option value="boolean">Boolean (Yes/No)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-field-unit">Unit (Optional)</label>
+                            <input type="text" id="form-field-unit" placeholder="e.g. g, mm, V, °C">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary modal-close-trigger">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Parameter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Export Modal -->
+    <div class="modal-backdrop" id="custom-export-modal">
+        <div class="modal-container modal-sm" style="width: 450px;">
+            <div class="modal-header">
+                <h3><i data-lucide="download"></i> Custom Data Export</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <form id="custom-export-form">
+                <div class="modal-body">
+                    <div class="form-group" style="margin-bottom:18px;">
+                        <label for="export-format">Export File Format *</label>
+                        <select id="export-format" required>
+                            <option value="xlsx">Excel Document (.xlsx)</option>
+                            <option value="csv">Comma Separated Values (.csv)</option>
+                            <option value="json">JSON Catalog Payload (.json)</option>
+                            <option value="xml">Extensible Markup Language (.xml)</option>
+                            <option value="html">HTML Telemetry Table (.html)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="margin-bottom: 8px; display: block; font-weight:600;">Select Columns to Include:</label>
+                        <div style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; background: var(--bg-base); display:flex; flex-direction:column; gap:8px;" id="export-columns-selector">
+                            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
+                                <input type="checkbox" value="category" checked> Category Name
+                            </label>
+                            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
+                                <input type="checkbox" value="motor" checked> Motor Model Name
+                            </label>
+                            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
+                                <input type="checkbox" value="company" checked> Manufacturer / Brand
+                            </label>
+                            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
+                                <input type="checkbox" value="thrust" checked> Max Thrust
+                            </label>
+                            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
+                                <input type="checkbox" value="esc" checked> Recommended ESC
+                            </label>
+                            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
+                                <input type="checkbox" value="prop" checked> Recommended Propeller
+                            </label>
+                            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
+                                <input type="checkbox" value="links" checked> Reference Links
+                            </label>
+                            <!-- Custom Columns will be injected dynamically here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary modal-close-trigger">Cancel</button>
+                    <button type="submit" class="btn-primary">Export Dataset</button>
+                </div>
+            </form>
         </div>
     </div>
 

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Exporter | ThrustVault</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    <!-- Supabase JS Client -->
+    <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
+    <!-- SheetJS Library -->
+    <script src="libs/xlsx.full.min.js"></script>
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .export-section-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+        @media(min-width: 1024px) {
+            .export-section-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .export-card {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 24px;
+        }
+        .export-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 5px;
+        }
+        .export-card-header i {
+            color: var(--primary-color);
+            width: 24px;
+            height: 24px;
+        }
+        .export-card-header h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .form-section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .checkbox-container-scroll {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            background: var(--bg-base);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .checkbox-container-scroll label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            user-select: none;
+        }
+        .checkbox-container-scroll label input[type="checkbox"] {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <i data-lucide="aperture" class="spin-slow icon-primary"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>Thrust<span>Vault</span></h1>
+                        <p>Administrator Console</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Widgets in Sidebar -->
+            <div class="sidebar-stats">
+                <div class="stat-card-mini">
+                    <div class="stat-icon"><i data-lucide="database"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="sidebar-motors-count">0</span>
+                        <span class="stat-label">Total Motors</span>
+                    </div>
+                </div>
+                <div class="stat-card-mini">
+                    <div class="stat-icon"><i data-lucide="line-chart"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="sidebar-test-runs-count">0</span>
+                        <span class="stat-label">Telemetry Runs</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="sidebar-nav">
+                <div class="sidebar-menu-links" style="display: flex; flex-direction: column; gap: 8px;">
+                    <a href="admin_dashboard.html" class="btn-sidebar-link" title="Catalog Dashboard" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="database"></i> Catalog Dashboard
+                    </a>
+                    <a href="performance_analytics.html" class="btn-sidebar-link" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="trending-up"></i> Performance Analytics
+                    </a>
+                    <a href="admin_exports.html" class="btn-sidebar-link active" title="Data Exporter" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="download"></i> Data Exporter
+                    </a>
+                </div>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <div class="sidebar-user-profile">
+                    <div class="user-avatar" id="user-avatar-initials">A</div>
+                    <div class="user-info">
+                        <span class="user-email" id="session-email">admin@thrustvault.com</span>
+                        <span class="badge-role role-admin">Admin</span>
+                    </div>
+                </div>
+                <button class="btn-logout-premium" id="btn-logout" title="Log Out">
+                    <i data-lucide="log-out"></i> Log Out
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Topbar Header -->
+            <header class="topbar">
+                <h2 style="font-family:'Outfit'; font-size:1.5rem; font-weight:700;">
+                    <i data-lucide="download" style="vertical-align:middle; margin-right:8px; color:var(--primary-color);"></i>
+                    Dedicated Admin Exporter Console
+                </h2>
+            </header>
+
+            <div class="content-body" style="display:flex; flex-direction:column; gap:25px;">
+                <!-- Info Banner -->
+                <div class="banner-alert info" style="border-radius:var(--radius-lg); border:1px solid #bfdbfe; border-bottom:none; margin:0;">
+                    <i data-lucide="info" style="width:20px; height:20px; flex-shrink:0;"></i>
+                    <div>
+                        <strong>Administrative Exporter Console</strong>: Compile, customize, and export propulsion telemetry curves and catalog listings. Export motor listings containing custom schema fields, or compile throttle-step telemetry points for modeling.
+                    </div>
+                </div>
+
+                <div class="export-section-grid">
+                    <!-- PANEL 1: MOTOR CATALOG EXPORTER -->
+                    <div class="glass-panel export-card">
+                        <div class="export-card-header">
+                            <i data-lucide="database"></i>
+                            <h3>1. Motor Spec Listings</h3>
+                        </div>
+
+                        <form id="catalog-export-form" style="display:flex; flex-direction:column; gap:16px;">
+                            <div class="form-group">
+                                <label for="cat-filter-select">Thrust Category Filter</label>
+                                <select id="cat-filter-select" style="width:100%;">
+                                    <option value="all">All Categories</option>
+                                    <!-- Dynamic categories -->
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <span class="form-section-title"><i data-lucide="sliders"></i> Columns to Include</span>
+                                <div class="checkbox-container-scroll" id="cat-columns-selector">
+                                    <label><input type="checkbox" value="category" checked> Category Name</label>
+                                    <label><input type="checkbox" value="motor" checked> Motor Model Name</label>
+                                    <label><input type="checkbox" value="company" checked> Manufacturer / Company</label>
+                                    <label><input type="checkbox" value="thrust" checked> Max Thrust Value</label>
+                                    <label><input type="checkbox" value="esc" checked> Recommended ESC</label>
+                                    <label><input type="checkbox" value="prop" checked> Recommended Propeller</label>
+                                    <label><input type="checkbox" value="links" checked> Product Reference Links</label>
+                                    <!-- Dynamic custom spec parameters loaded from schema -->
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cat-export-format">Export Format</label>
+                                <select id="cat-export-format" required style="width:100%;">
+                                    <option value="xlsx">Excel Document (.xlsx)</option>
+                                    <option value="csv">Comma-Separated Values (.csv)</option>
+                                    <option value="json">JSON Catalog Array (.json)</option>
+                                    <option value="xml">Extensible Markup Language (.xml)</option>
+                                    <option value="html">HTML Telemetry Table (.html)</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn-primary" style="width:100%; justify-content:center; gap:8px; margin-top:10px;">
+                                <i data-lucide="download"></i> Export Motor Catalog
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- PANEL 2: PERFORMANCE TELEMETRY EXPORTER -->
+                    <div class="glass-panel export-card">
+                        <div class="export-card-header">
+                            <i data-lucide="trending-up"></i>
+                            <h3>2. Performance Telemetry Data</h3>
+                        </div>
+
+                        <form id="telemetry-export-form" style="display:flex; flex-direction:column; gap:16px;">
+                            <div class="form-group">
+                                <label for="telemetry-motor-select">Select Motor & Test Run</label>
+                                <select id="telemetry-motor-select" style="width:100%;">
+                                    <option value="all">All Telemetry Datasets (Full Export)</option>
+                                    <!-- Dynamic test runs -->
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <span class="form-section-title"><i data-lucide="sliders"></i> Columns to Include</span>
+                                <div class="checkbox-container-scroll" id="telemetry-columns-selector">
+                                    <label><input type="checkbox" value="motor_name" checked> Associated Motor Model</label>
+                                    <label><input type="checkbox" value="propeller" checked> Propeller Model Used</label>
+                                    <label><input type="checkbox" value="esc" checked> ESC Model Used</label>
+                                    <label><input type="checkbox" value="battery" checked> Battery Info</label>
+                                    <label><input type="checkbox" value="throttle" checked> Throttle (%)</label>
+                                    <label><input type="checkbox" value="voltage" checked> Voltage (V)</label>
+                                    <label><input type="checkbox" value="current" checked> Current (A)</label>
+                                    <label><input type="checkbox" value="power" checked> Power (W)</label>
+                                    <label><input type="checkbox" value="thrust_g" checked> Thrust (g)</label>
+                                    <label><input type="checkbox" value="rpm" checked> RPM</label>
+                                    <label><input type="checkbox" value="efficiency" checked> Efficiency (g/W)</label>
+                                    <label><input type="checkbox" value="temperature" checked> Temperature (℃)</label>
+                                    <label><input type="checkbox" value="tester" checked> Tester</label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="telemetry-export-format">Export Format</label>
+                                <select id="telemetry-export-format" required style="width:100%;">
+                                    <option value="xlsx">Excel Document (.xlsx)</option>
+                                    <option value="csv">Comma-Separated Values (.csv)</option>
+                                    <option value="json">JSON Telemetry Payload (.json)</option>
+                                    <option value="xml">Extensible Markup Language (.xml)</option>
+                                    <option value="html">HTML Telemetry Table (.html)</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn-primary" style="width:100%; justify-content:center; gap:8px; margin-top:10px; background-color:#10b981; border-color:#10b981;">
+                                <i data-lucide="download"></i> Export Telemetry Data
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Controller JS -->
+    <script src="admin_exports_app.js"></script>
+</body>
+</html>

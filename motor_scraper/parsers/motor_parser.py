@@ -101,6 +101,9 @@ def normalize_motor(raw: dict) -> dict:
         "battery_config":        raw.get("battery_config", ""),
         "max_current":           raw.get("max_current", ""),
         "max_power":             raw.get("max_power", ""),
+        # Images
+        "images":                raw.get("images", []),
+        "perf_image":            raw.get("perf_image", ""),
     }
 
 

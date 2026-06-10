@@ -389,8 +389,9 @@
         <div class="source-chip active" data-source="tmotor"      onclick="toggleSource(this)"><span class="chip-dot"></span>T-Motor</div>
         <div class="source-chip active" data-source="getfpv"      onclick="toggleSource(this)"><span class="chip-dot"></span>GetFPV</div>
         <div class="source-chip active" data-source="emax"        onclick="toggleSource(this)"><span class="chip-dot"></span>EMAX</div>
-        <div class="source-chip active" data-source="speedybee"   onclick="toggleSource(this)"><span class="chip-dot"></span>Speedybee</div>
+        <div class="source-chip active" data-source="speedybee"   onclick="toggleSource(this)"><span class="chip-dot"></span>SpeedyBee</div>
         <div class="source-chip active" data-source="rcbenchmark" onclick="toggleSource(this)"><span class="chip-dot"></span>RCBenchmark</div>
+        <div class="source-chip active" data-source="google" onclick="toggleSource(this)" title="Universal web search: DuckDuckGo → Bing → manufacturer sites"><span class="chip-dot"></span>🦆 Web Search</div>
       </div>
 
       <!-- Options -->
@@ -588,6 +589,34 @@
         `;
       }
 
+      // ── Image Gallery ──
+      let galleryHtml = '';
+      const allImages = m.images || [];
+      const primaryImage = m.perf_image || (allImages.length > 0 ? allImages[0] : '');
+
+      if (primaryImage) {
+        galleryHtml = `
+          <div class="motor-gallery" style="margin: 12px 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg3); display: flex; flex-direction: column; align-items: center; padding: 8px;">
+            <div class="main-img-wrap" style="width: 100%; height: 220px; display: flex; align-items: center; justify-content: center; position: relative; background: #0b0f19; border-radius: 6px; overflow: hidden;">
+              <img class="gallery-main-img" src="${escHtml(primaryImage)}" alt="Motor image" style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: zoom-in;" onclick="window.open(this.src, '_blank')" title="Click to view full size" />
+            </div>
+            ${allImages.length > 1 ? `
+              <div class="thumb-scroll" style="display: flex; gap: 6px; overflow-x: auto; width: 100%; margin-top: 8px; padding-bottom: 4px; scrollbar-width: thin; -webkit-overflow-scrolling: touch;">
+                ${allImages.map((img, idx) => `
+                  <img class="gallery-thumb ${img === primaryImage ? 'active' : ''}" 
+                       src="${escHtml(img)}" 
+                       style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid ${img === primaryImage ? 'var(--cyan)' : 'var(--border)'}; opacity: ${img === primaryImage ? '1' : '0.6'}; transition: all 0.2s;"
+                       onclick="this.closest('.motor-gallery').querySelector('.gallery-main-img').src = this.src; 
+                                this.closest('.thumb-scroll').querySelectorAll('.gallery-thumb').forEach(t => { t.style.borderColor = 'var(--border)'; t.style.opacity = '0.6'; });
+                                this.style.borderColor = 'var(--cyan)'; this.style.opacity = '1';"
+                  />
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
       const linkEsc   = m.link_esc || '';
       const linkProp  = m.link_propeller || m.link_prop || '';
       
@@ -614,6 +643,7 @@
         </div>
         ${specs ? `<div class="motor-specs">${specs}</div>` : ''}
         ${detailGrid}
+        ${galleryHtml}
         ${summary ? `<div class="motor-ai-note">${escHtml(summary)}</div>` : ''}
         ${linksHtml}
       `;

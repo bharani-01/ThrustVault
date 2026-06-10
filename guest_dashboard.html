@@ -8,12 +8,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Lucide Icons CDN -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Supabase JS Client CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    <!-- Chart.js -->
+    <script src="libs/chart.umd.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/chart.js';"></script>
+    <!-- Supabase JS Client -->
+    <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
+    <!-- SheetJS Library -->
+    <script src="libs/xlsx.full.min.js"></script>
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
@@ -104,21 +106,7 @@
                 </div>
 
                 <div class="topbar-actions">
-                    <!-- Export Actions only for guest -->
-                    <div class="dropdown">
-                        <button class="btn-outline dropdown-toggle" id="import-export-toggle">
-                            <i data-lucide="file-output"></i> Export Catalog
-                            <i data-lucide="chevron-down" class="chevron"></i>
-                        </button>
-                        <div class="dropdown-menu" id="import-export-menu">
-                            <button class="dropdown-item" id="btn-export-csv">
-                                <i data-lucide="file-spreadsheet"></i> Export to CSV
-                            </button>
-                            <button class="dropdown-item" id="btn-export-json">
-                                <i data-lucide="download"></i> Export to JSON
-                            </button>
-                        </div>
-                    </div>
+                    <!-- Read-only access -->
                 </div>
             </header>
 

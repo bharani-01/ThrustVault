@@ -21,9 +21,14 @@ CREATE TABLE IF NOT EXISTS motors (
     link_motor TEXT,
     link_esc TEXT,
     link_propeller TEXT,
+    custom_parameters JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Safe migration for existing setups
+ALTER TABLE motors ADD COLUMN IF NOT EXISTS custom_parameters JSONB DEFAULT '{}'::jsonb;
+
 
 -- Remove deprecated password column if it exists in public.user_profiles
 DO $$ 
@@ -284,6 +289,7 @@ CREATE TABLE IF NOT EXISTS public.motor_test_data_points (
     rpm NUMERIC,
     efficiency NUMERIC,
     temperature NUMERIC,
+    extra_data JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -313,5 +319,35 @@ CREATE POLICY "Allow write for admins and interns" ON public.motor_test_runs
 
 CREATE POLICY "Allow write for admins and interns" ON public.motor_test_data_points 
     FOR ALL USING (public.get_my_role() IN ('admin', 'intern'));
+
+
+-- =========================================================================
+-- DYNAMIC SPEC SCHEMA CUSTOMIZER EXTENSION
+-- =========================================================================
+
+-- Create custom_specs_schema Table
+CREATE TABLE IF NOT EXISTS public.custom_specs_schema (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    field_key VARCHAR(100) UNIQUE NOT NULL,
+    field_name VARCHAR(255) NOT NULL,
+    field_type VARCHAR(50) DEFAULT 'text' CHECK (field_type IN ('text', 'number', 'boolean')),
+    field_unit VARCHAR(50),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Enable RLS
+ALTER TABLE public.custom_specs_schema ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if any
+DROP POLICY IF EXISTS "Allow select for authenticated users" ON public.custom_specs_schema;
+DROP POLICY IF EXISTS "Allow write for admins" ON public.custom_specs_schema;
+
+-- Create Policies
+CREATE POLICY "Allow select for authenticated users" ON public.custom_specs_schema 
+    FOR SELECT USING (auth.uid() IS NOT NULL);
+
+CREATE POLICY "Allow write for admins" ON public.custom_specs_schema 
+    FOR ALL USING (public.get_my_role() = 'admin');
+
 
 

@@ -37,4 +37,7 @@ SOURCES = {
     "emax":        "EMAX official motor pages",
     "speedybee":   "Speedybee motor catalog",
     "hobbyking":   "HobbyKing motor listings",
+    "mad":         "MAD Components official store",
+    "kdedirect":   "KDE Direct official store",
+    "sunnysky":    "SunnySky official store",
 }

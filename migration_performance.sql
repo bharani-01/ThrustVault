@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS public.motor_test_data_points (
     rpm NUMERIC,
     efficiency NUMERIC,
     temperature NUMERIC,
+    extra_data JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
