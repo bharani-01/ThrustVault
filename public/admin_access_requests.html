@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Requests | ThrustVault</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    <!-- Supabase JS Client -->
+    <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .modal-container {
+            max-height: 90vh !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        .modal-container form {
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            flex: 1 !important;
+        }
+        .modal-container .modal-body {
+            overflow-y: auto !important;
+            flex: 1 !important;
+            padding-right: 8px;
+        }
+    </style>
+    <!-- Page Loader Transition Script -->
+    <script src="page-loader.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+                <aside class="sidebar">
+            <script>
+                if (localStorage.getItem('thrustvault_sidebar_collapsed') === 'true') {
+                    document.currentScript.parentElement.classList.add('collapsed');
+                }
+            </script>
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <i data-lucide="aperture" class="spin-slow icon-primary"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>Thrust<span>Vault</span></h1>
+                        <p>Administrator Console</p>
+                    </div>
+                                    <button class="btn-toggle-sidebar" id="btn-toggle-sidebar" title="Toggle Sidebar">
+                        <i data-lucide="menu"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Widgets in Sidebar -->
+            <div class="sidebar-stats">
+                <div class="stat-card-mini">
+                    <div class="stat-icon"><i data-lucide="database"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="total-motors-count">0</span>
+                        <span class="stat-label">Total Motors</span>
+                    </div>
+                </div>
+                <div class="stat-card-mini">
+                    <div class="stat-icon"><i data-lucide="layers"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="total-categories-count">0</span>
+                        <span class="stat-label">Thrust Levels</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Categories & Views Toggle -->
+            <nav class="sidebar-nav">
+                <div class="sidebar-menu-links">
+                    <a href="admin_dashboard" class="btn-sidebar-link" id="btn-show-catalog" title="Catalog View">
+                        <i data-lucide="database"></i> Catalog Dashboard
+                    </a>
+                    <a href="admin_users" class="btn-sidebar-link" id="btn-show-users" title="User Management">
+                        <i data-lucide="users"></i> User Management
+                    </a>
+                    <a href="admin_access_requests" class="btn-sidebar-link active" id="btn-show-requests" title="Access Requests">
+                        <i data-lucide="user-check"></i> Access Requests <span id="requests-pending-badge" class="count-badge" style="background:#e11d48; color:#fff; display:none; margin-left: auto;">0</span>
+                    </a>
+                    <a href="admin_schema_customizer" class="btn-sidebar-link" id="btn-show-schema" title="Template & Schema Customizer">
+                        <i data-lucide="settings"></i> Schema Customizer
+                    </a>
+                    <a href="performance_analytics" class="btn-sidebar-link" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="trending-up"></i> Performance Analytics
+                    </a>
+                    <a href="admin_exports" class="btn-sidebar-link" title="Data Exporter" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="download"></i> Data Exporter
+                    </a>
+                    <a href="admin_audit_logs" class="btn-sidebar-link" title="Audit Logs" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="shield-alert"></i> Audit Logs
+                    </a>
+                </div>
+
+                <div class="nav-section-title" id="cat-nav-title" style="margin-top: 25px;">
+                    <span>Thrust Categories</span>
+                    <button class="btn-icon-small" id="btn-add-category" title="Add Custom Thrust Level">
+                        <i data-lucide="plus"></i>
+                    </button>
+                </div>
+                <div class="category-list" id="category-list-container">
+                    <!-- Dynamic Category Tabs -->
+                </div>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <div class="sidebar-user-profile">
+                    <div class="user-avatar" id="user-avatar-initials">A</div>
+                    <div class="user-info">
+                        <span class="user-email" id="session-email">admin@thrustvault.com</span>
+                        <span class="badge-role role-admin">Admin</span>
+                    </div>
+                </div>
+                <button class="btn-logout-premium" id="btn-logout" title="Log Out">
+                    <i data-lucide="log-out"></i> Log Out
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area Wrapper -->
+        <div class="main-content-wrapper" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+            
+            <!-- ADMIN ACCESS REQUESTS VIEWPORT -->
+            <main class="main-content" id="requests-view-section">
+                <header class="topbar">
+                    <h2 style="font-family:'Outfit'; font-size:1.5rem; font-weight:700;"><i data-lucide="user-check" style="vertical-align:middle; margin-right:8px; color:var(--primary-color);"></i> Access Request Administration</h2>
+                </header>
+
+                <div class="content-body" style="display:flex; flex-direction:column; gap:20px; padding:24px; overflow-y:auto; flex:1;">
+                    <!-- Request Stats Cards -->
+                    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px;">
+                        <div class="glass-panel" style="padding:15px; border-radius:10px; display:flex; align-items:center; gap:12px; border-left:4px solid #2563eb;">
+                            <div style="width:36px; height:36px; background:#eff6ff; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#2563eb;"><i data-lucide="list"></i></div>
+                            <div>
+                                <div style="font-size:1.3rem; font-weight:800;" id="req-stat-total">0</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted);">Total Requests</div>
+                            </div>
+                        </div>
+                        <div class="glass-panel" style="padding:15px; border-radius:10px; display:flex; align-items:center; gap:12px; border-left:4px solid #d97706;">
+                            <div style="width:36px; height:36px; background:#fef3c7; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#d97706;"><i data-lucide="clock"></i></div>
+                            <div>
+                                <div style="font-size:1.3rem; font-weight:800;" id="req-stat-pending">0</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted);">Pending Review</div>
+                            </div>
+                        </div>
+                        <div class="glass-panel" style="padding:15px; border-radius:10px; display:flex; align-items:center; gap:12px; border-left:4px solid #059669;">
+                            <div style="width:36px; height:36px; background:#ecfdf5; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#059669;"><i data-lucide="check-circle"></i></div>
+                            <div>
+                                <div style="font-size:1.3rem; font-weight:800;" id="req-stat-approved">0</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted);">Approved</div>
+                            </div>
+                        </div>
+                        <div class="glass-panel" style="padding:15px; border-radius:10px; display:flex; align-items:center; gap:12px; border-left:4px solid #e11d48;">
+                            <div style="width:36px; height:36px; background:#fff1f2; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#e11d48;"><i data-lucide="x-circle"></i></div>
+                            <div>
+                                <div style="font-size:1.3rem; font-weight:800;" id="req-stat-rejected">0</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted);">Rejected</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search and Filters Panel -->
+                    <div class="glass-panel" style="padding:15px 20px; display:flex; justify-content:space-between; align-items:center; gap:20px; flex-wrap:wrap;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <h3 style="font-family:'Outfit'; font-size:1rem; margin:0;"><i data-lucide="sliders" style="vertical-align:middle; width:16px;"></i> Filters</h3>
+                        </div>
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <div style="position:relative;">
+                                <i data-lucide="search" style="width:14px; height:14px; position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
+                                <input type="text" id="requests-search-input" placeholder="Search applicant/email..." style="padding:8px 12px 8px 30px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-size:0.85rem; width:220px; font-family:inherit;">
+                            </div>
+                            <select id="requests-filter-status" style="padding:8px 12px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-size:0.85rem; background:white; cursor:pointer; font-family:inherit;">
+                                <option value="all">All Statuses</option>
+                                <option value="pending" selected>Pending Review</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Requests List Table -->
+                    <div class="glass-panel" style="padding:20px; border-radius:var(--radius-lg);">
+                        <div class="table-responsive">
+                            <table class="motors-table">
+                                <thead>
+                                    <tr>
+                                        <th>Applicant Name</th>
+                                        <th>Email Address</th>
+                                        <th>Requested Role</th>
+                                        <th>Justification</th>
+                                        <th>Requested Date</th>
+                                        <th>Status</th>
+                                        <th style="width:260px; text-align:right;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="access-requests-list-rows">
+                                    <!-- Dynamic rows loaded via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="empty-state" id="requests-empty-state" style="display: none; text-align: center; padding: 40px;">
+                            <i data-lucide="inbox" style="width:40px; height:40px; opacity:0.5; margin-bottom:10px;"></i>
+                            <h4>No Access Requests Found</h4>
+                            <p style="color:var(--text-muted); font-size:0.9rem;">No applications match the current filter criteria.</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Dialog -->
+    <div class="modal-backdrop" id="confirm-modal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <h3 id="confirm-title">Are you sure?</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-close-trigger">Cancel</button>
+                <button class="btn-danger" id="btn-confirm-action">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="admin_access_requests_app.js"></script>
+    <script src="onboarding.js"></script>
+</body>
+</html>

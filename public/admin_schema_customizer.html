@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schema Customizer | ThrustVault</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    <!-- Supabase JS Client -->
+    <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .modal-container {
+            max-height: 90vh !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        .modal-container form {
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            flex: 1 !important;
+        }
+        .modal-container .modal-body {
+            overflow-y: auto !important;
+            flex: 1 !important;
+            padding-right: 8px;
+        }
+    </style>
+    <!-- Page Loader Transition Script -->
+    <script src="page-loader.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+                <aside class="sidebar">
+            <script>
+                if (localStorage.getItem('thrustvault_sidebar_collapsed') === 'true') {
+                    document.currentScript.parentElement.classList.add('collapsed');
+                }
+            </script>
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <i data-lucide="aperture" class="spin-slow icon-primary"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>Thrust<span>Vault</span></h1>
+                        <p>Administrator Console</p>
+                    </div>
+                                    <button class="btn-toggle-sidebar" id="btn-toggle-sidebar" title="Toggle Sidebar">
+                        <i data-lucide="menu"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Widgets in Sidebar -->
+            <div class="sidebar-stats">
+                <div class="stat-card-mini">
+                    <div class="stat-icon"><i data-lucide="database"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="total-motors-count">0</span>
+                        <span class="stat-label">Total Motors</span>
+                    </div>
+                </div>
+                <div class="stat-card-mini">
+                    <div class="stat-icon"><i data-lucide="layers"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="total-categories-count">0</span>
+                        <span class="stat-label">Thrust Levels</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Categories & Views Toggle -->
+            <nav class="sidebar-nav">
+                <div class="sidebar-menu-links">
+                    <a href="admin_dashboard" class="btn-sidebar-link" id="btn-show-catalog" title="Catalog View">
+                        <i data-lucide="database"></i> Catalog Dashboard
+                    </a>
+                    <a href="admin_users" class="btn-sidebar-link" id="btn-show-users" title="User Management">
+                        <i data-lucide="users"></i> User Management
+                    </a>
+                    <a href="admin_access_requests" class="btn-sidebar-link" id="btn-show-requests" title="Access Requests">
+                        <i data-lucide="user-check"></i> Access Requests <span id="requests-pending-badge" class="count-badge" style="background:#e11d48; color:#fff; display:none; margin-left: auto;">0</span>
+                    </a>
+                    <a href="admin_schema_customizer" class="btn-sidebar-link active" id="btn-show-schema" title="Template & Schema Customizer">
+                        <i data-lucide="settings"></i> Schema Customizer
+                    </a>
+                    <a href="performance_analytics" class="btn-sidebar-link" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="trending-up"></i> Performance Analytics
+                    </a>
+                    <a href="admin_exports" class="btn-sidebar-link" title="Data Exporter" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="download"></i> Data Exporter
+                    </a>
+                    <a href="admin_audit_logs" class="btn-sidebar-link" title="Audit Logs" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="shield-alert"></i> Audit Logs
+                    </a>
+                </div>
+
+                <div class="nav-section-title" id="cat-nav-title" style="margin-top: 25px;">
+                    <span>Thrust Categories</span>
+                    <button class="btn-icon-small" id="btn-add-category" title="Add Custom Thrust Level">
+                        <i data-lucide="plus"></i>
+                    </button>
+                </div>
+                <div class="category-list" id="category-list-container">
+                    <!-- Dynamic Category Tabs -->
+                </div>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <div class="sidebar-user-profile">
+                    <div class="user-avatar" id="user-avatar-initials">A</div>
+                    <div class="user-info">
+                        <span class="user-email" id="session-email">admin@thrustvault.com</span>
+                        <span class="badge-role role-admin">Admin</span>
+                    </div>
+                </div>
+                <button class="btn-logout-premium" id="btn-logout" title="Log Out">
+                    <i data-lucide="log-out"></i> Log Out
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area Wrapper -->
+        <div class="main-content-wrapper" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+            
+            <!-- ADMIN SCHEMA & TEMPLATE CUSTOMIZER VIEWPORT -->
+            <main class="main-content" id="schema-view-section">
+                <header class="topbar">
+                    <h2 style="font-family:'Outfit'; font-size:1.5rem; font-weight:700;"><i data-lucide="settings" style="vertical-align:middle; margin-right:8px; color:var(--primary-color);"></i> Database Schema & Excel Template Customizer</h2>
+                    <button class="btn-primary" id="btn-add-schema-field">
+                        <i data-lucide="plus-circle"></i> Add Custom Parameter
+                    </button>
+                </header>
+
+                <div class="content-body" style="display:flex; flex-direction:column; gap:20px; padding:24px; overflow-y:auto; flex:1;">
+                    <!-- Info Banner -->
+                    <div class="banner-alert info" style="border-radius:var(--radius-lg); border-bottom:none; border:1px solid #bfdbfe;">
+                        <i data-lucide="info" style="width:20px; height:20px; flex-shrink:0;"></i>
+                        <div>
+                            <strong>Dynamic Catalog Customization</strong>: Defining custom fields below automatically adds new input controls to the motor editor form, appends column headers to Excel template downloads, and maps columns on batch XLSX uploads. Custom data is stored in the <code>custom_parameters</code> database payload.
+                        </div>
+                    </div>
+
+                    <!-- Custom Fields Table -->
+                    <div class="schema-table-container glass-panel">
+                        <h3 style="margin-bottom:15px; font-family:'Outfit'; font-size:1.1rem; display:flex; align-items:center; gap:8px;"><i data-lucide="sliders"></i> Active Custom Schema Parameters</h3>
+                        <div class="table-responsive">
+                            <table class="motors-table" id="schema-fields-table" style="display: table;">
+                                <thead>
+                                    <tr>
+                                        <th>Field Label</th>
+                                        <th>Field Key (Database)</th>
+                                        <th>Data Type</th>
+                                        <th>Measurement Unit</th>
+                                        <th style="width:100px; text-align:right;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="schema-fields-list-rows">
+                                    <!-- Dynamic rows loaded via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="empty-state" id="schema-empty-state" style="display: none; text-align: center; padding: 30px;">
+                            <i data-lucide="settings" style="width:40px; height:40px; opacity:0.5; margin-bottom:10px;"></i>
+                            <h4>No Custom Parameters Defined</h4>
+                            <p style="color:var(--text-muted); font-size:0.9rem;">Only core fields are active. Click "Add Custom Parameter" to extend the motor database schema.</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Dialog -->
+    <div class="modal-backdrop" id="confirm-modal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <h3 id="confirm-title">Are you sure?</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-close-trigger">Cancel</button>
+                <button class="btn-danger" id="btn-confirm-action">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Schema Field Modal -->
+    <div class="modal-backdrop" id="schema-field-modal">
+        <div class="modal-container modal-sm" style="width: 450px;">
+            <div class="modal-header">
+                <h3><i data-lucide="sliders"></i> Add Custom Parameter</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <form id="schema-field-form">
+                <div class="modal-body">
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label for="form-field-name">Field Label *</label>
+                        <input type="text" id="form-field-name" required placeholder="e.g. Weight (g), Stator Size">
+                    </div>
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label for="form-field-key">Field Key (Database) *</label>
+                        <input type="text" id="form-field-key" required placeholder="e.g. weight_g, stator_size" pattern="[a-z0-9_]+" title="Lowercase letters, numbers, and underscores only.">
+                    </div>
+                    <div class="form-row" style="margin-bottom:12px;">
+                        <div class="form-group">
+                            <label for="form-field-type">Data Type</label>
+                            <select id="form-field-type" required>
+                                <option value="text">Text (String)</option>
+                                <option value="number">Number</option>
+                                <option value="boolean">Boolean (Yes/No)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-field-unit">Unit (Optional)</label>
+                            <input type="text" id="form-field-unit" placeholder="e.g. g, mm, V, °C">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary modal-close-trigger">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Parameter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="admin_schema_app.js"></script>
+    <script src="onboarding.js"></script>
+</body>
+</html>

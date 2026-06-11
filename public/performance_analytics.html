@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Analytics | ThrustVault</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    <!-- Chart.js -->
+    <script src="libs/chart.umd.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/chart.js';"></script>
+    <!-- Supabase JS Client -->
+    <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
+    <!-- SheetJS Excel/CSV Parser -->
+    <script src="libs/xlsx.full.min.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';"></script>
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Extra styles for performance analytics tab system and dataset creator */
+        .analytics-tabs {
+            display: flex;
+            gap: 12px;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 25px;
+            padding-bottom: 2px;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover {
+            color: var(--primary-color);
+        }
+        .tab-btn.active {
+            color: var(--primary-color);
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-color);
+            border-radius: 3px 3px 0 0;
+        }
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+        @media(min-width: 1024px) {
+            .analytics-grid {
+                grid-template-columns: 2fr 1fr;
+            }
+            .full-width-analytics {
+                grid-column: span 2;
+            }
+        }
+        .creator-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+        @media(min-width: 900px) {
+            .creator-grid {
+                grid-template-columns: 320px 1fr;
+            }
+        }
+        /* Category info badge under selects */
+        .cat-info-badge {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #eff6ff, #e0f2fe);
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            color: #1e40af;
+            margin-top: 4px;
+            animation: fadeIn 0.25s ease;
+        }
+        .cat-info-badge.visible { display: flex; }
+        .cat-info-badge i { flex-shrink: 0; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Motor select locked state */
+        select:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Dynamic table row inputs styling */
+        .creator-table input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: var(--radius-sm);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            box-sizing: border-box;
+            background: #ffffff;
+            color: var(--text-primary);
+        }
+        .creator-table input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+        }
+        .creator-table input[readonly] {
+            background: #f1f5f9;
+            border-color: #e2e8f0;
+            color: #475569;
+            cursor: not-allowed;
+        }
+        .creator-table th {
+            font-size: 0.8rem;
+            padding: 10px 8px;
+        }
+        .creator-table td {
+            padding: 6px 4px;
+        }
+        .btn-header-copy-down:hover {
+            background-color: #cbd5e1 !important;
+            color: var(--primary-color) !important;
+        }
+    </style>
+    <!-- Page Loader Transition Script -->
+    <script src="page-loader.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+                <aside class="sidebar">
+            <script>
+                if (localStorage.getItem('thrustvault_sidebar_collapsed') === 'true') {
+                    document.currentScript.parentElement.classList.add('collapsed');
+                }
+            </script>
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <i data-lucide="aperture" class="spin-slow icon-primary"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>Thrust<span>Vault</span></h1>
+                        <p>Administrator Console</p>
+                    </div>
+                                    <button class="btn-toggle-sidebar" id="btn-toggle-sidebar" title="Toggle Sidebar">
+                        <i data-lucide="menu"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Widgets in Sidebar -->
+            <div class="sidebar-stats">
+                <div class="stat-card-mini">
+                    <div class="stat-icon"><i data-lucide="database"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="total-motors-count">0</span>
+                        <span class="stat-label">Total Motors</span>
+                    </div>
+                </div>
+                <div class="stat-card-mini">
+                    <div class="stat-icon"><i data-lucide="layers"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="total-categories-count">0</span>
+                        <span class="stat-label">Thrust Levels</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Categories & Views Toggle -->
+            <nav class="sidebar-nav">
+                <div class="sidebar-menu-links">
+                    <a href="admin_dashboard" class="btn-sidebar-link" id="btn-show-catalog" title="Catalog View">
+                        <i data-lucide="database"></i> Catalog Dashboard
+                    </a>
+                    <a href="admin_users" class="btn-sidebar-link" id="btn-show-users" title="User Management">
+                        <i data-lucide="users"></i> User Management
+                    </a>
+                    <a href="admin_access_requests" class="btn-sidebar-link" id="btn-show-requests" title="Access Requests">
+                        <i data-lucide="user-check"></i> Access Requests <span id="requests-pending-badge" class="count-badge" style="background:#e11d48; color:#fff; display:none; margin-left: auto;">0</span>
+                    </a>
+                    <a href="admin_schema_customizer" class="btn-sidebar-link" id="btn-show-schema" title="Template & Schema Customizer">
+                        <i data-lucide="settings"></i> Schema Customizer
+                    </a>
+                    <a href="performance_analytics" class="btn-sidebar-link active" id="btn-show-performance" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="trending-up"></i> Performance Analytics
+                    </a>
+                    <a href="admin_exports" class="btn-sidebar-link" id="btn-show-exports" title="Data Exporter" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="download"></i> Data Exporter
+                    </a>
+                    <a href="admin_audit_logs" class="btn-sidebar-link" id="btn-show-audit" title="Audit Logs" style="text-decoration: none; box-sizing: border-box;">
+                        <i data-lucide="shield-alert"></i> Audit Logs
+                    </a>
+                </div>
+
+                <div class="nav-section-title" id="cat-nav-title" style="margin-top: 25px;">
+                    <span>Thrust Categories</span>
+                    <button class="btn-icon-small" id="btn-add-category" title="Add Custom Thrust Level">
+                        <i data-lucide="plus"></i>
+                    </button>
+                </div>
+                <div class="category-list" id="category-list-container">
+                    <!-- Dynamic Category Tabs -->
+                </div>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <div class="sidebar-user-profile">
+                    <div class="user-avatar" id="user-avatar-initials">A</div>
+                    <div class="user-info">
+                        <span class="user-email" id="session-email">admin@thrustvault.com</span>
+                        <span class="badge-role role-admin" id="session-role-badge">Admin</span>
+                    </div>
+                </div>
+                <button class="btn-logout-premium" id="btn-logout" title="Log Out">
+                    <i data-lucide="log-out"></i> Log Out
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="main-content-wrapper" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+            
+            <!-- TOPBAR -->
+            <header class="topbar">
+                <h2 style="font-family:'Outfit'; font-size:1.5rem; font-weight:700; display:flex; align-items:center; gap:10px;">
+                    <i data-lucide="trending-up" style="color:var(--primary-color); width: 28px; height: 28px;"></i>
+                    Calibration Curves & Analytics
+                </h2>
+            </header>
+
+            <!-- MAIN VIEWPORT -->
+            <main class="main-content" style="overflow-y:auto; padding:30px;">
+                
+                <!-- View Tabs -->
+                <div class="analytics-tabs">
+                    <button class="tab-btn active" id="tab-btn-visualizer"><i data-lucide="area-chart" style="width:16px; height:16px; vertical-align:middle; margin-right:4px;"></i> Curves Visualizer</button>
+                    <button class="tab-btn" id="tab-btn-creator" style="display:none;"><i data-lucide="file-plus" style="width:16px; height:16px; vertical-align:middle; margin-right:4px;"></i> Create Performance Dataset</button>
+                </div>
+
+                <!-- SECTION 1: CURVES VISUALIZER -->
+                <div class="tab-section" id="section-visualizer">
+                    <div class="analytics-grid">
+                        
+                        <!-- Main Curves Plot -->
+                        <div class="glass-panel" style="display:flex; flex-direction:column; gap:15px; min-height: 450px;">
+                            <div class="section-header" style="margin-bottom:0; justify-content:space-between; flex-wrap:wrap; gap:15px;">
+                                <h3><i data-lucide="line-chart"></i> Multi-Propeller Curve Plots</h3>
+                                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                                    <div class="filter-group" style="margin:0; flex-direction:column; align-items:flex-start; gap:4px;">
+                                        <label for="plot-category-select" style="font-size:0.8rem; font-weight:600;"><i data-lucide="layers"></i> Thrust Level:</label>
+                                        <select id="plot-category-select" style="padding:6px 12px; font-size:0.85rem; border-radius:6px; border:1px solid #cbd5e1; outline:none; cursor:pointer; min-width:185px;">
+                                            <option value="">-- Select Thrust Level --</option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-group" style="margin:0; flex-direction:column; align-items:flex-start; gap:4px;">
+                                        <label for="plot-motor-select" style="font-size:0.8rem; font-weight:600;"><i data-lucide="cpu"></i> Motor:</label>
+                                        <select id="plot-motor-select" disabled style="padding:6px 12px; font-size:0.85rem; border-radius:6px; border:1px solid #cbd5e1; outline:none; cursor:pointer; min-width:200px;">
+                                            <option value="">-- Select Thrust Level First --</option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-group" style="margin:0;">
+                                        <label for="plot-metric-select" style="font-size:0.8rem; font-weight:600;"><i data-lucide="sliders"></i> Y-Axis Metric:</label>
+                                        <select id="plot-metric-select" style="padding:6px 12px; font-size:0.85rem; border-radius:6px; border:1px solid #cbd5e1; outline:none; cursor:pointer;">
+                                            <option value="thrust">Thrust (g) vs. Throttle (%)</option>
+                                            <option value="efficiency">Efficiency (g/W) vs. Thrust (g)</option>
+                                            <option value="current">Current (A) vs. Throttle (%)</option>
+                                            <option value="rpm">RPM vs. Throttle (%)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Canvas wrapper -->
+                            <div style="flex:1; position:relative; min-height: 350px;">
+                                <canvas id="performanceCurveChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Test Configuration Metadata Details -->
+                        <div class="glass-panel" style="display:flex; flex-direction:column; gap:15px;">
+                            <div class="section-header">
+                                <h3><i data-lucide="layers"></i> Available Runs</h3>
+                            </div>
+                            <div id="test-runs-list" style="display:flex; flex-direction:column; gap:10px; overflow-y:auto; max-height: 400px; padding-right:4px;">
+                                <div style="color: #64748b; font-size: 0.85rem; text-align: center; padding: 20px 0;">
+                                    Select a motor to view test runs.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Data Points Specs Grid Table -->
+                        <div class="full-width-analytics glass-panel">
+                            <div class="table-header" style="padding-bottom:12px; border-bottom:1px solid #f1f5f9; margin-bottom:15px; justify-content:space-between; flex-wrap:wrap; gap:15px;">
+                                <div class="table-title">
+                                    <h3><i data-lucide="list"></i> Calibration Specs Grid</h3>
+                                    <span id="active-run-label" style="font-size:0.8rem; color:#64748b; font-weight:500; margin-left:10px;">Select a test run to inspect readings</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Draft Banner Container -->
+                            <div id="draft-run-banner" style="display:none; padding:12px 16px; background:linear-gradient(135deg, #fef3c7, #fffbeb); border:1px solid #fde68a; border-radius:8px; color:#b45309; font-size:0.85rem; font-weight:500; margin-bottom:15px; justify-content:space-between; align-items:center; gap:12px; animation:fadeIn 0.2s ease;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <i data-lucide="alert-triangle" style="width:18px; height:18px; flex-shrink:0; color:#d97706;"></i>
+                                    <span>This is a <strong>Draft Run</strong> (Original unmatched motor: <strong id="draft-original-motor-label">--</strong>). Associate this run with a registered motor to finalize it.</span>
+                                </div>
+                                <button type="button" class="btn-primary" id="btn-trigger-finalize" style="padding:6px 12px; font-size:0.75rem; border-radius:6px; background:#d97706; border-color:#d97706; white-space:nowrap; display:flex; align-items:center; gap:4px; font-family:'Inter',sans-serif; font-weight:500; color:#ffffff;">
+                                    <i data-lucide="check-square" style="width:14px; height:14px;"></i> Finalize Draft
+                                </button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="motors-table" id="data-points-grid-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Throttle (%)</th>
+                                            <th>Voltage (V)</th>
+                                            <th>Current (A)</th>
+                                            <th>Power (W)</th>
+                                            <th>Thrust (g)</th>
+                                            <th>RPM</th>
+                                            <th>Efficiency (g/W)</th>
+                                            <th>Temperature (℃)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="data-points-grid-rows">
+                                        <tr>
+                                            <td colspan="8" style="text-align:center; color:#64748b; font-size:0.85rem; padding: 30px 0;">
+                                                No configuration selected. Choose a motor and click a test run.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- SECTION 2: DATASET CREATOR -->
+                <div class="tab-section" id="section-creator" style="display:none;">
+                    <form id="dataset-creator-form">
+                        <!-- Editing Draft Banner -->
+                        <div id="creator-editing-banner" style="display:none; padding:12px 16px; background:linear-gradient(135deg, #eff6ff, #dbeafe); border:1px solid #bfdbfe; border-radius:8px; color:#1e40af; font-size:0.85rem; font-weight:500; margin-bottom:15px; justify-content:space-between; align-items:center; gap:12px;">
+                            <span>Currently editing Draft Run: <strong id="creator-editing-draft-name">--</strong></span>
+                            <button type="button" class="btn-secondary" id="btn-cancel-edit-draft" style="padding:4px 8px; font-size:0.75rem; border-radius:6px; height:24px; cursor:pointer;">Cancel Edit</button>
+                        </div>
+
+                        <div class="creator-grid">
+                            
+                            <!-- Left Column: Config and Drafts list -->
+                            <div style="display:flex; flex-direction:column; gap:20px;">
+                                <!-- Metadata Form Fields -->
+                                <div class="glass-panel" style="display:flex; flex-direction:column; gap:18px;">
+                                    <h3 style="font-family:'Outfit'; font-size:1.15rem; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
+                                        <i data-lucide="info" style="color:var(--primary-color); width:18px;"></i>
+                                        Test Configuration
+                                    </h3>
+                                    
+                                    <div class="form-group" style="margin-bottom: 5px;">
+                                        <label style="display:flex; align-items:center; gap:8px; font-weight:600; cursor:pointer; font-family:'Inter'; font-size:0.9rem; margin:0;">
+                                            <input type="checkbox" id="form-is-draft" style="width:16px; height:16px; cursor:pointer;">
+                                            <span>Save as Draft (Unregistered Motor)</span>
+                                        </label>
+                                    </div>
+
+                                    <div class="form-group" id="form-draft-motor-group" style="display:none;">
+                                        <label for="form-draft-motor-model">Draft Motor Model *</label>
+                                        <input type="text" id="form-draft-motor-model" placeholder="e.g. KV120 UAV Motor">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="form-category-select">Thrust Level *</label>
+                                        <select id="form-category-select" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-family:'Inter'; font-size:0.9rem;">
+                                            <option value="">-- Select Thrust Level --</option>
+                                        </select>
+                                        <div class="cat-info-badge" id="form-cat-info-badge">
+                                            <i data-lucide="info" style="width:14px; height:14px;"></i>
+                                            <span id="form-cat-info-text"></span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="form-test-motor">Motor Model *</label>
+                                        <select id="form-test-motor" required disabled style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-family:'Inter'; font-size:0.9rem;">
+                                            <option value="">-- Select Thrust Level First --</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="form-test-propeller">Propeller Model *</label>
+                                        <input type="text" id="form-test-propeller" required placeholder="e.g. T-MOTOR 14*4.8CF">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="form-test-esc">ESC Model</label>
+                                        <input type="text" id="form-test-esc" placeholder="e.g. Air 20A 3-4S ESC">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="form-test-battery">Battery Spec</label>
+                                        <input type="text" id="form-test-battery" placeholder="e.g. 4S LiPo, 14.8V">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="form-test-tester">Test Conducted By</label>
+                                        <input type="text" id="form-test-tester" placeholder="e.g. Bala">
+                                    </div>
+                                </div>
+
+                                <!-- Saved Drafts Panel -->
+                                <div class="glass-panel" id="panel-saved-drafts" style="display:flex; flex-direction:column; gap:15px;">
+                                    <h3 style="font-family:'Outfit'; font-size:1.15rem; color:#0f172a; margin:0; display:flex; align-items:center; justify-content:space-between;">
+                                        <span style="display:flex; align-items:center; gap:8px;">
+                                            <i data-lucide="clipboard-list" style="color:var(--primary-color); width:18px;"></i>
+                                            Saved Drafts
+                                        </span>
+                                        <span id="drafts-count-badge" class="count-badge" style="background:var(--primary-color); color:#fff; font-size:0.75rem; padding:2px 8px; border-radius:12px; font-weight:600; font-family:'Inter';">0</span>
+                                    </h3>
+                                    <div id="creator-drafts-list" style="display:flex; flex-direction:column; gap:10px; max-height: 250px; overflow-y:auto; padding-right:4px;">
+                                        <div style="color: #64748b; font-size: 0.85rem; text-align: center; padding: 20px 0;">
+                                            Loading drafts...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Interactive Grid Table -->
+                            <div class="glass-panel" style="display:flex; flex-direction:column; gap:15px; min-width: 0;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                                    <h3 style="font-family:'Outfit'; font-size:1.15rem; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
+                                        <i data-lucide="table" style="color:var(--primary-color); width:18px;"></i>
+                                        Throttle Steps Calibration Table
+                                    </h3>
+                                    <div style="display:flex; gap:10px; align-items:center;">
+                                        <label class="btn-outline-sm" style="padding:6px 12px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; cursor:pointer; margin:0; font-family:'Inter',sans-serif; font-weight:500; border-radius:var(--radius-md);">
+                                            <i data-lucide="upload" style="width:14px; height:14px;"></i> Import Spreadsheet (XLSX, CSV)
+                                            <input type="file" id="btn-import-file" accept=".xlsx,.xls,.csv" style="display:none;">
+                                        </label>
+                                        <button type="button" class="btn-outline-sm" id="btn-add-step-row" style="padding:6px 12px; font-size:0.8rem; display:flex; align-items:center; gap:6px;">
+                                            <i data-lucide="plus" style="width:14px;"></i> Add Throttle Step
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="table-responsive" style="max-height: 380px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;">
+                                    <table class="motors-table creator-table" style="margin:0;">
+                                        <thead style="position:sticky; top:0; background:#f8fafc; z-index:10; border-bottom:2px solid #e2e8f0;">
+                                            <tr id="creator-table-headers">
+                                                <th style="width:80px; white-space:nowrap;">Throttle (%)</th>
+                                                <th style="white-space:nowrap;">
+                                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
+                                                        <span>Voltage (V)</span>
+                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-voltage" title="Copy first row to all rows" style="border:none; background:none; padding:2px; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s;"><i data-lucide="chevron-down" style="width:14px; height:14px;"></i></button>
+                                                    </div>
+                                                </th>
+                                                <th style="white-space:nowrap;">
+                                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
+                                                        <span>Current (A)</span>
+                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-current" title="Copy first row to all rows" style="border:none; background:none; padding:2px; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s;"><i data-lucide="chevron-down" style="width:14px; height:14px;"></i></button>
+                                                    </div>
+                                                </th>
+                                                <th style="white-space:nowrap;">Power (W)</th>
+                                                <th style="white-space:nowrap;">
+                                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
+                                                        <span>Thrust (g)</span>
+                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-thrust" title="Copy first row to all rows" style="border:none; background:none; padding:2px; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s;"><i data-lucide="chevron-down" style="width:14px; height:14px;"></i></button>
+                                                    </div>
+                                                </th>
+                                                <th style="white-space:nowrap;">
+                                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
+                                                        <span>RPM</span>
+                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-rpm" title="Copy first row to all rows" style="border:none; background:none; padding:2px; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s;"><i data-lucide="chevron-down" style="width:14px; height:14px;"></i></button>
+                                                    </div>
+                                                </th>
+                                                <th style="white-space:nowrap;">Efficiency (g/W)</th>
+                                                <th style="white-space:nowrap;">
+                                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
+                                                        <span>Temp (℃)</span>
+                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-temp" title="Copy first row to all rows" style="border:none; background:none; padding:2px; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s;"><i data-lucide="chevron-down" style="width:14px; height:14px;"></i></button>
+                                                    </div>
+                                                </th>
+                                                <th style="width:40px; text-align:center;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="creator-table-rows">
+                                            <!-- Dynamic input rows added by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:10px; border-top:1px solid #f1f5f9; padding-top:15px;">
+                                    <button type="button" class="btn-secondary" id="btn-reset-creator" style="border-radius:8px;">Clear Dataset</button>
+                                    <button type="submit" class="btn-primary" style="border-radius:8px; display:flex; align-items:center; gap:8px;">
+                                        <i data-lucide="save" style="width:16px;"></i> Save Performance Dataset
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Dialog -->
+    <div class="modal-backdrop" id="confirm-modal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <h3 id="confirm-title">Are you sure?</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-close-trigger">Cancel</button>
+                <button class="btn-danger" id="btn-confirm-action">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Multi-Run Selection Modal -->
+    <div class="modal-backdrop" id="multi-run-modal">
+        <div class="modal-container" style="max-width: 600px; width: 90%;">
+            <div class="modal-header">
+                <h3 style="font-family:'Outfit'; font-weight:700;"><i data-lucide="layers" style="color:var(--primary-color); vertical-align:middle; margin-right:6px; width:20px; height:20px; display:inline-block;"></i> Multiple Test Runs Detected</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:15px; color:#475569; font-size:0.9rem;">We found multiple test configurations in this spreadsheet. Please select which run you would like to map and import:</p>
+                <div id="multi-run-list" style="display:flex; flex-direction:column; gap:10px; max-height: 350px; overflow-y:auto; padding-right:4px;">
+                    <!-- Populated dynamically by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-close-trigger">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Column Mapping & Editing Modal -->
+    <div class="modal-backdrop" id="column-mapping-modal">
+        <div class="modal-container" style="max-width: 95%; width: 1200px; height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3 style="font-family:'Outfit'; font-weight:700;"><i data-lucide="edit" style="color:var(--primary-color); vertical-align:middle; margin-right:6px; width:20px; height:20px; display:inline-block;"></i> Map & Edit Spreadsheet Columns</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 20px;">
+                <p style="color:#475569; font-size:0.9rem; margin-bottom:15px;">
+                    We detected the columns shown below. Map each spreadsheet column to a standard field, metadata field, or custom field.
+                </p>
+                
+                <!-- Validation messages -->
+                <div id="mapping-validation-alert" style="display:none; padding:10px 15px; background-color:#fee2e2; border:1px solid #fecaca; border-radius:6px; color:#b91c1c; font-size:0.85rem; margin-bottom:15px; font-weight:500; align-items:center; gap:8px;">
+                    <i data-lucide="alert-circle" style="width:16px; height:16px; flex-shrink:0;"></i>
+                    <span id="mapping-validation-text"></span>
+                </div>
+
+                <!-- Table Preview Workspace -->
+                <div class="table-responsive" style="flex: 1; overflow: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+                    <table class="motors-table" style="margin:0; min-width: 100%; border-collapse: collapse;">
+                        <thead style="position:sticky; top:0; background:#f8fafc; z-index:10; border-bottom:2px solid #e2e8f0;" id="mapping-table-header">
+                            <!-- Populated by JS -->
+                        </thead>
+                        <tbody id="mapping-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer" style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #e2e8f0; padding-top:15px; margin-top:0;">
+                <span style="font-size:0.8rem; color:#64748b; font-weight:500;" id="mapping-info-summary"></span>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-secondary modal-close-trigger">Cancel</button>
+                    <button class="btn-primary" id="btn-confirm-mapping" disabled style="display:flex; align-items:center; gap:6px;">
+                        <i data-lucide="check" style="width:16px; height:16px;"></i> Confirm Import
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Import Preview Modal -->
+    <div class="modal-backdrop" id="bulk-preview-modal">
+        <div class="modal-container" style="max-width: 1100px; width: 95%; height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3 style="font-family:'Outfit'; font-weight:700;"><i data-lucide="clipboard-list" style="color:var(--primary-color); vertical-align:middle; margin-right:6px; width:20px; height:20px; display:inline-block;"></i> Bulk Import Preview</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 20px;">
+                <p style="color:#475569; font-size:0.9rem; margin-bottom:15px;">
+                    Review the detected test runs below. Match each run to a motor model from the database, or import them as drafts if the motor is unregistered.
+                </p>
+                <div class="table-responsive" style="border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
+                    <table class="motors-table" style="margin:0; min-width: 100%; border-collapse: collapse;">
+                        <thead style="position:sticky; top:0; background:#f8fafc; z-index:10; border-bottom:2px solid #e2e8f0;">
+                            <tr>
+                                <th style="width: 50px; text-align: center;">Import</th>
+                                <th>Motor Model (Sheet)</th>
+                                <th style="min-width: 250px;">Database Motor Match</th>
+                                <th>Voltage</th>
+                                <th>Propeller</th>
+                                <th>ESC</th>
+                                <th>Battery</th>
+                                <th>Tester</th>
+                                <th style="width: 80px; text-align: center;">Rows</th>
+                                <th style="width: 120px; text-align: center;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bulk-preview-list">
+                            <!-- Populated dynamically by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer" style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #e2e8f0; padding-top:15px; margin-top:0;">
+                <span style="font-size:0.85rem; color:#64748b; font-weight:500;" id="bulk-preview-summary">Ready to Import: 0 | Drafts: 0</span>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-secondary modal-close-trigger">Cancel</button>
+                    <button class="btn-primary" id="btn-bulk-save" style="display:flex; align-items:center; gap:6px;">
+                        <i data-lucide="save" style="width:16px; height:16px;"></i> Save & Import Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Finalize Draft Modal -->
+    <div class="modal-backdrop" id="finalize-draft-modal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <h3 style="font-family:'Outfit'; font-weight:700;"><i data-lucide="check-square" style="color:var(--primary-color); vertical-align:middle; margin-right:6px; width:20px; height:20px; display:inline-block;"></i> Finalize Draft Run</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="padding: 20px 0;">
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <div>
+                        <span style="font-size:0.8rem; color:#64748b; font-weight:600; text-transform:uppercase;">Original Motor Name (from Sheet):</span>
+                        <div id="finalize-original-motor-name" style="font-family:'Outfit'; font-weight:600; color:#0f172a; margin-top:4px; font-size:1rem; background:#f1f5f9; padding:8px 12px; border-radius:6px;">--</div>
+                    </div>
+                    
+                    <div class="form-group" style="margin:0;">
+                        <label for="finalize-motor-select" style="font-size:0.8rem; font-weight:600; margin-bottom:6px; display:block;">Select Registered Motor *</label>
+                        <select id="finalize-motor-select" style="width:100%; padding:8px 10px; border-radius:6px; border:1px solid #cbd5e1; outline:none; font-family:'Inter'; font-size:0.85rem; background:#ffffff;">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding-top:15px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:10px; margin-top:0;">
+                <button class="btn-secondary modal-close-trigger">Cancel</button>
+                <button class="btn-primary" id="btn-save-finalize">Save & Finalize</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Controller -->
+    <script src="performance_app.js?v=2"></script>
+    <script src="onboarding.js"></script>
+</body>
+</html>

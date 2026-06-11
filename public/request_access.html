@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Access | ThrustVault</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    <!-- Supabase JS Client -->
+    <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .success-card {
+            text-align: center;
+            padding: 20px 10px;
+        }
+        .success-icon-wrapper {
+            width: 64px;
+            height: 64px;
+            background-color: #f0fdf4;
+            color: #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+        select.role-select {
+            width: 100%;
+            padding: 10px 12px 10px 40px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            background-color: #fff;
+            appearance: none;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        select.role-select:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 237, 0.15);
+        }
+        .select-wrapper {
+            position: relative;
+        }
+        .select-chevron {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            pointer-events: none;
+        }
+        textarea.justification-textarea {
+            width: 100%;
+            min-height: 90px;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        textarea.justification-textarea:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 97, 237, 0.15);
+        }
+    </style>
+    <!-- Page Loader Transition Script -->
+    <script src="page-loader.js"></script>
+</head>
+<body class="login-body">
+    <!-- Ambient Blur Background Blobs -->
+    <div class="login-bg-blob blob-1"></div>
+    <div class="login-bg-blob blob-2"></div>
+
+    <div class="login-container" style="max-width: 450px;">
+        <div class="login-card">
+            <!-- Header -->
+            <div class="login-header">
+                <div class="login-logo">
+                    <div class="login-logo-circle">
+                        <i data-lucide="shield-alert" class="spin-slow" style="width:30px; height:30px; color:#2563eb;"></i>
+                    </div>
+                </div>
+                <h2 id="page-title">Request <span>Access</span></h2>
+                <p id="page-subtitle">Submit details to request a database user account.</p>
+            </div>
+            
+            <!-- Request Form View -->
+            <div id="view-form">
+                <form id="request-access-form">
+                    <div class="form-group">
+                        <label for="request-fullname">Full Name</label>
+                        <div class="input-with-icon">
+                            <input type="text" id="request-fullname" required placeholder="e.g. John Doe">
+                            <i data-lucide="user"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 14px;">
+                        <label for="request-email">Email Address</label>
+                        <div class="input-with-icon">
+                            <input type="email" id="request-email" required placeholder="e.g. john@company.com">
+                            <i data-lucide="mail"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 14px;">
+                        <label for="request-role">Requested Role</label>
+                        <div class="select-wrapper">
+                            <select id="request-role" class="role-select" required>
+                                <option value="guest">Guest (Read-Only Specs & Charts)</option>
+                                <option value="intern">Intern (Read/Write Catalog Entries)</option>
+                                <option value="admin">Administrator (Full Control)</option>
+                            </select>
+                            <i data-lucide="shield" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b; width: 18px; height: 18px;"></i>
+                            <i data-lucide="chevron-down" class="select-chevron" style="width: 16px; height: 16px;"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 14px;">
+                        <label for="request-justification">Justification / Reason</label>
+                        <textarea id="request-justification" class="justification-textarea" required placeholder="Why do you require access to ThrustVault? Specify team or project."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="login-btn" style="margin-top: 24px; width: 100%;">
+                        Submit Request <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+                    </button>
+                </form>
+                
+                <div style="text-align: center; margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+                    <a href="login" style="font-size:0.85rem; color:#64748b; text-decoration:none; font-weight:500; display:inline-flex; align-items:center; gap:6px;"><i data-lucide="arrow-left" style="width:15px; height:15px;"></i> Back to Sign In</a>
+                </div>
+            </div>
+
+            <!-- Request Success View -->
+            <div id="view-success" style="display: none;">
+                <div class="success-card">
+                    <div class="success-icon-wrapper">
+                        <i data-lucide="check" style="width: 32px; height: 32px;"></i>
+                    </div>
+                    <h3 style="font-family: 'Outfit'; font-size: 1.3rem; font-weight: 700; color: #0f172a; margin-bottom: 10px;">Request Submitted</h3>
+                    <p style="font-size: 0.9rem; color: #64748b; line-height: 1.5; margin-bottom: 25px;">
+                        Your access request has been recorded. An email confirmation has been sent to you. Our administrators will review your application shortly.
+                    </p>
+                    <a href="login" class="login-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; text-decoration: none; box-sizing: border-box;">
+                        Return to Sign In <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) window.lucide.createIcons();
+
+            let supabase = null;
+
+            async function initSupabase() {
+                try {
+                    const res = await fetch('/api/config');
+                    const config = await res.json();
+                    if (config.SUPABASE_URL && config.SUPABASE_ANON_KEY) {
+                        supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+                    } else {
+                        console.error("Supabase credentials missing from server config");
+                    }
+                } catch (e) {
+                    console.error("Error loading Supabase config:", e);
+                }
+            }
+
+            const requestForm = document.getElementById('request-access-form');
+            if (requestForm) {
+                requestForm.onsubmit = async (e) => {
+                    e.preventDefault();
+                    
+                    const fullName = document.getElementById('request-fullname').value.trim();
+                    const email = document.getElementById('request-email').value.trim();
+                    const requestedRole = document.getElementById('request-role').value;
+                    const justification = document.getElementById('request-justification').value.trim();
+
+                    if (!supabase) {
+                        alert("Database is initializing. Please try again in a moment.");
+                        return;
+                    }
+
+                    const submitBtn = requestForm.querySelector('button[type="submit"]');
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('loading');
+                    submitBtn.innerHTML = '<div class="spinner-dual"></div> Submitting Request...';
+
+                    try {
+                        // 1. Check if user already exists in user_profiles
+                        const { data: existingProfile, error: profileErr } = await supabase
+                            .from('user_profiles')
+                            .select('id')
+                            .eq('email', email)
+                            .maybeSingle();
+
+                        if (existingProfile) {
+                            alert("An active account already exists with this email address. Please sign in or use the forgot password flow.");
+                            submitBtn.disabled = false;
+                            submitBtn.classList.remove('loading');
+                            submitBtn.innerHTML = 'Submit Request <i data-lucide="send" style="width: 16px; height: 16px;"></i>';
+                            if (window.lucide) window.lucide.createIcons();
+                            return;
+                        }
+
+                        // 2. Check if a request is already pending
+                        const { data: existingRequest, error: requestErr } = await supabase
+                            .from('access_requests')
+                            .select('status')
+                            .eq('email', email)
+                            .eq('status', 'pending')
+                            .maybeSingle();
+
+                        if (existingRequest) {
+                            alert("An access request is already pending for this email address. Our administrators will review it shortly.");
+                            submitBtn.disabled = false;
+                            submitBtn.classList.remove('loading');
+                            submitBtn.innerHTML = 'Submit Request <i data-lucide="send" style="width: 16px; height: 16px;"></i>';
+                            if (window.lucide) window.lucide.createIcons();
+                            return;
+                        }
+
+                        // 3. Insert new request (Anonymous insert is permitted by RLS)
+                        const { error: insertErr } = await supabase
+                            .from('access_requests')
+                            .insert([{
+                                full_name: fullName,
+                                email: email,
+                                requested_role: requestedRole,
+                                justification: justification,
+                                status: 'pending'
+                            }]);
+
+                        if (insertErr) {
+                            throw insertErr;
+                        }
+
+                        // 4. Send email notification via backend Resend endpoint
+                        try {
+                            await fetch('/api/send-email', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    type: 'received',
+                                    to: email,
+                                    full_name: fullName,
+                                    requested_role: requestedRole
+                                })
+                            });
+                        } catch (err) {
+                            console.error("Failed to trigger email confirmation:", err);
+                        }
+
+                        // Show success view
+                        document.getElementById('view-form').style.display = 'none';
+                        document.getElementById('view-success').style.display = 'block';
+                        document.getElementById('page-title').innerHTML = 'Request <span>Submitted</span>';
+                        document.getElementById('page-subtitle').textContent = 'Your application has been received successfully.';
+                        if (window.lucide) window.lucide.createIcons();
+
+                    } catch (err) {
+                        console.error("Submission failed:", err);
+                        alert("Failed to submit request: " + err.message);
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove('loading');
+                        submitBtn.innerHTML = 'Submit Request <i data-lucide="send" style="width: 16px; height: 16px;"></i>';
+                        if (window.lucide) window.lucide.createIcons();
+                    }
+                };
+            }
+
+            initSupabase();
+        });
+    </script>
+</body>
+</html>

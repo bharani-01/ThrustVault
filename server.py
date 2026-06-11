@@ -30,7 +30,7 @@ def load_env(env_path='.env'):
 
 load_env()
 
-app = Flask(__name__, static_folder='.', static_url_path='')
+app = Flask(__name__, static_folder='public', static_url_path='')
 
 
 # ---------------------------------------------------------------------------
@@ -206,7 +206,7 @@ def add_security_headers_and_log(response):
         status in [301, 302, 401, 403] or
         (method in ['POST', 'PUT', 'DELETE'] and route.startswith('/api/'))
     )
-    if is_important_log and not route.startswith('/api/audit-logs') and not is_static_asset:
+    if is_important_log and not route.startswith('/api/audit-logs') and not route.startswith('/api/log-activity') and not is_static_asset:
         details = None
         if status == 301 or status == 302:
             details = f"Redirected to {response.headers.get('Location', '')}"
@@ -224,11 +224,11 @@ def add_security_headers_and_log(response):
 # ---------------------------------------------------------------------------
 @app.errorhandler(404)
 def page_not_found(e):
-    return send_from_directory('.', '404.html'), 404
+    return send_from_directory('public', '404.html'), 404
 
 @app.errorhandler(403)
 def forbidden(e):
-    return send_from_directory('.', '404.html'), 404
+    return send_from_directory('public', '404.html'), 404
 
 
 # ---------------------------------------------------------------------------
@@ -490,7 +490,7 @@ def verify_dashboard_access(required_role, filename):
             else:
                 return redirect('/login')
                 
-        return send_from_directory('.', filename)
+        return send_from_directory('public', filename)
     except Exception as e:
         print("Error verifying session cookie:", e)
         return redirect('/login')
@@ -515,7 +515,7 @@ def verify_dashboard_access_any(filename):
         if role not in ['admin', 'intern', 'guest']:
             return redirect('/login')
                 
-        return send_from_directory('.', filename)
+        return send_from_directory('public', filename)
     except Exception as e:
         print("Error verifying session cookie:", e)
         return redirect('/login')
@@ -553,6 +553,42 @@ def admin_audit_logs():
 @app.route('/admin_audit_logs_app.js')
 def admin_audit_logs_app_js():
     return verify_dashboard_access('admin', 'admin_audit_logs_app.js')
+
+
+@app.route('/admin_users')
+@app.route('/admin_users.html')
+def admin_users():
+    if request.path.endswith('.html'):
+        return redirect('/admin_users')
+    return verify_dashboard_access('admin', 'admin_users.html')
+
+@app.route('/admin_users_app.js')
+def admin_users_app_js():
+    return verify_dashboard_access('admin', 'admin_users_app.js')
+
+
+@app.route('/admin_access_requests')
+@app.route('/admin_access_requests.html')
+def admin_access_requests():
+    if request.path.endswith('.html'):
+        return redirect('/admin_access_requests')
+    return verify_dashboard_access('admin', 'admin_access_requests.html')
+
+@app.route('/admin_access_requests_app.js')
+def admin_access_requests_app_js():
+    return verify_dashboard_access('admin', 'admin_access_requests_app.js')
+
+
+@app.route('/admin_schema_customizer')
+@app.route('/admin_schema_customizer.html')
+def admin_schema_customizer():
+    if request.path.endswith('.html'):
+        return redirect('/admin_schema_customizer')
+    return verify_dashboard_access('admin', 'admin_schema_customizer.html')
+
+@app.route('/admin_schema_app.js')
+def admin_schema_app_js():
+    return verify_dashboard_access('admin', 'admin_schema_app.js')
 
 
 @app.route('/intern_dashboard')
@@ -597,28 +633,28 @@ def performance_app_js():
 def root():
     if request.path.endswith('.html'):
         return redirect('/')
-    return send_from_directory('.', 'index.html')
+    return send_from_directory('public', 'index.html')
 
 @app.route('/login')
 @app.route('/login.html')
 def login_page():
     if request.path.endswith('.html'):
         return redirect('/login')
-    return send_from_directory('.', 'login.html')
+    return send_from_directory('public', 'login.html')
 
 @app.route('/request_access')
 @app.route('/request_access.html')
 def request_access_page():
     if request.path.endswith('.html'):
         return redirect('/request_access')
-    return send_from_directory('.', 'request_access.html')
+    return send_from_directory('public', 'request_access.html')
 
 @app.route('/thrustvault_presentation')
 @app.route('/thrustvault_presentation.html')
 def presentation_page():
     if request.path.endswith('.html'):
         return redirect('/thrustvault_presentation')
-    return send_from_directory('.', 'thrustvault_presentation.html')
+    return send_from_directory('public', 'thrustvault_presentation.html')
 
 
 # ---------------------------------------------------------------------------
@@ -638,6 +674,7 @@ def static_files(filename):
         'login.html',
         'login.js',
         'onboarding.js',
+        'page-loader.js',
         'request_access.html',
         'style.css',
         'thrustvault_presentation.html'
@@ -651,7 +688,7 @@ def static_files(filename):
     }
     
     if safe_path in PUBLIC_FILES or safe_path in PUBLIC_LIBS:
-        return send_from_directory('.', safe_path)
+        return send_from_directory('public', safe_path)
         
     # Block any other files
     abort(403)
