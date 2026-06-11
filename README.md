@@ -30,6 +30,7 @@ thrustvault-workspace/
 │   ├── seed_performance.py           # Supabase database population script for telemetry runs
 │   ├── migration_access_requests.sql # Role request management tables
 │   ├── migration_drafts_table.sql    # Motor catalog draft schema migration
+│   ├── migration_fix_user_cascade.sql # Cascade user deletion and orphaned profiles migration
 │   ├── migration_onboarding_progress.sql # User walkthrough onboarding state tracker
 │   ├── migration_performance.sql     # Telemetry run tables and data points migration
 │   ├── migration_user_onboarding.sql # Extended user onboarding fields migration

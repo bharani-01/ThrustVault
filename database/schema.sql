@@ -235,8 +235,12 @@ BEGIN
         RAISE EXCEPTION 'Only administrators can delete user accounts.';
     END IF;
 
-    -- Delete from auth.users (will cascade delete from public.user_profiles)
-    DELETE FROM auth.users WHERE id = user_id;
+    -- Explicitly delete dependent user profile and onboarding records
+    DELETE FROM public.user_onboarding WHERE user_id = delete_vault_user.user_id;
+    DELETE FROM public.user_profiles WHERE id = delete_vault_user.user_id;
+
+    -- Delete from auth.users (will cascade delete remaining auth references)
+    DELETE FROM auth.users WHERE id = delete_vault_user.user_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

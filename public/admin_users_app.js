@@ -387,15 +387,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const { data, error } = await supabase.rpc('create_vault_user', {
-                new_email: emailVal,
-                new_password: passVal,
-                new_role: roleVal
+                email_val: emailVal,
+                password_val: passVal,
+                role_val: roleVal
             });
 
             if (error) throw error;
 
             logUserActivity(session.email, session.role, 'User Account Created', `Created ${roleVal.toUpperCase()} account for: ${emailVal}`);
             elements.userForm.reset();
+
+            // Trigger email notification
+            try {
+                await fetch('/api/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'created',
+                        to: emailVal,
+                        requested_role: roleVal,
+                        temp_password: passVal
+                    })
+                });
+            } catch (emailErr) {
+                console.error("Failed to trigger welcome email notification:", emailErr);
+            }
 
             // Render custom success feedback modal
             createTemporarySuccessModal(emailVal, passVal, roleVal);
@@ -415,7 +431,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn-icon-close" id="btn-close-success-modal"><i data-lucide="x"></i></button>
                 </div>
                 <div class="modal-body" style="padding: 20px 0;">
-                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:14px;">The credentials have been written to the Supabase database console.</p>
+                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:14px;">The credentials have been saved, and a welcome email notification has been triggered.</p>
                     <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem;">
                             <span style="color:#64748b;">Role:</span>

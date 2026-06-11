@@ -326,8 +326,8 @@ def send_email_api():
     if not recipient or not email_type:
         return jsonify({"success": False, "error": "Missing recipient or type"}), 400
 
-    # For approved or rejected emails, restrict to logged-in admin users
-    if email_type in ['approved', 'rejected']:
+    # For approved, rejected, or created emails, restrict to logged-in admin users
+    if email_type in ['approved', 'rejected', 'created']:
         cookie_val = request.cookies.get('thrustvault_session')
         if not cookie_val:
             abort(403)
@@ -419,6 +419,48 @@ def send_email_api():
             <p>Thank you for your interest in the <strong>ThrustVault UAV Motor Database Console</strong>.</p>
             <p>We have reviewed your request for database access. Unfortunately, your request has not been approved at this time.</p>
             <p>If you believe this is in error or require further assistance, please contact the administrator.</p>
+            <p style="margin-top: 30px; font-size: 0.82rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                This is an automated notification from ThrustVault. Please do not reply directly to this email.
+            </p>
+        </div>
+        """
+    elif email_type == 'created':
+        role = data.get('requested_role', 'guest').upper()
+        temp_password = data.get('temp_password', '')
+        reset_link = data.get('reset_link', '')
+        
+        subject = "ThrustVault Account Created"
+        
+        link_section = ""
+        if reset_link:
+            link_section = f"""
+            <p style="margin: 25px 0; text-align: center;">
+                <a href="{reset_link}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Set Your Password & Login</a>
+            </p>
+            <p style="font-size: 0.85rem; color: #64748b; text-align: center;">If the button above does not work, copy and paste the following link into your browser:<br>
+            <a href="{reset_link}" style="color: #2563eb; word-break: break-all;">{reset_link}</a></p>
+            """
+        
+        pass_section = ""
+        if temp_password:
+            pass_section = f"""
+            <p>You can log in using the temporary credentials below:</p>
+            <table style="background-color: #f8fafc; padding: 15px; border-radius: 8px; width: 100%; border: 1px solid #e2e8f0; font-family: monospace; margin: 15px 0;">
+                <tr><td style="padding: 5px;"><strong>Email:</strong></td><td style="padding: 5px;">{recipient}</td></tr>
+                <tr><td style="padding: 5px;"><strong>Temporary Password:</strong></td><td style="padding: 5px;"><code>{temp_password}</code></td></tr>
+            </table>
+            """
+            
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            <div style="text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 style="color: #2563eb; margin: 0; font-family: 'Outfit', sans-serif;">Account Created 🎉</h2>
+            </div>
+            <p>Hello,</p>
+            <p>An administrator has created a new account for you on the <strong>ThrustVault UAV Motor Database Console</strong>. You have been assigned the <strong>{role}</strong> role.</p>
+            {link_section}
+            {pass_section}
+            <p>Once you sign in, you can start using the drone motor database and analytics tools.</p>
             <p style="margin-top: 30px; font-size: 0.82rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px;">
                 This is an automated notification from ThrustVault. Please do not reply directly to this email.
             </p>
