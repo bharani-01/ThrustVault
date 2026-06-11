@@ -435,4 +435,16 @@ CREATE POLICY "Allow update for own onboarding status" ON public.user_onboarding
 DROP TRIGGER IF EXISTS update_user_onboarding_updated_at ON public.user_onboarding;
 CREATE TRIGGER update_user_onboarding_updated_at BEFORE UPDATE ON public.user_onboarding FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
+-- Seed default custom specs schema parameters
+INSERT INTO public.custom_specs_schema (field_key, field_name, field_type, field_unit)
+VALUES 
+('motor_diameter_od', 'Motor Diameter (OD)', 'number', 'mm'),
+('motor_holes_mount_diameter', 'Motor Holes Mount Diameter', 'text', 'mm'),
+('screw_type', 'Screw Type', 'text', NULL),
+('shaft_diameter', 'Shaft Diameter', 'number', 'mm')
+ON CONFLICT (field_key) DO UPDATE 
+SET field_name = EXCLUDED.field_name,
+    field_type = EXCLUDED.field_type,
+    field_unit = EXCLUDED.field_unit;
+
 

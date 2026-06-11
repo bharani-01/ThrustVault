@@ -129,6 +129,131 @@ document.addEventListener('DOMContentLoaded', () => {
         return 0;
     }
 
+    function convertThrustToKg(val, unit) {
+        if (isNaN(val)) return 0;
+        switch (unit) {
+            case 'kg':
+                return val;
+            case 'g':
+                return val / 1000;
+            case 'N':
+            case 'n/m':
+                return val / 9.80665;
+            case 'lb':
+                return val * 0.45359237;
+            case 'oz':
+                return val * 0.02834952;
+            default:
+                return val;
+        }
+    }
+
+    function parseThrustInput(thrustStr) {
+        if (!thrustStr) return { value: '', unit: 'kg' };
+        const match = thrustStr.trim().match(/^([\d\.]+)\s*(kg|g|n|n\/m|oz|lb|lbs)?/i);
+        if (match) {
+            let val = parseFloat(match[1]);
+            let unit = (match[2] || 'kg').toLowerCase();
+            if (unit === 'lbs') unit = 'lb';
+            return { value: isNaN(val) ? '' : val, unit: unit };
+        }
+        return { value: thrustStr, unit: 'kg' };
+    }
+
+    function findMatchingCategory(kgVal, categories) {
+        if (isNaN(kgVal) || kgVal <= 0 || !categories || categories.length === 0) return null;
+        
+        const parsedCats = categories.map(cat => {
+            const numbers = cat.name.match(/[\d\.]+/g);
+            if (numbers && numbers.length > 0) {
+                const vals = numbers.map(Number);
+                if (vals.length === 1) {
+                    return { id: cat.id, name: cat.name, min: vals[0], max: vals[0] };
+                } else if (vals.length >= 2) {
+                    return { id: cat.id, name: cat.name, min: vals[0], max: vals[1] };
+                }
+            }
+            return { id: cat.id, name: cat.name, min: null, max: null };
+        }).filter(c => c.min !== null);
+
+        if (parsedCats.length === 0) return null;
+        
+        // 1. Direct match check
+        for (const cat of parsedCats) {
+            if (kgVal >= cat.min && kgVal <= cat.max) {
+                return cat.id;
+            }
+        }
+        
+        // 2. Range match check using midpoints
+        parsedCats.sort((a, b) => a.min - b.min);
+        
+        for (let i = 0; i < parsedCats.length; i++) {
+            const current = parsedCats[i];
+            const next = parsedCats[i + 1];
+            if (kgVal <= current.max) {
+                return current.id;
+            }
+            if (next) {
+                const mid = (current.max + next.min) / 2;
+                if (kgVal < mid) {
+                    return current.id;
+                }
+            } else {
+                return current.id;
+            }
+        }
+        return null;
+    }
+
+    function updateThrustPreview() {
+        const valEl = document.getElementById('form-motor-thrust-val');
+        const unitEl = document.getElementById('form-motor-thrust-unit');
+        const previewEl = document.getElementById('thrust-conversion-preview');
+        if (!valEl || !unitEl || !previewEl) return;
+        
+        const val = parseFloat(valEl.value);
+        const unit = unitEl.value;
+        if (isNaN(val) || val <= 0) {
+            previewEl.textContent = '';
+            return;
+        }
+        
+        const kgVal = convertThrustToKg(val, unit);
+        if (unit !== 'kg') {
+            previewEl.textContent = `= ${kgVal.toFixed(3)} kg`;
+        } else {
+            previewEl.textContent = '';
+        }
+
+        // Auto-select category based on thrust value in kg
+        if (state && state.categories && state.categories.length > 0) {
+            const catId = findMatchingCategory(kgVal, state.categories);
+            if (catId) {
+                document.getElementById('form-motor-category').value = catId;
+            }
+        }
+    }
+
+    function updateManufacturerSuggestions() {
+        const datalist = document.getElementById('manufacturer-list');
+        if (!datalist || !state.motors) return;
+        
+        const companies = [...new Set(state.motors.map(m => m.company))]
+            .filter(Boolean)
+            .map(c => c.trim())
+            .filter(c => c.length > 0)
+            .sort((a, b) => a.localeCompare(b));
+            
+        datalist.innerHTML = companies.map(c => `<option value="${escapeHTML(c)}"></option>`).join('');
+    }
+
+    // Bind thrust unit conversion live preview listeners
+    const valEl = document.getElementById('form-motor-thrust-val');
+    const unitEl = document.getElementById('form-motor-thrust-unit');
+    if (valEl) valEl.addEventListener('input', updateThrustPreview);
+    if (unitEl) unitEl.addEventListener('change', updateThrustPreview);
+
     // Helper: Custom Async Confirmation Dialog Modal (Promise-based)
     function customConfirm(title, message) {
         return new Promise((resolve) => {
@@ -213,6 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCharts();
         updateStats();
         updateComparisonDrawer();
+        updateManufacturerSuggestions();
         lucide.createIcons();
     }
 
@@ -460,7 +586,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('form-motor-index').value = m.id;
                 document.getElementById('form-motor-name').value = m.motor;
                 document.getElementById('form-motor-company').value = m.company;
-                document.getElementById('form-motor-thrust').value = m.thrust;
+                const parsedThrust = parseThrustInput(m.thrust);
+                document.getElementById('form-motor-thrust-val').value = parsedThrust.value;
+                document.getElementById('form-motor-thrust-unit').value = parsedThrust.unit;
+                updateThrustPreview();
                 document.getElementById('form-motor-category').value = m.categoryId;
                 document.getElementById('form-motor-esc').value = m.esc || '';
                 document.getElementById('form-motor-propeller').value = m.prop || '';
@@ -1085,6 +1214,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elements.btnAddMotor.onclick = () => {
         elements.motorForm.reset();
+        document.getElementById('form-motor-thrust-unit').value = 'kg';
+        document.getElementById('thrust-conversion-preview').textContent = '';
         document.getElementById('modal-title').innerHTML = `<i data-lucide="plus-circle"></i> Add New Motor Entry`;
         document.getElementById('form-motor-index').value = '';
         document.getElementById('form-motor-category').value = state.activeCategory || '';
@@ -1126,10 +1257,15 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.motorForm.onsubmit = async (e) => {
         e.preventDefault();
         const id = document.getElementById('form-motor-index').value;
+        const thrustVal = parseFloat(document.getElementById('form-motor-thrust-val').value);
+        const thrustUnit = document.getElementById('form-motor-thrust-unit').value;
+        const thrustKg = convertThrustToKg(thrustVal, thrustUnit);
+        const maxThrustStr = `${parseFloat(thrustKg.toFixed(3))} kg`;
+
         const motorData = {
             motor_name: document.getElementById('form-motor-name').value.trim(),
             company: document.getElementById('form-motor-company').value.trim(),
-            max_thrust: document.getElementById('form-motor-thrust').value.trim(),
+            max_thrust: maxThrustStr,
             category_id: document.getElementById('form-motor-category').value,
             recommended_esc: document.getElementById('form-motor-esc').value.trim() || null,
             recommended_propeller: document.getElementById('form-motor-propeller').value.trim() || null,

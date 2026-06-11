@@ -16,8 +16,26 @@
     <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
     <!-- SheetJS Library -->
     <script src="libs/xlsx.full.min.js"></script>
-    <!-- Main Stylesheet -->
     <link rel="stylesheet" href="style.css">
+    <!-- Modal scrolling and overflow fixes -->
+    <style>
+        .modal-container {
+            max-height: 90vh !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        .modal-container form {
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            flex: 1 !important;
+        }
+        .modal-container .modal-body {
+            overflow-y: auto !important;
+            flex: 1 !important;
+            padding-right: 8px;
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -648,14 +666,26 @@
                         </div>
                         <div class="form-group">
                             <label for="form-motor-company">Manufacturer / Company *</label>
-                            <input type="text" id="form-motor-company" required placeholder="e.g. T-Motor, Emax">
+                            <input type="text" id="form-motor-company" required placeholder="e.g. T-Motor, Emax" list="manufacturer-list">
+                            <datalist id="manufacturer-list"></datalist>
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="form-motor-thrust">Max Thrust Value *</label>
-                            <input type="text" id="form-motor-thrust" required placeholder="e.g. 20.4 kg, 2400g">
+                            <label for="form-motor-thrust-val">Max Thrust Value *</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="number" id="form-motor-thrust-val" required step="any" placeholder="e.g. 2.4, 2400" style="flex: 1;">
+                                <select id="form-motor-thrust-unit" required style="width: 75px; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-card); color: var(--text-main);">
+                                    <option value="kg">kg</option>
+                                    <option value="g">g</option>
+                                    <option value="N">N</option>
+                                    <option value="n/m">n/m</option>
+                                    <option value="lb">lb</option>
+                                    <option value="oz">oz</option>
+                                </select>
+                            </div>
+                            <small id="thrust-conversion-preview" style="color: var(--text-muted, #8a8f98); display: block; margin-top: 4px; font-size: 11px;"></small>
                         </div>
                         <div class="form-group">
                             <label for="form-motor-category">Thrust Level Category *</label>
