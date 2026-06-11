@@ -124,16 +124,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function logUserActivity(email, role, action, details) {
         try {
-            const logs = JSON.parse(localStorage.getItem('thrustvault_global_activity_logs')) || [];
-            logs.push({
-                id: 'log-' + Math.random().toString(36).substr(2, 9),
-                email: email,
-                role: role,
-                action: action,
-                details: details,
-                timestamp: new Date().toISOString()
-            });
-            localStorage.setItem('thrustvault_global_activity_logs', JSON.stringify(logs));
+            fetch('/api/log-activity', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, role, action, details })
+            }).catch(err => console.error("Error posting log:", err));
         } catch (e) {
             console.error("Error writing activity log:", e);
         }

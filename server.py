@@ -200,7 +200,13 @@ def add_security_headers_and_log(response):
         route.endswith('.gif')
     )
             
-    if not route.startswith('/api/audit-logs') and not is_static_asset:
+    # Only log requests that are errors, access denials, redirects, or critical API modifications
+    is_important_log = (
+        status >= 400 or
+        status in [301, 302, 401, 403] or
+        (method in ['POST', 'PUT', 'DELETE'] and route.startswith('/api/'))
+    )
+    if is_important_log and not route.startswith('/api/audit-logs') and not is_static_asset:
         details = None
         if status == 301 or status == 302:
             details = f"Redirected to {response.headers.get('Location', '')}"
@@ -223,6 +229,50 @@ def page_not_found(e):
 @app.errorhandler(403)
 def forbidden(e):
     return send_from_directory('.', '404.html'), 404
+
+
+# ---------------------------------------------------------------------------
+# Secure Audit Logs API Endpoint (Admin Only)
+# ---------------------------------------------------------------------------
+@app.route('/api/log-activity', methods=['POST'])
+def log_client_activity():
+    cookie_val = request.cookies.get('thrustvault_session')
+    if not cookie_val:
+        abort(401)
+        
+    try:
+        session_data = json.loads(urllib.parse.unquote(cookie_val))
+        email = session_data.get('email', 'Anonymous')
+        role = session_data.get('role', 'Anonymous')
+    except Exception:
+        abort(401)
+
+    data = request.json or {}
+    action = data.get('action', '')
+    details = data.get('details', '')
+
+    if not action:
+        return jsonify({"error": "action parameter is required"}), 400
+
+    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if ip_address and ',' in ip_address:
+        ip_address = ip_address.split(',')[0].strip()
+        
+    user_agent = request.headers.get('User-Agent', '')
+
+    # For client logs, we prefix the route with DB_FUNCTION to differentiate them from HTTP logs
+    log_audit_event(
+        email=email,
+        role=role,
+        route=f"DB_FUNCTION: {action}",
+        method="POST",
+        status=200,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        details=details
+    )
+
+    return jsonify({"success": True}), 200
 
 
 # ---------------------------------------------------------------------------
