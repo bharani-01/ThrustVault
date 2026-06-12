@@ -878,7 +878,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         y: {
                             grid: { display: false },
                             ticks: {
-                                font: { family: 'Inter', size: 10 }
+                                font: { family: 'Inter', size: 10 },
+                                callback: function(value, index) {
+                                    const label = this.getLabelForValue(value);
+                                    if (typeof label === 'string' && label.length > 18) {
+                                        return label.substring(0, 15) + '...';
+                                    }
+                                    return label;
+                                }
                             }
                         }
                     },

@@ -2,6 +2,20 @@
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
 
+    // Bind password visibility toggles
+    document.querySelectorAll('.btn-password-toggle').forEach(btn => {
+        btn.onclick = () => {
+            const targetId = btn.getAttribute('data-target');
+            const targetInput = document.getElementById(targetId);
+            if (targetInput) {
+                const isPass = targetInput.type === 'password';
+                targetInput.type = isPass ? 'text' : 'password';
+                btn.innerHTML = `<i data-lucide="${isPass ? 'eye-off' : 'eye'}" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>`;
+                if (window.lucide) window.lucide.createIcons();
+            }
+        };
+    });
+
     let supabase = null;
     const loginForm = document.getElementById('login-form');
     const emailInput = document.getElementById('login-email');

@@ -52,8 +52,11 @@
                             <a href="#" id="link-goto-forgot" style="font-size:0.75rem; color:#2563eb; text-decoration:none; font-weight:500;">Forgot Password?</a>
                         </div>
                         <div class="input-with-icon" style="margin-top: 6px;">
-                            <input type="password" id="login-password" required placeholder="••••••••">
+                            <input type="password" id="login-password" class="with-toggle" required placeholder="••••••••">
                             <i data-lucide="lock"></i>
+                            <button type="button" class="btn-password-toggle" data-target="login-password" title="Toggle Password Visibility">
+                                <i data-lucide="eye" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>
+                            </button>
                         </div>
                     </div>
                     
@@ -117,16 +120,22 @@
                     <div class="form-group">
                         <label for="reset-password">New Password</label>
                         <div class="input-with-icon">
-                            <input type="password" id="reset-password" required placeholder="Min 6 characters">
+                            <input type="password" id="reset-password" class="with-toggle" required placeholder="Min 6 characters">
                             <i data-lucide="lock"></i>
+                            <button type="button" class="btn-password-toggle" data-target="reset-password" title="Toggle Password Visibility">
+                                <i data-lucide="eye" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>
+                            </button>
                         </div>
                     </div>
 
                     <div class="form-group" style="margin-top: 18px;">
                         <label for="reset-password-confirm">Confirm New Password</label>
                         <div class="input-with-icon">
-                            <input type="password" id="reset-password-confirm" required placeholder="Repeat new password">
+                            <input type="password" id="reset-password-confirm" class="with-toggle" required placeholder="Repeat new password">
                             <i data-lucide="lock"></i>
+                            <button type="button" class="btn-password-toggle" data-target="reset-password-confirm" title="Toggle Password Visibility">
+                                <i data-lucide="eye" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>
+                            </button>
                         </div>
                     </div>
                     

@@ -2735,3 +2735,29 @@ button:active { transform: scale(0.98); }
 }
 .tv-ob-help-btn:hover { background: #dbeafe; border-color: #93c5fd; }
 
+/* Password Visibility Toggle */
+.input-with-icon .btn-password-toggle {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 6px;
+    transition: color 0.2s ease, background-color 0.2s ease;
+    z-index: 5;
+}
+.input-with-icon .btn-password-toggle:hover {
+    color: #2563eb;
+    background-color: rgba(37, 99, 235, 0.05);
+}
+.input-with-icon input.with-toggle {
+    padding-right: 44px;
+}
+

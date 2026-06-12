@@ -705,7 +705,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             grid: { display: false },
                             ticks: {
                                 color: '#475569',
-                                font: { family: "'Inter', sans-serif", size: 10 }
+                                font: { family: "'Inter', sans-serif", size: 10 },
+                                callback: function(value, index) {
+                                    const label = this.getLabelForValue(value);
+                                    if (typeof label === 'string' && label.length > 18) {
+                                        return label.substring(0, 15) + '...';
+                                    }
+                                    return label;
+                                }
                             }
                         }
                     },

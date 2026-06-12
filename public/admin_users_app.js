@@ -12,6 +12,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const email = session.email || '';
     document.getElementById('session-email').textContent = email;
 
+    // Bind password visibility toggles
+    document.querySelectorAll('.btn-password-toggle').forEach(btn => {
+        btn.onclick = () => {
+            const targetId = btn.getAttribute('data-target');
+            const targetInput = document.getElementById(targetId);
+            if (targetInput) {
+                const isPass = targetInput.type === 'password';
+                targetInput.type = isPass ? 'text' : 'password';
+                btn.innerHTML = `<i data-lucide="${isPass ? 'eye-off' : 'eye'}" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>`;
+                if (window.lucide) window.lucide.createIcons();
+            }
+        };
+    });
+
     let supabase = null;
     let state = {
         users: [],
@@ -444,14 +458,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; border-top:1px dashed #cbd5e1; padding-top:6px;">
                             <span style="color:#64748b;">Password:</span>
                             <div style="display:flex; align-items:center; gap:6px;">
-                                <input type="text" readonly value="${pass}" id="success-copy-password" style="border:none; background:none; font-family:monospace; font-size:0.82rem; text-align:right; outline:none; width:120px; font-weight:700;">
-                                <button id="btn-success-copy-pass" style="background:none; border:none; cursor:pointer; padding:2px;"><i data-lucide="copy" style="width: 14px;"></i></button>
+                                <strong style="color:#0f172a; font-family:monospace; font-size:0.85rem;">${pass}</strong>
+                                <button id="btn-success-copy-pass" style="background:none; border:none; cursor:pointer; padding:2px; display:inline-flex; align-items:center;" title="Copy Password"><i data-lucide="copy" style="width: 14px; height: 14px;"></i></button>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding-top:12px; display:flex; justify-content:flex-end;">
-                    <button class="btn-primary" id="btn-close-success-modal-footer">Done</button>
+                <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding-top:12px; display:flex; justify-content:space-between; gap:12px;">
+                    <button class="btn-outline" id="btn-success-copy-invite" style="font-size:0.8rem; padding: 6px 12px; display:inline-flex; align-items:center; gap:6px;">
+                        <i data-lucide="share-2" style="width:14px; height:14px;"></i> Copy Invite Message
+                    </button>
+                    <button class="btn-primary" id="btn-close-success-modal-footer" style="padding: 6px 16px;">Done</button>
                 </div>
             </div>
         `;
@@ -460,15 +477,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const copyPassBtn = backdrop.querySelector('#btn-success-copy-pass');
         copyPassBtn.onclick = () => {
-            const passVal = backdrop.querySelector('#success-copy-password');
-            passVal.select();
-            document.execCommand('copy');
-            copyPassBtn.innerHTML = '<i data-lucide="check" style="width: 14px; color: #10b981;"></i>';
-            if (window.lucide) window.lucide.createIcons();
-            setTimeout(() => {
-                copyPassBtn.innerHTML = '<i data-lucide="copy" style="width: 14px;"></i>';
+            navigator.clipboard.writeText(pass).then(() => {
+                copyPassBtn.innerHTML = '<i data-lucide="check" style="width: 14px; height: 14px; color: #10b981;"></i>';
                 if (window.lucide) window.lucide.createIcons();
-            }, 2000);
+                setTimeout(() => {
+                    copyPassBtn.innerHTML = '<i data-lucide="copy" style="width: 14px; height: 14px;"></i>';
+                    if (window.lucide) window.lucide.createIcons();
+                }, 2000);
+            });
+        };
+
+        const copyInviteBtn = backdrop.querySelector('#btn-success-copy-invite');
+        copyInviteBtn.onclick = () => {
+            const loginUrl = window.location.origin + '/login';
+            const inviteMsg = `Welcome to ThrustVault!\n\nAn account has been created for you. You can access the UAV motor database console using the credentials below:\n\nLogin Link: ${loginUrl}\nRole: ${role.toUpperCase()}\nEmail: ${email}\nPassword: ${pass}\n\nPlease sign in and change your password upon your first login.`;
+            
+            navigator.clipboard.writeText(inviteMsg).then(() => {
+                copyInviteBtn.innerHTML = '<i data-lucide="check" style="width: 14px; height: 14px; color: #10b981;"></i> Message Copied!';
+                if (window.lucide) window.lucide.createIcons();
+                setTimeout(() => {
+                    copyInviteBtn.innerHTML = '<i data-lucide="share-2" style="width: 14px; height: 14px;"></i> Copy Invite Message';
+                    if (window.lucide) window.lucide.createIcons();
+                }, 2000);
+            });
         };
 
         const closeModal = () => backdrop.remove();
