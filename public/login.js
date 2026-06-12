@@ -53,19 +53,101 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // View switcher helper
+    // View switcher helper with transition animations
     function switchView(viewId, title, subtitle) {
-        document.getElementById('view-signin').style.display = 'none';
-        document.getElementById('view-forgot-email').style.display = 'none';
-        document.getElementById('view-forgot-otp').style.display = 'none';
-        document.getElementById('view-forgot-reset').style.display = 'none';
+        document.querySelectorAll('.login-view').forEach(v => {
+            v.classList.remove('active');
+            v.style.display = 'none';
+        });
 
-        document.getElementById(viewId).style.display = 'block';
+        const activeView = document.getElementById(viewId);
+        if (activeView) {
+            activeView.style.display = 'block';
+            // Force reflow
+            activeView.offsetHeight;
+            activeView.classList.add('active');
+        }
 
         if (title) document.getElementById('login-card-title').innerHTML = title;
         if (subtitle) document.getElementById('login-card-subtitle').textContent = subtitle;
 
         if (window.lucide) window.lucide.createIcons();
+    }
+
+    // Caps Lock Warning Handler
+    const capsLockHandler = (e, warningId) => {
+        const warning = document.getElementById(warningId);
+        if (!warning) return;
+        if (e.getModifierState && e.getModifierState('CapsLock')) {
+            warning.style.display = 'flex';
+        } else {
+            warning.style.display = 'none';
+        }
+    };
+
+    const clearCapsLock = (warningId) => {
+        const warning = document.getElementById(warningId);
+        if (warning) warning.style.display = 'none';
+    };
+
+    const pwFields = [
+        { id: 'login-password', warn: 'caps-warning-login-password' },
+        { id: 'reset-password', warn: 'caps-warning-reset-password' },
+        { id: 'reset-password-confirm', warn: 'caps-warning-reset-password-confirm' }
+    ];
+
+    pwFields.forEach(field => {
+        const input = document.getElementById(field.id);
+        if (input) {
+            input.addEventListener('keyup', (e) => capsLockHandler(e, field.warn));
+            input.addEventListener('keydown', (e) => capsLockHandler(e, field.warn));
+            input.addEventListener('focus', (e) => capsLockHandler(e, field.warn));
+            input.addEventListener('blur', () => clearCapsLock(field.warn));
+        }
+    });
+
+    // Password Strength Meter Handler
+    const evaluateStrength = (password) => {
+        let score = 0;
+        if (!password) return { score, text: 'Weak', color: '#ef4444', width: '0%' };
+        if (password.length >= 8) score++;
+        if (/[A-Z]/.test(password)) score++;
+        if (/[0-9]/.test(password)) score++;
+        if (/[^A-Za-z0-9]/.test(password)) score++;
+
+        switch(score) {
+            case 0:
+            case 1:
+                return { score, text: 'Weak', color: '#ef4444', width: '25%' };
+            case 2:
+                return { score, text: 'Fair', color: '#f97316', width: '50%' };
+            case 3:
+                return { score, text: 'Good', color: '#3b82f6', width: '75%' };
+            case 4:
+            default:
+                return { score, text: 'Strong', color: '#10b981', width: '100%' };
+        }
+    };
+
+    const resetPwInput = document.getElementById('reset-password');
+    const resetPwStrength = document.getElementById('strength-reset-password');
+    if (resetPwInput && resetPwStrength) {
+        const fill = resetPwStrength.querySelector('.strength-bar-fill');
+        const text = resetPwStrength.querySelector('.strength-label-text');
+
+        resetPwInput.addEventListener('input', () => {
+            const val = resetPwInput.value;
+            if (!val) {
+                resetPwStrength.style.display = 'none';
+                return;
+            }
+            resetPwStrength.style.display = 'flex';
+            const res = evaluateStrength(val);
+            fill.style.width = res.width;
+            fill.style.backgroundColor = res.color;
+            text.textContent = res.text;
+            text.style.color = res.color;
+        });
     }
 
     // Bind navigation triggers

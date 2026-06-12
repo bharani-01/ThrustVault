@@ -2761,3 +2761,53 @@ button:active { transform: scale(0.98); }
     padding-right: 44px;
 }
 
+/* Password Strength Meter */
+.strength-meter-container {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.strength-bar-track {
+    height: 6px;
+    background-color: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+.strength-bar-fill {
+    height: 100%;
+    width: 0;
+    background-color: #ef4444;
+    border-radius: 3px;
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+.strength-text-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #64748b;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Caps Lock Warning */
+.caps-lock-warning {
+    display: none;
+    font-size: 0.78rem;
+    color: #e11d48;
+    font-weight: 500;
+    margin-top: 6px;
+    align-items: center;
+    gap: 6px;
+}
+
+/* View Transitions */
+.login-view {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+}
+.login-view.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+

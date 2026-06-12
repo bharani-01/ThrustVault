@@ -26,6 +26,68 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
 
+    // Caps Lock Warning Handler for User Creation Form
+    const userPassInput = document.getElementById('form-user-password');
+    const userCapsWarning = document.getElementById('caps-warning-user-password');
+    if (userPassInput && userCapsWarning) {
+        const checkUserCaps = (e) => {
+            if (e.getModifierState && e.getModifierState('CapsLock')) {
+                userCapsWarning.style.display = 'flex';
+            } else {
+                userCapsWarning.style.display = 'none';
+            }
+        };
+        userPassInput.addEventListener('keyup', checkUserCaps);
+        userPassInput.addEventListener('keydown', checkUserCaps);
+        userPassInput.addEventListener('focus', checkUserCaps);
+        userPassInput.addEventListener('blur', () => {
+            userCapsWarning.style.display = 'none';
+        });
+    }
+
+    // Password Strength Meter Handler for User Creation Form
+    const evaluateStrength = (password) => {
+        let score = 0;
+        if (!password) return { score, text: 'Weak', color: '#ef4444', width: '0%' };
+        if (password.length >= 8) score++;
+        if (/[A-Z]/.test(password)) score++;
+        if (/[0-9]/.test(password)) score++;
+        if (/[^A-Za-z0-9]/.test(password)) score++;
+
+        switch(score) {
+            case 0:
+            case 1:
+                return { score, text: 'Weak', color: '#ef4444', width: '25%' };
+            case 2:
+                return { score, text: 'Fair', color: '#f97316', width: '50%' };
+            case 3:
+                return { score, text: 'Good', color: '#3b82f6', width: '75%' };
+            case 4:
+            default:
+                return { score, text: 'Strong', color: '#10b981', width: '100%' };
+        }
+    };
+
+    const userStrengthMeter = document.getElementById('strength-user-password');
+    if (userPassInput && userStrengthMeter) {
+        const fill = userStrengthMeter.querySelector('.strength-bar-fill');
+        const text = userStrengthMeter.querySelector('.strength-label-text');
+
+        userPassInput.addEventListener('input', () => {
+            const val = userPassInput.value;
+            if (!val) {
+                userStrengthMeter.style.display = 'none';
+                return;
+            }
+            userStrengthMeter.style.display = 'flex';
+            const res = evaluateStrength(val);
+            fill.style.width = res.width;
+            fill.style.backgroundColor = res.color;
+            text.textContent = res.text;
+            text.style.color = res.color;
+        });
+    }
+
     let supabase = null;
     let state = {
         users: [],
@@ -517,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Swap sections
         elements.usersViewSection.style.display = 'none';
-        elements.profileViewSection.style.display = 'block';
+        elements.profileViewSection.style.display = 'flex';
 
         elements.fullProfileEmail.textContent = targetUser.email;
         elements.fullProfileUid.textContent = targetUser.id;
@@ -605,19 +667,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Populate profile stats
         elements.profileTotalOps.textContent = state.currentUserLogs.length;
         const writes = state.currentUserLogs.filter(l => {
-            const act = (l.action || '').toLowerCase();
+            const act = (l.action || l.route || l.details || '').toLowerCase();
             return act.includes('create') || act.includes('add') || act.includes('update') || act.includes('delete') || act.includes('edit') || act.includes('import');
         }).length;
         elements.profileTotalMutations.textContent = writes;
 
         // Logins count
-        const logins = state.currentUserLogs.filter(l => (l.action || '').toLowerCase().includes('login')).length;
+        const logins = state.currentUserLogs.filter(l => (l.action || l.route || l.details || '').toLowerCase().includes('login')).length;
         const loginsEl = document.getElementById('profile-total-logins');
         if (loginsEl) loginsEl.textContent = logins;
 
         // Catalog changes count
         const catChanges = state.currentUserLogs.filter(l => {
-            const act = (l.action || '').toLowerCase();
+            const act = (l.action || l.route || l.details || '').toLowerCase();
             return (act.includes('motor') || act.includes('category')) && !act.includes('schema') && !act.includes('role');
         }).length;
         const catChangesEl = document.getElementById('profile-catalog-changes');
@@ -635,11 +697,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderProfileBreakdownChart();
         renderProfileLogs();
+        renderProfileContributionCalendar();
     }
 
     elements.btnProfileBack.onclick = () => {
         elements.profileViewSection.style.display = 'none';
-        elements.usersViewSection.style.display = 'block';
+        elements.usersViewSection.style.display = 'flex';
     };
 
     function renderProfileBreakdownChart() {
@@ -648,19 +711,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!canvas) return;
 
         const loginCount = state.currentUserLogs.filter(l => {
-            const t = (l.action || l.route || '').toLowerCase();
+            const t = (l.action || l.route || l.details || '').toLowerCase();
             return t.includes('login') || t.includes('logout') || t.includes('session');
         }).length;
         const catalogCount = state.currentUserLogs.filter(l => {
-            const t = (l.action || l.route || '').toLowerCase();
+            const t = (l.action || l.route || l.details || '').toLowerCase();
             return (t.includes('motor') || t.includes('category') || t.includes('import') || t.includes('export')) && !t.includes('schema') && !t.includes('user') && !t.includes('login');
         }).length;
         const schemaCount = state.currentUserLogs.filter(l => {
-            const t = (l.action || l.route || '').toLowerCase();
+            const t = (l.action || l.route || l.details || '').toLowerCase();
             return t.includes('schema') || t.includes('custom parameter');
         }).length;
         const userOpsCount = state.currentUserLogs.filter(l => {
-            const t = (l.action || l.route || '').toLowerCase();
+            const t = (l.action || l.route || l.details || '').toLowerCase();
             return t.includes('user') || t.includes('role') || t.includes('registration');
         }).length;
         const otherCount = Math.max(0, state.currentUserLogs.length - loginCount - catalogCount - schemaCount - userOpsCount);
@@ -756,7 +819,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let icon = 'activity';
             let color = '#2563eb';
 
-            const actLower = (log.action || '').toLowerCase();
+            const actLower = (log.action || log.route || log.details || '').toLowerCase();
             if (actLower.includes('login') || actLower.includes('logout')) {
                 icon = 'key';
                 color = '#8b5cf6';
@@ -789,6 +852,163 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (window.lucide) window.lucide.createIcons();
+    }
+
+    function renderProfileContributionCalendar() {
+        const gridContainer = document.getElementById('contribution-calendar-grid');
+        const monthsContainer = document.getElementById('calendar-months-grid');
+        const totalInfoSpan = document.getElementById('profile-calendar-total-info');
+        if (!gridContainer || !monthsContainer) return;
+
+        gridContainer.innerHTML = '';
+        monthsContainer.innerHTML = '';
+
+        // 1. Calculate contributions per date (YYYY-MM-DD local timezone)
+        const dateCounts = {};
+        let totalContributions = 0;
+        
+        state.currentUserLogs.forEach(log => {
+            if (!log.timestamp) return;
+            
+            // Only count catalog/performance additions & mutations:
+            const actLower = (log.action || '').toLowerCase();
+            const routeLower = (log.route || '').toLowerCase();
+            const detailsLower = (log.details || '').toLowerCase();
+            
+            const isContribution = 
+                actLower.includes('motor entry') || 
+                actLower.includes('category created') || 
+                actLower.includes('category deleted') || 
+                actLower.includes('performance dataset') || 
+                actLower.includes('draft dataset') || 
+                actLower.includes('imported data') ||
+                routeLower.includes('motor entry') || 
+                routeLower.includes('category created') || 
+                routeLower.includes('category deleted') || 
+                routeLower.includes('performance dataset') || 
+                routeLower.includes('draft dataset') || 
+                routeLower.includes('imported data') ||
+                detailsLower.startsWith('added motor:') ||
+                detailsLower.startsWith('updated motor:') ||
+                detailsLower.startsWith('deleted motor:') ||
+                detailsLower.startsWith('created category:') ||
+                detailsLower.startsWith('deleted category:') ||
+                detailsLower.startsWith('added performance dataset') ||
+                detailsLower.startsWith('updated dataset') ||
+                detailsLower.startsWith('deleted test run') ||
+                detailsLower.startsWith('imported') ||
+                detailsLower.includes('finalized draft');
+            
+            if (!isContribution) return;
+
+            const d = new Date(log.timestamp);
+            if (isNaN(d.getTime())) return;
+            
+            // Format to YYYY-MM-DD local format
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const dateStr = `${yyyy}-${mm}-${dd}`;
+            
+            dateCounts[dateStr] = (dateCounts[dateStr] || 0) + 1;
+            totalContributions++;
+        });
+
+        if (totalInfoSpan) {
+            totalInfoSpan.textContent = `${totalContributions} contribution${totalContributions === 1 ? '' : 's'} in the last year`;
+        }
+
+        // 2. Generate date range ending today
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        
+        const startDate = new Date();
+        startDate.setDate(today.getDate() - 364); // 365 days
+        startDate.setHours(0, 0, 0, 0);
+        
+        // Align to Sunday
+        const startDay = startDate.getDay();
+        startDate.setDate(startDate.getDate() - startDay);
+
+        const endDate = new Date(today);
+        const endDay = endDate.getDay();
+        endDate.setDate(endDate.getDate() + (6 - endDay)); // Align to Saturday of this week
+
+        // 3. Create grid cells and month labels
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        // We will keep track of weeks to place month labels
+        let weekCount = 0;
+        let lastMonth = -1;
+        
+        const curDate = new Date(startDate);
+        
+        // Single shared tooltip element
+        let tooltip = document.getElementById('calendar-tooltip');
+        if (!tooltip) {
+            tooltip = document.createElement('div');
+            tooltip.id = 'calendar-tooltip';
+            tooltip.className = 'calendar-tooltip';
+            document.body.appendChild(tooltip);
+        }
+
+        while (curDate <= endDate) {
+            const yyyy = curDate.getFullYear();
+            const mm = String(curDate.getMonth() + 1).padStart(2, '0');
+            const dd = String(curDate.getDate()).padStart(2, '0');
+            const dateStr = `${yyyy}-${mm}-${dd}`;
+            const count = dateCounts[dateStr] || 0;
+
+            // Determine intensity level
+            let lvl = 0;
+            if (count > 0 && count <= 2) lvl = 1;
+            else if (count > 2 && count <= 5) lvl = 2;
+            else if (count > 5 && count <= 9) lvl = 3;
+            else if (count > 9) lvl = 4;
+
+            // Create cell
+            const cell = document.createElement('div');
+            cell.className = `contrib-cell contrib-lvl-${lvl}`;
+            
+            // Format nice display date for tooltip
+            const displayDateStr = curDate.toLocaleDateString(undefined, {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            
+            // Bind tooltips
+            cell.onmouseenter = (e) => {
+                const rect = cell.getBoundingClientRect();
+                tooltip.textContent = `${count} contribution${count === 1 ? '' : 's'} on ${displayDateStr}`;
+                tooltip.style.left = `${rect.left + window.scrollX + rect.width / 2}px`;
+                tooltip.style.top = `${rect.top + window.scrollY}px`;
+                tooltip.style.opacity = '1';
+            };
+            cell.onmouseleave = () => {
+                tooltip.style.opacity = '0';
+            };
+
+            gridContainer.appendChild(cell);
+
+            // Month Label Placement: Check on Sunday (first day of the column)
+            if (curDate.getDay() === 0) {
+                const curMonth = curDate.getMonth();
+                if (curMonth !== lastMonth) {
+                    // Place month label
+                    const label = document.createElement('div');
+                    label.textContent = months[curMonth];
+                    label.style.gridColumnStart = `${weekCount + 1}`;
+                    monthsContainer.appendChild(label);
+                    lastMonth = curMonth;
+                }
+                weekCount++;
+            }
+
+            // Move to next day
+            curDate.setDate(curDate.getDate() + 1);
+        }
     }
 
     elements.profileActivitySearch.oninput = () => renderProfileLogs();

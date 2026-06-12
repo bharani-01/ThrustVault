@@ -36,7 +36,7 @@
             </div>
             
             <!-- View 1: Sign In -->
-            <div id="view-signin">
+            <div id="view-signin" class="login-view active">
                 <form id="login-form">
                     <div class="form-group">
                         <label for="login-email">Email Address</label>
@@ -58,6 +58,9 @@
                                 <i data-lucide="eye" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>
                             </button>
                         </div>
+                        <div class="caps-lock-warning" id="caps-warning-login-password">
+                            <i data-lucide="alert-triangle" style="width:14px; height:14px; color:#e11d48; position:static; pointer-events:none;"></i> Caps Lock is ON
+                        </div>
                     </div>
                     
                     <button type="submit" class="login-btn" style="margin-top: 28px; width: 100%;">
@@ -71,7 +74,7 @@
 
 
             <!-- View 2: Forgot Password - Request OTP -->
-            <div id="view-forgot-email" style="display: none;">
+            <div id="view-forgot-email" class="login-view" style="display: none;">
                 <form id="forgot-email-form">
                     <div class="form-group">
                         <label for="forgot-email">Email Address</label>
@@ -92,7 +95,7 @@
             </div>
 
             <!-- View 3: Forgot Password - Verify OTP -->
-            <div id="view-forgot-otp" style="display: none;">
+            <div id="view-forgot-otp" class="login-view" style="display: none;">
                 <form id="forgot-otp-form">
                     <div class="form-group">
                         <label for="forgot-otp">Verification Code (OTP)</label>
@@ -115,7 +118,7 @@
             </div>
 
             <!-- View 4: Reset Password - Update Password -->
-            <div id="view-forgot-reset" style="display: none;">
+            <div id="view-forgot-reset" class="login-view" style="display: none;">
                 <form id="forgot-reset-form">
                     <div class="form-group">
                         <label for="reset-password">New Password</label>
@@ -125,6 +128,18 @@
                             <button type="button" class="btn-password-toggle" data-target="reset-password" title="Toggle Password Visibility">
                                 <i data-lucide="eye" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>
                             </button>
+                        </div>
+                        <div class="caps-lock-warning" id="caps-warning-reset-password">
+                            <i data-lucide="alert-triangle" style="width:14px; height:14px; color:#e11d48; position:static; pointer-events:none;"></i> Caps Lock is ON
+                        </div>
+                        <div class="strength-meter-container" id="strength-reset-password" style="display: none;">
+                            <div class="strength-text-label">
+                                <span>Password Strength</span>
+                                <span class="strength-label-text">Weak</span>
+                            </div>
+                            <div class="strength-bar-track">
+                                <div class="strength-bar-fill"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -136,6 +151,9 @@
                             <button type="button" class="btn-password-toggle" data-target="reset-password-confirm" title="Toggle Password Visibility">
                                 <i data-lucide="eye" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>
                             </button>
+                        </div>
+                        <div class="caps-lock-warning" id="caps-warning-reset-password-confirm">
+                            <i data-lucide="alert-triangle" style="width:14px; height:14px; color:#e11d48; position:static; pointer-events:none;"></i> Caps Lock is ON
                         </div>
                     </div>
                     

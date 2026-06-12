@@ -32,6 +32,96 @@
             flex: 1 !important;
             padding-right: 8px;
         }
+
+        /* Contribution Calendar Styles */
+        .contribution-calendar-wrapper {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.65);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .calendar-months-grid {
+            display: grid;
+            grid-template-columns: repeat(53, 10px);
+            gap: 2px;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            height: 14px;
+            line-height: 1;
+        }
+        .calendar-grid-wrapper {
+            display: flex;
+            gap: 8px;
+        }
+        .calendar-weekdays-grid {
+            display: grid;
+            grid-template-rows: repeat(7, 10px);
+            gap: 2px;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            width: 28px;
+            line-height: 10px;
+            text-align: left;
+        }
+        .contribution-calendar-grid {
+            display: grid;
+            grid-template-rows: repeat(7, 10px);
+            grid-auto-flow: column;
+            gap: 2px;
+            width: max-content;
+        }
+        .contrib-cell {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        .contrib-cell:hover {
+            transform: scale(1.3);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.12);
+            z-index: 5;
+        }
+        .contrib-lvl-0 { background-color: #e2e8f0; }
+        .contrib-lvl-1 { background-color: #dcfce7; }
+        .contrib-lvl-2 { background-color: #86efac; }
+        .contrib-lvl-3 { background-color: #22c55e; }
+        .contrib-lvl-4 { background-color: #15803d; }
+
+        /* Premium custom tooltip */
+        .calendar-tooltip {
+            position: absolute;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            pointer-events: none;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            transform: translate(-50%, -100%) translateY(-8px);
+        }
+        .calendar-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%) rotate(45deg);
+            width: 8px;
+            height: 8px;
+            background: #0f172a;
+        }
     </style>
     <!-- Page Loader Transition Script -->
     <script src="page-loader.js"></script>
@@ -139,7 +229,7 @@
                     <h2 style="font-family:'Outfit'; font-size:1.5rem; font-weight:700;"><i data-lucide="users" style="vertical-align:middle; margin-right:8px; color:var(--primary-color);"></i> User Account Administration</h2>
                 </header>
 
-                <div class="content-body" style="display:grid; grid-template-columns:300px 1fr; gap:25px; align-items:start; overflow-y:auto; flex:1; padding:24px;">
+                <div class="content-body" style="display:grid; grid-template-columns:300px 1fr; gap:25px; align-items:stretch; overflow-y:auto; flex:1; padding:24px;">
                     <!-- User Add Form -->
                     <div class="user-management-form-container glass-panel">
                         <h3 class="form-section-title" style="margin-top:0;"><i data-lucide="user-plus"></i> Create User Account</h3>
@@ -156,6 +246,18 @@
                                     <button type="button" class="btn-password-toggle" data-target="form-user-password" title="Toggle Password Visibility">
                                         <i data-lucide="eye" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>
                                     </button>
+                                </div>
+                                <div class="caps-lock-warning" id="caps-warning-user-password">
+                                    <i data-lucide="alert-triangle" style="width:14px; height:14px; color:#e11d48; position:static; pointer-events:none;"></i> Caps Lock is ON
+                                </div>
+                                <div class="strength-meter-container" id="strength-user-password" style="display: none;">
+                                    <div class="strength-text-label">
+                                        <span>Password Strength</span>
+                                        <span class="strength-label-text">Weak</span>
+                                    </div>
+                                    <div class="strength-bar-track">
+                                        <div class="strength-bar-fill"></div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-group" style="margin-bottom:18px;">
@@ -206,9 +308,9 @@
                     </div>
                 </header>
 
-                <div style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:24px; padding:28px;">
-                    <!-- Top Row: User Hero Card + Quick Metrics -->
-                    <div style="display:grid; grid-template-columns: 310px 1fr; gap:20px; align-items:stretch;">
+                <div style="flex:1; overflow:hidden; display:grid; grid-template-columns: 310px 1fr; gap:20px; padding:28px; align-items:stretch;">
+                    <!-- Left Column: Sidebar Details -->
+                    <div style="display:flex; flex-direction:column; gap:20px; overflow-y:auto; height:100%; padding-right:4px;">
                         <!-- User Hero Card -->
                         <div class="glass-panel" style="padding:22px; border-radius:16px; display:flex; flex-direction:column; gap:14px;">
                             <!-- Avatar + Name Row -->
@@ -240,33 +342,30 @@
                                 <div style="font-size:0.72rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px; display:flex; align-items:center; gap:5px;"><i data-lucide="shield-check" style="width:11px; height:11px; color:#2563eb;"></i> Permissions</div>
                                 <div style="display:flex; flex-direction:column; gap:7px;" id="full-profile-permissions-list"><!-- Loaded dynamically --></div>
                             </div>
-                        </div>
 
-                        <!-- Metrics Grid 2x2 -->
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
-                            <div class="glass-panel" style="padding:16px; border-radius:14px; display:flex; align-items:center; gap:12px; border-left:4px solid #2563eb;">
-                                <div style="width:40px; height:40px; background:#eff6ff; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                                    <i data-lucide="activity" style="width:18px; height:18px; color:#2563eb;"></i>
+                            <!-- Quick Stats -->
+                            <div style="border-top:1px solid #f1f5f9; padding-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                <div class="glass-panel" style="padding:10px; border-radius:10px; display:flex; align-items:center; gap:8px; border-left:3px solid #2563eb; background:rgba(255,255,255,0.45);">
+                                    <div style="width:28px; height:28px; background:#eff6ff; border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                        <i data-lucide="activity" style="width:14px; height:14px; color:#2563eb;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:1.1rem; font-weight:800; color:#0f172a; font-family:'Outfit'; line-height:1;" id="profile-total-ops">0</div>
+                                        <div style="font-size:0.65rem; color:#64748b; font-weight:500; margin-top:2px;">Actions</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div style="font-size:1.6rem; font-weight:800; color:#0f172a; font-family:'Outfit'; line-height:1;" id="profile-total-ops">0</div>
-                                    <div style="font-size:0.76rem; color:#64748b; font-weight:500; margin-top:2px;">Total Logged Actions</div>
+                                <div class="glass-panel" style="padding:10px; border-radius:10px; display:flex; align-items:center; gap:8px; border-left:3px solid #10b981; background:rgba(255,255,255,0.45);">
+                                    <div style="width:28px; height:28px; background:#f0fdf4; border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                        <i data-lucide="database" style="width:14px; height:14px; color:#10b981;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:1.1rem; font-weight:800; color:#0f172a; font-family:'Outfit'; line-height:1;" id="profile-total-mutations">0</div>
+                                        <div style="font-size:0.65rem; color:#64748b; font-weight:500; margin-top:2px;">Mutations</div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="glass-panel" style="padding:16px; border-radius:14px; display:flex; align-items:center; gap:12px; border-left:4px solid #10b981;">
-                                <div style="width:40px; height:40px; background:#f0fdf4; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                                    <i data-lucide="database" style="width:18px; height:18px; color:#10b981;"></i>
-                                </div>
-                                <div>
-                                    <div style="font-size:1.6rem; font-weight:800; color:#0f172a; font-family:'Outfit'; line-height:1;" id="profile-total-mutations">0</div>
-                                    <div style="font-size:0.76rem; color:#64748b; font-weight:500; margin-top:2px;">Data Mutations (Write Ops)</div>
-                                </div>
-                            </div>
                         </div>
-                    </div>
 
-                    <!-- Bottom Row: Activity Breakdown + Activity Log -->
-                    <div style="display:grid; grid-template-columns:280px 1fr; gap:20px; align-items:start;">
                         <!-- Breakdown Chart -->
                         <div class="glass-panel" style="padding:20px; border-radius:16px;">
                             <h4 style="font-family:'Outfit'; font-size:0.95rem; font-weight:700; color:#0f172a; margin:0 0 12px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
@@ -277,38 +376,81 @@
                             </div>
                             <div style="display:flex; flex-direction:column; gap:7px; margin-top:12px; border-top:1px solid #f1f5f9; padding-top:10px;" id="profile-breakdown-legend"><!-- Dynamic --></div>
                         </div>
+                    </div>
 
-                        <!-- Activity Log -->
-                        <div class="glass-panel" style="padding:22px; border-radius:16px; display:flex; flex-direction:column;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
-                                <h4 style="font-family:'Outfit'; font-size:1rem; font-weight:700; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
-                                    <i data-lucide="history" style="width:17px; height:17px; color:#2563eb;"></i> Activity History
-                                    <span id="profile-log-count-badge" style="background:#eff6ff; color:#2563eb; font-size:0.7rem; padding:2px 8px; border-radius:20px; font-weight:600; margin-left:4px;">0 events</span>
-                                </h4>
-                                <div style="display:flex; gap:8px; align-items:center;">
-                                    <div style="position:relative;">
-                                        <i data-lucide="search" style="width:13px; height:13px; position:absolute; left:9px; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
-                                        <input type="text" id="profile-activity-search" placeholder="Search..." style="padding:7px 10px 7px 28px; border-radius:8px; border:1px solid #e2e8f0; outline:none; font-size:0.8rem; width:160px; background:white; font-family:'Inter';">
-                                    </div>
-                                    <select id="profile-activity-filter" style="padding:7px 10px; border-radius:8px; border:1px solid #e2e8f0; outline:none; font-size:0.8rem; background:white; cursor:pointer; font-family:'Inter';">
-                                        <option value="all">All Activities</option>
-                                        <option value="logins">Logins &amp; Logouts</option>
-                                        <option value="catalog">Catalog Mutations</option>
-                                        <option value="schema">Schema Changes</option>
-                                        <option value="users">User Operations</option>
-                                    </select>
+                    <!-- Right Column: Activity Log -->
+                    <div class="glass-panel" style="padding:22px; border-radius:16px; display:flex; flex-direction:column; height:100%; overflow:hidden;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
+                            <h4 style="font-family:'Outfit'; font-size:1rem; font-weight:700; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
+                                <i data-lucide="history" style="width:17px; height:17px; color:#2563eb;"></i> Activity History
+                                <span id="profile-log-count-badge" style="background:#eff6ff; color:#2563eb; font-size:0.7rem; padding:2px 8px; border-radius:20px; font-weight:600; margin-left:4px;">0 events</span>
+                            </h4>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <div style="position:relative;">
+                                    <i data-lucide="search" style="width:13px; height:13px; position:absolute; left:9px; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
+                                    <input type="text" id="profile-activity-search" placeholder="Search..." style="padding:7px 10px 7px 28px; border-radius:8px; border:1px solid #e2e8f0; outline:none; font-size:0.8rem; width:160px; background:white; font-family:'Inter';">
                                 </div>
-                            </div>
-                            <!-- Feed -->
-                            <div id="full-profile-activity-container" style="flex:1; overflow-y:auto; max-height:500px; display:flex; flex-direction:column; gap:10px; padding-right:4px; min-height:300px;"><!-- Dynamic --></div>
-                            <!-- Empty -->
-                            <div id="profile-activity-empty" style="display:none; text-align:center; padding:60px 20px; color:#64748b;">
-                                <i data-lucide="inbox" style="width:44px; height:44px; opacity:0.4; margin:0 auto 14px; display:block;"></i>
-                                <h4 style="font-family:'Outfit'; font-size:1rem; font-weight:600; margin-bottom:6px; color:#475569;">No Matching Activities</h4>
-                                <p style="font-size:0.82rem; color:#94a3b8; margin:0;">Adjust your search or filter to find activities.</p>
+                                <select id="profile-activity-filter" style="padding:7px 10px; border-radius:8px; border:1px solid #e2e8f0; outline:none; font-size:0.8rem; background:white; cursor:pointer; font-family:'Inter';">
+                                    <option value="all">All Activities</option>
+                                    <option value="logins">Logins &amp; Logouts</option>
+                                    <option value="catalog">Catalog Mutations</option>
+                                    <option value="schema">Schema Changes</option>
+                                    <option value="users">User Operations</option>
+                                </select>
                             </div>
                         </div>
+                        <!-- Contribution Calendar (Heatmap) -->
+                        <div class="contribution-calendar-wrapper">
+                            <div style="font-family:'Outfit'; font-size:0.85rem; font-weight:600; color:#475569; display:flex; justify-content:space-between; align-items:center;">
+                                <span>Activity Heatmap</span>
+                                <span id="profile-calendar-total-info" style="font-size:0.75rem; color:#94a3b8; font-weight:normal;">0 contributions in the last year</span>
+                            </div>
+                            <div class="calendar-overflow-container" style="overflow-x: auto; width: 100%; padding-bottom: 5px; scrollbar-width: thin;">
+                                <div style="display: flex; flex-direction: column; gap: 4px; width: max-content; padding: 5px 0;">
+                                    <!-- Months Header -->
+                                    <div id="calendar-months-grid" class="calendar-months-grid">
+                                        <!-- Month labels dynamically generated -->
+                                    </div>
+                                    <!-- Weekdays + Grid -->
+                                    <div class="calendar-grid-wrapper">
+                                        <div class="calendar-weekdays-grid">
+                                            <div></div>
+                                            <div>Mon</div>
+                                            <div></div>
+                                            <div>Wed</div>
+                                            <div></div>
+                                            <div>Fri</div>
+                                            <div></div>
+                                        </div>
+                                        <div id="contribution-calendar-grid" class="contribution-calendar-grid">
+                                            <!-- Cells dynamically generated -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:#94a3b8; border-top:1px solid #f1f5f9; padding-top:10px;">
+                                <a href="#" style="color:inherit; text-decoration:none; cursor:default;" onclick="return false;">Learn how we count contributions</a>
+                                <div style="display:flex; align-items:center; gap:4px;">
+                                    <span>Less</span>
+                                    <span class="contrib-cell contrib-lvl-0" style="cursor:default; transform:none; box-shadow:none;"></span>
+                                    <span class="contrib-cell contrib-lvl-1" style="cursor:default; transform:none; box-shadow:none;"></span>
+                                    <span class="contrib-cell contrib-lvl-2" style="cursor:default; transform:none; box-shadow:none;"></span>
+                                    <span class="contrib-cell contrib-lvl-3" style="cursor:default; transform:none; box-shadow:none;"></span>
+                                    <span class="contrib-cell contrib-lvl-4" style="cursor:default; transform:none; box-shadow:none;"></span>
+                                    <span>More</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Feed -->
+                        <div id="full-profile-activity-container" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right:4px; min-height:0;"><!-- Dynamic --></div>
+                        <!-- Empty -->
+                        <div id="profile-activity-empty" style="display:none; text-align:center; padding:60px 20px; color:#64748b;">
+                            <i data-lucide="inbox" style="width:44px; height:44px; opacity:0.4; margin:0 auto 14px; display:block;"></i>
+                            <h4 style="font-family:'Outfit'; font-size:1rem; font-weight:600; margin-bottom:6px; color:#475569;">No Matching Activities</h4>
+                            <p style="font-size:0.82rem; color:#94a3b8; margin:0;">Adjust your search or filter to find activities.</p>
+                        </div>
                     </div>
+                </div>
                 </div>
             </main>
         </div>
