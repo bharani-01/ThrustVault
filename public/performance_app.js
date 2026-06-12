@@ -41,6 +41,39 @@ document.addEventListener('DOMContentLoaded', () => {
         return '#';
     }
 
+    function getMotorDisplayString(motor) {
+        if (!motor) return '';
+        const cat = state.categories.find(c => c.id === motor.category_id);
+        const catLabel = cat ? (cat.name.toLowerCase().includes('class') ? cat.name : `${cat.name} Class`) : '';
+        const thrustLabel = motor.max_thrust ? ` | Thrust: ${motor.max_thrust}` : '';
+        return `${motor.company} - ${motor.motor_name} (${catLabel}${thrustLabel})`;
+    }
+
+    function setFormTestMotor(motorId) {
+        elements.formTestMotor.value = motorId || '';
+        if (elements.formTestMotorInput) {
+            if (!motorId) {
+                elements.formTestMotorInput.value = '';
+            } else if (state.allMotors) {
+                const motor = state.allMotors.find(m => m.id === motorId);
+                elements.formTestMotorInput.value = motor ? getMotorDisplayString(motor) : '';
+            }
+        }
+    }
+
+    function setPlotMotor(motorId) {
+        elements.plotMotorSelect.value = motorId || '';
+        const inputEl = document.getElementById('plot-motor-input');
+        if (inputEl) {
+            if (!motorId) {
+                inputEl.value = '';
+            } else if (state.allMotors) {
+                const motor = state.allMotors.find(m => m.id === motorId);
+                inputEl.value = motor ? getMotorDisplayString(motor) : '';
+            }
+        }
+    }
+
 
     // Enable/Disable creator views based on role
     const isWriter = session.role === 'admin' || session.role === 'intern';
@@ -151,6 +184,8 @@ document.addEventListener('DOMContentLoaded', () => {
         formCatInfoBadge: document.getElementById('form-cat-info-badge'),
         formCatInfoText: document.getElementById('form-cat-info-text'),
         formTestMotor: document.getElementById('form-test-motor'),
+        formTestMotorInput: document.getElementById('form-test-motor-input'),
+        formTestMotorDatalist: document.getElementById('form-test-motor-datalist'),
         formTestPropeller: document.getElementById('form-test-propeller'),
         formTestEsc: document.getElementById('form-test-esc'),
         formTestBattery: document.getElementById('form-test-battery'),
@@ -1012,17 +1047,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const listContainer = document.getElementById('bulk-preview-list');
         listContainer.innerHTML = '';
         
-        // Build motor options for matching dropdown
-        let motorDropdownOptionsHtml = '<option value="">-- Match Motor (Unmatched, Save as Draft) --</option>';
+        // Build motor options for matching datalist
+        let motorDatalistOptionsHtml = '';
         state.categories.forEach(cat => {
-            if (cat.id === state.draftCategoryId) return; // Hide System Drafts
-            const label = cat.name.toLowerCase().includes('class') ? cat.name : `${cat.name} Class`;
-            motorDropdownOptionsHtml += `<optgroup label="${label}">`;
+            if (cat.id === state.draftCategoryId) return;
             const catMotors = state.motorsByCat[cat.id] || [];
             catMotors.forEach(m => {
-                motorDropdownOptionsHtml += `<option value="${m.id}">${escapeHTML(m.company)} - ${escapeHTML(m.motor_name)}</option>`;
+                const displayVal = getMotorDisplayString(m);
+                motorDatalistOptionsHtml += `<option value="${escapeHTML(displayVal)}"></option>`;
             });
-            motorDropdownOptionsHtml += `</optgroup>`;
         });
 
         state.pendingBulkRuns.forEach((run, index) => {
@@ -1037,9 +1070,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
                 <td style="font-weight:600; font-family:'Outfit'; color:#0f172a; padding:10px 8px;">${escapeHTML(run.motorModel)}</td>
                 <td style="padding:10px 8px;">
-                    <select class="bulk-run-motor-select" data-run-index="${index}" style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1; font-family:'Inter'; font-size:0.8rem; background:#ffffff;">
-                        ${motorDropdownOptionsHtml}
-                    </select>
+                    <div style="position: relative;">
+                        <i data-lucide="search" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; color: #94a3b8;"></i>
+                        <input type="text" class="bulk-run-motor-input" data-run-index="${index}" placeholder="Search and match motor..." list="bulk-run-motor-datalist-${index}" style="width: 100%; padding: 6px 8px 6px 26px; border-radius: 6px; border: 1px solid #cbd5e1; font-family: 'Inter'; font-size: 0.8rem; box-sizing: border-box; background: #ffffff;">
+                        <datalist id="bulk-run-motor-datalist-${index}">
+                            ${motorDatalistOptionsHtml}
+                        </datalist>
+                        <input type="hidden" class="bulk-run-motor-select" data-run-index="${index}">
+                    </div>
                 </td>
                 <td style="padding:10px 8px; font-weight:600; color:#3b82f6;">${escapeHTML(run.voltage || '-')}${run.voltage ? ' V' : ''}</td>
                 <td style="padding:10px 8px;">${escapeHTML(run.propellerModel)}</td>
@@ -1057,10 +1095,15 @@ document.addEventListener('DOMContentLoaded', () => {
             listContainer.appendChild(tr);
 
             const selectEl = tr.querySelector('.bulk-run-motor-select');
+            const inputEl = tr.querySelector('.bulk-run-motor-input');
+
             if (isMatched) {
                 selectEl.value = run.matchedMotorId;
+                const motor = state.allMotors.find(m => m.id === run.matchedMotorId);
+                inputEl.value = motor ? getMotorDisplayString(motor) : '';
             } else {
                 selectEl.value = '';
+                inputEl.value = '';
             }
 
             function updateRowStyle() {
@@ -1078,8 +1121,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            selectEl.onchange = (e) => {
-                run.matchedMotorId = e.target.value;
+            inputEl.oninput = (e) => {
+                const val = e.target.value;
+                const matched = state.allMotors.find(m => getMotorDisplayString(m) === val);
+                if (matched) {
+                    selectEl.value = matched.id;
+                    run.matchedMotorId = matched.id;
+                } else {
+                    selectEl.value = '';
+                    run.matchedMotorId = '';
+                }
                 updateRowStyle();
                 updateBulkSummary();
             };
@@ -1145,11 +1196,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (motor) {
                 elements.formCategorySelect.value = motor.category_id;
                 elements.formCategorySelect.dispatchEvent(new Event('change'));
-                elements.formTestMotor.value = motor.id;
+                setFormTestMotor(motor.id);
             }
         } else {
             elements.formCategorySelect.value = '';
             elements.formCategorySelect.dispatchEvent(new Event('change'));
+            setFormTestMotor('');
         }
 
         run.rows.forEach(pt => {
@@ -1202,6 +1254,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let savedCount = 0;
+            let duplicateCount = 0;
             let errorCount = 0;
             let firstError = null;
 
@@ -1211,6 +1264,71 @@ document.addEventListener('DOMContentLoaded', () => {
                 let motorId = selectedMotorId;
                 let propellerModel = run.propellerModel;
                 
+                // Duplicate check
+                const testVoltageVal = parseFloat(run.voltage) || (run.rows[0] ? parseFloat(run.rows[0].voltage) : null);
+                let isDuplicate = false;
+                
+                try {
+                    if (!motorId) {
+                        let draftQuery = supabase.from('draft_test_runs').select('id, data_points');
+                        draftQuery = draftQuery.eq('motor_model', run.motorModel);
+                        draftQuery = draftQuery.eq('propeller_model', propellerModel);
+                        if (run.metadata.esc_model) {
+                            draftQuery = draftQuery.eq('esc_model', run.metadata.esc_model);
+                        } else {
+                            draftQuery = draftQuery.is('esc_model', null);
+                        }
+                        if (run.metadata.battery_info) {
+                            draftQuery = draftQuery.eq('battery_info', run.metadata.battery_info);
+                        } else {
+                            draftQuery = draftQuery.is('battery_info', null);
+                        }
+                        
+                        const { data: existingDrafts } = await draftQuery;
+                        if (existingDrafts && existingDrafts.length > 0 && testVoltageVal !== null) {
+                            isDuplicate = existingDrafts.some(d => {
+                                const pts = d.data_points || [];
+                                return pts.some(pt => (parseFloat(pt.voltage) === testVoltageVal));
+                            });
+                        }
+                    } else {
+                        let runQuery = supabase.from('motor_test_runs').select('id');
+                        runQuery = runQuery.eq('motor_id', motorId);
+                        runQuery = runQuery.eq('propeller_model', propellerModel);
+                        if (run.metadata.esc_model) {
+                            runQuery = runQuery.eq('esc_model', run.metadata.esc_model);
+                        } else {
+                            runQuery = runQuery.is('esc_model', null);
+                        }
+                        if (run.metadata.battery_info) {
+                            runQuery = runQuery.eq('battery_info', run.metadata.battery_info);
+                        } else {
+                            runQuery = runQuery.is('battery_info', null);
+                        }
+                        
+                        const { data: existingRuns } = await runQuery;
+                        if (existingRuns && existingRuns.length > 0 && testVoltageVal !== null) {
+                            const runIds = existingRuns.map(r => r.id);
+                            const { data: existingPoints } = await supabase
+                                .from('motor_test_data_points')
+                                .select('test_run_id, voltage')
+                                .in('test_run_id', runIds)
+                                .eq('voltage', testVoltageVal)
+                                .limit(1);
+                            if (existingPoints && existingPoints.length > 0) {
+                                isDuplicate = true;
+                            }
+                        }
+                    }
+                } catch (checkErr) {
+                    console.error("Duplicate check error during bulk import:", checkErr);
+                }
+                
+                if (isDuplicate) {
+                    duplicateCount++;
+                    continue;
+                }
+
                 if (!motorId) {
                     try {
                         const { error: draftError } = await supabase
@@ -1291,10 +1409,10 @@ document.addEventListener('DOMContentLoaded', () => {
             saveBtn.disabled = false;
             saveBtn.innerHTML = oldHtml;
 
-            if (errorCount === 0) {
+            if (errorCount === 0 && duplicateCount === 0) {
                 alert(`Successfully saved ${savedCount} test run(s)!`);
             } else {
-                alert(`Import completed with errors. Saved: ${savedCount}, Failed: ${errorCount}. First error: ${firstError.message}`);
+                alert(`Import completed. Saved: ${savedCount}, Duplicates skipped: ${duplicateCount}, Failed: ${errorCount}.${firstError ? ' First error: ' + firstError.message : ''}`);
             }
 
             state.pendingBulkRuns = [];
@@ -1376,7 +1494,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await refreshVisualizerData();
                     elements.plotCategorySelect.value = newMotor.category_id;
                     onPlotCategoryChange();
-                    elements.plotMotorSelect.value = selectedMotorId;
+                    setPlotMotor(selectedMotorId);
                     await loadMotorRuns(selectedMotorId);
                     loadGridPoints(run.id);
                     elements.activeRunLabel.textContent = `Inspecting Configuration: Prop ${cleanPropeller} + ESC ${run.esc_model || 'None'}`;
@@ -1544,7 +1662,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 return;
             }
-            motorModel = elements.formTestMotor.options[elements.formTestMotor.selectedIndex].text;
+            const matchedMotor = state.allMotors.find(m => m.id === motorId);
+            motorModel = matchedMotor ? `${matchedMotor.company} - ${matchedMotor.motor_name}` : 'Unknown';
         }
 
         const esc = elements.formTestEsc.value.trim() || null;
@@ -1604,6 +1723,90 @@ document.addEventListener('DOMContentLoaded', () => {
                 temperature: temp,
                 extra_data: extraData
             });
+        }
+
+        // Check for duplicate test run
+        const testVoltage = stepsData[0] ? stepsData[0].voltage : null;
+        let isDuplicate = false;
+        let runIdForCheck = state.editingDraftRunId;
+
+        try {
+            if (isDraft) {
+                let draftQuery = supabase.from('draft_test_runs').select('id, data_points');
+                draftQuery = draftQuery.eq('motor_model', draftMotorName);
+                draftQuery = draftQuery.eq('propeller_model', propeller);
+                if (esc) {
+                    draftQuery = draftQuery.eq('esc_model', esc);
+                } else {
+                    draftQuery = draftQuery.is('esc_model', null);
+                }
+                if (battery) {
+                    draftQuery = draftQuery.eq('battery_info', battery);
+                } else {
+                    draftQuery = draftQuery.is('battery_info', null);
+                }
+                if (runIdForCheck) {
+                    draftQuery = draftQuery.ne('id', runIdForCheck);
+                }
+                
+                const { data: existingDrafts } = await draftQuery;
+                if (existingDrafts && existingDrafts.length > 0 && testVoltage !== null) {
+                    isDuplicate = existingDrafts.some(d => {
+                        const pts = d.data_points || [];
+                        return pts.some(pt => pt.voltage === testVoltage);
+                    });
+                }
+            } else {
+                let runQuery = supabase.from('motor_test_runs').select('id');
+                runQuery = runQuery.eq('motor_id', motorId);
+                runQuery = runQuery.eq('propeller_model', propeller);
+                if (esc) {
+                    runQuery = runQuery.eq('esc_model', esc);
+                } else {
+                    runQuery = runQuery.is('esc_model', null);
+                }
+                if (battery) {
+                    runQuery = runQuery.eq('battery_info', battery);
+                } else {
+                    runQuery = runQuery.is('battery_info', null);
+                }
+                if (runIdForCheck) {
+                    // If we're updating a run, exclude it unless it is a draft run being finalized
+                    const { data: draftCheck } = await supabase
+                        .from('draft_test_runs')
+                        .select('id')
+                        .eq('id', runIdForCheck)
+                        .maybeSingle();
+                    if (!draftCheck) {
+                        runQuery = runQuery.ne('id', runIdForCheck);
+                    }
+                }
+                
+                const { data: existingRuns } = await runQuery;
+                if (existingRuns && existingRuns.length > 0 && testVoltage !== null) {
+                    const runIds = existingRuns.map(r => r.id);
+                    const { data: existingPoints } = await supabase
+                        .from('motor_test_data_points')
+                        .select('test_run_id, voltage')
+                        .in('test_run_id', runIds)
+                        .eq('voltage', testVoltage)
+                        .limit(1);
+                    if (existingPoints && existingPoints.length > 0) {
+                        isDuplicate = true;
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Duplicate checking error:", err);
+        }
+
+        if (isDuplicate) {
+            alert(`A test run for this motor, propeller, ESC, and battery at ${testVoltage} V already exists in the database.`);
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                updateCreatorSubmitButton();
+            }
+            return;
         }
 
         try {
@@ -1757,7 +1960,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await refreshVisualizerData();
                     elements.plotCategorySelect.value = newMotor.category_id;
                     onPlotCategoryChange();
-                    elements.plotMotorSelect.value = finalizedMotorId;
+                    setPlotMotor(finalizedMotorId);
                     await loadMotorRuns(finalizedMotorId);
                     loadGridPoints(finalizedRunId);
                     elements.activeRunLabel.textContent = `Inspecting Configuration: Prop ${propeller} + ESC ${esc || 'None'}`;
@@ -1788,8 +1991,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 .select('*', { count: 'exact', head: true });
             if (ptsError) throw ptsError;
 
-            elements.totalTestRunsCount.textContent = runsCount || 0;
-            elements.totalDataPointsCount.textContent = ptsCount || 0;
+            if (elements.totalTestRunsCount) {
+                elements.totalTestRunsCount.textContent = runsCount || 0;
+            }
+            if (elements.totalDataPointsCount) {
+                elements.totalDataPointsCount.textContent = ptsCount || 0;
+            }
             
             // Sync drafts list
             await loadSavedDraftsList();
@@ -1840,15 +2047,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const bannerEl = document.getElementById('draft-run-banner');
         if (bannerEl) bannerEl.style.display = 'none';
 
-        if (!catId) {
-            elements.plotMotorSelect.innerHTML = '<option value="">-- Select Thrust Level First --</option>';
-            elements.plotMotorSelect.disabled = true;
-            return;
+        const datalist = document.getElementById('plot-motor-datalist');
+        const inputEl = document.getElementById('plot-motor-input');
+        
+        if (datalist && inputEl) {
+            datalist.innerHTML = '';
+            inputEl.value = '';
+            elements.plotMotorSelect.value = '';
+            
+            if (!catId) {
+                inputEl.disabled = true;
+                inputEl.placeholder = '-- Select Thrust Level First --';
+                return;
+            }
+            
+            inputEl.disabled = false;
+            inputEl.placeholder = 'Type to select motor...';
+            
+            const list = state.motorsByCat[catId] || [];
+            datalist.innerHTML = list.map(m => {
+                const displayVal = getMotorDisplayString(m);
+                return `<option value="${escapeHTML(displayVal)}"></option>`;
+            }).join('');
         }
-
-        elements.plotMotorSelect.innerHTML = buildMotorOptions(catId);
-        elements.plotMotorSelect.disabled = false;
-        elements.plotMotorSelect.value = '';
     }
 
     if (elements.plotCategorySelect) {
@@ -1858,15 +2079,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Creator Form: category change → populate motor dropdown + info badge ──
     function onFormCategoryChange() {
         const catId = elements.formCategorySelect.value;
-        elements.formTestMotor.value = '';
+        setFormTestMotor('');
 
-        if (!catId) {
-            elements.formTestMotor.innerHTML = '<option value="">-- Select Thrust Level First --</option>';
-            elements.formTestMotor.disabled = true;
-            if (elements.formCatInfoBadge) {
-                elements.formCatInfoBadge.classList.remove('visible');
+        if (elements.formTestMotorDatalist && elements.formTestMotorInput) {
+            elements.formTestMotorDatalist.innerHTML = '';
+            elements.formTestMotorInput.value = '';
+            
+            if (!catId) {
+                elements.formTestMotorInput.disabled = true;
+                elements.formTestMotorInput.placeholder = '-- Select Thrust Level First --';
+                if (elements.formCatInfoBadge) {
+                    elements.formCatInfoBadge.classList.remove('visible');
+                }
+                return;
             }
-            return;
+            
+            elements.formTestMotorInput.disabled = false;
+            elements.formTestMotorInput.placeholder = 'Type to select motor...';
         }
 
         // Show category description badge
@@ -1877,9 +2106,13 @@ document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
         }
 
-        elements.formTestMotor.innerHTML = buildMotorOptions(catId);
-        elements.formTestMotor.disabled = false;
-        elements.formTestMotor.value = '';
+        const list = state.motorsByCat[catId] || [];
+        if (elements.formTestMotorDatalist) {
+            elements.formTestMotorDatalist.innerHTML = list.map(m => {
+                const displayVal = getMotorDisplayString(m);
+                return `<option value="${escapeHTML(displayVal)}"></option>`;
+            }).join('');
+        }
     }
 
     if (elements.formCategorySelect) {
@@ -1906,7 +2139,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.formCategorySelect.removeAttribute('required');
                 
                 if (motorGroup) motorGroup.style.display = 'none';
-                elements.formTestMotor.removeAttribute('required');
+                if (elements.formTestMotorInput) {
+                    elements.formTestMotorInput.removeAttribute('required');
+                }
             } else {
                 if (draftMotorGroup) draftMotorGroup.style.display = 'none';
                 if (draftMotorModel) {
@@ -1918,7 +2153,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.formCategorySelect.setAttribute('required', 'true');
                 
                 if (motorGroup) motorGroup.style.display = 'block';
-                elements.formTestMotor.setAttribute('required', 'true');
+                if (elements.formTestMotorInput) {
+                    elements.formTestMotorInput.setAttribute('required', 'true');
+                }
             }
             updateCreatorSubmitButton();
         };
@@ -2142,7 +2379,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Fetch all motors
             const { data: motors, error: motorError } = await supabase
                 .from('motors')
-                .select('id, motor_name, company, category_id')
+                .select('id, motor_name, company, category_id, max_thrust')
                 .order('company')
                 .order('motor_name');
             if (motorError) throw motorError;
@@ -2183,7 +2420,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (motor && motor.category_id) {
                     elements.plotCategorySelect.value = motor.category_id;
                     onPlotCategoryChange();
-                    elements.plotMotorSelect.value = state.activeMotorId;
+                    setPlotMotor(state.activeMotorId);
                     await loadMotorRuns(state.activeMotorId);
                 }
             }
@@ -2592,7 +2829,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchSidebarCounts() {
         try {
             const [motorsRes, catsRes, requestsRes] = await Promise.all([
-                supabase.from('motors').select('id, category_id'),
+                supabase.from('motors').select('id, category_id, motor_name, company, max_thrust'),
                 supabase.from('categories').select('*').order('name'),
                 supabase.from('access_requests').select('*').order('created_at', { ascending: false })
             ]);
@@ -2727,7 +2964,54 @@ document.addEventListener('DOMContentLoaded', () => {
             bindCopyDownHandlers();
             // Ensure creator selects start locked
             if (elements.formCategorySelect) elements.formCategorySelect.value = '';
-            if (elements.formTestMotor) { elements.formTestMotor.innerHTML = '<option value="">-- Select Thrust Level First --</option>'; elements.formTestMotor.disabled = true; }
+            if (elements.formTestMotorInput) {
+                elements.formTestMotorInput.value = '';
+                elements.formTestMotorInput.placeholder = '-- Select Thrust Level First --';
+                elements.formTestMotorInput.disabled = true;
+            }
+            if (elements.formTestMotor) elements.formTestMotor.value = '';
+
+            // Bind manual filter searches for motor select dropdowns
+            const plotMotorInput = document.getElementById('plot-motor-input');
+            if (plotMotorInput) {
+                plotMotorInput.oninput = (e) => {
+                    const val = e.target.value;
+                    const catId = elements.plotCategorySelect.value;
+                    if (!catId) return;
+                    
+                    const list = state.motorsByCat[catId] || [];
+                    const matched = list.find(m => getMotorDisplayString(m) === val);
+                    
+                    if (matched) {
+                        if (elements.plotMotorSelect.value !== matched.id) {
+                            elements.plotMotorSelect.value = matched.id;
+                            elements.plotMotorSelect.dispatchEvent(new Event('change'));
+                        }
+                    } else {
+                        if (elements.plotMotorSelect.value !== '') {
+                            elements.plotMotorSelect.value = '';
+                            elements.plotMotorSelect.dispatchEvent(new Event('change'));
+                        }
+                    }
+                };
+            }
+
+            if (elements.formTestMotorInput) {
+                elements.formTestMotorInput.oninput = (e) => {
+                    const val = e.target.value;
+                    const catId = elements.formCategorySelect.value;
+                    if (!catId) return;
+                    
+                    const list = state.motorsByCat[catId] || [];
+                    const matched = list.find(m => getMotorDisplayString(m) === val);
+                    
+                    if (matched) {
+                        elements.formTestMotor.value = matched.id;
+                    } else {
+                        elements.formTestMotor.value = '';
+                    }
+                };
+            }
         } catch (e) {
             console.error("Initialization failed", e);
             logoutAndRedirect();

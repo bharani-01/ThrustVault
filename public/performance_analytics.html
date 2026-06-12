@@ -268,14 +268,17 @@
                                         </select>
                                     </div>
                                     <div class="filter-group" style="margin:0; flex-direction:column; align-items:flex-start; gap:4px;">
-                                        <label for="plot-motor-select" style="font-size:0.8rem; font-weight:600;"><i data-lucide="cpu"></i> Motor:</label>
-                                        <select id="plot-motor-select" disabled style="padding:6px 12px; font-size:0.85rem; border-radius:6px; border:1px solid #cbd5e1; outline:none; cursor:pointer; min-width:200px;">
-                                            <option value="">-- Select Thrust Level First --</option>
-                                        </select>
+                                        <label for="plot-motor-input" style="font-size:0.8rem; font-weight:600;"><i data-lucide="cpu"></i> Motor:</label>
+                                        <div style="position: relative;">
+                                            <i data-lucide="search" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; color: #94a3b8;"></i>
+                                            <input type="text" id="plot-motor-input" disabled placeholder="-- Select Thrust Level First --" list="plot-motor-datalist" style="padding:6px 12px 6px 28px; font-size:0.85rem; border-radius:6px; border:1px solid #cbd5e1; outline:none; cursor:pointer; width:200px; box-sizing: border-box; transition: all 0.2s;">
+                                            <datalist id="plot-motor-datalist"></datalist>
+                                            <input type="hidden" id="plot-motor-select">
+                                        </div>
                                     </div>
-                                    <div class="filter-group" style="margin:0;">
+                                    <div class="filter-group" style="margin:0; flex-direction:column; align-items:flex-start; gap:4px;">
                                         <label for="plot-metric-select" style="font-size:0.8rem; font-weight:600;"><i data-lucide="sliders"></i> Y-Axis Metric:</label>
-                                        <select id="plot-metric-select" style="padding:6px 12px; font-size:0.85rem; border-radius:6px; border:1px solid #cbd5e1; outline:none; cursor:pointer;">
+                                        <select id="plot-metric-select" style="padding:6px 12px; font-size:0.85rem; border-radius:6px; border:1px solid #cbd5e1; outline:none; cursor:pointer; min-width:185px;">
                                             <option value="thrust">Thrust (g) vs. Throttle (%)</option>
                                             <option value="efficiency">Efficiency (g/W) vs. Thrust (g)</option>
                                             <option value="current">Current (A) vs. Throttle (%)</option>
@@ -393,11 +396,14 @@
                                             <span id="form-cat-info-text"></span>
                                         </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label for="form-test-motor">Motor Model *</label>
-                                        <select id="form-test-motor" required disabled style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-family:'Inter'; font-size:0.9rem;">
-                                            <option value="">-- Select Thrust Level First --</option>
-                                        </select>
+                                    <div class="form-group" id="form-test-motor-container">
+                                        <label for="form-test-motor-input">Motor Model *</label>
+                                        <div style="position: relative;">
+                                            <i data-lucide="search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: #94a3b8;"></i>
+                                            <input type="text" id="form-test-motor-input" disabled required placeholder="-- Select Thrust Level First --" list="form-test-motor-datalist" style="width:100%; padding:10px 10px 10px 32px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-family:'Inter'; font-size:0.9rem; box-sizing: border-box; transition: all 0.2s;">
+                                            <datalist id="form-test-motor-datalist"></datalist>
+                                            <input type="hidden" id="form-test-motor">
+                                        </div>
                                     </div>
                                     <div class="form-group">
                                         <label for="form-test-propeller">Propeller Model *</label>

@@ -818,7 +818,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'right', labels: { font: { family: 'Inter', size: 11 } } }
+                        legend: { position: 'right', labels: { font: { family: 'Inter', size: 11 } } },
+                        title: {
+                            display: true,
+                            text: 'Motors by Brand',
+                            color: '#1e293b',
+                            font: { family: 'Outfit', size: 14, weight: '600' },
+                            padding: { bottom: 10 }
+                        }
                     }
                 }
             });
@@ -829,7 +836,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if(state.chartInstances.thrust) state.chartInstances.thrust.destroy();
         
         if (ctx2 && catMotors.length > 0) {
-            const sorted = [...catMotors].sort((a, b) => parseThrustToKg(a.thrust) - parseThrustToKg(b.thrust));
+            const sorted = [...catMotors]
+                .sort((a, b) => parseThrustToKg(b.thrust) - parseThrustToKg(a.thrust))
+                .slice(0, 10);
+            
+            const canvasCtx = ctx2.getContext('2d');
+            let gradient = '#2563eb';
+            if (canvasCtx) {
+                gradient = canvasCtx.createLinearGradient(0, 0, 400, 0);
+                gradient.addColorStop(0, '#2563eb');
+                gradient.addColorStop(1, '#60a5fa');
+            }
             
             state.chartInstances.thrust = new Chart(ctx2, {
                 type: 'bar',
@@ -838,31 +855,46 @@ document.addEventListener('DOMContentLoaded', () => {
                     datasets: [{
                         label: 'Max Thrust (kg)',
                         data: sorted.map(m => parseThrustToKg(m.thrust)),
-                        backgroundColor: 'rgba(37, 99, 235, 0.85)',
+                        backgroundColor: gradient,
                         borderColor: '#2563eb',
-                        borderWidth: 1.5,
-                        borderRadius: 6
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        borderSkipped: false
                     }]
                 },
                 options: {
+                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: {
+                        x: {
                             beginAtZero: true,
                             title: { display: true, text: 'Max Thrust (kg)', font: { family: 'Inter', weight: '600' } },
-                            grid: { color: '#f1f5f9' }
+                            grid: { color: '#f1f5f9' },
+                            ticks: {
+                                font: { family: 'Inter', size: 10 }
+                            }
                         },
-                        x: {
-                            grid: { display: false }
+                        y: {
+                            grid: { display: false },
+                            ticks: {
+                                font: { family: 'Inter', size: 10 }
+                            }
                         }
                     },
                     plugins: {
                         legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Top 10 Motors by Max Thrust',
+                            color: '#1e293b',
+                            font: { family: 'Outfit', size: 14, weight: '600' },
+                            padding: { bottom: 10 }
+                        },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `Max Thrust: ${context.parsed.y.toFixed(2)} kg`;
+                                    return `Max Thrust: ${context.parsed.x.toFixed(2)} kg`;
                                 }
                             }
                         }
@@ -1273,6 +1305,16 @@ document.addEventListener('DOMContentLoaded', () => {
             link_esc: document.getElementById('form-esc-link').value.trim() || null,
             link_propeller: document.getElementById('form-prop-link').value.trim() || null
         };
+
+        const isDuplicate = state.motors.some(m => 
+            m.id !== id &&
+            m.company.toLowerCase() === motorData.company.toLowerCase() && 
+            m.motor.toLowerCase() === motorData.motor_name.toLowerCase()
+        );
+        if (isDuplicate) {
+            alert(`A motor named "${motorData.motor_name}" from manufacturer "${motorData.company}" already exists in the database.`);
+            return;
+        }
         
         try {
             if (id) {

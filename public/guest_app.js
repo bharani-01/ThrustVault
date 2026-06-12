@@ -640,6 +640,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                 boxWidth: 12,
                                 padding: 12
                             }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Motors by Brand',
+                            color: '#1e293b',
+                            font: { family: "'Outfit', sans-serif", size: 14, weight: '600' },
+                            padding: { bottom: 10 }
                         }
                     }
                 }
@@ -650,11 +657,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if(state.chartInstances.thrust) state.chartInstances.thrust.destroy();
         
         if (ctx2 && catMotors.length > 0) {
-            const sorted = [...catMotors].sort((a, b) => parseThrustToKg(a.thrust) - parseThrustToKg(b.thrust));
+            const sorted = [...catMotors]
+                .sort((a, b) => parseThrustToKg(b.thrust) - parseThrustToKg(a.thrust))
+                .slice(0, 10);
+            
             const canvasCtx = ctx2.getContext('2d');
             let gradient = '#2563eb';
             if (canvasCtx) {
-                gradient = canvasCtx.createLinearGradient(0, 0, 0, 200);
+                gradient = canvasCtx.createLinearGradient(0, 0, 400, 0);
                 gradient.addColorStop(0, '#2563eb');
                 gradient.addColorStop(1, '#60a5fa');
             }
@@ -673,18 +683,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     }]
                 },
                 options: {
+                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: {
+                        x: {
                             beginAtZero: true,
                             grid: { color: '#e2e8f0' },
                             ticks: {
                                 color: '#475569',
                                 font: { family: "'Inter', sans-serif", size: 10 }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Max Thrust (kg)',
+                                color: '#475569',
+                                font: { family: "'Inter', sans-serif", size: 11, weight: '600' }
                             }
                         },
-                        x: {
+                        y: {
                             grid: { display: false },
                             ticks: {
                                 color: '#475569',
@@ -692,7 +709,23 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
                     },
-                    plugins: { legend: { display: false } }
+                    plugins: { 
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Top 10 Motors by Max Thrust',
+                            color: '#1e293b',
+                            font: { family: "'Outfit', sans-serif", size: 14, weight: '600' },
+                            padding: { bottom: 10 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Max Thrust: ${context.parsed.x.toFixed(2)} kg`;
+                                }
+                            }
+                        }
+                    }
                 }
             });
         }
