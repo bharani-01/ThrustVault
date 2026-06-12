@@ -666,6 +666,17 @@ def performance_analytics():
 def performance_app_js():
     return verify_dashboard_access_any('performance_app.js')
 
+@app.route('/motor_explorer')
+@app.route('/motor_explorer.html')
+def motor_explorer():
+    if request.path.endswith('.html'):
+        return redirect('/motor_explorer')
+    return verify_dashboard_access_any('motor_explorer.html')
+
+@app.route('/motor_explorer_app.js')
+def motor_explorer_app_js():
+    return verify_dashboard_access_any('motor_explorer_app.js')
+
 
 # ---------------------------------------------------------------------------
 # Serve index.html at root
@@ -719,7 +730,9 @@ def static_files(filename):
         'page-loader.js',
         'request_access.html',
         'style.css',
-        'thrustvault_presentation.html'
+        'thrustvault_presentation.html',
+        'motor_explorer.html',
+        'motor_explorer_app.js'
     }
     
     PUBLIC_LIBS = {

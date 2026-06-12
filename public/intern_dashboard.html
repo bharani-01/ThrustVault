@@ -16,7 +16,7 @@
     <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
     <!-- SheetJS Library -->
     <script src="libs/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.1">
     <!-- Modal scrolling and overflow fixes -->
     <style>
         .modal-container {
@@ -42,81 +42,30 @@
 <body>
     <div class="app-container">
         <!-- Sidebar Navigation -->
-                <aside class="sidebar">
+                <aside class="sidebar" data-sidebar="intern">
             <script>
                 if (localStorage.getItem('thrustvault_sidebar_collapsed') === 'true') {
                     document.currentScript.parentElement.classList.add('collapsed');
                 }
             </script>
-            <div class="sidebar-header">
-                <div class="logo-container">
-                    <div class="logo-icon">
-                        <i data-lucide="aperture" class="spin-slow icon-primary"></i>
-                    </div>
-                    <div class="logo-text">
-                        <h1>Thrust<span>Vault</span></h1>
-                        <p>Intern Database Workspace</p>
-                    </div>
-                                    <button class="btn-toggle-sidebar" id="btn-toggle-sidebar" title="Toggle Sidebar">
-                        <i data-lucide="menu"></i>
-                    </button>
+            <!-- Sidebar Placeholder Skeletons -->
+            <div class="sidebar-skeleton-wrapper" style="padding: 20px; display: flex; flex-direction: column; gap: 30px; height: 100%; box-sizing: border-box;">
+                <div class="shimmer" style="height: 44px; width: 140px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                <div style="display:flex; flex-direction:column; gap:15px; flex:1;">
+                    <div class="shimmer" style="height: 16px; width: 80px; border-radius: 4px; background: var(--border-color);"></div>
+                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
                 </div>
-            </div>
-
-            <!-- Stats Widgets in Sidebar -->
-            <div class="sidebar-stats">
-                <div class="stat-card-mini">
-                    <div class="stat-icon"><i data-lucide="database"></i></div>
-                    <div class="stat-info">
-                        <span class="stat-val" id="total-motors-count">0</span>
-                        <span class="stat-label">Total Motors</span>
-                    </div>
-                </div>
-                <div class="stat-card-mini">
-                    <div class="stat-icon"><i data-lucide="layers"></i></div>
-                    <div class="stat-info">
-                        <span class="stat-val" id="total-categories-count">0</span>
-                        <span class="stat-label">Thrust Levels</span>
+                <div style="display:flex; align-items:center; gap:12px; border-top: 1px solid var(--border-color); padding-top:20px;">
+                    <div class="shimmer" style="height: 40px; width: 40px; border-radius: var(--radius-full); background: var(--border-color);"></div>
+                    <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
+                        <div class="shimmer" style="height: 12px; width: 100px; border-radius: 4px; background: var(--border-color);"></div>
+                        <div class="shimmer" style="height: 10px; width: 50px; border-radius: 4px; background: var(--border-color);"></div>
                     </div>
                 </div>
             </div>
-
-            <!-- Navigation Categories (Thrust Levels) -->
-            <nav class="sidebar-nav">
-                <div class="sidebar-menu-links" style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
-                    <a href="intern_dashboard" class="btn-sidebar-link active" title="Catalog View" style="text-decoration: none; box-sizing: border-box;">
-                        <i data-lucide="database"></i> Catalog Dashboard
-                    </a>
-                    <a href="performance_analytics" class="btn-sidebar-link" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
-                        <i data-lucide="trending-up"></i> Performance Analytics
-                    </a>
-                </div>
-
-                <div class="nav-section-title">
-                    <span>Thrust Categories</span>
-                    <button class="btn-icon-small" id="btn-add-category" title="Add Custom Thrust Level">
-                        <i data-lucide="plus"></i>
-                    </button>
-                </div>
-                <div class="category-list" id="category-list-container">
-                    <!-- Dynamic Category Tabs -->
-                </div>
-            </nav>
-
-            <!-- Sidebar Footer -->
-            <div class="sidebar-footer">
-                <div class="sidebar-user-profile">
-                    <div class="user-avatar" id="user-avatar-initials">I</div>
-                    <div class="user-info">
-                        <span class="user-email" id="session-email">intern@thrustvault.com</span>
-                        <span class="badge-role role-intern">Intern</span>
-                    </div>
-                </div>
-                <button class="btn-logout-premium" id="btn-logout" title="Log Out">
-                    <i data-lucide="log-out"></i> Log Out
-                </button>
-            </div>
-        </aside>
+</aside>
 
         <!-- Main Dashboard Area -->
         <main class="main-content">
@@ -180,22 +129,22 @@
                 <!-- Banner showing selected thrust category details -->
                 <section class="category-header-panel">
                     <div class="category-header-info">
-                        <div class="badge-accent" id="category-badge">Loading...</div>
-                        <h2 id="active-category-title">Loading Class</h2>
-                        <p id="active-category-desc">...</p>
+                        <div class="badge-accent" id="category-badge"><span class="shimmer skeleton-badge-shimmer" style="width: 50px;"></span></div>
+                        <h2 id="active-category-title"><span class="shimmer skeleton-title-shimmer" style="width: 150px;"></span></h2>
+                        <p id="active-category-desc"><span class="shimmer skeleton-text" style="width: 250px;"></span></p>
                     </div>
                     
                     <div class="category-quick-stats">
                         <div class="quick-stat-item">
-                            <span class="value" id="category-motors-count">0</span>
+                            <span class="value" id="category-motors-count"><span class="shimmer skeleton-text" style="width: 20px;"></span></span>
                             <span class="label">Motors</span>
                         </div>
                         <div class="quick-stat-item">
-                            <span class="value" id="category-avg-thrust">N/A</span>
+                            <span class="value" id="category-avg-thrust"><span class="shimmer skeleton-text" style="width: 40px;"></span></span>
                             <span class="label">Avg Thrust Max</span>
                         </div>
                         <div class="quick-stat-item">
-                            <span class="value" id="category-top-company">N/A</span>
+                            <span class="value" id="category-top-company"><span class="shimmer skeleton-text" style="width: 60px;"></span></span>
                             <span class="label">Leading Brand</span>
                         </div>
                     </div>
@@ -261,7 +210,37 @@
                                 </tr>
                             </thead>
                             <tbody id="motors-list-rows">
-                                <!-- Dynamic rows -->
+                                <!-- Skeleton Loader Rows -->
+                                <tr class="skeleton-row">
+                                    <td><span class="shimmer skeleton-badge-shimmer" style="width: 16px; height: 16px; display: block;"></span></td>
+                                    <td><span class="shimmer skeleton-text" style="width: 140px; display: block;"></span></td>
+                                    <td><span class="shimmer skeleton-text" style="width: 90px; display: block;"></span></td>
+                                    <td><span class="shimmer skeleton-badge-shimmer" style="width: 60px; display: block;"></span></td>
+                                    <td><span class="shimmer skeleton-badge-shimmer" style="width: 50px; display: block;"></span></td>
+                                    <td><span class="shimmer skeleton-text" style="width: 110px; display: block;"></span></td>
+                                    <td style="text-align: center;"><span class="shimmer skeleton-badge-shimmer" style="width: 60px; display: inline-block;"></span></td>
+                                    <td style="text-align: right;"><span class="shimmer skeleton-badge-shimmer" style="width: 50px; display: inline-block;"></span></td>
+                                </tr>
+                                <tr class="skeleton-row">
+                                    <td><span class="shimmer skeleton-badge-shimmer" style="width: 16px; height: 16px; display: block;"></span></td>
+                                    <td><span class="shimmer skeleton-text" style="width: 120px; display: block;"></span></td>
+                                    <td><span class="shimmer skeleton-text" style="width: 80px; display: block;"></span></td>
+                                    <td><span class="shimmer skeleton-badge-shimmer" style="width: 55px; display: block;"></span></td>
+                                    <td><span class="shimmer skeleton-badge-shimmer" style="width: 45px; display: block;"></span></td>
+                                    <td><span class="shimmer skeleton-text" style="width: 100px; display: block;"></span></td>
+                                    <td style="text-align: center;"><span class="shimmer skeleton-badge-shimmer" style="width: 60px; display: inline-block;"></span></td>
+                                    <td style="text-align: right;"><span class="shimmer skeleton-badge-shimmer" style="width: 50px; display: inline-block;"></span></td>
+                                </tr>
+                                <tr class="skeleton-row">
+                                    <td><span class="shimmer skeleton-badge-shimmer" style="width: 16px; height: 16px; display: block;"></span></td>
+                                    <td><span class="shimmer skeleton-text" style="width: 150px; display: block;"></span></td>
+                                    <td><span class="shimmer skeleton-text" style="width: 95px; display: block;"></span></td>
+                                    <td><span class="shimmer skeleton-badge-shimmer" style="width: 65px; display: block;"></span></td>
+                                    <td><span class="shimmer skeleton-badge-shimmer" style="width: 55px; display: block;"></span></td>
+                                    <td><span class="shimmer skeleton-text" style="width: 120px; display: block;"></span></td>
+                                    <td style="text-align: center;"><span class="shimmer skeleton-badge-shimmer" style="width: 60px; display: inline-block;"></span></td>
+                                    <td style="text-align: right;"><span class="shimmer skeleton-badge-shimmer" style="width: 50px; display: inline-block;"></span></td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>

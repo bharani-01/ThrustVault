@@ -10,7 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Set email display in footer
     const email = session.email || '';
-    document.getElementById('session-email').textContent = email;
+    const emailEl = document.getElementById('session-email');
+    if (emailEl) emailEl.textContent = email;
 
     let supabase = null;
     let state = {
@@ -21,12 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // DOM Elements
     const elements = {
-        catList: document.getElementById('category-list-container'),
-        totalMotors: document.getElementById('total-motors-count'),
-        totalCats: document.getElementById('total-categories-count'),
-        btnLogout: document.getElementById('btn-logout'),
-        btnAddCat: document.getElementById('btn-add-category'),
-        requestsPendingBadge: document.getElementById('requests-pending-badge'),
+        get catList() { return document.getElementById('category-list-container'); },
+        get totalMotors() { return document.getElementById('total-motors-count'); },
+        get totalCats() { return document.getElementById('total-categories-count'); },
+        get btnLogout() { return document.getElementById('btn-logout'); },
+        get btnAddCat() { return document.getElementById('btn-add-category'); },
+        get requestsPendingBadge() { return document.getElementById('requests-pending-badge'); },
         
         // Requests Specific Elements
         requestsTableBody: document.getElementById('access-requests-list-rows'),
@@ -101,9 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'index.html';
     }
 
-    elements.btnLogout.onclick = () => {
-        logoutAndRedirect();
-    };
+    
 
     // Throttled timer logic
     let inactivityTimeout;
@@ -141,19 +140,18 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener(evt, resetInactivityTimer, { passive: true });
     });
 
-    // Sidebar navigation trigger for custom category creations
-    if (elements.btnAddCat) {
-        elements.btnAddCat.onclick = () => {
-            sessionStorage.setItem('triggerAddCategory', 'true');
-            window.location.href = 'admin_dashboard';
-        };
-    }
+    // Sidebar navigation trigger is setup dynamically in setupSidebar()
 
     // =========================================================================
     // CORE SERVICES: CATEGORIES & SIDEBAR COUNTERS
     // =========================================================================
     async function fetchSidebarCounts() {
         try {
+            if (!supabase) {
+                const res = await fetch('/api/config');
+                const config = await res.json();
+                supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+            }
             const [motorsRes, catsRes] = await Promise.all([
                 supabase.from('motors').select('id, category_id'),
                 supabase.from('categories').select('*').order('name')
@@ -165,8 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
             state.motors = motorsRes.data || [];
             state.categories = catsRes.data || [];
 
-            elements.totalMotors.textContent = state.motors.length;
-            elements.totalCats.textContent = state.categories.length;
+            if (elements.totalMotors) elements.totalMotors.textContent = state.motors.length;
+            if (elements.totalCats) elements.totalCats.textContent = state.categories.length;
 
             renderSidebar();
         } catch (err) {
@@ -175,6 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderSidebar() {
+        if (!elements.catList) return;
         elements.catList.innerHTML = '';
         state.categories.forEach(cat => {
             const count = state.motors.filter(m => m.category_id === cat.id).length;
@@ -217,6 +216,15 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             elements.catList.appendChild(div);
         });
+
+        // Add static All Motors tab
+        const allTab = document.createElement('div');
+        allTab.className = 'category-tab';
+        allTab.innerHTML = '<span>All Motors</span>';
+        allTab.onclick = () => {
+            window.location.href = 'motor_explorer';
+        };
+        elements.catList.appendChild(allTab);
         if (window.lucide) window.lucide.createIcons();
     }
 
@@ -566,16 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.requestsSearch.oninput = () => renderAccessRequestsList();
     elements.requestsFilterStatus.onchange = () => renderAccessRequestsList();
 
-    // Sidebar Profile Click Trigger
-    const sidebarProfileCard = document.querySelector('.sidebar-user-profile');
-    if (sidebarProfileCard) {
-        sidebarProfileCard.style.cursor = 'pointer';
-        sidebarProfileCard.title = 'View My Profile';
-        sidebarProfileCard.onclick = () => {
-            sessionStorage.setItem('showMyProfile', 'true');
-            window.location.href = 'admin_users';
-        };
-    }
+    // Sidebar Profile Click Trigger is setup dynamically in setupSidebar()
 
     // =========================================================================
     // INITIALIZATION
@@ -608,13 +607,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     init();
-    // Sidebar Toggle Event Listener
-    const sidebar = document.querySelector('.sidebar');
-    const toggleBtn = document.getElementById('btn-toggle-sidebar');
-    if (toggleBtn && sidebar) {
-        toggleBtn.addEventListener('click', () => {
-            const isCollapsed = sidebar.classList.toggle('collapsed');
-            localStorage.setItem('thrustvault_sidebar_collapsed', isCollapsed);
-        });
+    
+    function setupSidebar() {
+        if (typeof fetchSidebarCounts === 'function') {
+            fetchSidebarCounts();
+        }
+
+        if (elements.btnAddCat) {
+            elements.btnAddCat.onclick = () => {
+                sessionStorage.setItem('triggerAddCategory', 'true');
+                window.location.href = 'admin_dashboard';
+            };
+        }
+
+        const sidebarProfileCard = document.querySelector('.sidebar-user-profile');
+        if (sidebarProfileCard) {
+            sidebarProfileCard.style.cursor = 'pointer';
+            sidebarProfileCard.title = 'View My Profile';
+            sidebarProfileCard.onclick = () => {
+                sessionStorage.setItem('showMyProfile', 'true');
+                window.location.href = 'admin_users';
+            };
+        }
+    }
+
+    if (window.sidebarLoaded) {
+        setupSidebar();
+    } else {
+        window.addEventListener('sidebarLoaded', setupSidebar);
     }
 });

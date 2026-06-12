@@ -184,38 +184,159 @@
 
         startProgress(pb);
 
-        // Inject Theme Toggle Button if Sidebar Footer exists
-        const sidebarFooter = document.querySelector('.sidebar-footer');
-        if (sidebarFooter) {
-            const toggleBtn = document.createElement('button');
-            toggleBtn.className = 'btn-theme-toggle';
-            toggleBtn.id = 'btn-theme-toggle';
-            toggleBtn.title = 'Toggle Theme';
-            
-            const currentTheme = localStorage.getItem('thrustvault_theme') || 'light';
-            const iconName = currentTheme === 'dark' ? 'sun' : 'moon';
-            const textLabel = currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
-            
-            toggleBtn.style.cssText = 'width:100%; padding:8px 16px; background:transparent; border:1px solid var(--border-color); border-radius:var(--radius-md); font-size:0.85rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; color:var(--text-primary); transition:all 0.2s; margin-bottom: 8px; box-sizing: border-box;';
-            toggleBtn.innerHTML = `<i data-lucide="${iconName}" style="width:16px; height:16px;"></i> <span>${textLabel}</span>`;
-            
-            const logoutBtn = sidebarFooter.querySelector('#btn-logout') || sidebarFooter.querySelector('.btn-logout-premium');
-            if (logoutBtn) {
-                sidebarFooter.insertBefore(toggleBtn, logoutBtn);
-            } else {
-                sidebarFooter.appendChild(toggleBtn);
+        const sidebarEl = document.querySelector('.sidebar');
+        if (sidebarEl) {
+            let sidebarRole = sidebarEl.getAttribute('data-sidebar');
+            if (sidebarRole === 'dynamic') {
+                const sessionStr = localStorage.getItem('thrustvault_session');
+                if (sessionStr) {
+                    try {
+                        const session = JSON.parse(sessionStr);
+                        sidebarRole = session.role;
+                    } catch(e) {
+                        sidebarRole = 'guest';
+                    }
+                } else {
+                    sidebarRole = 'guest';
+                }
             }
             
-            toggleBtn.onclick = () => {
-                const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-                document.documentElement.setAttribute('data-theme', theme);
-                localStorage.setItem('thrustvault_theme', theme);
-                
-                const newIcon = theme === 'dark' ? 'sun' : 'moon';
-                const newText = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
-                toggleBtn.innerHTML = `<i data-lucide="${newIcon}" style="width:16px; height:16px;"></i> <span>${newText}</span>`;
-                if (window.lucide) window.lucide.createIcons();
-            };
+            fetch(`sidebar_${sidebarRole}.html`)
+                .then(res => {
+                    if (!res.ok) throw new Error("Failed to load sidebar template");
+                    return res.text();
+                })
+                .then(html => {
+                    const existingScript = sidebarEl.querySelector('script');
+                    sidebarEl.innerHTML = '';
+                    if (existingScript) {
+                        sidebarEl.appendChild(existingScript);
+                    }
+                    
+                    const templateWrapper = document.createElement('div');
+                    templateWrapper.innerHTML = html;
+                    while (templateWrapper.firstChild) {
+                        sidebarEl.appendChild(templateWrapper.firstChild);
+                    }
+                    
+                    const currentPath = window.location.pathname;
+                    const currentPage = currentPath.substring(currentPath.lastIndexOf('/') + 1) || 'index.html';
+                    sidebarEl.querySelectorAll('.btn-sidebar-link').forEach(link => {
+                        const href = link.getAttribute('href');
+                        if (href && (currentPage.startsWith(href) || href.startsWith(currentPage))) {
+                            link.classList.add('active');
+                        } else {
+                            link.classList.remove('active');
+                        }
+                    });
+                    
+                    const sidebarFooter = sidebarEl.querySelector('.sidebar-footer');
+                    if (sidebarFooter) {
+                        const toggleBtn = document.createElement('button');
+                        toggleBtn.className = 'btn-theme-toggle';
+                        toggleBtn.id = 'btn-theme-toggle';
+                        toggleBtn.title = 'Toggle Theme';
+                        
+                        const currentTheme = localStorage.getItem('thrustvault_theme') || 'light';
+                        const iconName = currentTheme === 'dark' ? 'sun' : 'moon';
+                        const textLabel = currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+                        
+                        toggleBtn.style.cssText = 'width:100%; padding:8px 16px; background:transparent; border:1px solid var(--border-color); border-radius:var(--radius-md); font-size:0.85rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; color:var(--text-primary); transition:all 0.2s; margin-bottom: 8px; box-sizing: border-box;';
+                        toggleBtn.innerHTML = `<i data-lucide="${iconName}" style="width:16px; height:16px;"></i> <span>${textLabel}</span>`;
+                        
+                        const logoutBtn = sidebarFooter.querySelector('#btn-logout') || sidebarFooter.querySelector('.btn-logout-premium');
+                        if (logoutBtn) {
+                            sidebarFooter.insertBefore(toggleBtn, logoutBtn);
+                            logoutBtn.onclick = (e) => {
+                                e.preventDefault();
+                                if (confirm("Are you sure you want to log out of ThrustVault?")) {
+                                    const sessionStr = localStorage.getItem('thrustvault_session');
+                                    if (sessionStr) {
+                                        try {
+                                            const session = JSON.parse(sessionStr);
+                                            fetch('/api/log-activity', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    email: session.email,
+                                                    role: session.role,
+                                                    action: 'Logout',
+                                                    details: 'Logged out successfully.'
+                                                })
+                                            }).catch(err => console.error(err));
+                                        } catch(err) {}
+                                    }
+                                    localStorage.removeItem('thrustvault_session');
+                                    document.cookie = "thrustvault_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Strict";
+                                    
+                                    if (window.supabase) {
+                                        try {
+                                            window.supabase.auth.signOut().finally(() => {
+                                                window.location.href = 'login';
+                                            });
+                                            return;
+                                        } catch(err) {}
+                                    }
+                                    window.location.href = 'login';
+                                }
+                            };
+                        } else {
+                            sidebarFooter.appendChild(toggleBtn);
+                        }
+                        
+                        toggleBtn.onclick = () => {
+                            const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                            document.documentElement.setAttribute('data-theme', theme);
+                            localStorage.setItem('thrustvault_theme', theme);
+                            
+                            const newIcon = theme === 'dark' ? 'sun' : 'moon';
+                            const newText = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+                            toggleBtn.innerHTML = `<i data-lucide="${newIcon}" style="width:16px; height:16px;"></i> <span>${newText}</span>`;
+                            if (window.lucide) window.lucide.createIcons();
+                        };
+                    }
+                    
+                    const toggleBtn = sidebarEl.querySelector('.btn-toggle-sidebar');
+                    if (toggleBtn) {
+                        toggleBtn.onclick = () => {
+                            sidebarEl.classList.toggle('collapsed');
+                            const isCollapsed = sidebarEl.classList.contains('collapsed');
+                            localStorage.setItem('thrustvault_sidebar_collapsed', isCollapsed);
+                        };
+                    }
+                    
+                    const catalogDropdownToggle = sidebarEl.querySelector('#catalog-dropdown-toggle');
+                    if (catalogDropdownToggle) {
+                        catalogDropdownToggle.onclick = (e) => {
+                            e.preventDefault();
+                            const dropdownWrapper = catalogDropdownToggle.closest('.sidebar-dropdown-wrapper');
+                            if (dropdownWrapper) {
+                                dropdownWrapper.classList.toggle('expanded');
+                            }
+                        };
+                    }
+                    
+                    const sessionEmailEl = sidebarEl.querySelector('#session-email');
+                    const sessionInitialsEl = sidebarEl.querySelector('#user-avatar-initials');
+                    const sessionStr = localStorage.getItem('thrustvault_session');
+                    if (sessionStr && sessionEmailEl) {
+                        try {
+                            const session = JSON.parse(sessionStr);
+                            sessionEmailEl.textContent = session.email;
+                            if (sessionInitialsEl && session.email) {
+                                sessionInitialsEl.textContent = session.email.charAt(0).toUpperCase();
+                            }
+                        } catch(e) {}
+                    }
+                    
+                    window.sidebarLoaded = true;
+                    window.sidebarRole = sidebarRole;
+                    if (window.lucide) window.lucide.createIcons();
+                    window.dispatchEvent(new CustomEvent('sidebarLoaded', { detail: { role: sidebarRole } }));
+                })
+                .catch(err => {
+                    console.error("Sidebar loading error:", err);
+                });
         }
     });
 

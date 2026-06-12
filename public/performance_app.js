@@ -10,7 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Set user profile in sidebar footer
     const email = session.email || '';
-    document.getElementById('session-email').textContent = email;
+    const emailEl = document.getElementById('session-email');
+    if (emailEl) emailEl.textContent = email;
     const avatarInitials = document.getElementById('user-avatar-initials');
     if (avatarInitials && email) {
         avatarInitials.textContent = email.charAt(0).toUpperCase();
@@ -194,12 +195,12 @@ document.addEventListener('DOMContentLoaded', () => {
         btnAddStepRow: document.getElementById('btn-add-step-row'),
         creatorTableRows: document.getElementById('creator-table-rows'),
         btnResetCreator: document.getElementById('btn-reset-creator'),
-        totalMotors: document.getElementById('total-motors-count'),
-        totalCats: document.getElementById('total-categories-count'),
-        catList: document.getElementById('category-list-container'),
-        requestsPendingBadge: document.getElementById('requests-pending-badge'),
-        btnAddCat: document.getElementById('btn-add-category'),
-        btnLogout: document.getElementById('btn-logout')
+        get totalMotors() { return document.getElementById('total-motors-count'); },
+        get totalCats() { return document.getElementById('total-categories-count'); },
+        get catList() { return document.getElementById('category-list-container'); },
+        get requestsPendingBadge() { return document.getElementById('requests-pending-badge'); },
+        get btnAddCat() { return document.getElementById('btn-add-category'); },
+        get btnLogout() { return document.getElementById('btn-logout'); }
     };
 
     // Logging helper
@@ -263,9 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Logout
-    elements.btnLogout.onclick = () => {
-        logoutAndRedirect();
-    };
+    
 
     // Helper to map spreadsheet headers to database fields
     function findStandardField(headerName) {
@@ -2818,16 +2817,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Sidebar navigation trigger for custom category creations
-    if (elements.btnAddCat) {
-        elements.btnAddCat.onclick = () => {
-            sessionStorage.setItem('triggerAddCategory', 'true');
-            window.location.href = 'admin_dashboard';
-        };
-    }
+    // Sidebar navigation trigger is setup dynamically in setupSidebar()
 
     async function fetchSidebarCounts() {
         try {
+            if (!supabase) {
+                const res = await fetch('/api/config');
+                const config = await res.json();
+                supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+            }
             const [motorsRes, catsRes, requestsRes] = await Promise.all([
                 supabase.from('motors').select('id, category_id, motor_name, company, max_thrust'),
                 supabase.from('categories').select('*').order('name'),
@@ -2842,8 +2840,8 @@ document.addEventListener('DOMContentLoaded', () => {
             state.categories = catsRes.data || [];
             state.accessRequests = requestsRes.data || [];
 
-            elements.totalMotors.textContent = state.allMotors.length;
-            elements.totalCats.textContent = state.categories.length;
+            if (elements.totalMotors) elements.totalMotors.textContent = state.allMotors.length;
+            if (elements.totalCats) elements.totalCats.textContent = state.categories.length;
 
             // Update Access Requests Pending Badge
             const pendingRequests = state.accessRequests.filter(r => r.status === 'pending').length;
@@ -2863,6 +2861,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderSidebar() {
+        if (!elements.catList) return;
         elements.catList.innerHTML = '';
         state.categories.forEach(cat => {
             if (cat.id === state.draftCategoryId) return; // Hide System Drafts
@@ -2910,6 +2909,15 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             elements.catList.appendChild(div);
         });
+
+        // Add static All Motors tab
+        const allTab = document.createElement('div');
+        allTab.className = 'category-tab';
+        allTab.innerHTML = '<span>All Motors</span>';
+        allTab.onclick = () => {
+            window.location.href = 'motor_explorer';
+        };
+        elements.catList.appendChild(allTab);
         if (window.lucide) window.lucide.createIcons();
     }
 
@@ -3032,16 +3040,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'index.html';
     }
 
-    // Sidebar Profile Click Trigger
-    const sidebarProfileCard = document.querySelector('.sidebar-user-profile');
-    if (sidebarProfileCard) {
-        sidebarProfileCard.style.cursor = 'pointer';
-        sidebarProfileCard.title = 'View My Profile';
-        sidebarProfileCard.onclick = () => {
-            sessionStorage.setItem('showMyProfile', 'true');
-            window.location.href = 'admin_users';
-        };
-    }
+    // Sidebar Profile Click Trigger is setup dynamically in setupSidebar()
 
     // Inactivity Session Expiry (10 minutes)
     let inactivityTimeout;
@@ -3084,13 +3083,36 @@ document.addEventListener('DOMContentLoaded', () => {
     resetInactivityTimer();
 
     init();
-    // Sidebar Toggle Event Listener
-    const sidebar = document.querySelector('.sidebar');
-    const toggleBtn = document.getElementById('btn-toggle-sidebar');
-    if (toggleBtn && sidebar) {
-        toggleBtn.addEventListener('click', () => {
-            const isCollapsed = sidebar.classList.toggle('collapsed');
-            localStorage.setItem('thrustvault_sidebar_collapsed', isCollapsed);
-        });
+    
+    function setupSidebar() {
+        if (typeof fetchSidebarCounts === 'function') {
+            fetchSidebarCounts();
+        }
+
+        if (elements.btnAddCat) {
+            elements.btnAddCat.onclick = () => {
+                sessionStorage.setItem('triggerAddCategory', 'true');
+                const targetDash = (session && session.role === 'intern') ? 'intern_dashboard' : 'admin_dashboard';
+                window.location.href = targetDash;
+            };
+        }
+
+        if (session && session.role === 'admin') {
+            const sidebarProfileCard = document.querySelector('.sidebar-user-profile');
+            if (sidebarProfileCard) {
+                sidebarProfileCard.style.cursor = 'pointer';
+                sidebarProfileCard.title = 'View My Profile';
+                sidebarProfileCard.onclick = () => {
+                    sessionStorage.setItem('showMyProfile', 'true');
+                    window.location.href = 'admin_users';
+                };
+            }
+        }
+    }
+
+    if (window.sidebarLoaded) {
+        setupSidebar();
+    } else {
+        window.addEventListener('sidebarLoaded', setupSidebar);
     }
 });

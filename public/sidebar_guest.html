@@ -1,0 +1,79 @@
+<div class="sidebar-header">
+    <div class="logo-container">
+        <a href="guest_dashboard" class="logo-link">
+            <img src="thrustvault_logo_bgremoved_light.png" alt="ThrustVault Logo" class="logo-image logo-light">
+            <img src="thrustvault_logo_bgremoved_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark">
+        </a>
+        <button class="btn-toggle-sidebar" id="btn-toggle-sidebar" title="Toggle Sidebar">
+            <i data-lucide="menu"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Stats Widgets in Sidebar -->
+<div class="sidebar-stats">
+    <div class="stat-card-mini">
+        <div class="stat-icon"><i data-lucide="database"></i></div>
+        <div class="stat-info">
+            <span class="stat-val" id="total-motors-count">0</span>
+            <span class="stat-label">Total Motors</span>
+        </div>
+    </div>
+    <div class="stat-card-mini">
+        <div class="stat-icon"><i data-lucide="layers"></i></div>
+        <div class="stat-info">
+            <span class="stat-val" id="total-categories-count">0</span>
+            <span class="stat-label">Thrust Levels</span>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation Categories (Thrust Levels) -->
+<nav class="sidebar-nav">
+    <div class="sidebar-menu-links" style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
+        <a href="guest_dashboard" class="btn-sidebar-link" title="Catalog View" style="text-decoration: none; box-sizing: border-box;">
+            <i data-lucide="database"></i> Catalog Dashboard
+        </a>
+        <a href="performance_analytics" class="btn-sidebar-link" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
+            <i data-lucide="trending-up"></i> Performance Analytics
+        </a>
+    </div>
+
+    <div class="sidebar-dropdown-wrapper expanded">
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <a href="#" class="btn-sidebar-link" id="catalog-dropdown-toggle" style="flex: 1; border-top-right-radius: 0; border-bottom-right-radius: 0; margin-bottom: 0;">
+                <i data-lucide="boxes"></i> Catalog
+                <i data-lucide="chevron-down" class="dropdown-chevron" style="margin-left: auto; width: 16px; height: 16px;"></i>
+            </a>
+        </div>
+        <div class="category-list" id="category-list-container" style="padding-left: 15px; margin-top: 5px; display: flex; flex-direction: column; gap: 4px;">
+        <!-- Dynamic Category Tabs Skeletons -->
+        <div class="category-tab" style="pointer-events: none; justify-content: space-between; align-items: center; display: flex;">
+            <span class="shimmer skeleton-text" style="width: 75px; height: 12px; border-radius: 4px; display: block;"></span>
+            <span class="shimmer" style="width: 22px; height: 16px; border-radius: 10px; background: var(--border-color); display: block; margin-left: auto;"></span>
+        </div>
+        <div class="category-tab" style="pointer-events: none; justify-content: space-between; align-items: center; display: flex;">
+            <span class="shimmer skeleton-text" style="width: 90px; height: 12px; border-radius: 4px; display: block;"></span>
+            <span class="shimmer" style="width: 22px; height: 16px; border-radius: 10px; background: var(--border-color); display: block; margin-left: auto;"></span>
+        </div>
+        <div class="category-tab" style="pointer-events: none; justify-content: space-between; align-items: center; display: flex;">
+            <span class="shimmer skeleton-text" style="width: 60px; height: 12px; border-radius: 4px; display: block;"></span>
+            <span class="shimmer" style="width: 22px; height: 16px; border-radius: 10px; background: var(--border-color); display: block; margin-left: auto;"></span>
+        </div>
+    </div>
+    </div>
+</nav>
+
+<!-- Sidebar Footer -->
+<div class="sidebar-footer">
+    <div class="sidebar-user-profile">
+        <div class="user-avatar" id="user-avatar-initials">G</div>
+        <div class="user-info">
+            <span class="user-email" id="session-email">guest@thrustvault.com</span>
+            <span class="badge-role role-guest">Guest</span>
+        </div>
+    </div>
+    <button class="btn-logout-premium" id="btn-logout" title="Log Out">
+        <i data-lucide="log-out"></i> Log Out
+    </button>
+</div>

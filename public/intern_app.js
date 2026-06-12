@@ -10,7 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Set email display in footer
     const email = session.email || '';
-    document.getElementById('session-email').textContent = email;
+    const emailEl = document.getElementById('session-email');
+    if (emailEl) emailEl.textContent = email;
 
     // XSS Escaping and URL Sanitization Utilities
     function escapeHTML(str) {
@@ -192,10 +193,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // DOM Elements
     const elements = {
-        catList: document.getElementById('category-list-container'),
+        get catList() { return document.getElementById('category-list-container'); },
         motorsTableBody: document.getElementById('motors-list-rows'),
-        totalMotors: document.getElementById('total-motors-count'),
-        totalCats: document.getElementById('total-categories-count'),
+        get totalMotors() { return document.getElementById('total-motors-count'); },
+        get totalCats() { return document.getElementById('total-categories-count'); },
         catBadge: document.getElementById('category-badge'),
         catTitle: document.getElementById('active-category-title'),
         catDesc: document.getElementById('active-category-desc'),
@@ -226,11 +227,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Buttons
         btnAddMotor: document.getElementById('btn-add-motor'),
-        btnAddCat: document.getElementById('btn-add-category'),
+        get btnAddCat() { return document.getElementById('btn-add-category'); },
         btnCompareNow: document.getElementById('btn-compare-now'),
         btnClearComparison: document.getElementById('btn-clear-comparison'),
         btnCloseComparison: document.getElementById('btn-close-comparison'),
-        btnLogout: document.getElementById('btn-logout'),
+        get btnLogout() { return document.getElementById('btn-logout'); },
         
         // Forms
         motorForm: document.getElementById('motor-form'),
@@ -566,12 +567,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateStats() {
-        elements.totalMotors.textContent = state.motors.length;
-        elements.totalCats.textContent = state.categories.length;
+        if (elements.totalMotors) {
+            elements.totalMotors.textContent = state.motors.length;
+        }
+        if (elements.totalCats) {
+            elements.totalCats.textContent = state.categories.length;
+        }
     }
 
     // Sidebar Category Rendering
     function renderSidebar() {
+        if (!elements.catList) return;
         elements.catList.innerHTML = '';
         state.categories.forEach(cat => {
             const count = state.motors.filter(m => m.categoryId === cat.id).length;
@@ -626,6 +632,15 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             elements.catList.appendChild(div);
         });
+
+        // Add static All Motors tab
+        const allTab = document.createElement('div');
+        allTab.className = 'category-tab';
+        allTab.innerHTML = '<span>All Motors</span>';
+        allTab.onclick = () => {
+            window.location.href = 'motor_explorer';
+        };
+        elements.catList.appendChild(allTab);
         
         const catSelect = document.getElementById('form-motor-category');
         catSelect.innerHTML = state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
@@ -1725,10 +1740,7 @@ document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
     };
 
-    elements.btnAddCat.onclick = () => {
-        elements.catForm.reset();
-        openModal(elements.catModal);
-    };
+    
 
     function openModal(modal) { modal.classList.add('show'); }
     function closeModal(modal) { modal.classList.remove('show'); }
@@ -1740,9 +1752,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Logout
-    elements.btnLogout.onclick = () => {
-        logoutAndRedirect();
-    };
+    
 
     // Logout and redirect helper
     function logoutAndRedirect(action = 'Logout', details = 'Logged out successfully.') {
@@ -2542,7 +2552,8 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             localStorage.setItem('thrustvault_session', JSON.stringify(sessionData));
             const userEmail = sbSession.user.email;
-            document.getElementById('session-email').textContent = userEmail;
+            const emailEl = document.getElementById('session-email');
+            if (emailEl) emailEl.textContent = userEmail;
             const avatarInit = document.getElementById('user-avatar-initials');
             if (avatarInit && userEmail) {
                 avatarInit.textContent = userEmail.charAt(0).toUpperCase();
@@ -2596,13 +2607,23 @@ document.addEventListener('DOMContentLoaded', () => {
     resetInactivityTimer();
 
     init();
-    // Sidebar Toggle Event Listener
-    const sidebar = document.querySelector('.sidebar');
-    const toggleBtn = document.getElementById('btn-toggle-sidebar');
-    if (toggleBtn && sidebar) {
-        toggleBtn.addEventListener('click', () => {
-            const isCollapsed = sidebar.classList.toggle('collapsed');
-            localStorage.setItem('thrustvault_sidebar_collapsed', isCollapsed);
-        });
+    
+
+    function setupSidebar() {
+        renderSidebar();
+
+        if (elements.btnAddCat) {
+            elements.btnAddCat.onclick = (e) => {
+                e.preventDefault();
+                elements.catForm.reset();
+                openModal(elements.catModal);
+            };
+        }
+    }
+
+    if (window.sidebarLoaded) {
+        setupSidebar();
+    } else {
+        window.addEventListener('sidebarLoaded', setupSidebar);
     }
 });

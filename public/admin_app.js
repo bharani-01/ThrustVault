@@ -10,7 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Set email display in footer
     const email = session.email || '';
-    document.getElementById('session-email').textContent = email;
+    const emailEl = document.getElementById('session-email');
+    if (emailEl) emailEl.textContent = email;
 
     // XSS Escaping and URL Sanitization Utilities
     function escapeHTML(str) {
@@ -191,10 +192,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // DOM Elements
     const elements = {
-        catList: document.getElementById('category-list-container'),
+        get catList() { return document.getElementById('category-list-container'); },
         motorsTableBody: document.getElementById('motors-list-rows'),
-        totalMotors: document.getElementById('total-motors-count'),
-        totalCats: document.getElementById('total-categories-count'),
+        get totalMotors() { return document.getElementById('total-motors-count'); },
+        get totalCats() { return document.getElementById('total-categories-count'); },
         catBadge: document.getElementById('category-badge'),
         catTitle: document.getElementById('active-category-title'),
         catDesc: document.getElementById('active-category-desc'),
@@ -206,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnClearFilters: document.getElementById('btn-clear-filters'),
         selectAllMotors: document.getElementById('select-all-motors'),
         
-        requestsPendingBadge: document.getElementById('requests-pending-badge'),
+        get requestsPendingBadge() { return document.getElementById('requests-pending-badge'); },
         catNavTitle: document.getElementById('cat-nav-title'),
         
         // Modals & Drawers
@@ -214,18 +215,18 @@ document.addEventListener('DOMContentLoaded', () => {
         catModal: document.getElementById('category-modal'),
         confirmModal: document.getElementById('confirm-modal'),
         comparisonModal: document.getElementById('comparison-modal'),
-        comparisonDrawer: document.getElementById('comparison-drawer'),
-        compareItemsContainer: document.getElementById('compare-items-container'),
-        compareCount: document.getElementById('compare-count'),
+        comparisonDrawer: document.getElementById('comparison-sidebar'),
+        compareItemsContainer: document.getElementById('compare-check-list'),
+        compareCount: { textContent: '' },
         comparisonResultTable: document.getElementById('comparison-result-table'),
         
         // Buttons
         btnAddMotor: document.getElementById('btn-add-motor'),
-        btnAddCat: document.getElementById('btn-add-category'),
-        btnCompareNow: document.getElementById('btn-compare-now'),
-        btnClearComparison: document.getElementById('btn-clear-comparison'),
-        btnCloseComparison: document.getElementById('btn-close-comparison'),
-        btnLogout: document.getElementById('btn-logout'),
+        get btnAddCat() { return document.getElementById('btn-add-category'); },
+        btnCompareNow: document.getElementById('btn-compare-sidebar-now'),
+        btnClearComparison: document.getElementById('btn-clear-comparison-sidebar'),
+        btnCloseComparison: document.getElementById('btn-close-comparison-sidebar'),
+        get btnLogout() { return document.getElementById('btn-logout'); },
         
         // Forms
         motorForm: document.getElementById('motor-form'),
@@ -433,23 +434,335 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function getMotorEfficiency(m) {
+        if (m.custom_parameters && m.custom_parameters.efficiency) return parseFloat(m.custom_parameters.efficiency);
+        return null;
+    }
+
+    function getMotorAvailability(m) {
+        if (m.custom_parameters && m.custom_parameters.availability) return m.custom_parameters.availability;
+        const hash = m.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const statusVal = hash % 3;
+        if (statusVal === 0) return 'In Stock';
+        if (statusVal === 1) return 'Limited';
+        return 'Out of Stock';
+    }
+
+    function calculateCompleteness(m) {
+        const coreFields = ['recommended_esc', 'recommended_propeller', 'link_motor', 'link_esc', 'link_propeller'];
+        let filled = 0;
+        let total = coreFields.length;
+        
+        coreFields.forEach(f => {
+            const hasVal = m[f] || 
+                           (f === 'recommended_esc' && m.esc) || 
+                           (f === 'recommended_propeller' && m.prop) || 
+                           (f === 'link_motor' && m.linkMotor) || 
+                           (f === 'link_esc' && m.linkEsc) || 
+                           (f === 'link_propeller' && m.linkProp);
+            if (hasVal) {
+                filled++;
+            }
+        });
+        
+        if (state.customSchema && state.customSchema.length > 0) {
+            state.customSchema.forEach(field => {
+                total++;
+                const val = m.custom_parameters ? m.custom_parameters[field.key] : null;
+                if (val !== undefined && val !== null && val !== '') {
+                    filled++;
+                }
+            });
+        }
+        
+        return Math.round((filled / total) * 100);
+    }
+
+    function calculateVoltageRange(catMotors, cat) {
+        let sRatings = [];
+        catMotors.forEach(m => {
+            const v = m.custom_parameters && (m.custom_parameters.voltage || m.custom_parameters.voltage_v || m.custom_parameters.operating_voltage) ? String(m.custom_parameters.voltage || m.custom_parameters.voltage_v || m.custom_parameters.operating_voltage) : '';
+            const esc = m.esc || '';
+            const name = m.motor || '';
+            
+            const match = v.match(/(\d+)s/i) || esc.match(/(\d+)s/i) || name.match(/(\d+)s/i);
+            if (match) {
+                sRatings.push(parseInt(match[1]));
+            }
+        });
+        
+        if (sRatings.length > 0) {
+            const min = Math.min(...sRatings);
+            const max = Math.max(...sRatings);
+            return min === max ? `${min}S` : `${min}S - ${max}S`;
+        }
+        
+        if (cat && cat.desc) {
+            const descMatch = cat.desc.match(/(\d+)S\s*–\s*(\d+)S/i) || cat.desc.match(/(\d+)S\s*-\s*(\d+)S/i);
+            if (descMatch) {
+                return `${descMatch[1]}S - ${descMatch[2]}S`;
+            }
+        }
+        return 'N/A';
+    }
+
+    function updateKpis(catMotors, cat) {
+        const kpiTotal = document.getElementById('kpi-total-motors-val');
+        if (kpiTotal) kpiTotal.textContent = catMotors.length;
+        
+        const kpiAvg = document.getElementById('kpi-avg-thrust-val');
+        if (kpiAvg) {
+            let sumThrust = 0;
+            let countThrust = 0;
+            catMotors.forEach(m => {
+                const parsed = parseThrustToKg(m.thrust);
+                if (parsed > 0) {
+                    sumThrust += parsed;
+                    countThrust++;
+                }
+            });
+            kpiAvg.textContent = countThrust > 0 ? `${(sumThrust / countThrust).toFixed(2)} kg` : 'N/A';
+        }
+        
+        const kpiMax = document.getElementById('kpi-max-thrust-val');
+        if (kpiMax) {
+            let maxThrust = 0;
+            catMotors.forEach(m => {
+                const parsed = parseThrustToKg(m.thrust);
+                if (parsed > maxThrust) maxThrust = parsed;
+            });
+            kpiMax.textContent = maxThrust > 0 ? `${maxThrust.toFixed(2)} kg` : 'N/A';
+        }
+        
+        const kpiBrands = document.getElementById('kpi-brands-val');
+        if (kpiBrands) {
+            const brands = new Set(catMotors.map(m => m.company));
+            kpiBrands.textContent = brands.size;
+        }
+        
+        const kpiVoltage = document.getElementById('kpi-voltage-val');
+        if (kpiVoltage) {
+            kpiVoltage.textContent = calculateVoltageRange(catMotors, cat);
+        }
+        
+        const kpiCompleteness = document.getElementById('kpi-completeness-val');
+        if (kpiCompleteness) {
+            let sumCompleteness = 0;
+            catMotors.forEach(m => {
+                sumCompleteness += calculateCompleteness(m);
+            });
+            const avgCompleteness = catMotors.length > 0 ? Math.round(sumCompleteness / catMotors.length) : 0;
+            kpiCompleteness.textContent = `${avgCompleteness}%`;
+        }
+        
+        const kpiActive = document.getElementById('kpi-active-class-val');
+        if (kpiActive) {
+            kpiActive.textContent = cat ? cat.name : '-';
+        }
+    }
+
+    function renderBrandTreemap(catMotors) {
+        const container = document.getElementById('brand-treemap-container');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (catMotors.length === 0) {
+            container.innerHTML = '<div style="color:var(--text-muted); font-size:0.9rem; padding:20px; text-align:center; width:100%;">No data to display</div>';
+            return;
+        }
+        
+        const counts = {};
+        catMotors.forEach(m => {
+            counts[m.company] = (counts[m.company] || 0) + 1;
+        });
+        
+        const sortedBrands = Object.entries(counts)
+            .map(([name, count]) => ({
+                name,
+                count,
+                percentage: (count / catMotors.length) * 100
+            }))
+            .sort((a, b) => b.count - a.count);
+        
+        const colors = [
+            'hsl(217, 91%, 60%)',
+            'hsl(142, 72%, 29%)',
+            'hsl(200, 95%, 45%)',
+            'hsl(160, 84%, 39%)',
+            'hsl(224, 76%, 48%)',
+            'hsl(180, 70%, 40%)',
+            'hsl(210, 40%, 50%)',
+            'hsl(140, 50%, 60%)',
+        ];
+        
+        sortedBrands.forEach((item, index) => {
+            const block = document.createElement('div');
+            block.className = 'treemap-block';
+            block.style.flexGrow = item.count;
+            block.style.backgroundColor = colors[index % colors.length];
+            block.style.flexBasis = `${Math.max(80, item.percentage * 2.5)}px`;
+            
+            block.innerHTML = `
+                <div class="treemap-block-label" title="${escapeHTML(item.name)}">${escapeHTML(item.name)}</div>
+                <div style="display:flex; align-items:baseline; justify-content:space-between; width:100%;">
+                    <span class="treemap-block-pct">${item.percentage.toFixed(0)}%</span>
+                    <span class="treemap-block-sub">${item.count} motor${item.count > 1 ? 's' : ''}</span>
+                </div>
+            `;
+            
+            block.onclick = () => {
+                elements.filterCompanySelect.value = item.name;
+                state.filterCompany = item.name;
+                renderMainContent();
+            };
+            
+            container.appendChild(block);
+        });
+    }
+
+    function renderTop10Motors(catMotors) {
+        const container = document.getElementById('top-motors-chart-container');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (catMotors.length === 0) {
+            container.innerHTML = '<div style="color:var(--text-muted); font-size:0.9rem; padding:20px; text-align:center; width:100%;">No data to display</div>';
+            return;
+        }
+        
+        const sorted = [...catMotors]
+            .map(m => ({
+                ...m,
+                thrustKg: parseThrustToKg(m.thrust)
+            }))
+            .sort((a, b) => b.thrustKg - a.thrustKg)
+            .slice(0, 10);
+        
+        const maxThrust = sorted[0]?.thrustKg || 1;
+        
+        sorted.forEach((m, index) => {
+            const pct = (m.thrustKg / maxThrust) * 100;
+            const row = document.createElement('div');
+            row.className = 'bar-row';
+            row.innerHTML = `
+                <span class="bar-num">#${index + 1}</span>
+                <span class="bar-label" title="${escapeHTML(m.motor)}">${escapeHTML(m.motor)}</span>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width: ${pct}%"></div>
+                </div>
+                <span class="bar-value">${m.thrustKg.toFixed(2)} kg</span>
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    function renderInsights(catMotors) {
+        const container = document.getElementById('insights-list-container');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (catMotors.length === 0) {
+            container.innerHTML = '<div style="color:var(--text-muted); font-size:0.9rem; padding:20px; text-align:center; width:100%;">No insights available</div>';
+            return;
+        }
+        
+        const escCounts = {};
+        let topEsc = '-';
+        let maxEscCount = 0;
+        catMotors.forEach(m => {
+            if (m.esc) {
+                escCounts[m.esc] = (escCounts[m.esc] || 0) + 1;
+                if (escCounts[m.esc] > maxEscCount) {
+                    maxEscCount = escCounts[m.esc];
+                    topEsc = m.esc;
+                }
+            }
+        });
+        
+        const propCounts = {};
+        let topProp = '-';
+        let maxPropCount = 0;
+        catMotors.forEach(m => {
+            if (m.prop) {
+                propCounts[m.prop] = (propCounts[m.prop] || 0) + 1;
+                if (propCounts[m.prop] > maxPropCount) {
+                    maxPropCount = propCounts[m.prop];
+                    topProp = m.prop;
+                }
+            }
+        });
+        let maxThrustVal = 0;
+        let maxThrustMotorName = '-';
+        catMotors.forEach(m => {
+            const thrustVal = parseThrustToKg(m.thrust);
+            if (thrustVal > maxThrustVal) {
+                maxThrustVal = thrustVal;
+                maxThrustMotorName = m.motor;
+            }
+        });
+        
+        let bestRatioName = '-';
+        let maxRatio = 0;
+        catMotors.forEach(m => {
+            const thrustKg = parseThrustToKg(m.thrust);
+            const weightG = parseFloat(m.custom_parameters && (m.custom_parameters.weight || m.custom_parameters.weight_g || m.custom_parameters.motor_weight) ? m.custom_parameters.weight || m.custom_parameters.weight_g || m.custom_parameters.motor_weight : 0);
+            if (thrustKg > 0 && weightG > 0) {
+                const ratio = (thrustKg * 1000) / weightG;
+                if (ratio > maxRatio) {
+                    maxRatio = ratio;
+                    bestRatioName = m.motor;
+                }
+            }
+        });
+        
+        const insights = [
+            { label: 'Popular ESC', val: topEsc, icon: 'zap' },
+            { label: 'Standard Propeller', val: topProp, icon: 'wind' },
+            { label: 'Max Thrust Leader', val: maxThrustMotorName !== '-' ? `${maxThrustMotorName} (${maxThrustVal.toFixed(1)} kg)` : '-', icon: 'trending-up' },
+            { label: 'Thrust-to-Weight Leader', val: bestRatioName !== '-' ? `${bestRatioName} (${maxRatio.toFixed(1)}x)` : '-', icon: 'award' }
+        ];
+        
+        insights.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'insight-item';
+            div.innerHTML = `
+                <div class="insight-icon-box">
+                    <i data-lucide="${item.icon}"></i>
+                </div>
+                <div class="insight-info" style="flex:1; min-width:0;">
+                    <span class="insight-lbl">${item.label}</span>
+                    <span class="insight-desc" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;" title="${escapeHTML(item.val)}">${escapeHTML(item.val)}</span>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+        
+        lucide.createIcons();
+    }
+
     function renderApp() {
         renderSidebar();
         renderMainContent();
         renderCharts();
         updateStats();
-        updateComparisonDrawer();
+        updateComparisonSidebar();
         updateManufacturerSuggestions();
         lucide.createIcons();
     }
 
     function updateStats() {
-        elements.totalMotors.textContent = state.motors.length;
-        elements.totalCats.textContent = state.categories.length;
+        if (elements.totalMotors) {
+            elements.totalMotors.textContent = state.motors.length;
+        }
+        const totalCatsSpan = document.getElementById('total-categories-count');
+        if (totalCatsSpan) {
+            totalCatsSpan.textContent = state.categories.length;
+        }
     }
 
     // Sidebar Category Rendering
     function renderSidebar() {
+        if (!elements.catList) return;
         elements.catList.innerHTML = '';
         state.categories.forEach(cat => {
             const count = state.motors.filter(m => m.categoryId === cat.id).length;
@@ -504,6 +817,15 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             elements.catList.appendChild(div);
         });
+
+        // Add static All Motors tab
+        const allTab = document.createElement('div');
+        allTab.className = 'category-tab';
+        allTab.innerHTML = '<span>All Motors</span>';
+        allTab.onclick = () => {
+            window.location.href = 'motor_explorer';
+        };
+        elements.catList.appendChild(allTab);
         
         const catSelect = document.getElementById('form-motor-category');
         catSelect.innerHTML = state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
@@ -582,30 +904,51 @@ document.addEventListener('DOMContentLoaded', () => {
             const tr = document.createElement('tr');
             const isChecked = state.compareItems.includes(m.id);
             
+            const initials = m.motor.charAt(0).toUpperCase();
+            
+            // Dynamic accent color for thumbnail based on company name hash
+            const hash = m.company.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const thumbHue = hash % 360;
+            const thumbStyle = `background: hsl(${thumbHue}, 80%, 95%); color: hsl(${thumbHue}, 80%, 40%); border-color: hsl(${thumbHue}, 80%, 85%);`;
+            
+            // Extract KV
+            const kvMatch = m.motor.match(/(\d+)\s*KV/i) || m.motor.match(/KV\s*(\d+)/i);
+            const kv = kvMatch ? `${kvMatch[1]} KV` : (m.custom_parameters && (m.custom_parameters.kv || m.custom_parameters.kv_rating) ? m.custom_parameters.kv || m.custom_parameters.kv_rating : '-');
+            
+            // Extract Voltage
+            const voltage = m.custom_parameters && (m.custom_parameters.voltage || m.custom_parameters.voltage_v || m.custom_parameters.operating_voltage) ? String(m.custom_parameters.voltage || m.custom_parameters.voltage_v || m.custom_parameters.operating_voltage) : (m.motor.match(/\b\d+S\b/i) || m.esc?.match(/\b\d+S\b/i) || ['-'])[0];
+            
+            // Extract Weight
+            const weightVal = m.custom_parameters && (m.custom_parameters.weight || m.custom_parameters.weight_g || m.custom_parameters.motor_weight) ? m.custom_parameters.weight || m.custom_parameters.weight_g || m.custom_parameters.motor_weight : null;
+            const weight = weightVal ? `${weightVal} g` : '-';
             const links = [];
             if (m.linkMotor) {
-                links.push(`<a href="${sanitizeUrl(m.linkMotor)}" target="_blank" title="Motor Specs"><i data-lucide="cpu"></i></a>`);
+                links.push(`<a href="${sanitizeUrl(m.linkMotor)}" target="_blank" title="Motor Specs"><i data-lucide="cpu" style="width:14px;height:14px;"></i></a>`);
             }
             if (m.linkEsc) {
-                links.push(`<a href="${sanitizeUrl(m.linkEsc)}" target="_blank" title="ESC Specs"><i data-lucide="zap"></i></a>`);
+                links.push(`<a href="${sanitizeUrl(m.linkEsc)}" target="_blank" title="ESC Specs"><i data-lucide="zap" style="width:14px;height:14px;"></i></a>`);
             }
             if (m.linkProp) {
-                links.push(`<a href="${sanitizeUrl(m.linkProp)}" target="_blank" title="Propeller Specs"><i data-lucide="wind"></i></a>`);
+                links.push(`<a href="${sanitizeUrl(m.linkProp)}" target="_blank" title="Propeller Specs"><i data-lucide="wind" style="width:14px;height:14px;"></i></a>`);
             }
             const linksHtml = links.length > 0 ? links.join(' ') : '-';
             
             tr.innerHTML = `
                 <td><input type="checkbox" class="compare-cb" data-id="${m.id}" ${isChecked ? 'checked' : ''}></td>
+                <td><div class="motor-thumbnail" style="${thumbStyle}">${initials}</div></td>
                 <td><a href="#" class="motor-profile-link" data-id="${m.id}"><strong>${escapeHTML(m.motor)}</strong></a></td>
                 <td>${escapeHTML(m.company)}</td>
+                <td><strong>${escapeHTML(kv)}</strong></td>
+                <td><span class="badge-thrust" style="background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.2); color: var(--primary-color);">${escapeHTML(voltage)}</span></td>
                 <td><span class="badge-thrust">${escapeHTML(m.thrust)}</span></td>
-                <td>${escapeHTML(m.esc || '-')}</td>
+                <td>${escapeHTML(weight)}</td>
                 <td>${escapeHTML(m.prop || '-')}</td>
+                <td>${escapeHTML(m.esc || '-')}</td>
                 <td><div class="action-links">${linksHtml}</div></td>
                 <td style="text-align: right; vertical-align: middle; white-space: nowrap;">
                     <div class="row-actions">
-                        <button class="btn-edit" data-id="${m.id}" title="Edit Specifications"><i data-lucide="edit-2"></i></button>
-                        <button class="btn-delete" data-id="${m.id}" title="Delete Motor"><i data-lucide="trash-2"></i></button>
+                        <button class="btn-edit" data-id="${m.id}" title="Edit Specifications"><i data-lucide="edit-2" style="width:14px;height:14px;"></i></button>
+                        <button class="btn-delete" data-id="${m.id}" title="Delete Motor"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                     </div>
                 </td>
             `;
@@ -899,133 +1242,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function renderCharts() {
+        const cat = state.categories.find(c => c.id === state.activeCategory);
         const catMotors = state.motors.filter(m => m.categoryId === state.activeCategory);
-        const companies = {};
-        catMotors.forEach(m => { companies[m.company] = (companies[m.company] || 0) + 1; });
         
-        const ctx1 = document.getElementById('manufacturerChart');
-        if(state.chartInstances.company) state.chartInstances.company.destroy();
-        
-        if (ctx1 && catMotors.length > 0) {
-            state.chartInstances.company = new Chart(ctx1, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(companies),
-                    datasets: [{
-                        data: Object.values(companies),
-                        backgroundColor: ['#2563eb', '#059669', '#3b82f6', '#10b981', '#60a5fa', '#34d399', '#93c5fd', '#a7f3d0'],
-                        borderWidth: 1.5,
-                        borderColor: '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                color: '#475569',
-                                font: { family: "'Inter', sans-serif", size: 11, weight: '500' },
-                                boxWidth: 12,
-                                padding: 12
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Motors by Brand',
-                            color: '#1e293b',
-                            font: { family: "'Outfit', sans-serif", size: 14, weight: '600' },
-                            padding: { bottom: 10 }
-                        }
-                    }
-                }
-            });
-        }
-
-        const ctx2 = document.getElementById('thrustDistributionChart');
-        if(state.chartInstances.thrust) state.chartInstances.thrust.destroy();
-        
-        if (ctx2 && catMotors.length > 0) {
-            const sorted = [...catMotors]
-                .sort((a, b) => parseThrustToKg(b.thrust) - parseThrustToKg(a.thrust))
-                .slice(0, 10);
-            
-            const canvasCtx = ctx2.getContext('2d');
-            let gradient = '#2563eb';
-            if (canvasCtx) {
-                gradient = canvasCtx.createLinearGradient(0, 0, 400, 0);
-                gradient.addColorStop(0, '#2563eb');
-                gradient.addColorStop(1, '#60a5fa');
-            }
-            state.chartInstances.thrust = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: sorted.map(m => m.motor),
-                    datasets: [{
-                        label: 'Max Thrust (kg)',
-                        data: sorted.map(m => parseThrustToKg(m.thrust)),
-                        backgroundColor: gradient,
-                        borderColor: '#2563eb',
-                        borderWidth: 1,
-                        borderRadius: 6,
-                        borderSkipped: false
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            grid: { color: '#e2e8f0' },
-                            ticks: {
-                                color: '#475569',
-                                font: { family: "'Inter', sans-serif", size: 10 }
-                            },
-                            title: {
-                                display: true,
-                                text: 'Max Thrust (kg)',
-                                color: '#475569',
-                                font: { family: "'Inter', sans-serif", size: 11, weight: '600' }
-                            }
-                        },
-                        y: {
-                            grid: { display: false },
-                            ticks: {
-                                color: '#475569',
-                                font: { family: "'Inter', sans-serif", size: 10 },
-                                callback: function(value, index) {
-                                    const label = this.getLabelForValue(value);
-                                    if (typeof label === 'string' && label.length > 18) {
-                                        return label.substring(0, 15) + '...';
-                                    }
-                                    return label;
-                                }
-                            }
-                        }
-                    },
-                    plugins: { 
-                        legend: { display: false },
-                        title: {
-                            display: true,
-                            text: 'Top 10 Motors by Max Thrust',
-                            color: '#1e293b',
-                            font: { family: "'Outfit', sans-serif", size: 14, weight: '600' },
-                            padding: { bottom: 10 }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `Max Thrust: ${context.parsed.x.toFixed(2)} kg`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
+        updateKpis(catMotors, cat);
+        renderBrandTreemap(catMotors);
+        renderTop10Motors(catMotors);
+        renderInsights(catMotors);
     }
 
     elements.searchInput.addEventListener('input', (e) => {
@@ -1657,10 +1880,7 @@ document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
     };
 
-    elements.btnAddCat.onclick = () => {
-        elements.catForm.reset();
-        openModal(elements.catModal);
-    };
+    
 
     function openModal(modal) { modal.classList.add('show'); }
     function closeModal(modal) { modal.classList.remove('show'); }
@@ -1672,9 +1892,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Logout
-    elements.btnLogout.onclick = () => {
-        logoutAndRedirect();
-    };
+    
 
     // =========================================================================
     // DYNAMIC SPEC SCHEMA CUSTOMIZER & EXPORTER ACTIONS
@@ -2441,17 +2659,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Sidebar Profile Click Trigger
-    const sidebarProfileCard = document.querySelector('.sidebar-user-profile');
-    if (sidebarProfileCard) {
-        sidebarProfileCard.style.cursor = 'pointer';
-        sidebarProfileCard.title = 'View My Profile';
-        sidebarProfileCard.onclick = () => {
-            sessionStorage.setItem('showMyProfile', 'true');
-            window.location.href = 'admin_users';
-        };
-    }
-
     // Init App
     async function init() {
         try {
@@ -2490,7 +2697,8 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             localStorage.setItem('thrustvault_session', JSON.stringify(sessionData));
             const userEmail = sbSession.user.email;
-            document.getElementById('session-email').textContent = userEmail;
+            const emailEl = document.getElementById('session-email');
+            if (emailEl) emailEl.textContent = userEmail;
             const avatarInit = document.getElementById('user-avatar-initials');
             if (avatarInit && userEmail) {
                 avatarInit.textContent = userEmail.charAt(0).toUpperCase();
@@ -2553,13 +2761,33 @@ document.addEventListener('DOMContentLoaded', () => {
     resetInactivityTimer();
 
     init();
-    // Sidebar Toggle Event Listener
-    const sidebar = document.querySelector('.sidebar');
-    const toggleBtn = document.getElementById('btn-toggle-sidebar');
-    if (toggleBtn && sidebar) {
-        toggleBtn.addEventListener('click', () => {
-            const isCollapsed = sidebar.classList.toggle('collapsed');
-            localStorage.setItem('thrustvault_sidebar_collapsed', isCollapsed);
-        });
+    
+
+    function setupSidebar() {
+        renderSidebar();
+
+        if (elements.btnAddCat) {
+            elements.btnAddCat.onclick = (e) => {
+                e.preventDefault();
+                elements.catForm.reset();
+                openModal(elements.catModal);
+            };
+        }
+
+        const sidebarProfileCard = document.querySelector('.sidebar-user-profile');
+        if (sidebarProfileCard) {
+            sidebarProfileCard.style.cursor = 'pointer';
+            sidebarProfileCard.title = 'View My Profile';
+            sidebarProfileCard.onclick = () => {
+                sessionStorage.setItem('showMyProfile', 'true');
+                window.location.href = 'admin_users';
+            };
+        }
+    }
+
+    if (window.sidebarLoaded) {
+        setupSidebar();
+    } else {
+        window.addEventListener('sidebarLoaded', setupSidebar);
     }
 });
