@@ -1,6 +1,14 @@
 // page-loader.js
 // Handles premium, lightweight page loading and transition animations
 (function() {
+    // Immediately set data-theme to prevent flash
+    const isLandingPage = window.location.pathname === '/' || 
+                          window.location.pathname.endsWith('/index.html') || 
+                          window.location.pathname.endsWith('index.html') || 
+                          window.location.pathname === '';
+    const currentTheme = isLandingPage ? 'light' : (localStorage.getItem('thrustvault_theme') || 'light');
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
     // 1. Immediately inject preload styling to prevent Content Flash (FOUC)
     const style = document.createElement('style');
     style.id = 'tv-loader-preload-style';
@@ -175,6 +183,40 @@
         document.body.appendChild(overlay);
 
         startProgress(pb);
+
+        // Inject Theme Toggle Button if Sidebar Footer exists
+        const sidebarFooter = document.querySelector('.sidebar-footer');
+        if (sidebarFooter) {
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'btn-theme-toggle';
+            toggleBtn.id = 'btn-theme-toggle';
+            toggleBtn.title = 'Toggle Theme';
+            
+            const currentTheme = localStorage.getItem('thrustvault_theme') || 'light';
+            const iconName = currentTheme === 'dark' ? 'sun' : 'moon';
+            const textLabel = currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+            
+            toggleBtn.style.cssText = 'width:100%; padding:8px 16px; background:transparent; border:1px solid var(--border-color); border-radius:var(--radius-md); font-size:0.85rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; color:var(--text-primary); transition:all 0.2s; margin-bottom: 8px; box-sizing: border-box;';
+            toggleBtn.innerHTML = `<i data-lucide="${iconName}" style="width:16px; height:16px;"></i> <span>${textLabel}</span>`;
+            
+            const logoutBtn = sidebarFooter.querySelector('#btn-logout') || sidebarFooter.querySelector('.btn-logout-premium');
+            if (logoutBtn) {
+                sidebarFooter.insertBefore(toggleBtn, logoutBtn);
+            } else {
+                sidebarFooter.appendChild(toggleBtn);
+            }
+            
+            toggleBtn.onclick = () => {
+                const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('thrustvault_theme', theme);
+                
+                const newIcon = theme === 'dark' ? 'sun' : 'moon';
+                const newText = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+                toggleBtn.innerHTML = `<i data-lucide="${newIcon}" style="width:16px; height:16px;"></i> <span>${newText}</span>`;
+                if (window.lucide) window.lucide.createIcons();
+            };
+        }
     });
 
     // 3. Page load completed event
@@ -193,6 +235,7 @@
         
         // Reveal page contents
         document.documentElement.classList.add('tv-loaded');
+        if (window.lucide) window.lucide.createIcons();
     });
 
     // 4. Intercept link navigation to trigger slide-out animations
