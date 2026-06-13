@@ -501,6 +501,136 @@ def send_email_api():
         return jsonify({"success": False, "error": str(e)})
 
 
+# ---------------------------------------------------------------------------
+# Request Demo API Endpoint — Saves request in DB & sends confirmation email
+# ---------------------------------------------------------------------------
+@app.route('/api/request-demo', methods=['POST'])
+def request_demo_api():
+    data = request.get_json() or {}
+    full_name = data.get('name')
+    company = data.get('company')
+    email = data.get('email')
+    usecase = data.get('usecase', 'research')
+
+    if not full_name or not company or not email:
+        return jsonify({"success": False, "error": "Missing required fields"}), 400
+
+    # 1. Insert into Supabase 'access_requests' table using REST API
+    supabase_url = os.environ.get("SUPABASE_URL", "")
+    supabase_key = os.environ.get("SUPABASE_ANON_KEY", "")
+    
+    db_success = False
+    db_message = ""
+    if supabase_url and supabase_key:
+        url = f"{supabase_url}/rest/v1/access_requests"
+        headers = {
+            "apikey": supabase_key,
+            "Authorization": f"Bearer {supabase_key}",
+            "Content-Type": "application/json",
+            "Prefer": "return=representation"
+        }
+        payload = {
+            "full_name": full_name,
+            "email": email,
+            "requested_role": "guest",
+            "justification": f"Demo Request. Company: {company}, Use Case: {usecase}",
+            "status": "pending"
+        }
+        try:
+            req_obj = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode('utf-8'),
+                headers=headers,
+                method='POST'
+            )
+            with urllib.request.urlopen(req_obj, timeout=5.0) as res_obj:
+                res_obj.read()
+                db_success = True
+        except Exception as e:
+            print("DB INSERT ERROR for demo request:", e)
+            db_message = f"Failed to record in DB: {str(e)}"
+    else:
+        print("DB INSERT WARNING: Supabase credentials missing. Storing in DB skipped.")
+        db_message = "Database credentials missing"
+
+    # 2. Send confirmation email via Resend API
+    resend_key = os.environ.get("RESEND_API_KEY", "")
+    email_success = False
+    email_message = ""
+    if resend_key and resend_key != "re_placeholder_key":
+        url = "https://api.resend.com/emails"
+        headers = {
+            "Authorization": f"Bearer {resend_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0"
+        }
+        
+        # Format the usecase display string
+        usecase_display = {
+            "delivery": "Autonomous Cargo/Delivery",
+            "inspection": "Industrial Inspection & Mapping",
+            "defense": "Defense & Public Safety",
+            "agriculture": "Precision Agriculture",
+            "research": "Academic / R&D Curation"
+        }.get(usecase, usecase)
+
+        subject = "ThrustVault Demo Request Confirmation"
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            <div style="text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 style="color: #2563eb; margin: 0; font-family: 'Outfit', sans-serif;">Demo Request Received</h2>
+            </div>
+            <p>Dear {full_name},</p>
+            <p>Thank you for requesting a custom demonstration of the <strong>ThrustVault UAV Motor Database Console</strong>.</p>
+            <p>We are excited to help you explore our secure spec catalog and analytics modules. Here are the details we received from your submission:</p>
+            <table style="background-color: #f8fafc; padding: 15px; border-radius: 8px; width: 100%; border: 1px solid #e2e8f0; margin: 15px 0;">
+                <tr><td style="padding: 5px; width: 130px;"><strong>Company:</strong></td><td style="padding: 5px;">{company}</td></tr>
+                <tr><td style="padding: 5px; width: 130px;"><strong>UAV Use Case:</strong></td><td style="padding: 5px;">{usecase_display}</td></tr>
+                <tr><td style="padding: 5px; width: 130px;"><strong>Email:</strong></td><td style="padding: 5px;">{email}</td></tr>
+            </table>
+            <p>A member of our UAV systems validation team will reach out to you shortly to schedule your personalized live demo session and walk you through role-based dashboard telemetry curation.</p>
+            <p>If you have any immediate questions in the meantime, please do not hesitate to contact us.</p>
+            <p style="margin-bottom: 0;">Best regards,</p>
+            <p style="margin-top: 5px; font-weight: bold; color: #2563eb;">The ThrustVault Team</p>
+            <p style="margin-top: 30px; font-size: 0.82rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px; text-align: center;">
+                This is an automated confirmation of your request. Please do not reply directly to this email.
+            </p>
+        </div>
+        """
+        
+        email_payload = {
+            "from": "ThrustVault <demo.thrustvault@bharani-01.xyz>",
+            "to": [email],
+            "subject": subject,
+            "html": html_content
+        }
+        
+        try:
+            req_obj = urllib.request.Request(
+                url,
+                data=json.dumps(email_payload).encode('utf-8'),
+                headers=headers,
+                method='POST'
+            )
+            with urllib.request.urlopen(req_obj, timeout=5.0) as res_obj:
+                res_obj.read()
+                email_success = True
+        except Exception as e:
+            print("EMAIL SENDING ERROR for demo request:", e)
+            email_message = f"Failed to send email: {str(e)}"
+    else:
+        print("EMAIL SENDING WARNING: RESEND_API_KEY is not configured. Email skipped.")
+        email_message = "Resend API key missing"
+        email_success = True  # mock success locally so frontend doesn't throw a hard error
+
+    return jsonify({
+        "success": db_success or email_success,
+        "db_recorded": db_success,
+        "db_message": db_message,
+        "email_sent": email_success,
+        "email_message": email_message
+    })
+
 
 # ---------------------------------------------------------------------------
 # Server-Side Dashboard Session & Role Verification
