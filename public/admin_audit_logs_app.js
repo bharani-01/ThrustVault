@@ -50,6 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let sortDir = 'desc';
     let viewMode = 'table'; // 'table' or 'timeline'
     let liveInterval = null;
+    let statusChart = null;
+    let activityChart = null;
+    let riskChart = null;
 
     // DOM Elements
     const elements = {
@@ -294,11 +297,183 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Helper: Dynamic Activity Binning
+    function getActivityTrendData(logs) {
+        if (logs.length === 0) return { labels: [], data: [] };
+        
+        // Sort chronologically ascending
+        const sorted = [...logs].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        const first = new Date(sorted[0].timestamp);
+        const last = new Date(sorted[sorted.length - 1].timestamp);
+        const durationMs = last - first;
+
+        const isMultiDay = durationMs > 36 * 60 * 60 * 1000;
+        const groups = {};
+
+        sorted.forEach(log => {
+            const date = new Date(log.timestamp);
+            let key;
+            if (isMultiDay) {
+                key = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            } else {
+                key = date.toLocaleTimeString([], { hour: '2-digit', hour12: true }).replace(':00', '');
+            }
+            groups[key] = (groups[key] || 0) + 1;
+        });
+
+        return {
+            labels: Object.keys(groups),
+            data: Object.values(groups)
+        };
+    }
+
+    // Helper: Render Chart.js visualisations
+    function renderCharts(logs) {
+        if (typeof Chart === 'undefined') return;
+        const trendData = getActivityTrendData(logs);
+        const riskData = {
+            info: logs.filter(l => l.risk_level === 'info' || !l.risk_level).length,
+            warning: logs.filter(l => l.risk_level === 'warning').length,
+            suspicious: logs.filter(l => l.risk_level === 'suspicious').length
+        };
+        
+        const statusData = {
+            '2xx': logs.filter(l => l.status >= 200 && l.status < 300).length,
+            '3xx': logs.filter(l => l.status >= 300 && l.status < 400).length,
+            '4xx': logs.filter(l => l.status >= 400 && l.status < 500).length,
+            '5xx': logs.filter(l => l.status >= 500).length
+        };
+
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const textColor = isDark ? '#94a3b8' : '#64748b';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0';
+        const primaryColor = isDark ? '#3b82f6' : '#2563eb';
+        const primaryBg = isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(37, 99, 235, 0.03)';
+
+        // 0. Traffic Status Codes Chart
+        const ctxStatus = document.getElementById('chart-traffic-status');
+        if (ctxStatus) {
+            if (statusChart) statusChart.destroy();
+            statusChart = new Chart(ctxStatus, {
+                type: 'bar',
+                data: {
+                    labels: ['2xx OK', '3xx Redirect', '4xx Client Err', '5xx Server Err'],
+                    datasets: [{
+                        data: [statusData['2xx'], statusData['3xx'], statusData['4xx'], statusData['5xx']],
+                        backgroundColor: ['#059669', '#3b82f6', '#f59e0b', '#e11d48'],
+                        borderRadius: 4,
+                        barThickness: 12
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: gridColor },
+                            ticks: { precision: 0, color: textColor, font: { size: 9, family: 'Inter' } }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: textColor, font: { size: 9, family: 'Inter', weight: '500' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 1. Activity Trend Chart
+        const ctxTrend = document.getElementById('chart-activity-trend');
+        if (ctxTrend) {
+            if (activityChart) activityChart.destroy();
+            activityChart = new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: trendData.labels,
+                    datasets: [{
+                        label: 'Requests',
+                        data: trendData.data,
+                        borderColor: primaryColor,
+                        backgroundColor: primaryBg,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: textColor, font: { size: 9, family: 'Inter' } }
+                        },
+                        y: {
+                            grid: { color: gridColor },
+                            ticks: { precision: 0, color: textColor, font: { size: 9, family: 'Inter' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 2. Risk Breakdown Doughnut Chart
+        const ctxRisk = document.getElementById('chart-risk-breakdown');
+        if (ctxRisk) {
+            if (riskChart) riskChart.destroy();
+            const panelColor = getComputedStyle(document.documentElement).getPropertyValue('--bg-panel-solid').trim() || '#ffffff';
+            riskChart = new Chart(ctxRisk, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Info', 'Warning', 'Suspicious'],
+                    datasets: [{
+                        data: [riskData.info, riskData.warning, riskData.suspicious],
+                        backgroundColor: ['#0ea5e9', '#f59e0b', '#ef4444'],
+                        borderWidth: isDark ? 2 : 1,
+                        borderColor: panelColor,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: textColor,
+                                font: { size: 9, family: 'Inter', weight: '500' },
+                                boxWidth: 10
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+    }
+
     // Calculate Metrics
     function updateMetrics() {
-        elements.totalRequests.textContent = allLogs.length;
-        elements.warningRequests.textContent = allLogs.filter(log => log.risk_level === 'warning').length;
-        elements.suspiciousRequests.textContent = allLogs.filter(log => log.risk_level === 'suspicious').length;
+        const total = allLogs.length;
+        const warnings = allLogs.filter(log => log.risk_level === 'warning').length;
+        const suspicious = allLogs.filter(log => log.risk_level === 'suspicious').length;
+
+        if (elements.totalRequests) elements.totalRequests.textContent = total;
+        if (elements.warningRequests) elements.warningRequests.textContent = warnings;
+        if (elements.suspiciousRequests) elements.suspiciousRequests.textContent = suspicious;
+
+        // Render trend lines & status & doughnut
+        renderCharts(allLogs);
     }
 
     // Collapse adjacent duplicate events (same email, method, route, status, risk within 1 min)
@@ -555,22 +730,22 @@ document.addEventListener('DOMContentLoaded', () => {
         items.forEach(log => {
             const dateStr = new Date(log.timestamp).toLocaleString();
             
-            let statusStyle = 'color: #059669; font-weight:600;'; // green
+            let statusStyle = 'color: var(--success-color); font-weight:600;'; // green
             if (log.status >= 400) {
-                statusStyle = 'color: #e11d48; font-weight:700;'; // red
+                statusStyle = 'color: var(--danger-color); font-weight:700;'; // red
             } else if (log.status >= 300) {
-                statusStyle = 'color: #d97706; font-weight:600;'; // orange
+                statusStyle = 'color: #d97706; font-weight:600;'; // orange (warning)
             }
 
             const dupBadge = log.duplicateCount > 1 
-                ? ` <span class="badge-role" style="background:#f1f5f9; color:#475569; font-size:0.75rem; border:1px solid #cbd5e1; padding:2px 6px; margin-left:4px; font-weight:600;">×${log.duplicateCount}</span>`
+                ? ` <span class="badge-role" style="background:var(--bg-base); color:var(--text-secondary); font-size:0.75rem; border:1px solid var(--border-color); padding:2px 6px; margin-left:4px; font-weight:600;">×${log.duplicateCount}</span>`
                 : '';
 
             const tr = document.createElement('tr');
             tr.className = 'log-detail-row';
-            tr.style.borderBottom = '1px solid #e2e8f0';
+            tr.style.borderBottom = '1px solid var(--border-color)';
             tr.innerHTML = `
-                <td style="padding:12px 16px; color:#64748b;">${dateStr}</td>
+                <td style="padding:12px 16px; color:var(--text-muted);">${dateStr}</td>
                 <td style="padding:12px 16px; font-weight:500;">${escapeHTML(log.email)}</td>
                 <td style="padding:12px 16px;"><span class="badge-role role-${log.role}">${escapeHTML(log.role)}</span></td>
                 <td style="padding:12px 16px; font-family:monospace; word-break:break-all;">
@@ -578,8 +753,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${dupBadge}
                 </td>
                 <td style="padding:12px 16px; text-align:center; ${statusStyle}">${log.status}</td>
-                <td style="padding:12px 16px; color:#475569;">${escapeHTML(log.ip_address)}</td>
-                <td style="padding:12px 16px; color:#64748b;">${escapeHTML(log.location || 'Unknown')}</td>
+                <td style="padding:12px 16px; color:var(--text-secondary);">${escapeHTML(log.ip_address)}</td>
+                <td style="padding:12px 16px; color:var(--text-muted);">${escapeHTML(log.location || 'Unknown')}</td>
                 <td style="padding:12px 16px; text-align:center;">
                     <span class="badge-risk risk-${log.risk_level}">${escapeHTML(log.risk_level)}</span>
                 </td>
@@ -607,7 +782,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         return `<li>[${new Date(d.timestamp).toLocaleTimeString()}] Status: ${d.status}, IP: ${d.ip_address}</li>`;
                     }).join('');
                     dupBlock = `
-                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1;">
+                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-color);">
                             <strong>Collapsed Occurrences:</strong>
                             <ul style="margin: 4px 0 0 16px; padding: 0; font-family:monospace; font-size:0.8rem; list-style-type: disc;">
                                 ${dupList}
@@ -631,7 +806,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </td>
                 `;
-                detailsTr.style.borderBottom = '1px solid #cbd5e1';
+                detailsTr.style.borderBottom = '1px solid var(--border-color)';
                 elements.tableBody.appendChild(detailsTr);
             }
         });
@@ -676,12 +851,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const riskClass = `risk-${log.risk_level}`;
             const dupBadge = log.duplicateCount > 1 
-                ? `<span class="badge-role" style="background:#f1f5f9; color:#475569; font-size:0.75rem; border:1px solid #cbd5e1; padding:2px 6px; font-weight:600;">×${log.duplicateCount} repeated events</span>`
+                ? `<span class="badge-role" style="background:var(--bg-base); color:var(--text-secondary); font-size:0.75rem; border:1px solid var(--border-color); padding:2px 6px; font-weight:600;">×${log.duplicateCount} repeated events</span>`
                 : '';
 
-            let statusStyle = 'color: #059669; font-weight:600;';
+            let statusStyle = 'color: var(--success-color); font-weight:600;';
             if (log.status >= 400) {
-                statusStyle = 'color: #e11d48; font-weight:700;';
+                statusStyle = 'color: var(--danger-color); font-weight:700;';
             } else if (log.status >= 300) {
                 statusStyle = 'color: #d97706; font-weight:600;';
             }
@@ -689,11 +864,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const isExpanded = expandedLogId === log.id;
             const expandedBlock = isExpanded 
                 ? `
-                <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px; padding-top:8px; border-top:1px dashed #cbd5e1; font-size:0.8rem; color:var(--text-secondary);">
+                <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border-color); font-size:0.8rem; color:var(--text-secondary);">
                     <div><strong>User Agent:</strong> <span style="font-family:monospace; word-break:break-all;">${escapeHTML(log.user_agent || 'N/A')}</span></div>
                     <div><strong>IP Address:</strong> ${escapeHTML(log.ip_address)} | <strong>Location:</strong> ${escapeHTML(log.location || 'Unknown')}</div>
                     ${log.duplicates && log.duplicates.length > 0 ? `
-                    <div style="margin-top:6px; padding-top:6px; border-top:1px dashed #e2e8f0;">
+                    <div style="margin-top:6px; padding-top:6px; border-top:1px dashed var(--border-color);">
                         <strong>Collapsed Occurrences:</strong>
                         <ul style="margin:4px 0 0 16px; padding:0; list-style-type:disc; font-family:monospace;">
                             ${log.duplicates.map(d => `<li>[${new Date(d.timestamp).toLocaleTimeString()}] Status: ${d.status}, IP: ${d.ip_address}</li>`).join('')}
@@ -996,6 +1171,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Start initial timer
     resetInactivityTimer();
+
+    // Listen for theme changes to update chart colors dynamically
+    const themeObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'data-theme') {
+                updateMetrics(); // triggers chart recreation with correct theme colors
+            }
+        });
+    });
+    themeObserver.observe(document.documentElement, { attributes: true });
 
     // Initial Fetch
     fetchLogs();

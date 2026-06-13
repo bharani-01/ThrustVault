@@ -17,43 +17,57 @@
     <!-- SheetJS Excel/CSV Parser -->
     <script src="libs/xlsx.full.min.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';"></script>
     <!-- Main Stylesheet -->
-    <link rel="stylesheet" href="style.css?v=1.1">
+    <link rel="stylesheet" href="style.css?v=1.4">
     <style>
         /* Extra styles for performance analytics tab system and dataset creator */
         .analytics-tabs {
             display: flex;
-            gap: 12px;
-            border-bottom: 2px solid #e2e8f0;
+            gap: 16px;
+            border-bottom: 1px solid var(--border-color);
             margin-bottom: 25px;
-            padding-bottom: 2px;
+            padding-bottom: 4px;
         }
         .tab-btn {
             background: none;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 24px;
             font-family: 'Outfit', sans-serif;
             font-weight: 600;
             font-size: 0.95rem;
             color: var(--text-secondary);
             cursor: pointer;
             position: relative;
-            transition: all 0.2s;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: var(--radius-md) var(--radius-md) 0 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        .tab-btn:hover {
-            color: var(--primary-color);
-        }
-        .tab-btn.active {
-            color: var(--primary-color);
-        }
-        .tab-btn.active::after {
+        .tab-btn::after {
             content: '';
             position: absolute;
-            bottom: -4px;
-            left: 0;
-            right: 0;
+            bottom: -5px;
+            left: 50%;
+            right: 50%;
             height: 3px;
             background: var(--primary-color);
             border-radius: 3px 3px 0 0;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+        }
+        .tab-btn:hover {
+            color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.05);
+        }
+        .tab-btn.active {
+            color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.02);
+        }
+        .tab-btn.active::after {
+            left: 0;
+            right: 0;
+            opacity: 1;
+            box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
         }
         .analytics-grid {
             display: grid;
@@ -76,7 +90,7 @@
         }
         @media(min-width: 900px) {
             .creator-grid {
-                grid-template-columns: 320px 1fr;
+                grid-template-columns: 340px 1fr;
             }
         }
         /* Category info badge under selects */
@@ -84,13 +98,13 @@
             display: none;
             align-items: center;
             gap: 8px;
-            background: linear-gradient(135deg, #eff6ff, #e0f2fe);
-            border: 1px solid #bfdbfe;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(59, 130, 246, 0.05));
+            border: 1px solid rgba(37, 99, 235, 0.2);
             border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 0.8rem;
-            color: #1e40af;
-            margin-top: 4px;
+            padding: 10px 14px;
+            font-size: 0.82rem;
+            color: var(--primary-color);
+            margin-top: 6px;
             animation: fadeIn 0.25s ease;
         }
         .cat-info-badge.visible { display: flex; }
@@ -98,41 +112,304 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Motor select locked state */
-        select:disabled { opacity: 0.5; cursor: not-allowed; }
+        select:disabled { opacity: 0.4; cursor: not-allowed; }
 
         /* Dynamic table row inputs styling */
         .creator-table input {
             width: 100%;
-            padding: 8px 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: var(--radius-sm);
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
             font-family: 'Inter', sans-serif;
             font-size: 0.85rem;
             box-sizing: border-box;
-            background: #ffffff;
+            background: var(--bg-panel-solid);
             color: var(--text-primary);
+            transition: all 0.2s ease;
         }
         .creator-table input:focus {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.18);
         }
         .creator-table input[readonly] {
-            background: #f1f5f9;
-            border-color: #e2e8f0;
-            color: #475569;
+            background: rgba(0, 0, 0, 0.02);
+            border-color: var(--border-color);
+            color: var(--text-muted);
             cursor: not-allowed;
+        }
+        [data-theme="dark"] .creator-table input[readonly] {
+            background: rgba(255, 255, 255, 0.02);
         }
         .creator-table th {
             font-size: 0.8rem;
-            padding: 10px 8px;
+            padding: 12px 10px;
         }
         .creator-table td {
-            padding: 6px 4px;
+            padding: 8px 6px;
+        }
+        .btn-header-copy-down {
+            border: none;
+            background: none;
+            padding: 4px;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            border-radius: 4px;
+            transition: all 0.15s ease;
         }
         .btn-header-copy-down:hover {
-            background-color: #cbd5e1 !important;
+            background-color: rgba(37, 99, 235, 0.1) !important;
             color: var(--primary-color) !important;
+        }
+
+        /* Test Run & Draft Cards UI Improvements */
+        .run-card, .draft-card {
+            background: var(--bg-panel-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: var(--shadow-sm);
+        }
+        .run-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: transparent;
+            transition: background-color 0.2s ease;
+        }
+        .run-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: rgba(37, 99, 235, 0.3);
+            background: rgba(37, 99, 235, 0.01);
+        }
+        .run-card.active-run {
+            border-color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.04) !important;
+            box-shadow: var(--shadow-md), 0 0 0 1px var(--primary-color);
+        }
+        .run-card.active-run::before {
+            background: var(--primary-color);
+        }
+
+        /* Draft Cards specific warning/amber design */
+        .draft-card {
+            border-left: 4px solid #f59e0b;
+            box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.05), 0 2px 4px -1px rgba(245, 158, 11, 0.03);
+        }
+        .draft-card:hover {
+            transform: translateY(-2px);
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.02);
+            box-shadow: var(--shadow-md), 0 0 8px rgba(245, 158, 11, 0.1);
+        }
+
+        /* Card Content Inner Classes */
+        .run-card-title {
+            display: flex;
+            align-items: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 0.92rem;
+            color: var(--text-primary);
+            gap: 8px;
+            width: 100%;
+        }
+        .run-card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+        .run-card-meta span {
+            background: rgba(0, 0, 0, 0.03);
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+        [data-theme="dark"] .run-card-meta span {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .run-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            border-top: 1px dashed var(--border-color);
+            padding-top: 8px;
+            margin-top: 4px;
+        }
+
+        /* Badges for Draft/Status on cards */
+        .run-draft-badge {
+            background: rgba(245, 158, 11, 0.15);
+            color: #d97706;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 1px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+        [data-theme="dark"] .run-draft-badge {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+        }
+
+        /* Custom Run delete button style */
+        .btn-run-del {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            margin-left: 6px;
+        }
+        .btn-run-del:hover {
+            color: var(--danger-color);
+            background: rgba(225, 29, 72, 0.08);
+        }
+
+        /* Dark Mode Specific Overrides for elements created dynamically */
+        [data-theme="dark"] .run-card {
+            background: rgba(20, 24, 33, 0.65);
+        }
+        [data-theme="dark"] .run-card.active-run {
+            background: rgba(59, 130, 246, 0.08) !important;
+            border-color: var(--primary-color);
+        }
+        [data-theme="dark"] .draft-card {
+            background: rgba(20, 24, 33, 0.65);
+            border-left: 4px solid #d97706;
+        }
+        [data-theme="dark"] .draft-card:hover {
+            background: rgba(217, 119, 6, 0.04);
+        }
+
+        /* Interactive table/card edit button styles */
+        .btn-draft-delete:hover {
+            background-color: rgba(225, 29, 72, 0.08) !important;
+        }
+
+        /* Count Badge inside Tab/Saved drafts header */
+        .count-badge {
+            font-size: 0.72rem;
+            padding: 2px 7px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.15);
+        }
+
+        /* Form Group refinements */
+        .form-group label {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            display: block;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            outline: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            background: var(--bg-panel-solid);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+        }
+
+        /* Draft Card Inner Content Styles */
+        .draft-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            gap: 8px;
+            width: 100%;
+        }
+        .draft-card-title {
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.88rem;
+            color: var(--text-primary);
+            display: block;
+            word-break: break-all;
+        }
+        .draft-card-sub {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+        .draft-card-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .draft-card-footer {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 8px;
+            margin-top: 4px;
+        }
+        .draft-card-badge {
+            background: rgba(0, 0, 0, 0.04);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--text-secondary);
+        }
+        [data-theme="dark"] .draft-card-badge {
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .run-card-date {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+        }
+        .run-card-action-text {
+            font-size: 0.7rem;
+            color: var(--primary-color);
+            font-weight: 600;
         }
     </style>
     <!-- Page Loader Transition Script -->
@@ -223,8 +500,13 @@
                             </div>
                             
                             <!-- Canvas wrapper -->
-                            <div style="flex:1; position:relative; min-height: 350px;">
-                                <canvas id="performanceCurveChart"></canvas>
+                            <div style="flex:1; position:relative; min-height: 350px; display:flex; flex-direction:column;">
+                                <div id="chart-empty-state" style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:var(--text-muted); text-align:center; padding:20px;">
+                                    <i data-lucide="line-chart" style="width:40px; height:40px; color:var(--border-color);"></i>
+                                    <span style="font-family:'Outfit'; font-weight:600; font-size:1rem; color:var(--text-secondary);">Comparative Performance Plot Area</span>
+                                    <span style="font-size:0.82rem; max-width:280px;">Select a thrust level and motor to plot multi-propeller calibration curves.</span>
+                                </div>
+                                <canvas id="performanceCurveChart" style="display:none;"></canvas>
                             </div>
                         </div>
 

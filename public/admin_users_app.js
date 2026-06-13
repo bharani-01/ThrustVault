@@ -344,8 +344,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
     // USER ACCOUNT MANAGEMENT & PROFILE CONTRIB
     // =========================================================================
+    function renderUserAccountsSkeleton() {
+        if (!elements.usersTableBody) return;
+        let skeletonHtml = '';
+        for (let i = 0; i < 4; i++) {
+            const width = [150, 180, 130, 160][i % 4];
+            skeletonHtml += `
+                <tr>
+                    <td>
+                        <div class="user-email-cell" style="display:flex; align-items:center; gap:12px;">
+                            <div class="shimmer skeleton-circle-shimmer" style="width: 34px; height: 34px; border-radius:50%; flex-shrink: 0;"></div>
+                            <div style="display:flex; flex-direction:column; gap:6px;">
+                                <div class="shimmer skeleton-text" style="width: ${width}px; height: 12px; margin:0;"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="shimmer skeleton-badge-shimmer" style="width: 100px; height: 24px; border-radius: 6px;"></div>
+                    </td>
+                    <td>
+                        <div class="shimmer skeleton-text" style="width: 80px; height: 12px; margin:0;"></div>
+                    </td>
+                    <td style="text-align: right; vertical-align: middle; white-space: nowrap;">
+                        <div class="row-actions" style="display: inline-flex; gap: 8px; justify-content: flex-end; align-items: center; vertical-align: middle;">
+                            <div class="shimmer" style="width: 68px; height: 24px; border-radius: var(--radius-md);"></div>
+                            <div class="shimmer" style="width: 28px; height: 24px; border-radius: var(--radius-md);"></div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        elements.usersTableBody.innerHTML = skeletonHtml;
+    }
+
     async function fetchUserAccounts() {
         try {
+            renderUserAccountsSkeleton();
             const { data: users, error } = await supabase
                 .from('user_profiles')
                 .select('*')
@@ -371,15 +405,66 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function generateAvatarColor(email) {
+        const colors = [
+            'linear-gradient(135deg, #3b82f6, #1d4ed8)', // Blue
+            'linear-gradient(135deg, #10b981, #047857)', // Emerald
+            'linear-gradient(135deg, #8b5cf6, #6d28d9)', // Violet
+            'linear-gradient(135deg, #f59e0b, #b45309)', // Amber
+            'linear-gradient(135deg, #ec4899, #be185d)', // Pink
+            'linear-gradient(135deg, #14b8a6, #0f766e)', // Teal
+            'linear-gradient(135deg, #f43f5e, #be123c)', // Rose
+            'linear-gradient(135deg, #6366f1, #4338ca)'  // Indigo
+        ];
+        let hash = 0;
+        for (let i = 0; i < email.length; i++) {
+            hash = email.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const index = Math.abs(hash) % colors.length;
+        return colors[index];
+    }
+
     function renderUserAccountsList() {
+        if (!elements.usersTableBody) return;
         elements.usersTableBody.innerHTML = '';
-        state.users.forEach(u => {
+
+        const searchQuery = document.getElementById('search-users-input')?.value.trim().toLowerCase() || '';
+        const roleFilter = document.getElementById('filter-users-role')?.value || 'all';
+
+        const filtered = state.users.filter(u => {
+            if (searchQuery && !u.email.toLowerCase().includes(searchQuery)) return false;
+            if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted); font-style:italic;">
+                    No accounts found matching the filters.
+                </td>
+            `;
+            elements.usersTableBody.appendChild(tr);
+            return;
+        }
+
+        filtered.forEach(u => {
             const tr = document.createElement('tr');
             const createdDate = new Date(u.created_at).toLocaleDateString();
             const isSelf = u.email === session.email;
+            const avatarColor = generateAvatarColor(u.email);
+            const initial = u.email.charAt(0).toUpperCase();
             
             tr.innerHTML = `
-                <td><strong>${u.email}</strong> ${isSelf ? '<span class="count-badge" style="font-size:0.65rem; padding:2px 6px;">You</span>' : ''}</td>
+                <td>
+                    <div class="user-email-cell" style="display:flex; align-items:center; gap:12px;">
+                        <div class="user-avatar-circle" style="background:${avatarColor}; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; flex-shrink:0; font-family:'Outfit'; font-size:0.95rem;">${initial}</div>
+                        <div style="display:flex; flex-direction:column;">
+                            <strong style="color:var(--text-main); font-size:0.9rem;">${u.email}</strong>
+                            ${isSelf ? '<span style="font-size:0.7rem; color:var(--primary-color); font-weight:600; margin-top:2px;">(You)</span>' : ''}
+                        </div>
+                    </div>
+                </td>
                 <td>
                     <select class="user-role-select form-group" style="padding:4px 8px; font-size:0.85rem;" data-id="${u.id}" ${isSelf ? 'disabled' : ''}>
                         <option value="guest" ${u.role === 'guest' ? 'selected' : ''}>Guest (Read-only)</option>
@@ -497,6 +582,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("Failed to trigger welcome email notification:", emailErr);
             }
 
+            // Close the creation modal
+            const createUserModal = document.getElementById('create-user-modal');
+            if (createUserModal) closeModal(createUserModal);
+
             // Render custom success feedback modal
             createTemporarySuccessModal(emailVal, passVal, roleVal);
             await fetchUserAccounts();
@@ -509,32 +598,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const backdrop = document.createElement('div');
         backdrop.className = 'modal-backdrop show';
         backdrop.innerHTML = `
-            <div class="modal-container modal-sm" style="width: 420px;">
-                <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding-bottom:12px;">
-                    <h3 style="color: #10b981; font-family:'Outfit'; display:flex; align-items:center; gap:8px;"><i data-lucide="check-circle"></i> Account Created</h3>
+            <div class="modal-container modal-sm" style="width: 420px; background: var(--bg-panel-solid); border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom:12px;">
+                    <h3 style="color: var(--success-color); font-family:'Outfit'; display:flex; align-items:center; gap:8px;"><i data-lucide="check-circle"></i> Account Created</h3>
                     <button class="btn-icon-close" id="btn-close-success-modal"><i data-lucide="x"></i></button>
                 </div>
                 <div class="modal-body" style="padding: 20px 0;">
-                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:14px;">The credentials have been saved, and a welcome email notification has been triggered.</p>
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+                    <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:14px;">The credentials have been saved, and a welcome email notification has been triggered.</p>
+                    <div style="background:var(--bg-base); border:1px solid var(--border-color); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem;">
-                            <span style="color:#64748b;">Role:</span>
+                            <span style="color:var(--text-secondary);">Role:</span>
                             <span class="badge-role role-${role}" style="font-weight:700;">${role.toUpperCase()}</span>
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem;">
-                            <span style="color:#64748b;">Email:</span>
-                            <strong style="color:#0f172a;">${email}</strong>
+                            <span style="color:var(--text-secondary);">Email:</span>
+                            <strong style="color:var(--text-primary);">${email}</strong>
                         </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; border-top:1px dashed #cbd5e1; padding-top:6px;">
-                            <span style="color:#64748b;">Password:</span>
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; border-top:1px dashed var(--border-color); padding-top:6px;">
+                            <span style="color:var(--text-secondary);">Password:</span>
                             <div style="display:flex; align-items:center; gap:6px;">
-                                <strong style="color:#0f172a; font-family:monospace; font-size:0.85rem;">${pass}</strong>
-                                <button id="btn-success-copy-pass" style="background:none; border:none; cursor:pointer; padding:2px; display:inline-flex; align-items:center;" title="Copy Password"><i data-lucide="copy" style="width: 14px; height: 14px;"></i></button>
+                                <strong style="color:var(--text-primary); font-family:monospace; font-size:0.85rem;">${pass}</strong>
+                                <button id="btn-success-copy-pass" style="background:none; border:none; cursor:pointer; padding:2px; display:inline-flex; align-items:center; color:var(--text-secondary);" title="Copy Password"><i data-lucide="copy" style="width: 14px; height: 14px;"></i></button>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer" style="border-top:1px solid #f1f5f9; padding-top:12px; display:flex; justify-content:space-between; gap:12px;">
+                <div class="modal-footer" style="border-top:1px solid var(--border-color); padding-top:12px; display:flex; justify-content:space-between; gap:12px;">
                     <button class="btn-outline" id="btn-success-copy-invite" style="font-size:0.8rem; padding: 6px 12px; display:inline-flex; align-items:center; gap:6px;">
                         <i data-lucide="share-2" style="width:14px; height:14px;"></i> Copy Invite Message
                     </button>
@@ -577,6 +666,39 @@ document.addEventListener('DOMContentLoaded', () => {
         backdrop.querySelector('#btn-close-success-modal-footer').onclick = closeModal;
     }
 
+    function renderProfileLogsSkeleton() {
+        if (!elements.fullProfileActivityContainer) return;
+        let skeletonHtml = '';
+        for (let i = 0; i < 3; i++) {
+            const width1 = [120, 150, 100][i % 3];
+            const width2 = [90, 75, 85][i % 3];
+            skeletonHtml += `
+                <div style="display:flex; gap:12px; padding:12px; background:var(--bg-base); border:1px solid var(--border-color); border-radius:10px; align-items:start;">
+                    <div class="shimmer skeleton-circle-shimmer" style="width:32px; height:32px; flex-shrink:0;"></div>
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                            <div class="shimmer skeleton-text" style="width:${width1}px; height:12px; margin:0;"></div>
+                            <div class="shimmer skeleton-text" style="width:60px; height:10px; margin:0;"></div>
+                        </div>
+                        <div class="shimmer skeleton-text" style="width:${width2}%; height:12px; margin:0;"></div>
+                    </div>
+                </div>
+            `;
+        }
+        elements.fullProfileActivityContainer.innerHTML = skeletonHtml;
+    }
+
+    function renderProfileContributionCalendarSkeleton() {
+        const gridContainer = document.getElementById('contribution-calendar-grid');
+        if (!gridContainer) return;
+        gridContainer.innerHTML = '';
+        let html = '';
+        for (let i = 0; i < 371; i++) {
+            html += `<div class="contrib-cell shimmer" style="cursor:default; transform:none; box-shadow:none; background-color:#e2e8f0; opacity:0.6;"></div>`;
+        }
+        gridContainer.innerHTML = html;
+    }
+
     // User profile detail sub-pages
     async function showUserProfile(targetUser) {
         state.profileUserEmail = targetUser.email;
@@ -617,35 +739,77 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         };
 
-        const checkIcon = `<span style="color: #059669; font-weight: 700; margin-right: 8px;">+</span>`;
-        const crossIcon = `<span style="color: #e11d48; font-weight: 700; margin-right: 8px;">-</span>`;
+        const checkIcon = `<span style="color: var(--success-color); font-weight: 700; margin-right: 8px;">+</span>`;
+        const crossIcon = `<span style="color: var(--danger-color); font-weight: 700; margin-right: 8px;">-</span>`;
         
         let permsHtml = '';
         if (targetUser.role === 'admin') {
             permsHtml = `
-                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Access motor catalog</div>
-                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Add, edit, or delete motors</div>
-                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Add, edit, or delete categories</div>
-                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Administer user roles & registrations</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">${checkIcon} Access motor catalog</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">${checkIcon} Add, edit, or delete motors</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">${checkIcon} Add, edit, or delete categories</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">${checkIcon} Administer user roles & registrations</div>
             `;
         } else if (targetUser.role === 'intern') {
             permsHtml = `
-                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Access motor catalog</div>
-                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Add, edit, or delete motors</div>
-                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Add, edit, or delete categories</div>
-                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #64748b; text-decoration: line-through;">${crossIcon} Administer user roles & registrations</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">${checkIcon} Access motor catalog</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">${checkIcon} Add, edit, or delete motors</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">${checkIcon} Add, edit, or delete categories</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-muted); text-decoration: line-through;">${crossIcon} Administer user roles & registrations</div>
             `;
         } else {
             permsHtml = `
-                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #334155;">${checkIcon} Access motor catalog</div>
-                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #64748b; text-decoration: line-through;">${crossIcon} Add, edit, or delete motors</div>
-                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #64748b; text-decoration: line-through;">${crossIcon} Add, edit, or delete categories</div>
-                <div style="display: flex; align-items: center; font-size: 0.85rem; color: #64748b; text-decoration: line-through;">${crossIcon} Administer user roles & registrations</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">${checkIcon} Access motor catalog</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-muted); text-decoration: line-through;">${crossIcon} Add, edit, or delete motors</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-muted); text-decoration: line-through;">${crossIcon} Add, edit, or delete categories</div>
+                <div style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-muted); text-decoration: line-through;">${crossIcon} Administer user roles & registrations</div>
             `;
         }
         elements.fullProfilePermissionsList.innerHTML = permsHtml;
 
         state.currentUserLogs = [];
+        
+        // Show shimmer loader placeholders
+        renderProfileLogsSkeleton();
+        renderProfileContributionCalendarSkeleton();
+        elements.profileTotalOps.innerHTML = '<div class="shimmer skeleton-text" style="width:30px; height:16px; margin:0;"></div>';
+        elements.profileTotalMutations.innerHTML = '<div class="shimmer skeleton-text" style="width:30px; height:16px; margin:0;"></div>';
+        
+        let skLoginsEl = document.getElementById('profile-total-logins');
+        if (skLoginsEl) skLoginsEl.innerHTML = '<div class="shimmer skeleton-text" style="width:30px; height:16px; margin:0;"></div>';
+        let skCatChangesEl = document.getElementById('profile-catalog-changes');
+        if (skCatChangesEl) skCatChangesEl.innerHTML = '<div class="shimmer skeleton-text" style="width:30px; height:16px; margin:0;"></div>';
+        let skLastActiveEl = document.getElementById('full-profile-last-active');
+        if (skLastActiveEl) skLastActiveEl.innerHTML = '<div class="shimmer skeleton-text" style="width:70px; height:14px; margin:0;"></div>';
+
+        let skCanvas = document.getElementById('profileActivityChart');
+        if (skCanvas) {
+            skCanvas.style.display = 'none';
+            let chartSkeleton = document.getElementById('profile-chart-skeleton');
+            if (!chartSkeleton) {
+                chartSkeleton = document.createElement('div');
+                chartSkeleton.id = 'profile-chart-skeleton';
+                chartSkeleton.className = 'shimmer skeleton-circle-shimmer';
+                chartSkeleton.style.cssText = 'width:120px; height:120px; position:absolute; border-radius:50%;';
+                skCanvas.parentNode.appendChild(chartSkeleton);
+            } else {
+                chartSkeleton.style.display = 'block';
+            }
+        }
+        let skLegend = document.getElementById('profile-breakdown-legend');
+        if (skLegend) {
+            skLegend.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div class="shimmer skeleton-text" style="width:80px; height:12px; margin:0;"></div>
+                    <div class="shimmer skeleton-text" style="width:20px; height:12px; margin:0;"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
+                    <div class="shimmer skeleton-text" style="width:100px; height:12px; margin:0;"></div>
+                    <div class="shimmer skeleton-text" style="width:20px; height:12px; margin:0;"></div>
+                </div>
+            `;
+        }
+
         try {
             const response = await fetch('/api/audit-logs');
             if (response.ok) {
@@ -718,6 +882,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const legend = document.getElementById('profile-breakdown-legend');
         if (!canvas) return;
 
+        const chartSkeleton = document.getElementById('profile-chart-skeleton');
+        if (chartSkeleton) chartSkeleton.style.display = 'none';
+        canvas.style.display = 'block';
+
         const loginCount = state.currentUserLogs.filter(l => {
             const t = (l.action || l.route || l.details || '').toLowerCase();
             return t.includes('login') || t.includes('logout') || t.includes('session');
@@ -750,11 +918,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const panelColor = getComputedStyle(document.documentElement).getPropertyValue('--bg-panel-solid').trim() || '#ffffff';
         profileActivityChartInstance = new Chart(canvas, {
             type: 'doughnut',
             data: {
                 labels,
-                datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff', hoverOffset: 6 }]
+                datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: panelColor, hoverOffset: 6 }]
             },
             options: {
                 responsive: true,
@@ -771,9 +940,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.79rem;">
                     <span style="display:flex; align-items:center; gap:7px;">
                         <span style="width:10px; height:10px; border-radius:50%; background:${colors[i]}; display:inline-block; flex-shrink:0;"></span>
-                        <span style="color:#475569;">${label}</span>
+                        <span style="color:var(--text-secondary);">${label}</span>
                     </span>
-                    <span style="font-weight:700; color:#0f172a;">${data[i]}</span>
+                    <span style="font-weight:700; color:var(--text-primary);">${data[i]}</span>
                 </div>
             ` : '').join('');
         }
@@ -850,10 +1019,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div style="flex:1; min-width:0;">
                     <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
-                        <strong style="font-size:0.85rem; color:#0f172a;">${log.action || 'Activity'}</strong>
-                        <span style="font-size:0.7rem; color:#94a3b8; white-space:nowrap;">${timeStr}</span>
+                        <strong style="font-size:0.85rem; color:var(--text-primary);">${log.action || 'Activity'}</strong>
+                        <span style="font-size:0.7rem; color:var(--text-muted); white-space:nowrap;">${timeStr}</span>
                     </div>
-                    <p style="font-size:0.8rem; color:#64748b; margin:0; line-height:1.4;">${log.details || log.route || ''}</p>
+                    <p style="font-size:0.8rem; color:var(--text-secondary); margin:0; line-height:1.4;">${log.details || log.route || ''}</p>
                 </div>
             `;
             elements.fullProfileActivityContainer.appendChild(item);
@@ -1021,6 +1190,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elements.profileActivitySearch.oninput = () => renderProfileLogs();
     elements.profileActivityFilter.onchange = () => renderProfileLogs();
+
+    // Bind search and filter events for user administration table
+    const searchUsersInput = document.getElementById('search-users-input');
+    const filterUsersRole = document.getElementById('filter-users-role');
+    if (searchUsersInput) searchUsersInput.oninput = () => renderUserAccountsList();
+    if (filterUsersRole) filterUsersRole.onchange = () => renderUserAccountsList();
+
+    // Bind create user modal trigger
+    const btnCreateTrigger = document.getElementById('btn-create-user-trigger');
+    const createUserModal = document.getElementById('create-user-modal');
+    if (btnCreateTrigger && createUserModal) {
+        btnCreateTrigger.onclick = () => {
+            elements.userForm.reset();
+            const meter = document.getElementById('strength-user-password');
+            if (meter) meter.style.display = 'none';
+            const caps = document.getElementById('caps-warning-user-password');
+            if (caps) caps.style.display = 'none';
+            openModal(createUserModal);
+        };
+    }
+
+    // MutationObserver to update chart border color on theme change dynamically
+    const themeObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'data-theme') {
+                if (elements.profileViewSection && elements.profileViewSection.style.display !== 'none') {
+                    renderProfileBreakdownChart();
+                }
+            }
+        });
+    });
+    themeObserver.observe(document.documentElement, { attributes: true });
 
     // Sidebar Profile Click Trigger is setup dynamically in setupSidebar()
 

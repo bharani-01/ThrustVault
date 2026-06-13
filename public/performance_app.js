@@ -76,11 +76,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // Enable/Disable creator views based on role
+    // Show creator tab for all; disable/lock it for guests
     const isWriter = session.role === 'admin' || session.role === 'intern';
     const tabBtnCreator = document.getElementById('tab-btn-creator');
-    if (isWriter && tabBtnCreator) {
-        tabBtnCreator.style.display = 'block';
+    if (tabBtnCreator) {
+        tabBtnCreator.style.display = 'flex';
+        if (!isWriter) {
+            tabBtnCreator.disabled = true;
+            tabBtnCreator.title = 'Create Dataset is only available to Admins and Interns';
+            tabBtnCreator.style.opacity = '0.45';
+            tabBtnCreator.style.cursor = 'not-allowed';
+            tabBtnCreator.style.filter = 'grayscale(0.5)';
+            // Prepend lock icon
+            const lockIcon = document.createElement('i');
+            lockIcon.setAttribute('data-lucide', 'lock');
+            lockIcon.style.cssText = 'width:13px;height:13px;margin-right:2px;flex-shrink:0;';
+            tabBtnCreator.insertBefore(lockIcon, tabBtnCreator.firstChild);
+        }
     }
 
     // Update sidebar header subtitle to match the actual logged-in role
@@ -257,6 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     elements.tabBtnCreator.onclick = () => {
+        if (!isWriter) return; // guests: locked
         elements.tabBtnCreator.classList.add('active');
         elements.tabBtnVisualizer.classList.remove('active');
         elements.sectionCreator.style.display = 'block';
@@ -1977,6 +1990,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Count-up animation helper
+    function animateCountUp(el, target, duration = 700) {
+        if (!el) return;
+        const start = parseInt(el.textContent) || 0;
+        const delta = target - start;
+        if (delta === 0) { el.textContent = target; return; }
+        const startTime = performance.now();
+        function step(now) {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            el.textContent = Math.round(start + delta * eased);
+            if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+
     // Fetch quick counts
     async function fetchStats() {
         try {
@@ -1990,13 +2019,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 .select('*', { count: 'exact', head: true });
             if (ptsError) throw ptsError;
 
+            // Count distinct motors with at least one test run
+            const { data: motorRunData } = await supabase
+                .from('motor_test_runs')
+                .select('motor_id');
+            const activeMotors = motorRunData ? new Set(motorRunData.map(r => r.motor_id).filter(Boolean)).size : 0;
+
+            const runsEl = document.getElementById('total-test-runs-count');
+            const ptsEl = document.getElementById('total-data-points-count');
+            const motorsEl = document.getElementById('total-active-motors-count');
+
+            if (runsEl) { runsEl.innerHTML = ''; animateCountUp(runsEl, runsCount || 0); }
+            if (ptsEl)  { ptsEl.innerHTML  = ''; animateCountUp(ptsEl,  ptsCount  || 0); }
+            if (motorsEl){ motorsEl.innerHTML=''; animateCountUp(motorsEl, activeMotors); }
+
+            // Legacy element refs for backward compat
             if (elements.totalTestRunsCount) {
-                elements.totalTestRunsCount.textContent = runsCount || 0;
+                // already rendered above via ID lookup
             }
             if (elements.totalDataPointsCount) {
-                elements.totalDataPointsCount.textContent = ptsCount || 0;
+                // already rendered above via ID lookup
             }
-            
+
             // Sync drafts list
             await loadSavedDraftsList();
         } catch (err) {
@@ -2040,11 +2084,17 @@ document.addEventListener('DOMContentLoaded', () => {
         state.activeRunId = null;
         elements.activeRunLabel.textContent = 'Select a test run to inspect readings';
         elements.dataPointsGridRows.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#64748b; font-size:0.85rem; padding:30px 0;">No configuration selected. Choose a motor and click a test run.</td></tr>`;
-        elements.testRunsList.innerHTML = `<div style="color:#64748b; font-size:0.85rem; text-align:center; padding:20px 0;">Select a motor to view test runs.</div>`;
+        elements.testRunsList.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 0;gap:10px;color:var(--text-muted);"><i data-lucide="mouse-pointer-click" style="width:28px;height:28px;color:#cbd5e1;"></i><span style="font-size:0.82rem;text-align:center;">Select a motor to view test runs.</span></div>`;
         if (state.chartInstance) { state.chartInstance.destroy(); state.chartInstance = null; }
+        // Show chart empty state
+        const emptyState = document.getElementById('chart-empty-state');
+        const chartCanvas = document.getElementById('performanceCurveChart');
+        if (emptyState) emptyState.style.display = 'flex';
+        if (chartCanvas) chartCanvas.style.display = 'none';
 
         const bannerEl = document.getElementById('draft-run-banner');
         if (bannerEl) bannerEl.style.display = 'none';
+        if (window.lucide) window.lucide.createIcons();
 
         const datalist = document.getElementById('plot-motor-datalist');
         const inputEl = document.getElementById('plot-motor-input');
@@ -2195,14 +2245,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const displayProp = run.propeller_model || 'Unknown';
                 
                 return `
-                    <div class="glass-panel" style="padding:12px; border:1px solid #cbd5e1; border-radius:8px; display:flex; flex-direction:column; gap:6px;">
-                        <div style="display:flex; justify-content:space-between; align-items:start;">
-                            <div>
-                                <span style="font-weight:700; font-family:'Outfit'; font-size:0.85rem; color:#0f172a; display:block; word-break:break-all;">${escapeHTML(run.motor_model)}</span>
-                                <span style="font-size:0.8rem; color:#64748b; word-break:break-all;">Prop: ${escapeHTML(displayProp)}</span>
+                    <div class="draft-card">
+                        <div class="draft-card-header">
+                            <div style="min-width:0;">
+                                <span class="draft-card-title">${escapeHTML(run.motor_model)}</span>
+                                <span class="draft-card-sub">Prop: ${escapeHTML(displayProp)}</span>
                             </div>
-                            <div style="display:flex; gap:6px; align-items:center;">
-                                <button type="button" class="btn-outline-sm btn-edit-draft" data-draft-id="${run.id}" title="Edit and Save Draft" style="padding:4px 8px; font-size:0.75rem; border-radius:6px; display:inline-flex; align-items:center; gap:4px; height:24px; cursor:pointer; background:#fff; border:1px solid #cbd5e1;">
+                            <div class="draft-card-actions">
+                                <button type="button" class="btn-outline-sm btn-edit-draft" data-draft-id="${run.id}" title="Edit and Save Draft" style="padding:4px 8px; font-size:0.75rem; border-radius:6px; display:inline-flex; align-items:center; gap:4px; height:24px; cursor:pointer;">
                                     <i data-lucide="edit-3" style="width:12px; height:12px;"></i> Edit
                                 </button>
                                 <button type="button" class="btn-draft-delete" data-run-id="${run.id}" title="Delete draft" style="border:none; background:none; padding:4px; color:var(--danger-color); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s;">
@@ -2210,9 +2260,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </button>
                             </div>
                         </div>
-                        <div style="font-size:0.75rem; color:#94a3b8; display:flex; justify-content:space-between; align-items:center;">
+                        <div class="draft-card-footer">
                             <span>Tested: ${date}</span>
-                            ${run.esc_model ? `<span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; color:#475569;">ESC: ${escapeHTML(run.esc_model)}</span>` : ''}
+                            ${run.esc_model ? `<span class="draft-card-badge">ESC: ${escapeHTML(run.esc_model)}</span>` : ''}
                         </div>
                     </div>
                 `;
@@ -2449,14 +2499,20 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadMotorRuns(motorId);
         } else {
             elements.testRunsList.innerHTML = `
-                <div style="color: #64748b; font-size: 0.85rem; text-align: center; padding: 20px 0;">
-                    Select a motor to view test runs.
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 0;gap:10px;color:var(--text-muted);">
+                    <i data-lucide="mouse-pointer-click" style="width:28px;height:28px;color:#cbd5e1;"></i>
+                    <span style="font-size:0.82rem;text-align:center;">Select a motor to view test runs.</span>
                 </div>
             `;
             if (state.chartInstance) {
                 state.chartInstance.destroy();
                 state.chartInstance = null;
             }
+            const emSt = document.getElementById('chart-empty-state');
+            const emCv = document.getElementById('performanceCurveChart');
+            if (emSt) emSt.style.display = 'flex';
+            if (emCv) emCv.style.display = 'none';
+            if (window.lucide) window.lucide.createIcons();
         }
     };
 
@@ -2481,43 +2537,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (state.testRuns.length === 0) {
                 elements.testRunsList.innerHTML = `
-                    <div style="color: #64748b; font-size: 0.85rem; text-align: center; padding: 20px 0;">
-                        No calibration datasets found for this motor.
+                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 0;gap:10px;color:var(--text-muted);">
+                        <i data-lucide="inbox" style="width:28px;height:28px;color:#cbd5e1;"></i>
+                        <span style="font-size:0.82rem;text-align:center;">No calibration datasets found for this motor.</span>
                     </div>
                 `;
                 if (state.chartInstance) {
                     state.chartInstance.destroy();
                     state.chartInstance = null;
                 }
+                // Show empty state
+                const emSt = document.getElementById('chart-empty-state');
+                const emCv = document.getElementById('performanceCurveChart');
+                if (emSt) emSt.style.display = 'flex';
+                if (emCv) emCv.style.display = 'none';
                 const bannerEl = document.getElementById('draft-run-banner');
                 if (bannerEl) bannerEl.style.display = 'none';
+                if (window.lucide) window.lucide.createIcons();
                 return;
             }
+
+            // Update runs badge
+            const runsBadge = document.getElementById('test-runs-count-badge');
+            if (runsBadge) { runsBadge.textContent = state.testRuns.length; runsBadge.style.display = 'inline-block'; }
 
             elements.testRunsList.innerHTML = state.testRuns.map(run => {
                 const date = new Date(run.tested_at).toLocaleDateString();
                 const isSelected = state.activeRunId === run.id;
                 const isDraft = run.motor_id === state.draftMotorId;
                 const displayProp = isDraft ? run.propeller_model.replace(/^\[DRAFT:.*?\]\s*/, '') : run.propeller_model;
-                const badgeHtml = isDraft ? `<span style="background:#ffedd5; color:#c2410c; border:1px solid #fed7aa; padding:2px 6px; font-size:0.65rem; border-radius:4px; font-weight:600; text-transform:uppercase; margin-left:6px; display:inline-block; font-family:'Inter';">Draft</span>` : '';
-                
+                const draftBadge = isDraft ? `<span class="run-draft-badge">Draft</span>` : '';
+                const deleteBtn = isWriter ? `<button class="btn-run-del btn-run-delete" data-run-id="${run.id}" title="Delete this test run"><i data-lucide="trash-2"></i></button>` : '';
+
                 return `
-                    <div class="glass-panel btn-sidebar-link ${isSelected ? 'active' : ''}" data-id="${run.id}" style="cursor:pointer; display:flex; flex-direction:column; gap:8px; align-items:start; padding:12px; margin-bottom:8px; width:100%; border:1px solid ${isSelected ? 'var(--primary-color)' : '#cbd5e1'};">
-                        <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                            <span style="font-weight:700; font-family:'Outfit'; font-size:0.9rem; color:#0f172a; word-break:break-all;">${escapeHTML(displayProp)} ${badgeHtml}</span>
-                            <div style="display:flex; align-items:center; gap:6px;">
-                                <span style="font-size:0.75rem; color:#94a3b8;">${date}</span>
-                                ${isWriter ? `
-                                <button class="btn-run-delete" data-run-id="${run.id}" title="Delete this test run" style="border:none; background:none; padding:2px; color:var(--danger-color); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s; margin-left:4px;">
-                                    <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
-                                </button>
-                                ` : ''}
-                            </div>
+                    <div class="run-card ${isSelected ? 'active-run' : ''}" data-id="${run.id}">
+                        <div class="run-card-title">
+                            ${escapeHTML(displayProp)} ${draftBadge}
+                            <span class="run-card-date">${date}${deleteBtn}</span>
                         </div>
-                        <div style="font-size:0.8rem; color:#64748b; display:flex; flex-direction:column; gap:2px; text-align:left;">
-                            <span><strong>ESC:</strong> ${escapeHTML(run.esc_model || '-')}</span>
-                            <span><strong>Battery:</strong> ${escapeHTML(run.battery_info || '-')}</span>
-                            <span><strong>Tester:</strong> ${escapeHTML(run.test_conducted_by || '-')}</span>
+                        <div class="run-card-meta">
+                            <span><strong>ESC:</strong> ${escapeHTML(run.esc_model || '—')}</span>
+                            <span><strong>Battery:</strong> ${escapeHTML(run.battery_info || '—')}</span>
+                        </div>
+                        <div class="run-card-footer">
+                            <span>Tester: ${escapeHTML(run.test_conducted_by || '—')}</span>
+                            <span class="run-card-action-text">Click to inspect ›</span>
                         </div>
                     </div>
                 `;
@@ -2531,11 +2595,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     // Mark card as active visually
                     elements.testRunsList.querySelectorAll('[data-id]').forEach(c => {
-                        c.style.borderColor = '#cbd5e1';
-                        c.style.background = 'none';
+                        c.classList.remove('active-run');
                     });
-                    card.style.borderColor = 'var(--primary-color)';
-                    card.style.background = '#eff6ff';
+                    card.classList.add('active-run');
 
                     const run = state.testRuns.find(x => x.id === runId);
                     
@@ -2651,13 +2713,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Draw Comparative Chart
     async function drawPerformanceCurve() {
+        const emptyState = document.getElementById('chart-empty-state');
+        const chartCanvas = document.getElementById('performanceCurveChart');
         if (!state.activeMotorId || state.testRuns.length === 0) {
             if (state.chartInstance) {
                 state.chartInstance.destroy();
                 state.chartInstance = null;
             }
+            if (emptyState) emptyState.style.display = 'flex';
+            if (chartCanvas) chartCanvas.style.display = 'none';
             return;
         }
+        // Hide empty state, show canvas
+        if (emptyState) emptyState.style.display = 'none';
+        if (chartCanvas) chartCanvas.style.display = 'block';
 
         try {
             // Fetch all data points for all runs of this motor
@@ -2746,6 +2815,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 yAxisTitle = 'RPM Speed';
             }
 
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0';
+            const titleColor = isDark ? '#cbd5e1' : '#1e293b';
+            const ticksColor = isDark ? '#94a3b8' : '#475569';
+            const legendColor = isDark ? '#cbd5e1' : '#475569';
+
             state.chartInstance = new Chart(ctx, {
                 type: 'line',
                 data: { datasets },
@@ -2759,11 +2834,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 display: true,
                                 text: xAxisTitle,
                                 font: { family: 'Outfit', weight: '600', size: 12 },
-                                color: '#1e293b'
+                                color: titleColor
                             },
-                            grid: { color: '#f1f5f9' },
+                            grid: { color: gridColor },
                             ticks: {
-                                color: '#475569',
+                                color: ticksColor,
                                 font: { family: 'Inter', size: 10 }
                             }
                         },
@@ -2773,11 +2848,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 display: true,
                                 text: yAxisTitle,
                                 font: { family: 'Outfit', weight: '600', size: 12 },
-                                color: '#1e293b'
+                                color: titleColor
                             },
-                            grid: { color: '#f1f5f9' },
+                            grid: { color: gridColor },
                             ticks: {
-                                color: '#475569',
+                                color: ticksColor,
                                 font: { family: 'Inter', size: 10 }
                             }
                         }
@@ -2787,6 +2862,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             position: 'bottom',
                             labels: {
                                 font: { family: 'Inter', size: 11 },
+                                color: legendColor,
                                 boxWidth: 12,
                                 padding: 15
                             }
@@ -3109,6 +3185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+
 
     if (window.sidebarLoaded) {
         setupSidebar();

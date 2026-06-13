@@ -720,8 +720,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Populate Comparison side-by-side spec grid
-    elements.btnCompareNow.onclick = () => {
-        if (state.compareItems.length === 0) return;
+    if (elements.btnCompareNow) {
+        elements.btnCompareNow.onclick = () => {
+            if (state.compareItems.length === 0) return;
         const selected = state.compareItems.map(id => state.motors.find(m => m.id === id)).filter(Boolean);
         
         elements.comparisonResultTable.innerHTML = `
@@ -763,33 +764,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>
             </tbody>
         `;
-        openModal(elements.comparisonModal);
-        lucide.createIcons();
+        if (elements.comparisonModal) {
+            openModal(elements.comparisonModal);
+        }
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
     };
 
     // Table Select All Change Listener
-    elements.selectAllMotors.onchange = () => {
-        const visibleCbs = elements.motorsTableBody.querySelectorAll('.compare-cb');
-        const isChecked = elements.selectAllMotors.checked;
-        
-        visibleCbs.forEach(cb => {
-            const id = cb.dataset.id;
-            if (isChecked) {
-                if (!state.compareItems.includes(id)) {
-                    if (state.compareItems.length < 3) {
-                        cb.checked = true;
-                        state.compareItems.push(id);
-                    } else {
-                        cb.checked = false;
+    if (elements.selectAllMotors) {
+        elements.selectAllMotors.onchange = () => {
+            const visibleCbs = elements.motorsTableBody ? elements.motorsTableBody.querySelectorAll('.compare-cb') : [];
+            const isChecked = elements.selectAllMotors.checked;
+            
+            visibleCbs.forEach(cb => {
+                const id = cb.dataset.id;
+                if (isChecked) {
+                    if (!state.compareItems.includes(id)) {
+                        if (state.compareItems.length < 3) {
+                            cb.checked = true;
+                            state.compareItems.push(id);
+                        } else {
+                            cb.checked = false;
+                        }
                     }
+                } else {
+                    cb.checked = false;
+                    state.compareItems = state.compareItems.filter(item => item !== id);
                 }
-            } else {
-                cb.checked = false;
-                state.compareItems = state.compareItems.filter(item => item !== id);
-            }
-        });
-        updateComparisonDrawer();
-    };
+            });
+            updateComparisonDrawer();
+        };
+    }
 
     // Render Premium Charts
     function renderCharts() {

@@ -14,7 +14,7 @@
     <script src="libs/chart.umd.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/chart.js';"></script>
     <!-- Supabase JS Client -->
     <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
-    <link rel="stylesheet" href="style.css?v=1.1">
+    <link rel="stylesheet" href="style.css?v=1.4">
     <style>
         .modal-container {
             max-height: 90vh !important;
@@ -122,6 +122,132 @@
             height: 8px;
             background: #0f172a;
         }
+
+        /* Fixed viewport height layout overrides to eliminate page scrollbars */
+        html, body {
+            height: 100vh !important;
+            margin: 0;
+            overflow: hidden !important;
+        }
+        .app-container {
+            height: 100vh !important;
+            overflow: hidden !important;
+        }
+        .main-content-wrapper {
+            height: 100vh !important;
+            overflow: hidden !important;
+        }
+        
+        #users-view-section {
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 24px !important;
+        }
+        #users-view-section .topbar {
+            flex-shrink: 0;
+            margin-bottom: 12px;
+        }
+        #users-view-section .content-body {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px !important;
+            overflow: hidden;
+            padding: 0 !important;
+        }
+        .user-management-table-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+            box-sizing: border-box;
+            padding: 24px;
+            flex: 1;
+        }
+        .user-management-table-container .table-responsive {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-panel-solid);
+        }
+        
+        /* Custom scrollbar for table responsive container */
+        .user-management-table-container .table-responsive::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .user-management-table-container .table-responsive::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .user-management-table-container .table-responsive::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: var(--radius-full);
+        }
+
+        /* Profile Viewport Scroll Override */
+        #profile-view-section {
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 24px !important;
+        }
+        #profile-view-section .topbar {
+            flex-shrink: 0;
+            margin-bottom: 12px;
+        }
+        #profile-view-section > div {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 310px 1fr;
+            gap: 20px;
+            overflow: hidden;
+            padding: 0 !important;
+        }
+        #profile-view-section > div > div:first-child {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            min-height: 0;
+            padding-right: 6px;
+        }
+        #profile-view-section > div > div:first-child::-webkit-scrollbar {
+            width: 5px;
+        }
+        #profile-view-section > div > div:first-child::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #profile-view-section > div > div:first-child::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: var(--radius-full);
+        }
+        #profile-view-section > div > div:second-child {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+            padding: 22px;
+        }
+
+        /* Contribution calendar dark-theme support overrides */
+        [data-theme="dark"] .contrib-lvl-0 { background-color: rgba(255, 255, 255, 0.08); }
+        [data-theme="dark"] .contrib-lvl-1 { background-color: #0e4429; }
+        [data-theme="dark"] .contrib-lvl-2 { background-color: #006d32; }
+        [data-theme="dark"] .contrib-lvl-3 { background-color: #26a641; }
+        [data-theme="dark"] .contrib-lvl-4 { background-color: #39d353; }
+        [data-theme="dark"] .contribution-calendar-wrapper { background: rgba(20, 24, 33, 0.45); }
     </style>
     <!-- Page Loader Transition Script -->
     <script src="page-loader.js"></script>
@@ -163,52 +289,27 @@
                     <h2 style="font-family:'Outfit'; font-size:1.5rem; font-weight:700;"><i data-lucide="users" style="vertical-align:middle; margin-right:8px; color:var(--primary-color);"></i> User Account Administration</h2>
                 </header>
 
-                <div class="content-body" style="display:grid; grid-template-columns:300px 1fr; gap:25px; align-items:stretch; overflow-y:auto; flex:1; padding:24px;">
-                    <!-- User Add Form -->
-                    <div class="user-management-form-container glass-panel">
-                        <h3 class="form-section-title" style="margin-top:0;"><i data-lucide="user-plus"></i> Create User Account</h3>
-                        <form id="admin-user-form">
-                            <div class="form-group" style="margin-bottom:12px;">
-                                <label for="form-user-email">Email Address</label>
-                                <input type="email" id="form-user-email" required placeholder="name@thrustvault.com">
-                            </div>
-                            <div class="form-group" style="margin-bottom:12px;">
-                                <label for="form-user-password">Password</label>
-                                <div class="input-with-icon" style="margin-top: 6px;">
-                                    <input type="password" id="form-user-password" class="with-toggle" required placeholder="password">
-                                    <i data-lucide="lock"></i>
-                                    <button type="button" class="btn-password-toggle" data-target="form-user-password" title="Toggle Password Visibility">
-                                        <i data-lucide="eye" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>
-                                    </button>
-                                </div>
-                                <div class="caps-lock-warning" id="caps-warning-user-password">
-                                    <i data-lucide="alert-triangle" style="width:14px; height:14px; color:#e11d48; position:static; pointer-events:none;"></i> Caps Lock is ON
-                                </div>
-                                <div class="strength-meter-container" id="strength-user-password" style="display: none;">
-                                    <div class="strength-text-label">
-                                        <span>Password Strength</span>
-                                        <span class="strength-label-text">Weak</span>
-                                    </div>
-                                    <div class="strength-bar-track">
-                                        <div class="strength-bar-fill"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-group" style="margin-bottom:18px;">
-                                <label for="form-user-role">Assigned Access Level</label>
-                                <select id="form-user-role" required>
-                                    <option value="guest">Guest (Read-only)</option>
-                                    <option value="intern">Intern (Read/Write Catalog)</option>
-                                    <option value="admin">Admin (Full Control)</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn-primary" style="width:100%;">Create Account</button>
-                        </form>
-                    </div>
-
+                <div class="content-body">
                     <!-- User Account Table -->
                     <div class="user-management-table-container glass-panel">
-                        <h3 style="margin-bottom:15px; font-family:'Outfit'; font-size:1.1rem; display:flex; align-items:center; gap:8px;"><i data-lucide="list"></i> Registered Accounts</h3>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--border-color); padding-bottom:12px; flex-wrap:wrap; gap:12px;">
+                            <h3 style="font-family:'Outfit'; font-size:1.1rem; display:flex; align-items:center; gap:8px; margin:0;"><i data-lucide="list"></i> Registered Accounts</h3>
+                            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                                <div style="position:relative;">
+                                    <i data-lucide="search" style="width:13px; height:13px; position:absolute; left:9px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                                    <input type="text" id="search-users-input" placeholder="Search accounts..." style="padding:7px 10px 7px 28px; border-radius:8px; border:1px solid var(--border-color); outline:none; font-size:0.8rem; width:160px; background:var(--bg-base); color:var(--text-primary); font-family:'Inter';">
+                                </div>
+                                <select id="filter-users-role" style="padding:7px 10px; border-radius:8px; border:1px solid var(--border-color); outline:none; font-size:0.8rem; background:var(--bg-base); color:var(--text-primary); cursor:pointer; font-family:'Inter';">
+                                    <option value="all">All Roles</option>
+                                    <option value="guest">Guest</option>
+                                    <option value="intern">Intern</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                                <button type="button" class="btn-primary" id="btn-create-user-trigger" style="display:inline-flex; align-items:center; gap:6px; font-weight:600; font-size:0.85rem; padding:8px 16px;">
+                                    <i data-lucide="user-plus" style="width:16px; height:16px;"></i> Create Account
+                                </button>
+                            </div>
+                        </div>
                         <div class="table-responsive">
                             <table class="motors-table">
                                 <thead>
@@ -238,7 +339,7 @@
                         <h2 style="font-family:'Outfit'; font-weight:700; font-size:1.3rem;">User Profile &amp; Contributions</h2>
                     </div>
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <span id="profile-header-role-info" style="font-size:0.82rem; color:#64748b; font-weight:500;"></span>
+                        <span id="profile-header-role-info" style="font-size:0.82rem; color:var(--text-muted); font-weight:500;"></span>
                     </div>
                 </header>
 
@@ -249,52 +350,52 @@
                         <div class="glass-panel" style="padding:22px; border-radius:16px; display:flex; flex-direction:column; gap:14px;">
                             <!-- Avatar + Name Row -->
                             <div style="display:flex; align-items:center; gap:14px;">
-                                <div id="full-profile-avatar" style="width:60px; height:60px; border-radius:50%; background:linear-gradient(135deg,#2563eb,#7c3aed); border:3px solid #fff; box-shadow:0 4px 14px -2px rgba(37,99,235,0.35); display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:800; color:#fff; font-family:'Outfit'; flex-shrink:0;">U</div>
+                                <div id="full-profile-avatar" style="width:60px; height:60px; border-radius:50%; background:linear-gradient(135deg,#2563eb,#7c3aed); border:3px solid var(--bg-panel-solid); box-shadow:0 4px 14px -2px rgba(37,99,235,0.35); display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:800; color:#fff; font-family:'Outfit'; flex-shrink:0;">U</div>
                                 <div style="min-width:0;">
-                                    <h3 id="full-profile-email" style="font-family:'Outfit'; font-size:1rem; color:#0f172a; word-break:break-all; margin:0 0 4px; font-weight:700;">user@thrustvault.com</h3>
+                                    <h3 id="full-profile-email" style="font-family:'Outfit'; font-size:1rem; color:var(--text-primary); word-break:break-all; margin:0 0 4px; font-weight:700;">user@thrustvault.com</h3>
                                     <span class="badge-role role-admin" id="full-profile-role-badge" style="display:inline-block; width:fit-content;">Admin</span>
                                 </div>
                             </div>
 
                             <!-- Meta Info -->
-                            <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid #f1f5f9; padding-top:12px;">
+                            <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--border-color); padding-top:12px;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
-                                    <span style="color:#94a3b8; display:flex; align-items:center; gap:5px;"><i data-lucide="fingerprint" style="width:12px; height:12px;"></i> UID</span>
+                                    <span style="color:var(--text-muted); display:flex; align-items:center; gap:5px;"><i data-lucide="fingerprint" style="width:12px; height:12px;"></i> UID</span>
                                     <div style="display:flex; align-items:center; gap:4px;">
-                                        <code id="full-profile-uid" style="background:#e2e8f0; padding:2px 6px; border-radius:4px; font-size:0.7rem; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:monospace;">uuid-value</code>
-                                        <button id="btn-copy-full-profile-uid" style="background:none; border:none; cursor:pointer; padding:2px; color:#94a3b8;" title="Copy UID"><i data-lucide="copy" style="width:12px; height:12px;"></i></button>
+                                        <code id="full-profile-uid" style="background:var(--bg-base); color:var(--text-primary); padding:2px 6px; border-radius:4px; font-size:0.7rem; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:monospace;">uuid-value</code>
+                                        <button id="btn-copy-full-profile-uid" style="background:none; border:none; cursor:pointer; padding:2px; color:var(--text-muted);" title="Copy UID"><i data-lucide="copy" style="width:12px; height:12px;"></i></button>
                                     </div>
                                 </div>
                                 <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
-                                    <span style="color:#94a3b8; display:flex; align-items:center; gap:5px;"><i data-lucide="calendar" style="width:12px; height:12px;"></i> Registered</span>
-                                    <span id="full-profile-created-at" style="color:#334155; font-weight:600;">—</span>
+                                    <span style="color:var(--text-muted); display:flex; align-items:center; gap:5px;"><i data-lucide="calendar" style="width:12px; height:12px;"></i> Registered</span>
+                                    <span id="full-profile-created-at" style="color:var(--text-secondary); font-weight:600;">—</span>
                                 </div>
                             </div>
 
                             <!-- Permissions -->
-                            <div style="border-top:1px solid #f1f5f9; padding-top:12px;">
-                                <div style="font-size:0.72rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px; display:flex; align-items:center; gap:5px;"><i data-lucide="shield-check" style="width:11px; height:11px; color:#2563eb;"></i> Permissions</div>
+                            <div style="border-top:1px solid var(--border-color); padding-top:12px;">
+                                <div style="font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px; display:flex; align-items:center; gap:5px;"><i data-lucide="shield-check" style="width:11px; height:11px; color:#2563eb;"></i> Permissions</div>
                                 <div style="display:flex; flex-direction:column; gap:7px;" id="full-profile-permissions-list"><!-- Loaded dynamically --></div>
                             </div>
 
                             <!-- Quick Stats -->
-                            <div style="border-top:1px solid #f1f5f9; padding-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                                <div class="glass-panel" style="padding:10px; border-radius:10px; display:flex; align-items:center; gap:8px; border-left:3px solid #2563eb; background:rgba(255,255,255,0.45);">
-                                    <div style="width:28px; height:28px; background:#eff6ff; border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <div style="border-top:1px solid var(--border-color); padding-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                <div class="glass-panel" style="padding:10px; border-radius:10px; display:flex; align-items:center; gap:8px; border-left:3px solid #2563eb; background:var(--bg-panel);">
+                                    <div style="width:28px; height:28px; background:rgba(37, 99, 235, 0.1); border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                                         <i data-lucide="activity" style="width:14px; height:14px; color:#2563eb;"></i>
                                     </div>
                                     <div>
-                                        <div style="font-size:1.1rem; font-weight:800; color:#0f172a; font-family:'Outfit'; line-height:1;" id="profile-total-ops">0</div>
-                                        <div style="font-size:0.65rem; color:#64748b; font-weight:500; margin-top:2px;">Actions</div>
+                                        <div style="font-size:1.1rem; font-weight:800; color:var(--text-primary); font-family:'Outfit'; line-height:1;" id="profile-total-ops">0</div>
+                                        <div style="font-size:0.65rem; color:var(--text-muted); font-weight:500; margin-top:2px;">Actions</div>
                                     </div>
                                 </div>
-                                <div class="glass-panel" style="padding:10px; border-radius:10px; display:flex; align-items:center; gap:8px; border-left:3px solid #10b981; background:rgba(255,255,255,0.45);">
-                                    <div style="width:28px; height:28px; background:#f0fdf4; border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                <div class="glass-panel" style="padding:10px; border-radius:10px; display:flex; align-items:center; gap:8px; border-left:3px solid #10b981; background:var(--bg-panel);">
+                                    <div style="width:28px; height:28px; background:rgba(16, 185, 129, 0.1); border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                                         <i data-lucide="database" style="width:14px; height:14px; color:#10b981;"></i>
                                     </div>
                                     <div>
-                                        <div style="font-size:1.1rem; font-weight:800; color:#0f172a; font-family:'Outfit'; line-height:1;" id="profile-total-mutations">0</div>
-                                        <div style="font-size:0.65rem; color:#64748b; font-weight:500; margin-top:2px;">Mutations</div>
+                                        <div style="font-size:1.1rem; font-weight:800; color:var(--text-primary); font-family:'Outfit'; line-height:1;" id="profile-total-mutations">0</div>
+                                        <div style="font-size:0.65rem; color:var(--text-muted); font-weight:500; margin-top:2px;">Mutations</div>
                                     </div>
                                 </div>
                             </div>
@@ -302,7 +403,7 @@
 
                         <!-- Breakdown Chart -->
                         <div class="glass-panel" style="padding:20px; border-radius:16px;">
-                            <h4 style="font-family:'Outfit'; font-size:0.95rem; font-weight:700; color:#0f172a; margin:0 0 12px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
+                            <h4 style="font-family:'Outfit'; font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0 0 12px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border-color); padding-bottom:10px;">
                                 <i data-lucide="pie-chart" style="width:16px; height:16px; color:#2563eb;"></i> Activity Breakdown
                             </h4>
                             <div style="height:160px; position:relative; display:flex; align-items:center; justify-content:center;">
@@ -314,17 +415,17 @@
 
                     <!-- Right Column: Activity Log -->
                     <div class="glass-panel" style="padding:22px; border-radius:16px; display:flex; flex-direction:column; height:100%; overflow:hidden;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
-                            <h4 style="font-family:'Outfit'; font-size:1rem; font-weight:700; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; border-bottom:1px solid var(--border-color); padding-bottom:12px;">
+                            <h4 style="font-family:'Outfit'; font-size:1rem; font-weight:700; color:var(--text-primary); margin:0; display:flex; align-items:center; gap:8px;">
                                 <i data-lucide="history" style="width:17px; height:17px; color:#2563eb;"></i> Activity History
-                                <span id="profile-log-count-badge" style="background:#eff6ff; color:#2563eb; font-size:0.7rem; padding:2px 8px; border-radius:20px; font-weight:600; margin-left:4px;">0 events</span>
+                                <span id="profile-log-count-badge" style="background:rgba(37, 99, 235, 0.1); color:#2563eb; font-size:0.7rem; padding:2px 8px; border-radius:20px; font-weight:600; margin-left:4px;">0 events</span>
                             </h4>
                             <div style="display:flex; gap:8px; align-items:center;">
                                 <div style="position:relative;">
-                                    <i data-lucide="search" style="width:13px; height:13px; position:absolute; left:9px; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
-                                    <input type="text" id="profile-activity-search" placeholder="Search..." style="padding:7px 10px 7px 28px; border-radius:8px; border:1px solid #e2e8f0; outline:none; font-size:0.8rem; width:160px; background:white; font-family:'Inter';">
+                                    <i data-lucide="search" style="width:13px; height:13px; position:absolute; left:9px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                                    <input type="text" id="profile-activity-search" placeholder="Search..." style="padding:7px 10px 7px 28px; border-radius:8px; border:1px solid var(--border-color); outline:none; font-size:0.8rem; width:160px; background:var(--bg-base); color:var(--text-primary); font-family:'Inter';">
                                 </div>
-                                <select id="profile-activity-filter" style="padding:7px 10px; border-radius:8px; border:1px solid #e2e8f0; outline:none; font-size:0.8rem; background:white; cursor:pointer; font-family:'Inter';">
+                                <select id="profile-activity-filter" style="padding:7px 10px; border-radius:8px; border:1px solid var(--border-color); outline:none; font-size:0.8rem; background:var(--bg-base); color:var(--text-primary); cursor:pointer; font-family:'Inter';">
                                     <option value="all">All Activities</option>
                                     <option value="logins">Logins &amp; Logouts</option>
                                     <option value="catalog">Catalog Mutations</option>
@@ -335,9 +436,9 @@
                         </div>
                         <!-- Contribution Calendar (Heatmap) -->
                         <div class="contribution-calendar-wrapper">
-                            <div style="font-family:'Outfit'; font-size:0.85rem; font-weight:600; color:#475569; display:flex; justify-content:space-between; align-items:center;">
+                            <div style="font-family:'Outfit'; font-size:0.85rem; font-weight:600; color:var(--text-secondary); display:flex; justify-content:space-between; align-items:center;">
                                 <span>Activity Heatmap</span>
-                                <span id="profile-calendar-total-info" style="font-size:0.75rem; color:#94a3b8; font-weight:normal;">0 contributions in the last year</span>
+                                <span id="profile-calendar-total-info" style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">0 contributions in the last year</span>
                             </div>
                             <div class="calendar-overflow-container" style="overflow-x: auto; width: 100%; padding-bottom: 5px; scrollbar-width: thin;">
                                 <div style="display: flex; flex-direction: column; gap: 4px; width: max-content; padding: 5px 0;">
@@ -362,7 +463,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:#94a3b8; border-top:1px solid #f1f5f9; padding-top:10px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:var(--text-muted); border-top:1px solid var(--border-color); padding-top:10px;">
                                 <a href="#" style="color:inherit; text-decoration:none; cursor:default;" onclick="return false;">Learn how we count contributions</a>
                                 <div style="display:flex; align-items:center; gap:4px;">
                                     <span>Less</span>
@@ -378,15 +479,73 @@
                         <!-- Feed -->
                         <div id="full-profile-activity-container" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right:4px; min-height:0;"><!-- Dynamic --></div>
                         <!-- Empty -->
-                        <div id="profile-activity-empty" style="display:none; text-align:center; padding:60px 20px; color:#64748b;">
+                        <div id="profile-activity-empty" style="display:none; text-align:center; padding:60px 20px; color:var(--text-muted);">
                             <i data-lucide="inbox" style="width:44px; height:44px; opacity:0.4; margin:0 auto 14px; display:block;"></i>
-                            <h4 style="font-family:'Outfit'; font-size:1rem; font-weight:600; margin-bottom:6px; color:#475569;">No Matching Activities</h4>
-                            <p style="font-size:0.82rem; color:#94a3b8; margin:0;">Adjust your search or filter to find activities.</p>
+                            <h4 style="font-family:'Outfit'; font-size:1rem; font-weight:600; margin-bottom:6px; color:var(--text-secondary);">No Matching Activities</h4>
+                            <p style="font-size:0.82rem; color:var(--text-muted); margin:0;">Adjust your search or filter to find activities.</p>
                         </div>
                     </div>
                 </div>
                 </div>
             </main>
+        </div>
+    </div>
+
+    <!-- Create User Account Modal Dialog -->
+    <div class="modal-backdrop" id="create-user-modal">
+        <div class="modal-container modal-sm" style="width: 380px;">
+            <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 15px;">
+                <h3 style="font-family:'Outfit'; font-weight:700; font-size:1.2rem; display:flex; align-items:center; gap:8px; margin:0;">
+                    <i data-lucide="user-plus" style="color:var(--primary-color);"></i> Create User Account
+                </h3>
+                <button type="button" class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            
+            <form id="admin-user-form">
+                <div class="modal-body">
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label for="form-user-email">Email Address</label>
+                        <input type="email" id="form-user-email" required placeholder="name@thrustvault.com" style="width:100%; box-sizing:border-box;">
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label for="form-user-password">Password</label>
+                        <div class="input-with-icon" style="margin-top: 6px;">
+                            <input type="password" id="form-user-password" class="with-toggle" required placeholder="password" style="width:100%; box-sizing:border-box;">
+                            <i data-lucide="lock"></i>
+                            <button type="button" class="btn-password-toggle" data-target="form-user-password" title="Toggle Password Visibility">
+                                <i data-lucide="eye" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>
+                            </button>
+                        </div>
+                        <div class="caps-lock-warning" id="caps-warning-user-password">
+                            <i data-lucide="alert-triangle" style="width:14px; height:14px; color:#e11d48; position:static; pointer-events:none;"></i> Caps Lock is ON
+                        </div>
+                        <div class="strength-meter-container" id="strength-user-password" style="display: none;">
+                            <div class="strength-text-label">
+                                <span>Password Strength</span>
+                                <span class="strength-label-text">Weak</span>
+                            </div>
+                            <div class="strength-bar-track">
+                                <div class="strength-bar-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom:18px;">
+                        <label for="form-user-role">Assigned Access Level</label>
+                        <select id="form-user-role" required style="width:100%;">
+                            <option value="guest">Guest (Read-only)</option>
+                            <option value="intern">Intern (Read/Write Catalog)</option>
+                            <option value="admin">Admin (Full Control)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="modal-footer" style="margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--border-color); display:flex; justify-content:flex-end; gap:10px;">
+                    <button type="button" class="btn-secondary modal-close-trigger">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Account</button>
+                </div>
+            </form>
         </div>
     </div>
 

@@ -1145,7 +1145,12 @@
                 const res = await fetch('/api/config');
                 const cfg = await res.json();
                 if (window.supabase && cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY) {
-                    return window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+                    return window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
+                        auth: {
+                            persistSession: false,
+                            autoRefreshToken: false
+                        }
+                    });
                 }
             } catch (e) { /* silent */ }
             return null;

@@ -415,6 +415,7 @@
                 else if (href.includes('requests')) textEl.textContent = 'Retrieving Credentials';
                 else if (href.includes('schema')) textEl.textContent = 'Parsing Template Columns';
                 else if (href.includes('export')) textEl.textContent = 'Configuring Data compiler';
+                else if (href.includes('import')) textEl.textContent = 'Initializing Import Pipeline';
                 else if (href.includes('audit')) textEl.textContent = 'Syncing Operation Logs';
                 else textEl.textContent = 'Loading Page';
             }

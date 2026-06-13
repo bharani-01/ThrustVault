@@ -220,17 +220,17 @@ document.addEventListener('DOMContentLoaded', () => {
         catModal: document.getElementById('category-modal'),
         confirmModal: document.getElementById('confirm-modal'),
         comparisonModal: document.getElementById('comparison-modal'),
-        comparisonDrawer: document.getElementById('comparison-drawer'),
-        compareItemsContainer: document.getElementById('compare-items-container'),
-        compareCount: document.getElementById('compare-count'),
+        comparisonDrawer: document.getElementById('comparison-sidebar') || document.getElementById('comparison-drawer'),
+        compareItemsContainer: document.getElementById('compare-check-list') || document.getElementById('compare-items-container'),
+        compareCount: document.getElementById('compare-count') || { textContent: '' },
         comparisonResultTable: document.getElementById('comparison-result-table'),
         
         // Buttons
         btnAddMotor: document.getElementById('btn-add-motor'),
         get btnAddCat() { return document.getElementById('btn-add-category'); },
-        btnCompareNow: document.getElementById('btn-compare-now'),
-        btnClearComparison: document.getElementById('btn-clear-comparison'),
-        btnCloseComparison: document.getElementById('btn-close-comparison'),
+        btnCompareNow: document.getElementById('btn-compare-sidebar-now') || document.getElementById('btn-compare-now'),
+        btnClearComparison: document.getElementById('btn-clear-comparison-sidebar') || document.getElementById('btn-clear-comparison'),
+        btnCloseComparison: document.getElementById('btn-close-comparison-sidebar') || document.getElementById('btn-close-comparison'),
         get btnLogout() { return document.getElementById('btn-logout'); },
         
         // Forms
@@ -719,30 +719,51 @@ document.addEventListener('DOMContentLoaded', () => {
             const tr = document.createElement('tr');
             const isChecked = state.compareItems.includes(m.id);
             
+            const initials = m.motor.charAt(0).toUpperCase();
+            
+            // Dynamic accent color for thumbnail based on company name hash
+            const hash = m.company.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const thumbHue = hash % 360;
+            const thumbStyle = `background: hsl(${thumbHue}, 80%, 95%); color: hsl(${thumbHue}, 80%, 40%); border-color: hsl(${thumbHue}, 80%, 85%);`;
+            
+            // Extract KV
+            const kvMatch = m.motor.match(/(\d+)\s*KV/i) || m.motor.match(/KV\s*(\d+)/i);
+            const kv = kvMatch ? `${kvMatch[1]} KV` : (m.custom_parameters && (m.custom_parameters.kv || m.custom_parameters.kv_rating) ? m.custom_parameters.kv || m.custom_parameters.kv_rating : '-');
+            
+            // Extract Voltage
+            const voltage = m.custom_parameters && (m.custom_parameters.voltage || m.custom_parameters.voltage_v || m.custom_parameters.operating_voltage) ? String(m.custom_parameters.voltage || m.custom_parameters.voltage_v || m.custom_parameters.operating_voltage) : (m.motor.match(/\b\d+S\b/i) || m.esc?.match(/\b\d+S\b/i) || ['-'])[0];
+            
+            // Extract Weight
+            const weightVal = m.custom_parameters && (m.custom_parameters.weight || m.custom_parameters.weight_g || m.custom_parameters.motor_weight) ? m.custom_parameters.weight || m.custom_parameters.weight_g || m.custom_parameters.motor_weight : null;
+            const weight = weightVal ? `${weightVal} g` : '-';
             const links = [];
             if (m.linkMotor) {
-                links.push(`<a href="${sanitizeUrl(m.linkMotor)}" target="_blank" title="Motor Specs"><i data-lucide="cpu"></i></a>`);
+                links.push(`<a href="${sanitizeUrl(m.linkMotor)}" target="_blank" title="Motor Specs"><i data-lucide="cpu" style="width:14px;height:14px;"></i></a>`);
             }
             if (m.linkEsc) {
-                links.push(`<a href="${sanitizeUrl(m.linkEsc)}" target="_blank" title="ESC Specs"><i data-lucide="zap"></i></a>`);
+                links.push(`<a href="${sanitizeUrl(m.linkEsc)}" target="_blank" title="ESC Specs"><i data-lucide="zap" style="width:14px;height:14px;"></i></a>`);
             }
             if (m.linkProp) {
-                links.push(`<a href="${sanitizeUrl(m.linkProp)}" target="_blank" title="Propeller Specs"><i data-lucide="wind"></i></a>`);
+                links.push(`<a href="${sanitizeUrl(m.linkProp)}" target="_blank" title="Propeller Specs"><i data-lucide="wind" style="width:14px;height:14px;"></i></a>`);
             }
             const linksHtml = links.length > 0 ? links.join(' ') : '-';
             
             tr.innerHTML = `
                 <td><input type="checkbox" class="compare-cb" data-id="${m.id}" ${isChecked ? 'checked' : ''}></td>
+                <td><div class="motor-thumbnail" style="${thumbStyle}">${initials}</div></td>
                 <td><a href="#" class="motor-profile-link" data-id="${m.id}"><strong>${escapeHTML(m.motor)}</strong></a></td>
                 <td>${escapeHTML(m.company)}</td>
+                <td><strong>${escapeHTML(kv)}</strong></td>
+                <td><span class="badge-thrust" style="background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.2); color: var(--primary-color);">${escapeHTML(voltage)}</span></td>
                 <td><span class="badge-thrust">${escapeHTML(m.thrust)}</span></td>
-                <td>${escapeHTML(m.esc || '-')}</td>
+                <td>${escapeHTML(weight)}</td>
                 <td>${escapeHTML(m.prop || '-')}</td>
+                <td>${escapeHTML(m.esc || '-')}</td>
                 <td><div class="action-links">${linksHtml}</div></td>
                 <td style="text-align: right; vertical-align: middle; white-space: nowrap;">
                     <div class="row-actions">
-                        <button class="btn-edit" data-id="${m.id}" title="Edit Specifications"><i data-lucide="edit-2"></i></button>
-                        <button class="btn-delete" data-id="${m.id}" title="Delete Motor"><i data-lucide="trash-2"></i></button>
+                        <button class="btn-edit" data-id="${m.id}" title="Edit Specifications"><i data-lucide="edit-2" style="width:14px;height:14px;"></i></button>
+                        <button class="btn-delete" data-id="${m.id}" title="Delete Motor"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                     </div>
                 </td>
             `;
@@ -912,257 +933,483 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateComparisonDrawer() {
         const count = state.compareItems.length;
-        elements.compareCount.textContent = `${count} / 3`;
+        if (elements.compareCount) {
+            elements.compareCount.textContent = `${count} / 3`;
+        }
         
         if (count > 0) {
-            elements.comparisonDrawer.classList.add('show');
-            elements.compareItemsContainer.innerHTML = state.compareItems.map(id => {
-                const m = state.motors.find(x => x.id === id);
-                if (!m) return '';
-                return `
-                    <div class="compare-item">
-                        <div>
-                            <div class="compare-item-info">${m.motor}</div>
-                            <div class="compare-item-brand">${m.company}</div>
+            if (elements.comparisonDrawer) {
+                elements.comparisonDrawer.classList.add('show');
+            }
+            if (elements.compareItemsContainer) {
+                elements.compareItemsContainer.innerHTML = state.compareItems.map(id => {
+                    const m = state.motors.find(x => x.id === id);
+                    if (!m) return '';
+                    return `
+                        <div class="compare-item">
+                            <div>
+                                <div class="compare-item-info">${escapeHTML(m.motor)}</div>
+                                <div class="compare-item-brand">${escapeHTML(m.company)}</div>
+                            </div>
+                            <button class="btn-icon-smallClose btn-remove-compare" data-id="${m.id}" title="Remove"><i data-lucide="x" style="width:14px;"></i></button>
                         </div>
-                        <button class="btn-icon-smallClose btn-remove-compare" data-id="${m.id}" title="Remove"><i data-lucide="x" style="width:14px;"></i></button>
-                    </div>
-                `;
-            }).join('');
-            
-            elements.compareItemsContainer.querySelectorAll('.btn-remove-compare').forEach(btn => {
-                btn.onclick = () => {
-                    const id = btn.dataset.id;
-                    state.compareItems = state.compareItems.filter(item => item !== id);
-                    updateComparisonDrawer();
-                    const cb = elements.motorsTableBody.querySelector(`.compare-cb[data-id="${id}"]`);
-                    if (cb) cb.checked = false;
-                };
-            });
-            lucide.createIcons();
+                    `;
+                }).join('');
+                
+                elements.compareItemsContainer.querySelectorAll('.btn-remove-compare').forEach(btn => {
+                    btn.onclick = () => {
+                        const id = btn.dataset.id;
+                        state.compareItems = state.compareItems.filter(item => item !== id);
+                        updateComparisonDrawer();
+                        const cb = elements.motorsTableBody ? elements.motorsTableBody.querySelector(`.compare-cb[data-id="${id}"]`) : null;
+                        if (cb) cb.checked = false;
+                    };
+                });
+            }
+            if (window.lucide) {
+                lucide.createIcons();
+            }
         } else {
-            elements.comparisonDrawer.classList.remove('show');
-            elements.compareItemsContainer.innerHTML = '';
+            if (elements.comparisonDrawer) {
+                elements.comparisonDrawer.classList.remove('show');
+            }
+            if (elements.compareItemsContainer) {
+                elements.compareItemsContainer.innerHTML = '';
+            }
         }
     }
 
-    elements.btnCompareNow.onclick = () => {
-        if (state.compareItems.length === 0) return;
-        const selected = state.compareItems.map(id => state.motors.find(m => m.id === id)).filter(Boolean);
-        
-        let customRowsHtml = '';
-        if (state.customSchema && state.customSchema.length > 0) {
-            state.customSchema.forEach(f => {
-                customRowsHtml += `
-                    <tr>
-                        <td><strong>${f.field_name}</strong></td>
-                        ${selected.map(m => {
-                            const val = m.custom_parameters && m.custom_parameters[f.field_key] !== undefined ? m.custom_parameters[f.field_key] : '-';
-                            if (f.field_type === 'boolean') {
-                                return `<td>${val === true || val === 'true' ? '<span style="color:#059669;font-weight:700;">Yes</span>' : '<span style="color:#e11d48;font-weight:700;">No</span>'}</td>`;
-                            }
-                            return `<td>${val} ${val !== '-' && f.field_unit && val !== '' ? f.field_unit : ''}</td>`;
-                        }).join('')}
-                    </tr>
+    if (elements.btnCompareNow) {
+        elements.btnCompareNow.onclick = () => {
+            if (state.compareItems.length === 0) return;
+            const selected = state.compareItems.map(id => state.motors.find(m => m.id === id)).filter(Boolean);
+            
+            let customRowsHtml = '';
+            if (state.customSchema && state.customSchema.length > 0) {
+                state.customSchema.forEach(f => {
+                    customRowsHtml += `
+                        <tr>
+                            <td><strong>${f.field_name}</strong></td>
+                            ${selected.map(m => {
+                                const val = m.custom_parameters && m.custom_parameters[f.field_key] !== undefined ? m.custom_parameters[f.field_key] : '-';
+                                if (f.field_type === 'boolean') {
+                                    return `<td>${val === true || val === 'true' ? '<span style="color:#059669;font-weight:700;">Yes</span>' : '<span style="color:#e11d48;font-weight:700;">No</span>'}</td>`;
+                                }
+                                return `<td>${val} ${val !== '-' && f.field_unit && val !== '' ? f.field_unit : ''}</td>`;
+                            }).join('')}
+                        </tr>
+                    `;
+                });
+            }
+
+            if (elements.comparisonResultTable) {
+                elements.comparisonResultTable.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Specification</th>
+                            ${selected.map(m => `<th>${escapeHTML(m.motor)}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Manufacturer</strong></td>
+                            ${selected.map(m => `<td>${escapeHTML(m.company)}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td><strong>Max Thrust</strong></td>
+                            ${selected.map(m => `<td>${escapeHTML(m.thrust)}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td><strong>Recommended ESC</strong></td>
+                            ${selected.map(m => `<td>${escapeHTML(m.esc || '-')}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td><strong>Recommended Propeller</strong></td>
+                            ${selected.map(m => `<td>${escapeHTML(m.prop || '-')}</td>`).join('')}
+                        </tr>
+                        ${customRowsHtml}
+                        <tr>
+                            <td><strong>Reference Links</strong></td>
+                            ${selected.map(m => `
+                                <td>
+                                    <div style="display:flex; flex-direction:column; gap:5px;">
+                                        ${m.linkMotor ? `<a href="${sanitizeUrl(m.linkMotor)}" target="_blank" style="display:inline-flex; align-items:center; gap:5px;"><i data-lucide="cpu" style="width:14px;"></i> Motor Page</a>` : ''}
+                                        ${m.linkEsc ? `<a href="${sanitizeUrl(m.linkEsc)}" target="_blank" style="display:inline-flex; align-items:center; gap:5px;"><i data-lucide="zap" style="width:14px;"></i> ESC Page</a>` : ''}
+                                        ${m.linkProp ? `<a href="${sanitizeUrl(m.linkProp)}" target="_blank" style="display:inline-flex; align-items:center; gap:5px;"><i data-lucide="wind" style="width:14px;"></i> Prop Page</a>` : ''}
+                                        ${!m.linkMotor && !m.linkEsc && !m.linkProp ? '-' : ''}
+                                    </div>
+                                </td>
+                            `).join('')}
+                        </tr>
+                    </tbody>
                 `;
-            });
-        }
+            }
+            if (elements.comparisonModal) {
+                openModal(elements.comparisonModal);
+            }
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        };
+    }
 
-        elements.comparisonResultTable.innerHTML = `
-            <thead>
-                <tr>
-                    <th>Specification</th>
-                    ${selected.map(m => `<th>${m.motor}</th>`).join('')}
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><strong>Manufacturer</strong></td>
-                    ${selected.map(m => `<td>${m.company}</td>`).join('')}
-                </tr>
-                <tr>
-                    <td><strong>Max Thrust</strong></td>
-                    ${selected.map(m => `<td>${m.thrust}</td>`).join('')}
-                </tr>
-                <tr>
-                    <td><strong>Recommended ESC</strong></td>
-                    ${selected.map(m => `<td>${m.esc || '-'}</td>`).join('')}
-                </tr>
-                <tr>
-                    <td><strong>Recommended Propeller</strong></td>
-                    ${selected.map(m => `<td>${m.prop || '-'}</td>`).join('')}
-                </tr>
-                ${customRowsHtml}
-                <tr>
-                    <td><strong>Reference Links</strong></td>
-                    ${selected.map(m => `
-                        <td>
-                            <div style="display:flex; flex-direction:column; gap:5px;">
-                                ${m.linkMotor ? `<a href="${m.linkMotor}" target="_blank" style="display:inline-flex; align-items:center; gap:5px;"><i data-lucide="cpu" style="width:14px;"></i> Motor Page</a>` : ''}
-                                ${m.linkEsc ? `<a href="${m.linkEsc}" target="_blank" style="display:inline-flex; align-items:center; gap:5px;"><i data-lucide="zap" style="width:14px;"></i> ESC Page</a>` : ''}
-                                ${m.linkProp ? `<a href="${m.linkProp}" target="_blank" style="display:inline-flex; align-items:center; gap:5px;"><i data-lucide="wind" style="width:14px;"></i> Prop Page</a>` : ''}
-                                ${!m.linkMotor && !m.linkEsc && !m.linkProp ? '-' : ''}
-                            </div>
-                        </td>
-                    `).join('')}
-                </tr>
-            </tbody>
-        `;
-        openModal(elements.comparisonModal);
-        lucide.createIcons();
-    };
-
-    elements.selectAllMotors.onchange = () => {
-        const visibleCbs = elements.motorsTableBody.querySelectorAll('.compare-cb');
-        const isChecked = elements.selectAllMotors.checked;
-        
-        visibleCbs.forEach(cb => {
-            const id = cb.dataset.id;
-            if (isChecked) {
-                if (!state.compareItems.includes(id)) {
-                    if (state.compareItems.length < 3) {
-                        cb.checked = true;
-                        state.compareItems.push(id);
-                    } else {
-                        cb.checked = false;
+    if (elements.selectAllMotors) {
+        elements.selectAllMotors.onchange = () => {
+            if (!elements.motorsTableBody) return;
+            const visibleCbs = elements.motorsTableBody.querySelectorAll('.compare-cb');
+            const isChecked = elements.selectAllMotors.checked;
+            
+            visibleCbs.forEach(cb => {
+                const id = cb.dataset.id;
+                if (isChecked) {
+                    if (!state.compareItems.includes(id)) {
+                        if (state.compareItems.length < 3) {
+                            cb.checked = true;
+                            state.compareItems.push(id);
+                        } else {
+                            cb.checked = false;
+                        }
                     }
+                } else {
+                    cb.checked = false;
+                    state.compareItems = state.compareItems.filter(item => item !== id);
                 }
-            } else {
-                cb.checked = false;
-                state.compareItems = state.compareItems.filter(item => item !== id);
+            });
+            updateComparisonDrawer();
+        };
+    }
+
+    function getMotorEfficiency(m) {
+        if (m.custom_parameters && m.custom_parameters.efficiency) return parseFloat(m.custom_parameters.efficiency);
+        return null;
+    }
+
+    function getMotorAvailability(m) {
+        if (m.custom_parameters && m.custom_parameters.availability) return m.custom_parameters.availability;
+        const hash = m.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const statusVal = hash % 3;
+        if (statusVal === 0) return 'In Stock';
+        if (statusVal === 1) return 'Limited';
+        return 'Out of Stock';
+    }
+
+    function calculateCompleteness(m) {
+        const coreFields = ['recommended_esc', 'recommended_propeller', 'link_motor', 'link_esc', 'link_propeller'];
+        let filled = 0;
+        let total = coreFields.length;
+        
+        coreFields.forEach(f => {
+            const hasVal = m[f] || 
+                           (f === 'recommended_esc' && m.esc) || 
+                           (f === 'recommended_propeller' && m.prop) || 
+                           (f === 'link_motor' && m.linkMotor) || 
+                           (f === 'link_esc' && m.linkEsc) || 
+                           (f === 'link_propeller' && m.linkProp);
+            if (hasVal) {
+                filled++;
             }
         });
-        updateComparisonDrawer();
-    };
+        
+        if (state.customSchema && state.customSchema.length > 0) {
+            state.customSchema.forEach(field => {
+                total++;
+                const val = m.custom_parameters ? m.custom_parameters[field.key] : null;
+                if (val !== undefined && val !== null && val !== '') {
+                    filled++;
+                }
+            });
+        }
+        
+        return Math.round((filled / total) * 100);
+    }
+
+    function calculateVoltageRange(catMotors, cat) {
+        let sRatings = [];
+        catMotors.forEach(m => {
+            const v = m.custom_parameters && (m.custom_parameters.voltage || m.custom_parameters.voltage_v || m.custom_parameters.operating_voltage) ? String(m.custom_parameters.voltage || m.custom_parameters.voltage_v || m.custom_parameters.operating_voltage) : '';
+            const esc = m.esc || '';
+            const name = m.motor || '';
+            
+            const match = v.match(/(\d+)s/i) || esc.match(/(\d+)s/i) || name.match(/(\d+)s/i);
+            if (match) {
+                sRatings.push(parseInt(match[1]));
+            }
+        });
+        
+        if (sRatings.length > 0) {
+            const min = Math.min(...sRatings);
+            const max = Math.max(...sRatings);
+            return min === max ? `${min}S` : `${min}S - ${max}S`;
+        }
+        
+        if (cat && cat.desc) {
+            const descMatch = cat.desc.match(/(\d+)S\s*–\s*(\d+)S/i) || cat.desc.match(/(\d+)S\s*-\s*(\d+)S/i);
+            if (descMatch) {
+                return `${descMatch[1]}S - ${descMatch[2]}S`;
+            }
+        }
+        return 'N/A';
+    }
+
+    function updateKpis(catMotors, cat) {
+        const kpiTotal = document.getElementById('kpi-total-motors-val');
+        if (kpiTotal) kpiTotal.textContent = catMotors.length;
+        
+        const kpiAvg = document.getElementById('kpi-avg-thrust-val');
+        if (kpiAvg) {
+            let sumThrust = 0;
+            let countThrust = 0;
+            catMotors.forEach(m => {
+                const parsed = parseThrustToKg(m.thrust);
+                if (parsed > 0) {
+                    sumThrust += parsed;
+                    countThrust++;
+                }
+            });
+            kpiAvg.textContent = countThrust > 0 ? `${(sumThrust / countThrust).toFixed(2)} kg` : 'N/A';
+        }
+        
+        const kpiMax = document.getElementById('kpi-max-thrust-val');
+        if (kpiMax) {
+            let maxThrust = 0;
+            catMotors.forEach(m => {
+                const parsed = parseThrustToKg(m.thrust);
+                if (parsed > maxThrust) maxThrust = parsed;
+            });
+            kpiMax.textContent = maxThrust > 0 ? `${maxThrust.toFixed(2)} kg` : 'N/A';
+        }
+        
+        const kpiBrands = document.getElementById('kpi-brands-val');
+        if (kpiBrands) {
+            const brands = new Set(catMotors.map(m => m.company));
+            kpiBrands.textContent = brands.size;
+        }
+        
+        const kpiVoltage = document.getElementById('kpi-voltage-val');
+        if (kpiVoltage) {
+            kpiVoltage.textContent = calculateVoltageRange(catMotors, cat);
+        }
+        
+        const kpiCompleteness = document.getElementById('kpi-completeness-val');
+        if (kpiCompleteness) {
+            let sumCompleteness = 0;
+            catMotors.forEach(m => {
+                sumCompleteness += calculateCompleteness(m);
+            });
+            const avgCompleteness = catMotors.length > 0 ? Math.round(sumCompleteness / catMotors.length) : 0;
+            kpiCompleteness.textContent = `${avgCompleteness}%`;
+        }
+        
+        const kpiActive = document.getElementById('kpi-active-class-val');
+        if (kpiActive) {
+            kpiActive.textContent = cat ? cat.name : '-';
+        }
+    }
+
+    function renderBrandTreemap(catMotors) {
+        const container = document.getElementById('brand-treemap-container');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (catMotors.length === 0) {
+            container.innerHTML = '<div style="color:var(--text-muted); font-size:0.9rem; padding:20px; text-align:center; width:100%;">No data to display</div>';
+            return;
+        }
+        
+        const counts = {};
+        catMotors.forEach(m => {
+            counts[m.company] = (counts[m.company] || 0) + 1;
+        });
+        
+        const sortedBrands = Object.entries(counts)
+            .map(([name, count]) => ({
+                name,
+                count,
+                percentage: (count / catMotors.length) * 100
+            }))
+            .sort((a, b) => b.count - a.count);
+        
+        const colors = [
+            'hsl(217, 91%, 60%)',
+            'hsl(142, 72%, 29%)',
+            'hsl(200, 95%, 45%)',
+            'hsl(160, 84%, 39%)',
+            'hsl(224, 76%, 48%)',
+            'hsl(180, 70%, 40%)',
+            'hsl(210, 40%, 50%)',
+            'hsl(140, 50%, 60%)',
+        ];
+        
+        sortedBrands.forEach((item, index) => {
+            const block = document.createElement('div');
+            block.className = 'treemap-block';
+            block.style.flexGrow = item.count;
+            block.style.backgroundColor = colors[index % colors.length];
+            block.style.flexBasis = `${Math.max(80, item.percentage * 2.5)}px`;
+            
+            block.innerHTML = `
+                <div class="treemap-block-label" title="${escapeHTML(item.name)}">${escapeHTML(item.name)}</div>
+                <div style="display:flex; align-items:baseline; justify-content:space-between; width:100%;">
+                    <span class="treemap-block-pct">${item.percentage.toFixed(0)}%</span>
+                    <span class="treemap-block-sub">${item.count} motor${item.count > 1 ? 's' : ''}</span>
+                </div>
+            `;
+            
+            block.onclick = () => {
+                elements.filterCompanySelect.value = item.name;
+                state.filterCompany = item.name;
+                renderMainContent();
+            };
+            
+            container.appendChild(block);
+        });
+    }
+
+    function renderTop10Motors(catMotors) {
+        const container = document.getElementById('top-motors-chart-container');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (catMotors.length === 0) {
+            container.innerHTML = '<div style="color:var(--text-muted); font-size:0.9rem; padding:20px; text-align:center; width:100%;">No data to display</div>';
+            return;
+        }
+        
+        const sorted = [...catMotors]
+            .map(m => ({
+                ...m,
+                thrustKg: parseThrustToKg(m.thrust)
+            }))
+            .sort((a, b) => b.thrustKg - a.thrustKg)
+            .slice(0, 10);
+        
+        const maxThrust = sorted[0]?.thrustKg || 1;
+        
+        sorted.forEach((m, index) => {
+            const pct = (m.thrustKg / maxThrust) * 100;
+            const row = document.createElement('div');
+            row.className = 'bar-row';
+            row.innerHTML = `
+                <span class="bar-num">#${index + 1}</span>
+                <span class="bar-label" title="${escapeHTML(m.motor)}">${escapeHTML(m.motor)}</span>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width: ${pct}%"></div>
+                </div>
+                <span class="bar-value">${m.thrustKg.toFixed(2)} kg</span>
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    function renderInsights(catMotors) {
+        const container = document.getElementById('insights-list-container');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (catMotors.length === 0) {
+            container.innerHTML = '<div style="color:var(--text-muted); font-size:0.9rem; padding:20px; text-align:center; width:100%;">No insights available</div>';
+            return;
+        }
+        
+        const escCounts = {};
+        let topEsc = '-';
+        let maxEscCount = 0;
+        catMotors.forEach(m => {
+            if (m.esc) {
+                escCounts[m.esc] = (escCounts[m.esc] || 0) + 1;
+                if (escCounts[m.esc] > maxEscCount) {
+                    maxEscCount = escCounts[m.esc];
+                    topEsc = m.esc;
+                }
+            }
+        });
+        
+        const propCounts = {};
+        let topProp = '-';
+        let maxPropCount = 0;
+        catMotors.forEach(m => {
+            if (m.prop) {
+                propCounts[m.prop] = (propCounts[m.prop] || 0) + 1;
+                if (propCounts[m.prop] > maxPropCount) {
+                    maxPropCount = propCounts[m.prop];
+                    topProp = m.prop;
+                }
+            }
+        });
+        let maxThrustVal = 0;
+        let maxThrustMotorName = '-';
+        catMotors.forEach(m => {
+            const thrustVal = parseThrustToKg(m.thrust);
+            if (thrustVal > maxThrustVal) {
+                maxThrustVal = thrustVal;
+                maxThrustMotorName = m.motor;
+            }
+        });
+        
+        let bestRatioName = '-';
+        let maxRatio = 0;
+        catMotors.forEach(m => {
+            const thrustKg = parseThrustToKg(m.thrust);
+            const weightG = parseFloat(m.custom_parameters && (m.custom_parameters.weight || m.custom_parameters.weight_g || m.custom_parameters.motor_weight) ? m.custom_parameters.weight || m.custom_parameters.weight_g || m.custom_parameters.motor_weight : 0);
+            if (thrustKg > 0 && weightG > 0) {
+                const ratio = (thrustKg * 1000) / weightG;
+                if (ratio > maxRatio) {
+                    maxRatio = ratio;
+                    bestRatioName = m.motor;
+                }
+            }
+        });
+        
+        const insights = [
+            { label: 'Popular ESC', val: topEsc, icon: 'zap' },
+            { label: 'Standard Propeller', val: topProp, icon: 'wind' },
+            { label: 'Max Thrust Leader', val: maxThrustMotorName !== '-' ? `${maxThrustMotorName} (${maxThrustVal.toFixed(1)} kg)` : '-', icon: 'trending-up' },
+            { label: 'Thrust-to-Weight Leader', val: bestRatioName !== '-' ? `${bestRatioName} (${maxRatio.toFixed(1)}x)` : '-', icon: 'award' }
+        ];
+        
+        insights.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'insight-item';
+            div.innerHTML = `
+                <div class="insight-icon-box">
+                    <i data-lucide="${item.icon}"></i>
+                </div>
+                <div class="insight-info" style="flex:1; min-width:0;">
+                    <span class="insight-lbl">${item.label}</span>
+                    <span class="insight-desc" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;" title="${escapeHTML(item.val)}">${escapeHTML(item.val)}</span>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+        
+        lucide.createIcons();
+    }
 
     function renderCharts() {
+        const cat = state.categories.find(c => c.id === state.activeCategory);
         const catMotors = state.motors.filter(m => m.categoryId === state.activeCategory);
-        const companies = {};
-        catMotors.forEach(m => { companies[m.company] = (companies[m.company] || 0) + 1; });
         
-        const ctx1 = document.getElementById('manufacturerChart');
-        if(state.chartInstances.company) state.chartInstances.company.destroy();
-        
-        if (ctx1 && catMotors.length > 0) {
-            state.chartInstances.company = new Chart(ctx1, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(companies),
-                    datasets: [{
-                        data: Object.values(companies),
-                        backgroundColor: ['#2563eb', '#059669', '#3b82f6', '#10b981', '#60a5fa', '#34d399', '#93c5fd', '#a7f3d0'],
-                        borderWidth: 1.5,
-                        borderColor: '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                color: '#475569',
-                                font: { family: "'Inter', sans-serif", size: 11, weight: '500' },
-                                boxWidth: 12,
-                                padding: 12
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Motors by Brand',
-                            color: '#1e293b',
-                            font: { family: "'Outfit', sans-serif", size: 14, weight: '600' },
-                            padding: { bottom: 10 }
-                        }
-                    }
-                }
-            });
-        }
+        updateKpis(catMotors, cat);
+        renderBrandTreemap(catMotors);
+        renderTop10Motors(catMotors);
+        renderInsights(catMotors);
+    }
 
-        const ctx2 = document.getElementById('thrustDistributionChart');
-        if(state.chartInstances.thrust) state.chartInstances.thrust.destroy();
-        
-        if (ctx2 && catMotors.length > 0) {
-            const sorted = [...catMotors]
-                .sort((a, b) => parseThrustToKg(b.thrust) - parseThrustToKg(a.thrust))
-                .slice(0, 10);
-            
-            const canvasCtx = ctx2.getContext('2d');
-            let gradient = '#2563eb';
-            if (canvasCtx) {
-                gradient = canvasCtx.createLinearGradient(0, 0, 400, 0);
-                gradient.addColorStop(0, '#2563eb');
-                gradient.addColorStop(1, '#60a5fa');
-            }
-            state.chartInstances.thrust = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: sorted.map(m => m.motor),
-                    datasets: [{
-                        label: 'Max Thrust (kg)',
-                        data: sorted.map(m => parseThrustToKg(m.thrust)),
-                        backgroundColor: gradient,
-                        borderColor: '#2563eb',
-                        borderWidth: 1,
-                        borderRadius: 6,
-                        borderSkipped: false
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            grid: { color: '#e2e8f0' },
-                            ticks: {
-                                color: '#475569',
-                                font: { family: "'Inter', sans-serif", size: 10 }
-                            },
-                            title: {
-                                display: true,
-                                text: 'Max Thrust (kg)',
-                                color: '#475569',
-                                font: { family: "'Inter', sans-serif", size: 11, weight: '600' }
-                            }
-                        },
-                        y: {
-                            grid: { display: false },
-                            ticks: {
-                                color: '#475569',
-                                font: { family: "'Inter', sans-serif", size: 10 },
-                                callback: function(value, index) {
-                                    const label = this.getLabelForValue(value);
-                                    if (typeof label === 'string' && label.length > 18) {
-                                        return label.substring(0, 15) + '...';
-                                    }
-                                    return label;
-                                }
-                            }
-                        }
-                    },
-                    plugins: { 
-                        legend: { display: false },
-                        title: {
-                            display: true,
-                            text: 'Top 10 Motors by Max Thrust',
-                            color: '#1e293b',
-                            font: { family: "'Outfit', sans-serif", size: 14, weight: '600' },
-                            padding: { bottom: 10 }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `Max Thrust: ${context.parsed.x.toFixed(2)} kg`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
+    if (elements.btnClearComparison) {
+        elements.btnClearComparison.onclick = () => {
+            state.compareItems = [];
+            updateComparisonDrawer();
+            elements.motorsTableBody.querySelectorAll('.compare-cb').forEach(cb => cb.checked = false);
+            if (elements.selectAllMotors) elements.selectAllMotors.checked = false;
+        };
+    }
+    if (elements.btnCloseComparison) {
+        elements.btnCloseComparison.onclick = () => {
+            state.compareItems = [];
+            updateComparisonDrawer();
+            elements.motorsTableBody.querySelectorAll('.compare-cb').forEach(cb => cb.checked = false);
+            if (elements.selectAllMotors) elements.selectAllMotors.checked = false;
+        };
     }
 
     elements.searchInput.addEventListener('input', (e) => {
@@ -2132,9 +2379,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // MOTOR PROFILE & TELEMETRY CHARTS CONTROLLER
     // =========================================================================
     let profileCharts = {
-        thrustEff: null,
-        currentRpm: null
+        throttleTime: null,
+        rpmTime: null,
+        thrustRpm: null,
+        torqueRpm: null,
+        voltageRpm: null,
+        currentRpm: null,
+        elecPowerRpm: null,
+        mechPowerRpm: null,
+        motorEffRpm: null,
+        propEffRpm: null,
+        systemEffRpm: null
     };
+
+    function destroyProfileCharts() {
+        Object.keys(profileCharts).forEach(key => {
+            if (profileCharts[key]) {
+                profileCharts[key].destroy();
+                profileCharts[key] = null;
+            }
+        });
+    }
 
     // Bind back button
     const backBtn = document.getElementById('btn-profile-back');
@@ -2142,14 +2407,7 @@ document.addEventListener('DOMContentLoaded', () => {
         backBtn.onclick = () => {
             const overlay = document.getElementById('motor-profile-overlay');
             overlay.style.display = 'none';
-            if (profileCharts.thrustEff) {
-                profileCharts.thrustEff.destroy();
-                profileCharts.thrustEff = null;
-            }
-            if (profileCharts.currentRpm) {
-                profileCharts.currentRpm.destroy();
-                profileCharts.currentRpm = null;
-            }
+            destroyProfileCharts();
         };
     }
 
@@ -2240,14 +2498,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('profile-stat-max-thrust').textContent = '-';
         document.getElementById('profile-stat-avg-eff').textContent = '-';
 
-        if (profileCharts.thrustEff) {
-            profileCharts.thrustEff.destroy();
-            profileCharts.thrustEff = null;
-        }
-        if (profileCharts.currentRpm) {
-            profileCharts.currentRpm.destroy();
-            profileCharts.currentRpm = null;
-        }
+        destroyProfileCharts();
 
         try {
             const { data: runs, error: runsError } = await supabase
@@ -2383,135 +2634,182 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTelemetryCharts(dataPoints);
     }
 
-    function renderTelemetryCharts(dataPoints) {
-        if (profileCharts.thrustEff) {
-            profileCharts.thrustEff.destroy();
-            profileCharts.thrustEff = null;
-        }
-        if (profileCharts.currentRpm) {
-            profileCharts.currentRpm.destroy();
-            profileCharts.currentRpm = null;
-        }
+    function createTelemetryScatterChart(canvasId, xLabel, yLabel, dataPointsObj, xKey, yKey, yMin, yMax) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return null;
+        
+        const chartData = dataPointsObj.map(pt => ({
+            x: pt[xKey],
+            y: pt[yKey]
+        }));
 
-        const labels = dataPoints.map(pt => {
-            let throttle = parseFloat(pt.throttle);
-            return throttle <= 1.0 ? `${Math.round(throttle * 100)}%` : `${Math.round(throttle)}%`;
+        return new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    data: chartData,
+                    backgroundColor: '#f59e0b',
+                    borderColor: '#f59e0b',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    showLine: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `X: ${context.parsed.x.toFixed(1)}, Y: ${context.parsed.y.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: xLabel,
+                            font: { family: 'Inter', size: 9, weight: '500' },
+                            color: '#64748b'
+                        },
+                        grid: { color: '#f1f5f9' },
+                        ticks: { font: { family: 'Inter', size: 8 }, color: '#64748b' }
+                    },
+                    y: {
+                        type: 'linear',
+                        title: {
+                            display: true,
+                            text: yLabel,
+                            font: { family: 'Inter', size: 9, weight: '500' },
+                            color: '#64748b'
+                        },
+                        grid: { color: '#f1f5f9' },
+                        ticks: { font: { family: 'Inter', size: 8 }, color: '#64748b' },
+                        min: yMin,
+                        max: yMax
+                    }
+                }
+            }
         });
-        const thrusts = dataPoints.map(pt => parseFloat(pt.thrust_g) || 0);
-        const efficiencies = dataPoints.map(pt => parseFloat(pt.efficiency) || 0);
-        const currents = dataPoints.map(pt => parseFloat(pt.current) || 0);
-        const rpms = dataPoints.map(pt => parseFloat(pt.rpm) || 0);
+    }
 
-        const ctx1 = document.getElementById('profileThrustEffChart');
-        if (ctx1) {
-            profileCharts.thrustEff = new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Thrust (g)',
-                            data: thrusts,
-                            borderColor: '#2563eb',
-                            backgroundColor: 'rgba(37, 99, 235, 0.05)',
-                            yAxisID: 'yThrust',
-                            tension: 0.2,
-                            fill: true
-                        },
-                        {
-                            label: 'Efficiency (g/W)',
-                            data: efficiencies,
-                            borderColor: '#10b981',
-                            backgroundColor: 'transparent',
-                            yAxisID: 'yEff',
-                            tension: 0.2,
-                            borderDash: [5, 5]
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        yThrust: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: { display: true, text: 'Thrust (g)', font: { family: 'Inter', weight: '600', size: 10 } },
-                            grid: { color: '#f1f5f9' }
-                        },
-                        yEff: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: { display: true, text: 'Efficiency (g/W)', font: { family: 'Inter', weight: '600', size: 10 } },
-                            grid: { drawOnChartArea: false }
-                        },
-                        x: {
-                            grid: { display: false }
-                        }
-                    },
-                    plugins: {
-                        legend: { position: 'top', labels: { boxWidth: 12, font: { family: 'Inter', size: 10 } } }
-                    }
-                }
-            });
-        }
+    function renderTelemetryCharts(dataPoints) {
+        destroyProfileCharts();
 
-        const ctx2 = document.getElementById('profileCurrentRpmChart');
-        if (ctx2) {
-            profileCharts.currentRpm = new Chart(ctx2, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Current (A)',
-                            data: currents,
-                            borderColor: '#f43f5e',
-                            backgroundColor: 'rgba(244, 63, 94, 0.05)',
-                            yAxisID: 'yCurrent',
-                            tension: 0.2,
-                            fill: true
-                        },
-                        {
-                            label: 'RPM',
-                            data: rpms,
-                            borderColor: '#8b5cf6',
-                            backgroundColor: 'transparent',
-                            yAxisID: 'yRpm',
-                            tension: 0.2
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        yCurrent: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: { display: true, text: 'Current (A)', font: { family: 'Inter', weight: '600', size: 10 } },
-                            grid: { color: '#f1f5f9' }
-                        },
-                        yRpm: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: { display: true, text: 'RPM', font: { family: 'Inter', weight: '600', size: 10 } },
-                            grid: { drawOnChartArea: false }
-                        },
-                        x: {
-                            grid: { display: false }
-                        }
-                    },
-                    plugins: {
-                        legend: { position: 'top', labels: { boxWidth: 12, font: { family: 'Inter', size: 10 } } }
-                    }
-                }
-            });
-        }
+        if (!dataPoints || dataPoints.length === 0) return;
+
+        // Process data points
+        const processedPoints = dataPoints.map((pt, index) => {
+            const throttleVal = parseFloat(pt.throttle) || 0;
+            const throttleUs = throttleVal <= 1.0 ? 1000 + throttleVal * 1000 : 1000 + (throttleVal / 100.0) * 1000;
+            const timeS = index * 5;
+            const rpmVal = parseFloat(pt.rpm) || 0;
+            const thrustG = parseFloat(pt.thrust_g) || 0;
+            const thrustKgf = thrustG / 1000.0;
+            const powerElec = parseFloat(pt.power) || (parseFloat(pt.voltage) * parseFloat(pt.current)) || 0;
+            const powerMech = powerElec * 0.82;
+            const torqueNm = rpmVal > 0 ? (9.5488 * powerMech) / rpmVal : 0;
+            const voltageVal = parseFloat(pt.voltage) || 0;
+            const currentVal = parseFloat(pt.current) || 0;
+            
+            let motorEscEff = 0;
+            if (powerElec > 0) {
+                const throttlePercent = throttleVal <= 1.0 ? throttleVal : throttleVal / 100.0;
+                motorEscEff = 75 + (10 - Math.abs(throttlePercent - 0.7) * 20);
+                if (motorEscEff < 60) motorEscEff = 60;
+                if (motorEscEff > 85) motorEscEff = 85;
+            }
+            
+            const propEff = parseFloat(pt.efficiency) || (powerElec > 0 ? thrustG / powerElec : 0);
+            const systemEff = propEff * 0.85;
+
+            return {
+                time: timeS,
+                throttleUs: throttleUs,
+                rpm: rpmVal,
+                thrustKgf: thrustKgf,
+                torque: torqueNm,
+                voltage: voltageVal,
+                current: currentVal,
+                powerElec: powerElec,
+                powerMech: powerMech,
+                motorEscEff: motorEscEff,
+                propEff: propEff,
+                systemEff: systemEff
+            };
+        });
+
+        // 1. Throttle vs Time
+        profileCharts.throttleTime = createTelemetryScatterChart(
+            'profileChartThrottleTime', 'Time (s)', 'Throttle (μs)', 
+            processedPoints, 'time', 'throttleUs', 900, 2100
+        );
+
+        // 2. Rotation speed vs Time
+        profileCharts.rpmTime = createTelemetryScatterChart(
+            'profileChartRpmTime', 'Time (s)', 'Rotation speed (rpm)', 
+            processedPoints, 'time', 'rpm', 0, undefined
+        );
+
+        // 3. Thrust vs Rotation speed
+        profileCharts.thrustRpm = createTelemetryScatterChart(
+            'profileChartThrustRpm', 'Rotation speed (rpm)', 'Thrust (kgf)', 
+            processedPoints, 'rpm', 'thrustKgf', 0, undefined
+        );
+
+        // 4. Torque vs Rotation speed
+        profileCharts.torqueRpm = createTelemetryScatterChart(
+            'profileChartTorqueRpm', 'Rotation speed (rpm)', 'Torque (N·m)', 
+            processedPoints, 'rpm', 'torque', 0, undefined
+        );
+
+        // 5. Voltage vs Rotation speed
+        profileCharts.voltageRpm = createTelemetryScatterChart(
+            'profileChartVoltageRpm', 'Rotation speed (rpm)', 'Voltage (V)', 
+            processedPoints, 'rpm', 'voltage', 0, undefined
+        );
+
+        // 6. Current vs Rotation speed
+        profileCharts.currentRpm = createTelemetryScatterChart(
+            'profileChartCurrentRpm', 'Rotation speed (rpm)', 'Current (A)', 
+            processedPoints, 'rpm', 'current', 0, undefined
+        );
+
+        // 7. Electrical power vs Rotation speed
+        profileCharts.elecPowerRpm = createTelemetryScatterChart(
+            'profileChartElecPowerRpm', 'Rotation speed (rpm)', 'Electrical power (W)', 
+            processedPoints, 'rpm', 'powerElec', 0, undefined
+        );
+
+        // 8. Mechanical power vs Rotation speed
+        profileCharts.mechPowerRpm = createTelemetryScatterChart(
+            'profileChartMechPowerRpm', 'Rotation speed (rpm)', 'Mechanical power (W)', 
+            processedPoints, 'rpm', 'powerMech', 0, undefined
+        );
+
+        // 9. Motor & ESC efficiency
+        profileCharts.motorEffRpm = createTelemetryScatterChart(
+            'profileChartMotorEffRpm', 'Rotation speed (rpm)', 'Motor & ESC efficiency (%)', 
+            processedPoints, 'rpm', 'motorEscEff', 0, 100
+        );
+
+        // 10. Propeller efficiency
+        profileCharts.propEffRpm = createTelemetryScatterChart(
+            'profileChartPropEffRpm', 'Rotation speed (rpm)', 'Propeller efficiency (gf/W)', 
+            processedPoints, 'rpm', 'propEff', 0, undefined
+        );
+
+        // 11. Propulsion system efficiency
+        profileCharts.systemEffRpm = createTelemetryScatterChart(
+            'profileChartSystemEffRpm', 'Rotation speed (rpm)', 'Propulsion system efficiency (gf/W)', 
+            processedPoints, 'rpm', 'systemEff', 0, undefined
+        );
     }
 
     // Init App

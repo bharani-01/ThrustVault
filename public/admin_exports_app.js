@@ -58,7 +58,20 @@ document.addEventListener('DOMContentLoaded', () => {
         catFilterSelect: document.getElementById('cat-filter-select'),
         catColumnsSelector: document.getElementById('cat-columns-selector'),
         catalogExportForm: document.getElementById('catalog-export-form'),
-        catExportFormat: document.getElementById('cat-export-format'),
+        get catExportFormat() {
+            return {
+                get value() {
+                    return document.querySelector('#catalog-config-panel .format-card.selected')?.dataset.format || 'xlsx';
+                },
+                addEventListener(event, callback) {
+                    document.querySelectorAll('#catalog-config-panel .format-card').forEach(card => {
+                        card.addEventListener('click', () => {
+                            callback();
+                        });
+                    });
+                }
+            };
+        },
 
         // Advanced Catalog Filters
         catSearchInput: document.getElementById('cat-search-input'),
@@ -76,7 +89,20 @@ document.addEventListener('DOMContentLoaded', () => {
         btnTelemetryClearAll: document.getElementById('btn-telemetry-clear-all'),
         telemetryColumnsSelector: document.getElementById('telemetry-columns-selector'),
         telemetryExportForm: document.getElementById('telemetry-export-form'),
-        telemetryExportFormat: document.getElementById('telemetry-export-format'),
+        get telemetryExportFormat() {
+            return {
+                get value() {
+                    return document.querySelector('#telemetry-config-panel .format-card.selected')?.dataset.format || 'xlsx';
+                },
+                addEventListener(event, callback) {
+                    document.querySelectorAll('#telemetry-config-panel .format-card').forEach(card => {
+                        card.addEventListener('click', () => {
+                            callback();
+                        });
+                    });
+                }
+            };
+        },
 
         get totalMotors() { return document.getElementById('total-motors-count'); },
         get totalCats() { return document.getElementById('total-categories-count'); },
@@ -115,6 +141,17 @@ document.addEventListener('DOMContentLoaded', () => {
             this.bar.style.width = "0%";
             this.percent.textContent = "0%";
             this.overlay.style.display = "flex";
+            
+            // Reset stepper UI
+            for (let i = 0; i <= 3; i++) {
+                const stepEl = document.getElementById(`step-milestone-${i}`);
+                if (stepEl) {
+                    stepEl.className = 'stepper-step';
+                    const indicator = stepEl.querySelector('.step-indicator');
+                    if (indicator) indicator.innerHTML = '<i data-lucide="circle"></i>';
+                }
+            }
+            
             // Force reflow
             this.overlay.offsetHeight;
             this.overlay.classList.add('show');
@@ -128,6 +165,34 @@ document.addEventListener('DOMContentLoaded', () => {
             this.percent.textContent = `${percentVal}%`;
             if (statusText) {
                 this.status.textContent = statusText;
+            }
+            
+            // Update stepper steps based on percentVal
+            let activeStepIndex = 0;
+            if (percentVal >= 100) activeStepIndex = 4; // all done
+            else if (percentVal >= 90) activeStepIndex = 3;
+            else if (percentVal >= 45) activeStepIndex = 2;
+            else if (percentVal >= 15) activeStepIndex = 1;
+            
+            for (let i = 0; i <= 3; i++) {
+                const stepEl = document.getElementById(`step-milestone-${i}`);
+                if (stepEl) {
+                    const indicator = stepEl.querySelector('.step-indicator');
+                    if (i < activeStepIndex) {
+                        stepEl.className = 'stepper-step completed';
+                        if (indicator) indicator.innerHTML = '<i data-lucide="check-circle-2"></i>';
+                    } else if (i === activeStepIndex) {
+                        stepEl.className = 'stepper-step active';
+                        if (indicator) indicator.innerHTML = '<i data-lucide="loader-2" class="spin-animation"></i>';
+                    } else {
+                        stepEl.className = 'stepper-step';
+                        if (indicator) indicator.innerHTML = '<i data-lucide="circle"></i>';
+                    }
+                }
+            }
+            
+            if (window.lucide) {
+                window.lucide.createIcons();
             }
         },
         
@@ -534,19 +599,60 @@ document.addEventListener('DOMContentLoaded', () => {
         if (previewDisplayMode === 'grid') {
             elements.previewGridBox.style.display = 'block';
             elements.previewContentBox.style.display = 'none';
-            if (elements.btnPreviewModeGrid) elements.btnPreviewModeGrid.classList.add('active');
-            if (elements.btnPreviewModeCode) elements.btnPreviewModeCode.classList.remove('active');
+            if (elements.btnPreviewModeGrid) {
+                elements.btnPreviewModeGrid.classList.add('active');
+                elements.btnPreviewModeGrid.style.background = '';
+            }
+            if (elements.btnPreviewModeCode) {
+                elements.btnPreviewModeCode.classList.remove('active');
+                elements.btnPreviewModeCode.style.background = 'none';
+            }
         } else {
             elements.previewGridBox.style.display = 'none';
             elements.previewContentBox.style.display = 'block';
-            if (elements.btnPreviewModeGrid) elements.btnPreviewModeGrid.classList.remove('active');
-            if (elements.btnPreviewModeCode) elements.btnPreviewModeCode.classList.add('active');
+            if (elements.btnPreviewModeGrid) {
+                elements.btnPreviewModeGrid.classList.remove('active');
+                elements.btnPreviewModeGrid.style.background = 'none';
+            }
+            if (elements.btnPreviewModeCode) {
+                elements.btnPreviewModeCode.classList.add('active');
+                elements.btnPreviewModeCode.style.background = '';
+            }
         }
     }
 
     // Live Preview Engine
     async function updateLivePreview() {
         togglePreviewDisplay();
+
+        // Sync configuration pane visibility
+        const catPanel = document.getElementById('catalog-config-panel');
+        const telPanel = document.getElementById('telemetry-config-panel');
+        if (activePreviewTab === 'catalog') {
+            catPanel?.classList.add('active');
+            telPanel?.classList.remove('active');
+        } else {
+            catPanel?.classList.remove('active');
+            telPanel?.classList.add('active');
+        }
+
+        const format = activePreviewTab === 'catalog'
+            ? (elements.catExportFormat?.value || 'xlsx')
+            : (elements.telemetryExportFormat?.value || 'xlsx');
+
+        if (elements.previewContentBox) {
+            if (format === 'xlsx') {
+                elements.previewContentBox.style.whiteSpace = 'normal';
+                elements.previewContentBox.style.fontFamily = "'Outfit', sans-serif";
+                elements.previewContentBox.style.background = '#ffffff';
+                elements.previewContentBox.style.color = '#334155';
+            } else {
+                elements.previewContentBox.style.whiteSpace = '';
+                elements.previewContentBox.style.fontFamily = '';
+                elements.previewContentBox.style.background = '';
+                elements.previewContentBox.style.color = '';
+            }
+        }
 
         if (activePreviewTab === 'catalog') {
             const checkedMotors = state.motors.filter(m => state.selectedMotorIds.has(m.id));
@@ -561,7 +667,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const format = elements.catExportFormat.value;
             const selectedColumns = Array.from(elements.catColumnsSelector.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
             
             if (selectedColumns.length === 0) {
@@ -571,7 +676,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const previewMotors = checkedMotors.slice(0, 3);
+            const previewMotors = checkedMotors.slice(0, 15);
 
             // Compile columns headers
             const headers = [];
@@ -630,9 +735,9 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (format === 'csv') {
                 const csvLines = [
                     headers.map(h => `"${h}"`).join(','),
-                    ...rows.map(r => r.map(v => `"${v.toString().replace(/"/g, '""')}"`).join(','))
+                    ...rows.map(r => r.map(v => `"${(v === null || v === undefined ? '' : String(v)).replace(/"/g, '""')}"`).join(','))
                 ];
-                if (checkedMotors.length > 3) csvLines.push('... (additional rows truncated in preview)');
+                if (checkedMotors.length > 15) csvLines.push('... (additional rows truncated in preview)');
                 elements.previewContentBox.innerHTML = escapeHTML(csvLines.join('\n'));
             }
             else if (format === 'xml') {
@@ -645,7 +750,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     xml += '  </motor>\n';
                 });
-                if (checkedMotors.length > 3) xml += '  <!-- ... (additional items truncated) -->\n';
+                if (checkedMotors.length > 15) xml += '  <!-- ... (additional items truncated) -->\n';
                 xml += '</catalog>';
                 elements.previewContentBox.innerHTML = escapeHTML(xml);
             }
@@ -697,7 +802,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const format = elements.telemetryExportFormat.value;
             const targetRunId = checkedRuns[0];
 
             // Async load preview run data if needed
@@ -736,22 +840,53 @@ document.addEventListener('DOMContentLoaded', () => {
             const motor = state.motors.find(m => m.id === runObj.motor_id);
             const motorName = motor ? motor.motor_name : 'Draft Runs';
 
-            // Set visual grid innerHTML
-            const telemetryHeaders = ['Throttle (%)', 'Voltage (V)', 'Current (A)', 'Power (W)', 'Thrust (g)', 'RPM', 'Efficiency (g/W)', 'Temperature (℃)'];
-            const telemetryRows = previewDataPoints.slice(0, 3).map(dp => {
-                let power = (dp.voltage !== null && dp.current !== null && dp.voltage !== undefined && dp.current !== undefined) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
-                let efficiency = (dp.thrust_g !== null && dp.thrust_g !== undefined && power > 0) ? Number((dp.thrust_g / power).toFixed(2)) : (dp.efficiency || 0);
-                let throttle = dp.throttle !== null && dp.throttle !== undefined ? (dp.throttle <= 1 ? Math.round(dp.throttle * 100) : dp.throttle) : 0;
-                return [
-                    `${throttle}%`,
-                    dp.voltage !== null && dp.voltage !== undefined ? `${dp.voltage} V` : '',
-                    dp.current !== null && dp.current !== undefined ? `${dp.current} A` : '',
-                    `${power} W`,
-                    dp.thrust_g !== null && dp.thrust_g !== undefined ? `${dp.thrust_g} g` : '',
-                    dp.rpm !== null && dp.rpm !== undefined ? dp.rpm : '',
-                    `${efficiency} g/W`,
-                    dp.temperature !== null && dp.temperature !== undefined ? `${dp.temperature} ℃` : ''
-                ];
+            const selectedColumns = Array.from(elements.telemetryColumnsSelector.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+
+            if (selectedColumns.length === 0) {
+                const emptyCols = '<span style="color:#ef4444; font-size:0.85rem;">Please select at least one column to include in the preview.</span>';
+                if (elements.previewGridBox) elements.previewGridBox.innerHTML = emptyCols;
+                elements.previewContentBox.innerHTML = '<span style="color:#ef4444;">Please select at least one column to include in the preview.</span>';
+                return;
+            }
+
+            const columnMeta = {
+                motor_name: { header: 'Associated Motor', getVal: (dp) => motorName },
+                propeller: { header: 'Propeller Model', getVal: (dp) => runObj.propeller_model || '' },
+                esc: { header: 'ESC Model', getVal: (dp) => runObj.esc_model || '' },
+                battery: { header: 'Battery Info', getVal: (dp) => runObj.battery_voltage_capacity || '' },
+                tester: { header: 'Tester', getVal: (dp) => runObj.test_conducted_by || '' },
+                throttle: { 
+                    header: 'Throttle (%)', 
+                    getVal: (dp) => {
+                        let t = dp.throttle !== null && dp.throttle !== undefined ? (dp.throttle <= 1 ? Math.round(dp.throttle * 100) : dp.throttle) : 0;
+                        return `${t}%`;
+                    } 
+                },
+                voltage: { header: 'Voltage (V)', getVal: (dp) => dp.voltage !== null && dp.voltage !== undefined ? `${dp.voltage} V` : '' },
+                current: { header: 'Current (A)', getVal: (dp) => dp.current !== null && dp.current !== undefined ? `${dp.current} A` : '' },
+                power: { 
+                    header: 'Power (W)', 
+                    getVal: (dp) => {
+                        let p = (dp.voltage !== null && dp.current !== null && dp.voltage !== undefined && dp.current !== undefined) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
+                        return `${p} W`;
+                    } 
+                },
+                thrust_g: { header: 'Thrust (g)', getVal: (dp) => dp.thrust_g !== null && dp.thrust_g !== undefined ? `${dp.thrust_g} g` : '' },
+                rpm: { header: 'RPM', getVal: (dp) => dp.rpm !== null && dp.rpm !== undefined ? dp.rpm : '' },
+                efficiency: { 
+                    header: 'Efficiency (g/W)', 
+                    getVal: (dp) => {
+                        let p = (dp.voltage !== null && dp.current !== null && dp.voltage !== undefined && dp.current !== undefined) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
+                        let eff = (dp.thrust_g !== null && dp.thrust_g !== undefined && power > 0) ? Number((dp.thrust_g / p).toFixed(2)) : (dp.efficiency || 0);
+                        return `${eff} g/W`;
+                    } 
+                },
+                temperature: { header: 'Temperature (℃)', getVal: (dp) => dp.temperature !== null && dp.temperature !== undefined ? `${dp.temperature} ℃` : '' }
+            };
+
+            const telemetryHeaders = selectedColumns.map(col => columnMeta[col]?.header || col);
+            const telemetryRows = previewDataPoints.slice(0, 15).map(dp => {
+                return selectedColumns.map(col => columnMeta[col] ? columnMeta[col].getVal(dp) : '');
             });
 
             if (elements.previewGridBox) {
@@ -765,24 +900,39 @@ document.addEventListener('DOMContentLoaded', () => {
                     [`# Test conducted by: ${runObj.test_conducted_by || 'Unknown'}`, `Powertrain Name: ${runObj.powertrain_name || runObj.extra_data?.powertrain_name || 'test prowertrain'}`, `ESC Model: ${runObj.esc_model || ''}`, `Battery Voltage and Capacity: ${runObj.battery_voltage_capacity || runObj.extra_data?.battery_voltage_capacity || 'None'}`, `Battery : ${runObj.battery_info || ''}`],
                     [`# Generated On: ${formatDate(runObj.tested_at)}`],
                     [],
-                    ['Throttle', 'Voltage\n(V)', 'Current\n(A)', 'Power\n(W)', 'Thrust\n(G)', 'RPM', 'Efficiency\n(G/W)', 'Temperature\n(℃)']
+                    telemetryHeaders
                 ];
-                previewDataPoints.slice(0, 3).forEach(dp => {
-                    let power = (dp.voltage !== null && dp.current !== null && dp.voltage !== undefined && dp.current !== undefined) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
-                    let efficiency = (dp.thrust_g !== null && dp.thrust_g !== undefined && power > 0) ? Number((dp.thrust_g / power).toFixed(2)) : (dp.efficiency || 0);
-                    let throttle = dp.throttle !== null && dp.throttle !== undefined ? (dp.throttle <= 1 ? Math.round(dp.throttle * 100) : dp.throttle) : 0;
-                    rowData.push([throttle, dp.voltage || '', dp.current || '', power, dp.thrust_g || '', dp.rpm || '', efficiency, dp.temperature || '']);
+                previewDataPoints.slice(0, 15).forEach(dp => {
+                    rowData.push(selectedColumns.map(col => {
+                        if (col === 'motor_name') return motorName;
+                        if (col === 'propeller') return runObj.propeller_model || '';
+                        if (col === 'esc') return runObj.esc_model || '';
+                        if (col === 'battery') return runObj.battery_voltage_capacity || '';
+                        if (col === 'tester') return runObj.test_conducted_by || '';
+                        if (col === 'throttle') return dp.throttle !== null && dp.throttle !== undefined ? (dp.throttle <= 1 ? Math.round(dp.throttle * 100) : dp.throttle) : 0;
+                        if (col === 'voltage') return dp.voltage || '';
+                        if (col === 'current') return dp.current || '';
+                        if (col === 'power') return (dp.voltage !== null && dp.current !== null) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
+                        if (col === 'thrust_g') return dp.thrust_g || '';
+                        if (col === 'rpm') return dp.rpm || '';
+                        if (col === 'efficiency') {
+                            let p = (dp.voltage !== null && dp.current !== null) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
+                            return (dp.thrust_g !== null && p > 0) ? Number((dp.thrust_g / p).toFixed(2)) : (dp.efficiency || 0);
+                        }
+                        if (col === 'temperature') return dp.temperature || '';
+                        return '';
+                    }));
                 });
 
                 xlsxHtml += '  <tr style="background:#f1f5f9; font-weight:600; text-align:center;">\n    <td style="border:1px solid #cbd5e1; width:30px;"></td>\n';
-                for (let i = 0; i < 8; i++) {
+                for (let i = 0; i < telemetryHeaders.length; i++) {
                     xlsxHtml += `    <td style="border:1px solid #cbd5e1; padding:3px; min-width:80px;">${String.fromCharCode(65 + i)}</td>\n`;
                 }
                 xlsxHtml += '  </tr>\n';
 
                 rowData.forEach((row, rIdx) => {
                     xlsxHtml += `  <tr>\n    <td style="border:1px solid #cbd5e1; background:#f1f5f9; text-align:center; font-weight:600; width:30px;">${rIdx + 1}</td>\n`;
-                    for (let cIdx = 0; cIdx < 8; cIdx++) {
+                    for (let cIdx = 0; cIdx < telemetryHeaders.length; cIdx++) {
                         const val = row[cIdx] !== undefined ? row[cIdx] : '';
                         const isHeader = rIdx === 4;
                         const isComment = rIdx < 3 && cIdx === 0;
@@ -797,35 +947,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.previewContentBox.innerHTML = `<div style="background:white; padding:10px; border-radius:4px; overflow:auto; max-height:220px;">${xlsxHtml}</div>`;
             }
             else if (format === 'json') {
+                const metadata = { software_name: "created by ROTRIX" };
+                if (selectedColumns.includes('motor_name')) metadata.motor_model = motorName;
+                if (selectedColumns.includes('propeller')) metadata.propeller_model = runObj.propeller_model || '';
+                if (selectedColumns.includes('esc')) metadata.esc_model = runObj.esc_model || '';
+                if (selectedColumns.includes('battery')) metadata.battery_voltage_capacity = runObj.battery_voltage_capacity || '';
+                if (selectedColumns.includes('tester')) metadata.test_conducted_by = runObj.test_conducted_by || '';
+                metadata.generated_on = formatDate(runObj.tested_at);
+
                 const previewJson = {
                     motors: [{
                         motor_model: motorName,
                         test_runs: [{
-                            metadata: {
-                                software_name: "created by ROTRIX",
-                                device_name: runObj.device_name || runObj.extra_data?.device_name || 'test device',
-                                motor_model: motorName,
-                                propeller_model: runObj.propeller_model || '',
-                                test_conducted_by: runObj.test_conducted_by || 'Unknown',
-                                powertrain_name: runObj.powertrain_name || runObj.extra_data?.powertrain_name || 'test prowertrain',
-                                esc_model: runObj.esc_model || '',
-                                battery_voltage_capacity: runObj.battery_voltage_capacity || runObj.extra_data?.battery_voltage_capacity || 'None',
-                                battery_info: runObj.battery_info || '',
-                                generated_on: formatDate(runObj.tested_at)
-                            },
-                            data_points: previewDataPoints.slice(0, 3).map(dp => {
-                                let power = (dp.voltage !== null && dp.current !== null) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
-                                let efficiency = (dp.thrust_g !== null && power > 0) ? Number((dp.thrust_g / power).toFixed(2)) : (dp.efficiency || 0);
-                                return {
-                                    throttle: dp.throttle !== null && dp.throttle !== undefined ? (dp.throttle <= 1 ? Math.round(dp.throttle * 100) : dp.throttle) : 0,
-                                    voltage: dp.voltage,
-                                    current: dp.current,
-                                    power: power,
-                                    thrust_g: dp.thrust_g,
-                                    rpm: dp.rpm,
-                                    efficiency: efficiency,
-                                    temperature: dp.temperature
-                                };
+                            metadata: metadata,
+                            data_points: previewDataPoints.slice(0, 15).map(dp => {
+                                const pt = {};
+                                if (selectedColumns.includes('throttle')) pt.throttle = dp.throttle !== null && dp.throttle !== undefined ? (dp.throttle <= 1 ? Math.round(dp.throttle * 100) : dp.throttle) : 0;
+                                if (selectedColumns.includes('voltage')) pt.voltage = dp.voltage;
+                                if (selectedColumns.includes('current')) pt.current = dp.current;
+                                if (selectedColumns.includes('power')) pt.power = (dp.voltage !== null && dp.current !== null) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
+                                if (selectedColumns.includes('thrust_g')) pt.thrust_g = dp.thrust_g;
+                                if (selectedColumns.includes('rpm')) pt.rpm = dp.rpm;
+                                if (selectedColumns.includes('efficiency')) {
+                                    let p = (dp.voltage !== null && dp.current !== null) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
+                                    pt.efficiency = (dp.thrust_g !== null && p > 0) ? Number((dp.thrust_g / p).toFixed(2)) : (dp.efficiency || 0);
+                                }
+                                if (selectedColumns.includes('temperature')) pt.temperature = dp.temperature;
+                                return pt;
                             })
                         }]
                     }]
@@ -838,13 +986,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     `"# Test conducted by: ${runObj.test_conducted_by || 'Unknown'}","Powertrain Name: ${runObj.powertrain_name || 'test prowertrain'}","ESC Model: ${runObj.esc_model || ''}","Battery Voltage and Capacity: ${runObj.battery_voltage_capacity || 'None'}","Battery : ${runObj.battery_info || ''}"`,
                     `"# Generated On: ${formatDate(runObj.tested_at)}"`,
                     '',
-                    '"Throttle","Voltage\\n(V)","Current\\n(A)","Power\\n(W)","Thrust\\n(G)","RPM","Efficiency\\n(G/W)","Temperature\\n(℃)"'
+                    telemetryHeaders.map(h => `"${h}"`).join(',')
                 ];
-                previewDataPoints.slice(0, 3).forEach(dp => {
-                    let power = (dp.voltage !== null && dp.current !== null) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
-                    let efficiency = (dp.thrust_g !== null && power > 0) ? Number((dp.thrust_g / power).toFixed(2)) : (dp.efficiency || 0);
-                    let throttle = dp.throttle !== null && dp.throttle !== undefined ? (dp.throttle <= 1 ? Math.round(dp.throttle * 100) : dp.throttle) : 0;
-                    csvLines.push(`${throttle},${dp.voltage || ''},${dp.current || ''},${power},${dp.thrust_g || ''},${dp.rpm || ''},${efficiency},${dp.temperature || ''}`);
+                previewDataPoints.slice(0, 15).forEach(dp => {
+                    const line = selectedColumns.map(col => {
+                        if (col === 'motor_name') return motorName;
+                        if (col === 'propeller') return runObj.propeller_model || '';
+                        if (col === 'esc') return runObj.esc_model || '';
+                        if (col === 'battery') return runObj.battery_voltage_capacity || '';
+                        if (col === 'tester') return runObj.test_conducted_by || '';
+                        if (col === 'throttle') return dp.throttle !== null && dp.throttle !== undefined ? (dp.throttle <= 1 ? Math.round(dp.throttle * 100) : dp.throttle) : 0;
+                        if (col === 'voltage') return dp.voltage || '';
+                        if (col === 'current') return dp.current || '';
+                        if (col === 'power') return (dp.voltage !== null && dp.current !== null) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
+                        if (col === 'thrust_g') return dp.thrust_g || '';
+                        if (col === 'rpm') return dp.rpm || '';
+                        if (col === 'efficiency') {
+                            let p = (dp.voltage !== null && dp.current !== null) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
+                            return (dp.thrust_g !== null && p > 0) ? Number((dp.thrust_g / p).toFixed(2)) : (dp.efficiency || 0);
+                        }
+                        if (col === 'temperature') return dp.temperature || '';
+                        return '';
+                    });
+                    csvLines.push(line.map(v => `"${(v === null || v === undefined ? '' : String(v)).replace(/"/g, '""')}"`).join(','));
                 });
                 csvLines.push('... (additional telemetry data points truncated)');
                 elements.previewContentBox.innerHTML = escapeHTML(csvLines.join('\n'));
@@ -855,30 +1019,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 xml += '    <test_run>\n';
                 xml += '      <metadata>\n';
                 xml += '        <software_name>created by ROTRIX</software_name>\n';
-                xml += `        <device_name>${escapeXML(runObj.device_name || 'test device')}</device_name>\n`;
-                xml += `        <motor_model>${escapeXML(motorName)}</motor_model>\n`;
-                xml += `        <propeller_model>${escapeXML(runObj.propeller_model || '')}</propeller_model>\n`;
-                xml += `        <test_conducted_by>${escapeXML(runObj.test_conducted_by || 'Unknown')}</test_conducted_by>\n`;
-                xml += `        <powertrain_name>${escapeXML(runObj.powertrain_name || 'test prowertrain')}</powertrain_name>\n`;
-                xml += `        <esc_model>${escapeXML(runObj.esc_model || '')}</esc_model>\n`;
-                xml += `        <battery_voltage_capacity>${escapeXML(runObj.battery_voltage_capacity || 'None')}</battery_voltage_capacity>\n`;
-                xml += `        <battery_info>${escapeXML(runObj.battery_info || '')}</battery_info>\n`;
+                if (selectedColumns.includes('motor_name')) xml += `        <motor_model>${escapeXML(motorName)}</motor_model>\n`;
+                if (selectedColumns.includes('propeller')) xml += `        <propeller_model>${escapeXML(runObj.propeller_model || '')}</propeller_model>\n`;
+                if (selectedColumns.includes('esc')) xml += `        <esc_model>${escapeXML(runObj.esc_model || '')}</esc_model>\n`;
+                if (selectedColumns.includes('battery')) xml += `        <battery_voltage_capacity>${escapeXML(runObj.battery_voltage_capacity || '')}</battery_voltage_capacity>\n`;
+                if (selectedColumns.includes('tester')) xml += `        <test_conducted_by>${escapeXML(runObj.test_conducted_by || '')}</test_conducted_by>\n`;
                 xml += `        <generated_on>${formatDate(runObj.tested_at)}</generated_on>\n`;
                 xml += '      </metadata>\n';
                 xml += '      <data_points>\n';
-                previewDataPoints.slice(0, 3).forEach(dp => {
-                    let power = (dp.voltage !== null && dp.current !== null) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
-                    let efficiency = (dp.thrust_g !== null && power > 0) ? Number((dp.thrust_g / power).toFixed(2)) : (dp.efficiency || 0);
-                    let throttle = dp.throttle !== null && dp.throttle !== undefined ? (dp.throttle <= 1 ? Math.round(dp.throttle * 100) : dp.throttle) : 0;
+                previewDataPoints.slice(0, 15).forEach(dp => {
                     xml += '        <data_point>\n';
-                    xml += `          <throttle>${throttle}</throttle>\n`;
-                    xml += `          <voltage>${dp.voltage || ''}</voltage>\n`;
-                    xml += `          <current>${dp.current || ''}</current>\n`;
-                    xml += `          <power>${power}</power>\n`;
-                    xml += `          <thrust_g>${dp.thrust_g || ''}</thrust_g>\n`;
-                    xml += `          <rpm>${dp.rpm || ''}</rpm>\n`;
-                    xml += `          <efficiency>${efficiency}</efficiency>\n`;
-                    xml += `          <temperature>${dp.temperature || ''}</temperature>\n`;
+                    if (selectedColumns.includes('throttle')) {
+                        let throttle = dp.throttle !== null && dp.throttle !== undefined ? (dp.throttle <= 1 ? Math.round(dp.throttle * 100) : dp.throttle) : 0;
+                        xml += `          <throttle>${throttle}</throttle>\n`;
+                    }
+                    if (selectedColumns.includes('voltage')) xml += `          <voltage>${dp.voltage !== null && dp.voltage !== undefined ? dp.voltage : ''}</voltage>\n`;
+                    if (selectedColumns.includes('current')) xml += `          <current>${dp.current !== null && dp.current !== undefined ? dp.current : ''}</current>\n`;
+                    if (selectedColumns.includes('power')) {
+                        let power = (dp.voltage !== null && dp.current !== null) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
+                        xml += `          <power>${power}</power>\n`;
+                    }
+                    if (selectedColumns.includes('thrust_g')) xml += `          <thrust_g>${dp.thrust_g !== null && dp.thrust_g !== undefined ? dp.thrust_g : ''}</thrust_g>\n`;
+                    if (selectedColumns.includes('rpm')) xml += `          <rpm>${dp.rpm !== null && dp.rpm !== undefined ? dp.rpm : ''}</rpm>\n`;
+                    if (selectedColumns.includes('efficiency')) {
+                        let p = (dp.voltage !== null && dp.current !== null) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
+                        let efficiency = (dp.thrust_g !== null && p > 0) ? Number((dp.thrust_g / p).toFixed(2)) : (dp.efficiency || 0);
+                        xml += `          <efficiency>${efficiency}</efficiency>\n`;
+                    }
+                    if (selectedColumns.includes('temperature')) xml += `          <temperature>${dp.temperature !== null && dp.temperature !== undefined ? dp.temperature : ''}</temperature>\n`;
                     xml += '        </data_point>\n';
                 });
                 xml += '      </data_points>\n';
@@ -889,12 +1057,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             else if (format === 'html') {
                 let html = '<table>\n  <thead>\n    <tr>\n';
-                html += '      <th>Throttle</th><th>Voltage</th><th>Current</th><th>Power</th><th>Thrust</th>\n';
+                telemetryHeaders.forEach(h => html += `      <th>${h}</th>\n`);
                 html += '    </tr>\n  </thead>\n  <tbody>\n';
-                previewDataPoints.slice(0, 3).forEach(dp => {
-                    let power = (dp.voltage !== null && dp.current !== null) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
-                    let throttle = dp.throttle !== null && dp.throttle !== undefined ? (dp.throttle <= 1 ? Math.round(dp.throttle * 100) : dp.throttle) : 0;
-                    html += `    <tr><td>${throttle}</td><td>${dp.voltage || ''}</td><td>${dp.current || ''}</td><td>${power}</td><td>${dp.thrust_g || ''}</td></tr>\n`;
+                telemetryRows.forEach(r => {
+                    html += '    <tr>\n';
+                    r.forEach(v => html += `      <td>${v}</td>\n`);
+                    html += '    </tr>\n';
                 });
                 html += '  </tbody>\n</table>';
                 elements.previewContentBox.innerHTML = escapeHTML(html);
@@ -955,7 +1123,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Inject custom columns to catalog columns selector
             state.customSchema.forEach(f => {
                 const label = document.createElement('label');
-                label.innerHTML = `<input type="checkbox" value="custom_${f.field_key}" checked> ${f.field_name}`;
+                label.className = 'pill-checkbox';
+                label.innerHTML = `<input type="checkbox" value="custom_${f.field_key}" checked> <span>${f.field_name}</span>`;
                 elements.catColumnsSelector.appendChild(label);
             });
 
@@ -988,6 +1157,11 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.catThrustMin.addEventListener('input', renderMotorsSelector);
             elements.catThrustMax.addEventListener('input', renderMotorsSelector);
             elements.catExportFormat.addEventListener('change', updateLivePreview);
+
+            // Bind telemetry column selection change events to trigger preview update
+            elements.telemetryColumnsSelector.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.onchange = () => updateLivePreview();
+            });
 
             elements.btnCatSelectAll.onclick = () => {
                 elements.catMotorsListSelector.querySelectorAll('.selector-card').forEach(card => {
@@ -1045,6 +1219,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.tabPreviewCatalog.style.background = '';
                 elements.tabPreviewTelemetry.classList.remove('active');
                 elements.tabPreviewTelemetry.style.background = 'none';
+
+                // Sync left configuration tabs
+                const tabExportCatalog = document.getElementById('tab-export-catalog');
+                const tabExportTelemetry = document.getElementById('tab-export-telemetry');
+                if (tabExportCatalog) tabExportCatalog.classList.add('active');
+                if (tabExportTelemetry) tabExportTelemetry.classList.remove('active');
+
                 updateLivePreview();
             };
 
@@ -1054,8 +1235,89 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.tabPreviewTelemetry.style.background = '';
                 elements.tabPreviewCatalog.classList.remove('active');
                 elements.tabPreviewCatalog.style.background = 'none';
+
+                // Sync left configuration tabs
+                const tabExportCatalog = document.getElementById('tab-export-catalog');
+                const tabExportTelemetry = document.getElementById('tab-export-telemetry');
+                if (tabExportTelemetry) tabExportTelemetry.classList.add('active');
+                if (tabExportCatalog) tabExportCatalog.classList.remove('active');
+
                 updateLivePreview();
             };
+
+            // Sync left configuration tabs to right preview tabs
+            const tabExportCatalog = document.getElementById('tab-export-catalog');
+            const tabExportTelemetry = document.getElementById('tab-export-telemetry');
+            if (tabExportCatalog) {
+                tabExportCatalog.onclick = () => {
+                    activePreviewTab = 'catalog';
+                    tabExportCatalog.classList.add('active');
+                    if (tabExportTelemetry) tabExportTelemetry.classList.remove('active');
+
+                    elements.tabPreviewCatalog.classList.add('active');
+                    elements.tabPreviewCatalog.style.background = '';
+                    elements.tabPreviewTelemetry.classList.remove('active');
+                    elements.tabPreviewTelemetry.style.background = 'none';
+
+                    updateLivePreview();
+                };
+            }
+            if (tabExportTelemetry) {
+                tabExportTelemetry.onclick = () => {
+                    activePreviewTab = 'telemetry';
+                    tabExportTelemetry.classList.add('active');
+                    if (tabExportCatalog) tabExportCatalog.classList.remove('active');
+
+                    elements.tabPreviewTelemetry.classList.add('active');
+                    elements.tabPreviewTelemetry.style.background = '';
+                    elements.tabPreviewCatalog.classList.remove('active');
+                    elements.tabPreviewCatalog.style.background = 'none';
+
+                    updateLivePreview();
+                };
+            }
+
+            // Format card selection handler (scoped to each configuration panel)
+            document.querySelectorAll('#catalog-config-panel .format-card').forEach(card => {
+                card.onclick = () => {
+                    document.querySelectorAll('#catalog-config-panel .format-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    updateLivePreview();
+                };
+            });
+            document.querySelectorAll('#telemetry-config-panel .format-card').forEach(card => {
+                card.onclick = () => {
+                    document.querySelectorAll('#telemetry-config-panel .format-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    updateLivePreview();
+                };
+            });
+
+            // Preview mode switcher
+            if (elements.btnPreviewModeGrid) {
+                elements.btnPreviewModeGrid.onclick = () => {
+                    previewDisplayMode = 'grid';
+                    updateLivePreview();
+                };
+            }
+            if (elements.btnPreviewModeCode) {
+                elements.btnPreviewModeCode.onclick = () => {
+                    previewDisplayMode = 'code';
+                    updateLivePreview();
+                };
+            }
+
+            // Single trigger export button
+            const btnTriggerExport = document.getElementById('btn-trigger-active-export');
+            if (btnTriggerExport) {
+                btnTriggerExport.onclick = () => {
+                    if (activePreviewTab === 'catalog') {
+                        elements.catalogExportForm.requestSubmit();
+                    } else {
+                        elements.telemetryExportForm.requestSubmit();
+                    }
+                };
+            }
 
             const closeDetailsModal = () => {
                 if (elements.detailsPreviewModal) {
@@ -1166,7 +1428,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const mapKey = col === 'motor' ? 'motor_name' : (col === 'company' ? 'company' : (col === 'thrust' ? 'max_thrust' : (col === 'esc' ? 'recommended_esc' : (col === 'prop' ? 'recommended_propeller' : col))));
                                 val = m[mapKey] || '';
                             }
-                            return `"${val.toString().replace(/"/g, '""')}"`;
+                            return `"${(val === null || val === undefined ? '' : String(val)).replace(/"/g, '""')}"`;
                         });
                     });
                     const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');

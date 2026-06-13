@@ -508,6 +508,8 @@ def send_email_api():
 def verify_dashboard_access(required_role, filename):
     cookie_val = request.cookies.get('thrustvault_session')
     if not cookie_val:
+        if filename.endswith('.js'):
+            return make_response(jsonify({"error": "Unauthorized"}), 401)
         return redirect('/login')
     
     try:
@@ -518,11 +520,15 @@ def verify_dashboard_access(required_role, filename):
         # Enforce session validity within 24 hours (86400 seconds)
         current_time_ms = int(time.time() * 1000)
         if current_time_ms - timestamp > 86400 * 1000:
+            if filename.endswith('.js'):
+                return make_response(jsonify({"error": "Session expired"}), 401)
             response = make_response(redirect('/login'))
             response.set_cookie('thrustvault_session', '', expires=0, path='/')
             return response
             
         if role != required_role:
+            if filename.endswith('.js'):
+                return make_response(jsonify({"error": "Forbidden"}), 403)
             if role == 'admin':
                 return redirect('/admin_dashboard')
             elif role == 'intern':
@@ -535,11 +541,15 @@ def verify_dashboard_access(required_role, filename):
         return send_from_directory('public', filename)
     except Exception as e:
         print("Error verifying session cookie:", e)
+        if filename.endswith('.js'):
+            return make_response(jsonify({"error": "Unauthorized"}), 401)
         return redirect('/login')
 
 def verify_dashboard_access_any(filename):
     cookie_val = request.cookies.get('thrustvault_session')
     if not cookie_val:
+        if filename.endswith('.js'):
+            return make_response(jsonify({"error": "Unauthorized"}), 401)
         return redirect('/login')
     
     try:
@@ -550,16 +560,22 @@ def verify_dashboard_access_any(filename):
         # Enforce session validity within 24 hours (86400 seconds)
         current_time_ms = int(time.time() * 1000)
         if current_time_ms - timestamp > 86400 * 1000:
+            if filename.endswith('.js'):
+                return make_response(jsonify({"error": "Session expired"}), 401)
             response = make_response(redirect('/login'))
             response.set_cookie('thrustvault_session', '', expires=0, path='/')
             return response
             
         if role not in ['admin', 'intern', 'guest']:
+            if filename.endswith('.js'):
+                return make_response(jsonify({"error": "Forbidden"}), 403)
             return redirect('/login')
                 
         return send_from_directory('public', filename)
     except Exception as e:
         print("Error verifying session cookie:", e)
+        if filename.endswith('.js'):
+            return make_response(jsonify({"error": "Unauthorized"}), 401)
         return redirect('/login')
 
 # Explicit Dashboard and Scripts Routing
@@ -584,6 +600,17 @@ def admin_exports():
 @app.route('/admin_exports_app.js')
 def admin_exports_app_js():
     return verify_dashboard_access('admin', 'admin_exports_app.js')
+
+@app.route('/admin_imports')
+@app.route('/admin_imports.html')
+def admin_imports():
+    if request.path.endswith('.html'):
+        return redirect('/admin_imports')
+    return verify_dashboard_access('admin', 'admin_imports.html')
+
+@app.route('/admin_imports_app.js')
+def admin_imports_app_js():
+    return verify_dashboard_access('admin', 'admin_imports_app.js')
 
 @app.route('/admin_audit_logs')
 @app.route('/admin_audit_logs.html')
@@ -732,7 +759,13 @@ def static_files(filename):
         'style.css',
         'thrustvault_presentation.html',
         'motor_explorer.html',
-        'motor_explorer_app.js'
+        'motor_explorer_app.js',
+        'sidebar_admin.html',
+        'sidebar_intern.html',
+        'sidebar_guest.html',
+        'logo.png',
+        'thrustvault_logo_bgremoved_dark.png',
+        'thrustvault_logo_bgremoved_light.png'
     }
     
     PUBLIC_LIBS = {

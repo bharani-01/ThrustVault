@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Imports Console | ThrustVault</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    <!-- Supabase JS Client -->
+    <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
+    <!-- SheetJS Library -->
+    <script src="libs/xlsx.full.min.js"></script>
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css?v=1.4">
+    <!-- Custom Importer Styles -->
+    <style>
+        .importer-studio-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+        @media(min-width: 1024px) {
+            .importer-studio-layout {
+                grid-template-columns: 440px 1fr;
+            }
+        }
+
+        .importer-left-pane {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 24px;
+        }
+
+        .importer-right-pane {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 24px;
+            min-height: 550px;
+            position: relative;
+        }
+
+        /* File Dropzone Styles */
+        .dropzone-container {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            background: var(--bg-base);
+            padding: 35px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .dropzone-container:hover, .dropzone-container.dragover {
+            border-color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.02);
+        }
+        [data-theme="dark"] .dropzone-container:hover, [data-theme="dark"] .dropzone-container.dragover {
+            background: rgba(59, 130, 246, 0.04);
+        }
+        .dropzone-icon {
+            color: var(--text-muted);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: var(--radius-md);
+        }
+        [data-theme="dark"] .dropzone-icon {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .dropzone-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        .dropzone-desc {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* File Details Card */
+        .loaded-file-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: var(--radius-md);
+            margin-top: 15px;
+        }
+        [data-theme="dark"] .loaded-file-card {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+        .loaded-file-icon {
+            color: #059669;
+            display: flex;
+            align-items: center;
+        }
+        .loaded-file-details {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 0;
+        }
+        .loaded-file-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .loaded-file-size {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+        .btn-remove-file {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+        }
+        .btn-remove-file:hover {
+            color: var(--danger-color);
+            background: rgba(225, 29, 72, 0.1);
+        }
+
+        /* Importer Empty State */
+        .importer-empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex: 1;
+            text-align: center;
+            padding: 40px;
+        }
+        .importer-empty-icon {
+            color: var(--text-muted);
+            opacity: 0.4;
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+
+        /* Validation Badge Styles */
+        .validation-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .validation-badge.valid {
+            background: #f0fdf4;
+            color: #059669;
+            border: 1px solid #bbf7d0;
+        }
+        [data-theme="dark"] .validation-badge.valid {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+        .validation-badge.duplicate {
+            background: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fde68a;
+        }
+        [data-theme="dark"] .validation-badge.duplicate {
+            background: rgba(217, 119, 6, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(217, 119, 6, 0.25);
+        }
+        .validation-badge.invalid {
+            background: #fff1f2;
+            color: #e11d48;
+            border: 1px solid #fecdd3;
+        }
+        [data-theme="dark"] .validation-badge.invalid {
+            background: rgba(225, 29, 72, 0.15);
+            color: #fb7185;
+            border: 1px solid rgba(225, 29, 72, 0.25);
+        }
+        tr.row-invalid {
+            background: rgba(225, 29, 72, 0.02) !important;
+        }
+        [data-theme="dark"] tr.row-invalid {
+            background: rgba(225, 29, 72, 0.05) !important;
+        }
+
+        /* Stepper Milestones Styles */
+        .stepper-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .stepper-step {
+            display: flex;
+            gap: 16px;
+            align-items: start;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+        .stepper-step.active {
+            opacity: 1;
+            color: var(--primary-color);
+        }
+        .stepper-step.completed {
+            opacity: 1;
+            color: var(--success-color);
+        }
+        .step-indicator {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .step-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .step-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text-primary);
+        }
+        .step-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+    </style>
+    <!-- Page Loader Transition Script -->
+    <script src="page-loader.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" data-sidebar="admin">
+            <script>
+                if (localStorage.getItem('thrustvault_sidebar_collapsed') === 'true') {
+                    document.currentScript.parentElement.classList.add('collapsed');
+                }
+            </script>
+            <!-- Sidebar Placeholder Skeletons -->
+            <div class="sidebar-skeleton-wrapper" style="padding: 20px; display: flex; flex-direction: column; gap: 30px; height: 100%; box-sizing: border-box;">
+                <div class="shimmer" style="height: 44px; width: 140px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                <div style="display:flex; flex-direction:column; gap:15px; flex:1;">
+                    <div class="shimmer" style="height: 16px; width: 80px; border-radius: 4px; background: var(--border-color);"></div>
+                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area Wrapper -->
+        <div class="main-content-wrapper" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+            
+            <main class="main-content" style="overflow-y:auto; padding:30px;">
+                <div class="importer-studio-layout">
+                    
+                    <!-- Left Panel: Upload Controls -->
+                    <div class="glass-panel importer-left-pane">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <a href="admin_dashboard" class="btn-secondary-sm" style="text-decoration:none;">
+                                <i data-lucide="arrow-left" style="width:14px; height:14px;"></i> Back
+                            </a>
+                        </div>
+                        <h2 style="font-family:'Outfit', sans-serif; font-size:1.4rem; font-weight:700; color:var(--text-primary); margin-top:5px; margin-bottom:0;">Bulk Import Console</h2>
+                        <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">Prepare and upload a spreadsheet to bulk-populate motor specifications.</p>
+                        
+                        <button class="btn-secondary" id="btn-download-template" style="width:100%; justify-content:center; padding: 10px 14px; font-weight: 600;">
+                            <i data-lucide="download-cloud" style="width:16px; height:16px;"></i> Download Import Template
+                        </button>
+                        
+                        <!-- Target Category selection -->
+                        <div class="form-group" style="margin-top: 10px;">
+                            <label for="category-mode" style="font-weight: 600; display:block; margin-bottom:8px; font-size:0.88rem; color:var(--text-primary);">Assign Categories By</label>
+                            <select id="category-mode" style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: var(--radius-md); border:1px solid var(--border-color); background: var(--bg-panel-solid); color: var(--text-primary); cursor: pointer; font-weight: 550; font-size: 0.85rem; outline:none;">
+                                <option value="global">One Category: Put all imported motors into one category</option>
+                                <option value="dynamic">By Row: Use a column in the spreadsheet to decide the category</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="global-category-wrapper">
+                            <label for="target-category-select" style="font-weight: 600; display:block; margin-bottom:8px; font-size:0.88rem; color:var(--text-primary);">Select Category</label>
+                            <select id="target-category-select" style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: var(--radius-md); border:1px solid var(--border-color); background: var(--bg-base); color: var(--text-primary); font-weight: 550; font-size: 0.85rem; outline:none;">
+                                <option value="">Loading Category List...</option>
+                            </select>
+                        </div>
+
+                        <!-- Drag-and-Drop Dropzone -->
+                        <div class="form-group" style="margin-top: 5px;">
+                            <label style="font-weight: 600; display:block; margin-bottom:8px; font-size:0.88rem; color:var(--text-primary);">Select Spreadsheet File</label>
+                            <div id="dropzone-container" class="dropzone-container">
+                                <div class="dropzone-icon"><i data-lucide="file-spreadsheet" style="width:22px; height:22px;"></i></div>
+                                <p class="dropzone-title">Drag and drop file here</p>
+                                <p class="dropzone-desc">Supports Excel, CSV, or JSON</p>
+                                <span style="font-size: 0.72rem; color: var(--primary-color); font-weight: 600; text-decoration: underline; margin-top: 4px;">or click to browse</span>
+                            </div>
+                            <input type="file" id="file-picker-input" accept=".xlsx, .xls, .csv, .json" style="display: none;">
+                        </div>
+
+                        <!-- File Details Info Box (Hidden by default) -->
+                        <div id="loaded-file-container" style="display: none;">
+                            <div class="loaded-file-card">
+                                <div class="loaded-file-icon"><i data-lucide="check-square" style="width:18px; height:18px;"></i></div>
+                                <div class="loaded-file-details">
+                                    <span class="loaded-file-name" id="info-file-name">data_sheet.xlsx</span>
+                                    <span class="loaded-file-size" id="info-file-size">14 KB</span>
+                                </div>
+                                <button class="btn-remove-file" id="btn-reset-file" title="Clear uploaded file">
+                                    <i data-lucide="trash-2" style="width:16px; height:16px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Panel: Data Preview Studio -->
+                    <div class="glass-panel importer-right-pane" id="preview-studio-panel" style="overflow-x: hidden;">
+                        
+                        <!-- Empty State: Waiting for file -->
+                        <div class="importer-empty-state" id="importer-empty-state">
+                            <div class="importer-empty-icon"><i data-lucide="binary" style="width:48px; height:48px;"></i></div>
+                            <h3 style="font-family:'Outfit'; font-size:1.15rem; font-weight:700; margin:0; color:var(--text-primary);">Data Preview</h3>
+                            <p style="font-size:0.82rem; color:var(--text-muted); margin:0; max-width:350px; line-height:1.4;">Upload a spreadsheet file on the left panel to initialize schema column mapping and preview database operations.</p>
+                        </div>
+
+                        <!-- Preview Active Workspace (Hidden until file parsed) -->
+                        <div id="preview-workspace-container" style="display: none; flex-direction: column; gap: 20px; height: 100%;">
+                            <div class="preview-studio-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:15px;">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <i data-lucide="eye" style="color:var(--primary-color); width:22px; height:22px;"></i>
+                                    <h3 style="font-family:'Outfit', sans-serif; font-size:1.1rem; font-weight:700; margin:0; color:var(--text-primary);">Data Preview</h3>
+                                </div>
+                                
+                                <!-- Duplicate Action Strategy -->
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <label for="dup-strategy" style="font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin:0;">Duplicate Action:</label>
+                                    <select id="dup-strategy" style="padding: 6px 10px; font-size:0.75rem; border-radius: var(--radius-sm); border:1px solid var(--border-color); background: var(--bg-base); color: var(--text-primary); cursor: pointer; font-weight: 600; outline:none;">
+                                        <option value="skip">Skip duplicates</option>
+                                        <option value="overwrite">Update duplicates</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Stats Counters strip -->
+                            <div class="stats-strip" style="display:flex; gap:15px; margin-bottom: 5px;">
+                                <div class="stat-box" style="flex:1; padding:12px; background:var(--bg-base); border-radius:var(--radius-md); border:1px solid var(--border-color); display:flex; flex-direction:column; gap:4px;">
+                                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Total Rows</span>
+                                    <span id="stats-total-rows" style="font-size:1.3rem; font-weight:700; color:var(--text-primary);">0</span>
+                                </div>
+                                <div class="stat-box" style="flex:1; padding:12px; background:var(--bg-base); border-radius:var(--radius-md); border:1px solid var(--border-color); display:flex; flex-direction:column; gap:4px;">
+                                    <span style="font-size:0.75rem; color:#059669; font-weight:600;">Ready to Import</span>
+                                    <span id="stats-valid-rows" style="font-size:1.3rem; font-weight:700; color:#059669;">0</span>
+                                </div>
+                                <div class="stat-box" style="flex:1; padding:12px; background:var(--bg-base); border-radius:var(--radius-md); border:1px solid var(--border-color); display:flex; flex-direction:column; gap:4px;">
+                                    <span style="font-size:0.75rem; color:#d97706; font-weight:600;">Duplicates</span>
+                                    <span id="stats-dup-rows" style="font-size:1.3rem; font-weight:700; color:#d97706;">0</span>
+                                </div>
+                                <div class="stat-box" style="flex:1; padding:12px; background:var(--bg-base); border-radius:var(--radius-md); border:1px solid var(--border-color); display:flex; flex-direction:column; gap:4px;">
+                                    <span style="font-size:0.75rem; color:#e11d48; font-weight:600;">Errors</span>
+                                    <span id="stats-err-rows" style="font-size:1.3rem; font-weight:700; color:#e11d48;">0</span>
+                                </div>
+                            </div>
+
+                            <!-- Preview Table Scroll wrapper -->
+                            <div class="preview-table-scroll-wrapper" style="flex:1; overflow:auto; max-height:450px; border:1px solid var(--border-color); border-radius:var(--radius-md); background:var(--bg-panel-solid);">
+                                <table class="motors-table" style="width:100%; border-collapse:collapse; min-width:800px;">
+                                    <thead>
+                                        <tr id="preview-table-mappings" style="background:var(--bg-panel-solid); border-bottom:1px solid var(--border-color);">
+                                            <!-- Dynamic mapping selectors go here -->
+                                        </tr>
+                                        <tr id="preview-table-headers" style="background:var(--bg-base); border-bottom:2px solid var(--border-color);">
+                                            <!-- Dynamic column headers go here -->
+                                        </tr>
+                                    </thead>
+                                    <tbody id="preview-table-rows">
+                                        <!-- Dynamic rows items go here -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Action Buttons footer -->
+                            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:5px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                                <button class="btn-secondary" id="btn-cancel-preview" style="padding:10px 20px; font-weight:600;">
+                                    <i data-lucide="x-circle" style="vertical-align:middle; width:16px; margin-right:4px;"></i> Clear File
+                                </button>
+                                <button class="btn-primary" id="btn-save-imports" disabled style="padding:10px 24px; font-weight:700;">
+                                    <i data-lucide="database-backup" style="vertical-align:middle; width:16px; margin-right:4px;"></i> Import Motors
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Stepper progress modal overlay -->
+    <div class="modal-overlay" id="import-progress-modal" style="display: none;">
+        <div class="modal-container" style="max-width: 480px; padding: 25px; border-radius: var(--radius-lg); background: var(--bg-panel-solid); border: 1px solid var(--border-color); box-shadow: var(--shadow-lg);">
+            <div class="modal-header" style="margin-bottom:15px; border-bottom:1px solid var(--border-color); padding-bottom:10px;">
+                <h3 id="import-modal-title" style="font-family:'Outfit'; font-size:1.2rem; font-weight:700; color:var(--text-primary); margin:0;">Importing Motors</h3>
+            </div>
+            <div class="modal-body" style="padding:0;">
+                <p id="import-modal-status" style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:15px;">Preparing upload...</p>
+                
+                <!-- Progress Bar -->
+                <div class="progress-bar-container" style="width:100%; height:8px; background:var(--bg-base); border:1px solid var(--border-color); border-radius:4px; overflow:hidden; margin-bottom:8px; position:relative;">
+                    <div id="import-progress-bar" style="height:100%; width:0%; background:var(--primary-color); transition:width 0.2s ease;"></div>
+                </div>
+                <div style="text-align:right; font-size:0.8rem; font-weight:600; color:var(--primary-color); margin-bottom:20px;" id="import-progress-percent">0%</div>
+
+                <!-- Milestones Stepper -->
+                <div class="stepper-container">
+                    <div class="stepper-step" id="step-import-0">
+                        <div class="step-indicator"><i data-lucide="circle"></i></div>
+                        <div class="step-content">
+                            <h4 class="step-title">File Validation</h4>
+                            <p class="step-desc">Checking data integrity and mappings</p>
+                        </div>
+                    </div>
+                    <div class="stepper-step" id="step-import-1">
+                        <div class="step-indicator"><i data-lucide="circle"></i></div>
+                        <div class="step-content">
+                            <h4 class="step-title">Category Mapping</h4>
+                            <p class="step-desc">Matching classes and adding new categories</p>
+                        </div>
+                    </div>
+                    <div class="stepper-step" id="step-import-2">
+                        <div class="step-indicator"><i data-lucide="circle"></i></div>
+                        <div class="step-content">
+                            <h4 class="step-title">Database Upload</h4>
+                            <p class="step-desc">Bulk-saving motor specifications in batches</p>
+                        </div>
+                    </div>
+                    <div class="stepper-step" id="step-import-3">
+                        <div class="step-indicator"><i data-lucide="circle"></i></div>
+                        <div class="step-content">
+                            <h4 class="step-title">Audit Log Generation</h4>
+                            <p class="step-desc">Recording bulk operation details</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div class="modal-overlay" id="confirm-modal" style="display: none;">
+        <div class="modal-container" style="max-width: 400px; padding: 25px; border-radius: var(--radius-lg); background: var(--bg-panel-solid); border: 1px solid var(--border-color); box-shadow: var(--shadow-lg);">
+            <h3 id="confirm-title" style="font-family:'Outfit'; font-size:1.2rem; font-weight:700; color:var(--text-primary); margin:0; margin-bottom:10px;">Action Confirmation</h3>
+            <p id="confirm-message" style="font-size:0.9rem; color:var(--text-secondary); line-height:1.5; margin:0; margin-bottom:20px;">Are you sure you want to perform this action?</p>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn-secondary modal-close-trigger" style="padding:8px 16px;">Cancel</button>
+                <button class="btn-primary" id="btn-confirm-action" style="padding:8px 20px;">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App JavaScript -->
+    <script src="admin_imports_app.js"></script>
+    <!-- Onboarding Tour -->
+    <script src="onboarding.js"></script>
+</body>
+</html>

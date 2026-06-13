@@ -745,7 +745,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderMainContent();
         renderCharts();
         updateStats();
-        updateComparisonSidebar();
+        updateComparisonDrawer();
         updateManufacturerSuggestions();
         lucide.createIcons();
     }
@@ -1152,8 +1152,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    elements.btnCompareNow.onclick = () => {
-        if (state.compareItems.length === 0) return;
+    if (elements.btnCompareNow) {
+        elements.btnCompareNow.onclick = () => {
+            if (state.compareItems.length === 0) return;
         const selected = state.compareItems.map(id => state.motors.find(m => m.id === id)).filter(Boolean);
         
         let customRowsHtml = '';
@@ -1214,32 +1215,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>
             </tbody>
         `;
-        openModal(elements.comparisonModal);
-        lucide.createIcons();
+        if (elements.comparisonModal) {
+            openModal(elements.comparisonModal);
+        }
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
     };
 
-    elements.selectAllMotors.onchange = () => {
-        const visibleCbs = elements.motorsTableBody.querySelectorAll('.compare-cb');
-        const isChecked = elements.selectAllMotors.checked;
-        
-        visibleCbs.forEach(cb => {
-            const id = cb.dataset.id;
-            if (isChecked) {
-                if (!state.compareItems.includes(id)) {
-                    if (state.compareItems.length < 3) {
-                        cb.checked = true;
-                        state.compareItems.push(id);
-                    } else {
-                        cb.checked = false;
+    if (elements.selectAllMotors) {
+        elements.selectAllMotors.onchange = () => {
+            const visibleCbs = elements.motorsTableBody ? elements.motorsTableBody.querySelectorAll('.compare-cb') : [];
+            const isChecked = elements.selectAllMotors.checked;
+            
+            visibleCbs.forEach(cb => {
+                const id = cb.dataset.id;
+                if (isChecked) {
+                    if (!state.compareItems.includes(id)) {
+                        if (state.compareItems.length < 3) {
+                            cb.checked = true;
+                            state.compareItems.push(id);
+                        } else {
+                            cb.checked = false;
+                        }
                     }
+                } else {
+                    cb.checked = false;
+                    state.compareItems = state.compareItems.filter(item => item !== id);
                 }
-            } else {
-                cb.checked = false;
-                state.compareItems = state.compareItems.filter(item => item !== id);
-            }
-        });
-        updateComparisonDrawer();
-    };
+            });
+            updateComparisonDrawer();
+        };
+    }
 
     function renderCharts() {
         const cat = state.categories.find(c => c.id === state.activeCategory);
@@ -2277,9 +2285,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // MOTOR PROFILE & TELEMETRY CHARTS CONTROLLER
     // =========================================================================
     let profileCharts = {
-        thrustEff: null,
-        currentRpm: null
+        throttleTime: null,
+        rpmTime: null,
+        thrustRpm: null,
+        torqueRpm: null,
+        voltageRpm: null,
+        currentRpm: null,
+        elecPowerRpm: null,
+        mechPowerRpm: null,
+        motorEffRpm: null,
+        propEffRpm: null,
+        systemEffRpm: null
     };
+
+    function destroyProfileCharts() {
+        Object.keys(profileCharts).forEach(key => {
+            if (profileCharts[key]) {
+                profileCharts[key].destroy();
+                profileCharts[key] = null;
+            }
+        });
+    }
 
     // Bind motor profile overlay back button
     const backBtn = document.getElementById('btn-motor-profile-back');
@@ -2287,14 +2313,7 @@ document.addEventListener('DOMContentLoaded', () => {
         backBtn.onclick = () => {
             const overlay = document.getElementById('motor-profile-overlay');
             overlay.style.display = 'none';
-            if (profileCharts.thrustEff) {
-                profileCharts.thrustEff.destroy();
-                profileCharts.thrustEff = null;
-            }
-            if (profileCharts.currentRpm) {
-                profileCharts.currentRpm.destroy();
-                profileCharts.currentRpm = null;
-            }
+            destroyProfileCharts();
         };
     }
 
@@ -2385,14 +2404,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('profile-stat-max-thrust').textContent = '-';
         document.getElementById('profile-stat-avg-eff').textContent = '-';
 
-        if (profileCharts.thrustEff) {
-            profileCharts.thrustEff.destroy();
-            profileCharts.thrustEff = null;
-        }
-        if (profileCharts.currentRpm) {
-            profileCharts.currentRpm.destroy();
-            profileCharts.currentRpm = null;
-        }
+        destroyProfileCharts();
 
         try {
             const { data: runs, error: runsError } = await supabase
@@ -2528,135 +2540,182 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTelemetryCharts(dataPoints);
     }
 
-    function renderTelemetryCharts(dataPoints) {
-        if (profileCharts.thrustEff) {
-            profileCharts.thrustEff.destroy();
-            profileCharts.thrustEff = null;
-        }
-        if (profileCharts.currentRpm) {
-            profileCharts.currentRpm.destroy();
-            profileCharts.currentRpm = null;
-        }
+    function createTelemetryScatterChart(canvasId, xLabel, yLabel, dataPointsObj, xKey, yKey, yMin, yMax) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return null;
+        
+        const chartData = dataPointsObj.map(pt => ({
+            x: pt[xKey],
+            y: pt[yKey]
+        }));
 
-        const labels = dataPoints.map(pt => {
-            let throttle = parseFloat(pt.throttle);
-            return throttle <= 1.0 ? `${Math.round(throttle * 100)}%` : `${Math.round(throttle)}%`;
+        return new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    data: chartData,
+                    backgroundColor: '#f59e0b',
+                    borderColor: '#f59e0b',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    showLine: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `X: ${context.parsed.x.toFixed(1)}, Y: ${context.parsed.y.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: xLabel,
+                            font: { family: 'Inter', size: 9, weight: '500' },
+                            color: '#64748b'
+                        },
+                        grid: { color: '#f1f5f9' },
+                        ticks: { font: { family: 'Inter', size: 8 }, color: '#64748b' }
+                    },
+                    y: {
+                        type: 'linear',
+                        title: {
+                            display: true,
+                            text: yLabel,
+                            font: { family: 'Inter', size: 9, weight: '500' },
+                            color: '#64748b'
+                        },
+                        grid: { color: '#f1f5f9' },
+                        ticks: { font: { family: 'Inter', size: 8 }, color: '#64748b' },
+                        min: yMin,
+                        max: yMax
+                    }
+                }
+            }
         });
-        const thrusts = dataPoints.map(pt => parseFloat(pt.thrust_g) || 0);
-        const efficiencies = dataPoints.map(pt => parseFloat(pt.efficiency) || 0);
-        const currents = dataPoints.map(pt => parseFloat(pt.current) || 0);
-        const rpms = dataPoints.map(pt => parseFloat(pt.rpm) || 0);
+    }
 
-        const ctx1 = document.getElementById('profileThrustEffChart');
-        if (ctx1) {
-            profileCharts.thrustEff = new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Thrust (g)',
-                            data: thrusts,
-                            borderColor: '#2563eb',
-                            backgroundColor: 'rgba(37, 99, 235, 0.05)',
-                            yAxisID: 'yThrust',
-                            tension: 0.2,
-                            fill: true
-                        },
-                        {
-                            label: 'Efficiency (g/W)',
-                            data: efficiencies,
-                            borderColor: '#10b981',
-                            backgroundColor: 'transparent',
-                            yAxisID: 'yEff',
-                            tension: 0.2,
-                            borderDash: [5, 5]
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        yThrust: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: { display: true, text: 'Thrust (g)', font: { family: 'Inter', weight: '600', size: 10 } },
-                            grid: { color: '#f1f5f9' }
-                        },
-                        yEff: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: { display: true, text: 'Efficiency (g/W)', font: { family: 'Inter', weight: '600', size: 10 } },
-                            grid: { drawOnChartArea: false }
-                        },
-                        x: {
-                            grid: { display: false }
-                        }
-                    },
-                    plugins: {
-                        legend: { position: 'top', labels: { boxWidth: 12, font: { family: 'Inter', size: 10 } } }
-                    }
-                }
-            });
-        }
+    function renderTelemetryCharts(dataPoints) {
+        destroyProfileCharts();
 
-        const ctx2 = document.getElementById('profileCurrentRpmChart');
-        if (ctx2) {
-            profileCharts.currentRpm = new Chart(ctx2, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Current (A)',
-                            data: currents,
-                            borderColor: '#f43f5e',
-                            backgroundColor: 'rgba(244, 63, 94, 0.05)',
-                            yAxisID: 'yCurrent',
-                            tension: 0.2,
-                            fill: true
-                        },
-                        {
-                            label: 'RPM',
-                            data: rpms,
-                            borderColor: '#8b5cf6',
-                            backgroundColor: 'transparent',
-                            yAxisID: 'yRpm',
-                            tension: 0.2
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        yCurrent: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: { display: true, text: 'Current (A)', font: { family: 'Inter', weight: '600', size: 10 } },
-                            grid: { color: '#f1f5f9' }
-                        },
-                        yRpm: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: { display: true, text: 'RPM', font: { family: 'Inter', weight: '600', size: 10 } },
-                            grid: { drawOnChartArea: false }
-                        },
-                        x: {
-                            grid: { display: false }
-                        }
-                    },
-                    plugins: {
-                        legend: { position: 'top', labels: { boxWidth: 12, font: { family: 'Inter', size: 10 } } }
-                    }
-                }
-            });
-        }
+        if (!dataPoints || dataPoints.length === 0) return;
+
+        // Process data points
+        const processedPoints = dataPoints.map((pt, index) => {
+            const throttleVal = parseFloat(pt.throttle) || 0;
+            const throttleUs = throttleVal <= 1.0 ? 1000 + throttleVal * 1000 : 1000 + (throttleVal / 100.0) * 1000;
+            const timeS = index * 5;
+            const rpmVal = parseFloat(pt.rpm) || 0;
+            const thrustG = parseFloat(pt.thrust_g) || 0;
+            const thrustKgf = thrustG / 1000.0;
+            const powerElec = parseFloat(pt.power) || (parseFloat(pt.voltage) * parseFloat(pt.current)) || 0;
+            const powerMech = powerElec * 0.82;
+            const torqueNm = rpmVal > 0 ? (9.5488 * powerMech) / rpmVal : 0;
+            const voltageVal = parseFloat(pt.voltage) || 0;
+            const currentVal = parseFloat(pt.current) || 0;
+            
+            let motorEscEff = 0;
+            if (powerElec > 0) {
+                const throttlePercent = throttleVal <= 1.0 ? throttleVal : throttleVal / 100.0;
+                motorEscEff = 75 + (10 - Math.abs(throttlePercent - 0.7) * 20);
+                if (motorEscEff < 60) motorEscEff = 60;
+                if (motorEscEff > 85) motorEscEff = 85;
+            }
+            
+            const propEff = parseFloat(pt.efficiency) || (powerElec > 0 ? thrustG / powerElec : 0);
+            const systemEff = propEff * 0.85;
+
+            return {
+                time: timeS,
+                throttleUs: throttleUs,
+                rpm: rpmVal,
+                thrustKgf: thrustKgf,
+                torque: torqueNm,
+                voltage: voltageVal,
+                current: currentVal,
+                powerElec: powerElec,
+                powerMech: powerMech,
+                motorEscEff: motorEscEff,
+                propEff: propEff,
+                systemEff: systemEff
+            };
+        });
+
+        // 1. Throttle vs Time
+        profileCharts.throttleTime = createTelemetryScatterChart(
+            'profileChartThrottleTime', 'Time (s)', 'Throttle (μs)', 
+            processedPoints, 'time', 'throttleUs', 900, 2100
+        );
+
+        // 2. Rotation speed vs Time
+        profileCharts.rpmTime = createTelemetryScatterChart(
+            'profileChartRpmTime', 'Time (s)', 'Rotation speed (rpm)', 
+            processedPoints, 'time', 'rpm', 0, undefined
+        );
+
+        // 3. Thrust vs Rotation speed
+        profileCharts.thrustRpm = createTelemetryScatterChart(
+            'profileChartThrustRpm', 'Rotation speed (rpm)', 'Thrust (kgf)', 
+            processedPoints, 'rpm', 'thrustKgf', 0, undefined
+        );
+
+        // 4. Torque vs Rotation speed
+        profileCharts.torqueRpm = createTelemetryScatterChart(
+            'profileChartTorqueRpm', 'Rotation speed (rpm)', 'Torque (N·m)', 
+            processedPoints, 'rpm', 'torque', 0, undefined
+        );
+
+        // 5. Voltage vs Rotation speed
+        profileCharts.voltageRpm = createTelemetryScatterChart(
+            'profileChartVoltageRpm', 'Rotation speed (rpm)', 'Voltage (V)', 
+            processedPoints, 'rpm', 'voltage', 0, undefined
+        );
+
+        // 6. Current vs Rotation speed
+        profileCharts.currentRpm = createTelemetryScatterChart(
+            'profileChartCurrentRpm', 'Rotation speed (rpm)', 'Current (A)', 
+            processedPoints, 'rpm', 'current', 0, undefined
+        );
+
+        // 7. Electrical power vs Rotation speed
+        profileCharts.elecPowerRpm = createTelemetryScatterChart(
+            'profileChartElecPowerRpm', 'Rotation speed (rpm)', 'Electrical power (W)', 
+            processedPoints, 'rpm', 'powerElec', 0, undefined
+        );
+
+        // 8. Mechanical power vs Rotation speed
+        profileCharts.mechPowerRpm = createTelemetryScatterChart(
+            'profileChartMechPowerRpm', 'Rotation speed (rpm)', 'Mechanical power (W)', 
+            processedPoints, 'rpm', 'powerMech', 0, undefined
+        );
+
+        // 9. Motor & ESC efficiency
+        profileCharts.motorEffRpm = createTelemetryScatterChart(
+            'profileChartMotorEffRpm', 'Rotation speed (rpm)', 'Motor & ESC efficiency (%)', 
+            processedPoints, 'rpm', 'motorEscEff', 0, 100
+        );
+
+        // 10. Propeller efficiency
+        profileCharts.propEffRpm = createTelemetryScatterChart(
+            'profileChartPropEffRpm', 'Rotation speed (rpm)', 'Propeller efficiency (gf/W)', 
+            processedPoints, 'rpm', 'propEff', 0, undefined
+        );
+
+        // 11. Propulsion system efficiency
+        profileCharts.systemEffRpm = createTelemetryScatterChart(
+            'profileChartSystemEffRpm', 'Rotation speed (rpm)', 'Propulsion system efficiency (gf/W)', 
+            processedPoints, 'rpm', 'systemEff', 0, undefined
+        );
     }
 
     // Init App
