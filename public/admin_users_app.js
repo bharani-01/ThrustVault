@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function resetInactivityTimer() {
         clearTimeout(inactivityTimeout);
-        inactivityTimeout = setTimeout(autoLogout, 600000); // 10 minutes
+        // inactivityTimeout = setTimeout(autoLogout, 600000); // 10 minutes (disabled)
 
         const now = Date.now();
         if (now - lastSyncTime > 30000) {

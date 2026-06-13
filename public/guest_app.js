@@ -543,6 +543,10 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.comparisonDrawer.classList.remove('show');
             elements.compareItemsContainer.innerHTML = '';
         }
+        
+        if (elements.btnCompareNow) {
+            elements.btnCompareNow.disabled = (count === 0);
+        }
     }
 
     // Modal Compare
@@ -615,8 +619,27 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.lucide) {
             lucide.createIcons();
         }
-    }
     };
+    }
+
+    if (elements.btnClearComparison) {
+        elements.btnClearComparison.onclick = () => {
+            state.compareItems = [];
+            updateComparisonDrawer();
+            const cbs = elements.motorsTableBody ? elements.motorsTableBody.querySelectorAll('.compare-cb') : [];
+            cbs.forEach(cb => cb.checked = false);
+            if (elements.selectAllMotors) elements.selectAllMotors.checked = false;
+        };
+    }
+    if (elements.btnCloseComparison) {
+        elements.btnCloseComparison.onclick = () => {
+            state.compareItems = [];
+            updateComparisonDrawer();
+            const cbs = elements.motorsTableBody ? elements.motorsTableBody.querySelectorAll('.compare-cb') : [];
+            cbs.forEach(cb => cb.checked = false);
+            if (elements.selectAllMotors) elements.selectAllMotors.checked = false;
+        };
+    }
 
     // Table Select All
     if (elements.selectAllMotors) {
@@ -1607,7 +1630,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function resetInactivityTimer() {
         clearTimeout(inactivityTimeout);
-        inactivityTimeout = setTimeout(autoLogout, 600000); // 10 minutes
+        // inactivityTimeout = setTimeout(autoLogout, 600000); // 10 minutes (disabled)
 
         // Throttled cookie timestamp sync (at most once every 30 seconds)
         const now = Date.now();

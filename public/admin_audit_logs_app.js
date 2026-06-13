@@ -1130,7 +1130,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function resetInactivityTimer() {
         clearTimeout(inactivityTimeout);
-        inactivityTimeout = setTimeout(autoLogout, 600000); // 10 minutes
+        // inactivityTimeout = setTimeout(autoLogout, 600000); // 10 minutes (disabled)
 
         // Throttled cookie timestamp sync (at most once every 30 seconds)
         const now = Date.now();
