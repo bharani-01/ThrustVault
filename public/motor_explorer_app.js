@@ -83,20 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.btnBarDelete.style.display = 'inline-flex';
         }
 
-        // Initialize Supabase Connection
-        try {
-            const res = await fetch('/api/config');
-            const config = await res.json();
-            if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) {
-                alert("Supabase config loading failed. Check server setup.");
-                return;
-            }
-            supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-        } catch (e) {
-            console.error("Initialization failed", e);
-            alert("Database configuration not loaded.");
-            return;
-        }
+        // No direct Supabase client initialization needed; all requests are proxied via local Flask backend endpoints.
 
         // Theme restoration
         const currentTheme = localStorage.getItem('thrustvault_theme') || 'light';
@@ -115,11 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchData() {
         try {
             // Fetch categories
-            const { data: categories, error: catErr } = await supabase
-                .from('categories')
-                .select('*')
-                .order('name');
-            if (catErr) throw catErr;
+            const catRes = await fetch('/api/guest/categories');
+            if (!catRes.ok) throw new Error(`Categories fetch failed: HTTP ${catRes.status}`);
+            const categories = await catRes.json();
             state.categories = (categories || []).map(c => ({
                 id: c.id,
                 name: c.name,
@@ -127,11 +112,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }));
 
             // Fetch motors
-            const { data: motors, error: motorErr } = await supabase
-                .from('motors')
-                .select('*')
-                .order('motor_name');
-            if (motorErr) throw motorErr;
+            const motorRes = await fetch('/api/guest/motors');
+            if (!motorRes.ok) throw new Error(`Motors fetch failed: HTTP ${motorRes.status}`);
+            const motors = await motorRes.json();
             state.motors = (motors || []).map(m => ({
                 id: m.id,
                 categoryId: m.category_id,
@@ -149,8 +132,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // Fetch custom specifications schema
             let schema = [];
             try {
-                const { data } = await supabase.from('custom_specs_schema').select('*');
-                schema = data || [];
+                const schemaRes = await fetch('/api/guest/custom-specs');
+                if (schemaRes.ok) {
+                    schema = await schemaRes.json();
+                } else {
+                    throw new Error(`HTTP ${schemaRes.status}`);
+                }
             } catch(e) {
                 console.warn("Schema fetch error, fallback to local storage:", e);
                 schema = JSON.parse(localStorage.getItem('thrustvault_custom_specs')) || [];
@@ -353,12 +340,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     custom_parameters: customParams
                 };
 
-                const { error } = await supabase
-                    .from('motors')
-                    .update(updatePayload)
-                    .eq('id', motorId);
-
-                if (error) throw error;
+                const res = await fetch(`/api/intern/motors?id=eq.${motorId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatePayload)
+                });
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.error || `HTTP ${res.status}`);
+                }
 
                 logUserActivity(session.email, session.role, 'Motor Specifications Updated', `Updated specifications for motor: ${name}`);
                 closeModal(elements.motorModal);
@@ -1044,11 +1034,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const confirm = await customConfirm("Delete Specifications Record?", `Are you sure you want to permanently delete specifications for "${motor.motor}"? This action cannot be undone.`);
         if (confirm) {
             try {
-                const { error } = await supabase
-                    .from('motors')
-                    .delete()
-                    .eq('id', id);
-                if (error) throw error;
+                const res = await fetch(`/api/admin/motors?id=eq.${id}`, {
+                    method: 'DELETE'
+                });
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.error || `HTTP ${res.status}`);
+                }
 
                 logUserActivity(session.email, session.role, 'Motor Record Deleted', `Permanently deleted specifications for motor: ${motor.motor}`);
                 
@@ -1074,11 +1066,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const confirm = await customConfirm("Bulk Delete Records?", `Are you sure you want to permanently delete specifications for the ${ids.length} selected motors? This action cannot be undone.`);
         if (confirm) {
             try {
-                const { error } = await supabase
-                    .from('motors')
-                    .delete()
-                    .in('id', ids);
-                if (error) throw error;
+                const res = await fetch(`/api/admin/motors?id=in.(${ids.join(',')})`, {
+                    method: 'DELETE'
+                });
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.error || `HTTP ${res.status}`);
+                }
 
                 logUserActivity(session.email, session.role, 'Bulk Motor Records Deleted', `Bulk deleted ${ids.length} motors records from explorer.`);
                 

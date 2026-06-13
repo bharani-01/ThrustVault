@@ -95,9 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (session) {
             logUserActivity(session.email, session.role, action, details);
         }
-        if (supabase) {
-            supabase.auth.signOut().catch(e => console.error("SignOut error:", e));
-        }
+        fetch('/api/auth/logout', { method: 'POST' }).catch(e => console.error("Logout error:", e));
         localStorage.removeItem('thrustvault_session');
         const secureFlag = window.location.protocol === 'https:' ? '; Secure' : '';
         document.cookie = `thrustvault_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict${secureFlag}`;
@@ -149,24 +147,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
     async function fetchSidebarCounts() {
         try {
-            if (!supabase) {
-                const res = await fetch('/api/config');
-                const config = await res.json();
-                supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-            }
-            const [motorsRes, catsRes, requestsRes] = await Promise.all([
-                supabase.from('motors').select('id, category_id'),
-                supabase.from('categories').select('*').order('name'),
-                supabase.from('access_requests').select('*').order('created_at', { ascending: false })
+            const [motorsData, catsData, requestsData] = await Promise.all([
+                fetch('/api/guest/motors').then(r => r.json()),
+                fetch('/api/guest/categories').then(r => r.json()),
+                fetch('/api/admin/access-requests').then(r => r.json())
             ]);
 
-            if (motorsRes.error) throw motorsRes.error;
-            if (catsRes.error) throw catsRes.error;
-            if (requestsRes.error) throw requestsRes.error;
-
-            state.motors = motorsRes.data || [];
-            state.categories = catsRes.data || [];
-            state.accessRequests = requestsRes.data || [];
+            state.motors = motorsData || [];
+            state.categories = catsData || [];
+            state.accessRequests = requestsData || [];
 
             if (elements.totalMotors) elements.totalMotors.textContent = state.motors.length;
             if (elements.totalCats) elements.totalCats.textContent = state.categories.length;
@@ -218,11 +207,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const { error } = await supabase
-                            .from('categories')
-                            .delete()
-                            .eq('id', cat.id);
-                        if (error) throw error;
+                        const res = await fetch(`/api/intern/categories/${cat.id}`, {
+                            method: 'DELETE'
+                        });
+                        if (!res.ok) {
+                            const errData = await res.json();
+                            throw new Error(errData.error || `HTTP ${res.status}`);
+                        }
                         logUserActivity(session.email, session.role, 'Category Deleted', `Deleted category: ${cat.name}`);
                         await fetchSidebarCounts();
                     } catch (err) {
@@ -249,12 +240,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
     async function fetchCustomSchema() {
         try {
-            const { data: schema, error } = await supabase
-                .from('custom_specs_schema')
-                .select('*')
-                .order('field_name');
-            
-            if (error) throw error;
+            const res = await fetch('/api/guest/custom-specs');
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || `HTTP ${res.status}`);
+            }
+            const schema = await res.json();
             state.customSchema = schema || [];
             localStorage.setItem('thrustvault_custom_specs', JSON.stringify(state.customSchema));
             
@@ -294,7 +285,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     );
                     if (confirmDelete) {
                         try {
-                            await supabase.from('custom_specs_schema').delete().eq('field_key', f.field_key);
+                            const res = await fetch(`/api/admin/schema/${f.field_key}`, {
+                                method: 'DELETE'
+                            });
+                            if (!res.ok) {
+                                const errData = await res.json();
+                                throw new Error(errData.error || `HTTP ${res.status}`);
+                            }
                         } catch (err) {
                             console.warn("Supabase delete failed, using localStorage fallback:", err);
                         }
@@ -330,8 +327,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const newField = { field_key: key, field_name: label, field_type: type, field_unit: unit };
         
         try {
-            const { error } = await supabase.from('custom_specs_schema').insert([newField]);
-            if (error) throw error;
+            const res = await fetch('/api/admin/schema', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newField)
+            });
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || `HTTP ${res.status}`);
+            }
         } catch (err) {
             console.warn("Supabase insert failed, using localStorage fallback:", err);
         }
@@ -351,18 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
     async function init() {
         try {
-            const res = await fetch('/api/config');
-            const config = await res.json();
-            supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-            
-            const { data: { session: sbSession }, error: sessionError } = await supabase.auth.getSession();
-            if (sessionError || !sbSession) {
-                console.warn("No active Supabase session found.");
-                await logoutAndRedirect();
-                return;
-            }
-
-            const userEmail = sbSession.user.email;
+            const userEmail = session.email;
             const avatarInit = document.getElementById('user-avatar-initials');
             if (avatarInit && userEmail) {
                 avatarInit.textContent = userEmail.charAt(0).toUpperCase();

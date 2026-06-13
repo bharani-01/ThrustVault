@@ -267,17 +267,11 @@
                                         } catch(err) {}
                                     }
                                     localStorage.removeItem('thrustvault_session');
-                                    document.cookie = "thrustvault_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Strict";
                                     
-                                    if (window.supabase) {
-                                        try {
-                                            window.supabase.auth.signOut().finally(() => {
-                                                window.location.href = 'login';
-                                            });
-                                            return;
-                                        } catch(err) {}
-                                    }
-                                    window.location.href = 'login';
+                                    fetch('/api/auth/logout', { method: 'POST' })
+                                        .finally(() => {
+                                            window.location.href = 'login';
+                                        });
                                 }
                             };
                         } else {
@@ -336,6 +330,36 @@
                 })
                 .catch(err => {
                     console.error("Sidebar loading error:", err);
+                });
+        }
+
+        // 2b. Background session validation check
+        const path = window.location.pathname;
+        const isProtectedRoute = path.includes('/admin/') || path.includes('/intern/') || path.includes('/guest/') ||
+                                 path.includes('dashboard') || path.includes('analytics') || path.includes('explorer') ||
+                                 path.includes('users') || path.includes('requests') || path.includes('schema') ||
+                                 path.includes('exports') || path.includes('imports') || path.includes('audit');
+        
+        if (isProtectedRoute) {
+            fetch('/api/auth/session')
+                .then(res => res.json())
+                .then(sessionRes => {
+                    if (!sessionRes.logged_in) {
+                        localStorage.removeItem('thrustvault_session');
+                        window.location.href = '/login';
+                    } else {
+                        // Sync localStorage with session metadata safely (no token stored)
+                        const sessionData = {
+                            email: sessionRes.email,
+                            role: sessionRes.role,
+                            uid: sessionRes.uid,
+                            timestamp: Date.now()
+                        };
+                        localStorage.setItem('thrustvault_session', JSON.stringify(sessionData));
+                    }
+                })
+                .catch(err => {
+                    console.error("Session verification error:", err);
                 });
         }
     });

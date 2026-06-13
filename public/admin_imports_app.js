@@ -27,8 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         customSchema: [],
         parsedRows: [], // raw array of objects or arrays parsed from file
         fileHeaders: [], // list of keys/headers in parsed file
-        mappings: {}, // maps target schema field -> file header index/key
-        supabase: null
+        mappings: {} // maps target schema field -> file header index/key
     };
 
     // DOM Elements
@@ -165,24 +164,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Database config connection
     async function init() {
         try {
-            const res = await fetch('/api/config');
-            const config = await res.json();
-            state.supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-
             // Fetch dynamic categories, custom schema fields, and all current motor models
             const [catsRes, schemaRes, motorsRes] = await Promise.all([
-                state.supabase.from('categories').select('*').order('name'),
-                state.supabase.from('custom_specs_schema').select('*').order('field_name'),
-                state.supabase.from('motors').select('*')
+                fetch('/api/guest/categories?order=name'),
+                fetch('/api/guest/custom-specs?order=field_name'),
+                fetch('/api/guest/motors')
             ]);
 
-            if (catsRes.error) throw catsRes.error;
-            if (schemaRes.error) throw schemaRes.error;
-            if (motorsRes.error) throw motorsRes.error;
+            if (!catsRes.ok) throw new Error(`Categories load failed: ${catsRes.statusText}`);
+            if (!schemaRes.ok) throw new Error(`Schema load failed: ${schemaRes.statusText}`);
+            if (!motorsRes.ok) throw new Error(`Motors load failed: ${motorsRes.statusText}`);
 
-            state.categories = catsRes.data || [];
-            state.customSchema = schemaRes.data || [];
-            state.motors = motorsRes.data || [];
+            state.categories = await catsRes.json() || [];
+            state.customSchema = await schemaRes.json() || [];
+            state.motors = await motorsRes.json() || [];
 
             renderCategoriesSelect();
         } catch (err) {
@@ -888,12 +883,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 for (const catName of newCatNames) {
                     progressModal.update(25, `Creating category: ${catName}...`, 1);
                     
-                    const { data, error } = await state.supabase
-                        .from('categories')
-                        .insert([{ name: catName, description: 'Created dynamically during bulk import.' }])
-                        .select();
-
-                    if (error) throw error;
+                    const res = await fetch('/api/intern/categories', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify([{ name: catName, description: 'Created dynamically during bulk import.' }])
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
                     if (!data || data.length === 0) throw new Error(`Failed to create category: ${catName}`);
                     
                     const newId = data[0].id;
@@ -963,11 +959,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 progressModal.update(progressPercent, `Saving new motors (${completed + 1} of ${totalOperations})...`, 2);
 
-                const { error } = await state.supabase
-                    .from('motors')
-                    .insert(chunk);
-
-                if (error) throw error;
+                const res = await fetch('/api/intern/motors', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(chunk)
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
                 completed += chunk.length;
             }
 
@@ -978,12 +976,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 progressModal.update(progressPercent, `Updating duplicates (${completed + 1} of ${totalOperations}): ${item.data.motor_name}...`, 2);
 
-                const { error } = await state.supabase
-                    .from('motors')
-                    .update(item.data)
-                    .eq('id', item.id);
-
-                if (error) throw error;
+                const res = await fetch(`/api/intern/motors/${item.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item.data)
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
                 completed++;
             }
 

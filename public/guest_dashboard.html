@@ -15,7 +15,6 @@
     <!-- Chart.js -->
     <script src="libs/chart.umd.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/chart.js';"></script>
     <!-- Supabase JS Client -->
-    <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
     <!-- SheetJS Library -->
     <script src="libs/xlsx.full.min.js"></script>
     <!-- Main Stylesheet -->
@@ -466,12 +465,48 @@
                     <!-- Chart Visualizations -->
                     <div class="telemetry-charts-grid">
                         <div class="profile-chart-container">
-                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Thrust & Efficiency vs Throttle</h5>
-                            <canvas id="profileThrustEffChart"></canvas>
+                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Throttle vs Time</h5>
+                            <canvas id="profileChartThrottleTime"></canvas>
                         </div>
                         <div class="profile-chart-container">
-                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Current & RPM vs Throttle</h5>
-                            <canvas id="profileCurrentRpmChart"></canvas>
+                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Rotation Speed vs Time</h5>
+                            <canvas id="profileChartRpmTime"></canvas>
+                        </div>
+                        <div class="profile-chart-container">
+                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Thrust vs Rotation Speed</h5>
+                            <canvas id="profileChartThrustRpm"></canvas>
+                        </div>
+                        <div class="profile-chart-container">
+                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Torque vs Rotation Speed</h5>
+                            <canvas id="profileChartTorqueRpm"></canvas>
+                        </div>
+                        <div class="profile-chart-container">
+                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Voltage vs Rotation Speed</h5>
+                            <canvas id="profileChartVoltageRpm"></canvas>
+                        </div>
+                        <div class="profile-chart-container">
+                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Current vs Rotation Speed</h5>
+                            <canvas id="profileChartCurrentRpm"></canvas>
+                        </div>
+                        <div class="profile-chart-container">
+                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Electrical Power vs Rotation Speed</h5>
+                            <canvas id="profileChartElecPowerRpm"></canvas>
+                        </div>
+                        <div class="profile-chart-container">
+                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Mechanical Power vs Rotation Speed</h5>
+                            <canvas id="profileChartMechPowerRpm"></canvas>
+                        </div>
+                        <div class="profile-chart-container">
+                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Motor & ESC Efficiency</h5>
+                            <canvas id="profileChartMotorEffRpm"></canvas>
+                        </div>
+                        <div class="profile-chart-container">
+                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Propeller Efficiency</h5>
+                            <canvas id="profileChartPropEffRpm"></canvas>
+                        </div>
+                        <div class="profile-chart-container">
+                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Propulsion System Efficiency</h5>
+                            <canvas id="profileChartSystemEffRpm"></canvas>
                         </div>
                     </div>
 

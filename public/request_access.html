@@ -12,8 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
-    <!-- Supabase JS Client -->
-    <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
+
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="style.css?v=1.4">
     <style>
@@ -169,22 +168,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             if (window.lucide) window.lucide.createIcons();
 
-            let supabase = null;
-
-            async function initSupabase() {
-                try {
-                    const res = await fetch('/api/config');
-                    const config = await res.json();
-                    if (config.SUPABASE_URL && config.SUPABASE_ANON_KEY) {
-                        supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-                    } else {
-                        console.error("Supabase credentials missing from server config");
-                    }
-                } catch (e) {
-                    console.error("Error loading Supabase config:", e);
-                }
-            }
-
             const requestForm = document.getElementById('request-access-form');
             if (requestForm) {
                 requestForm.onsubmit = async (e) => {
@@ -195,63 +178,26 @@
                     const requestedRole = document.getElementById('request-role').value;
                     const justification = document.getElementById('request-justification').value.trim();
 
-                    if (!supabase) {
-                        alert("Database is initializing. Please try again in a moment.");
-                        return;
-                    }
-
                     const submitBtn = requestForm.querySelector('button[type="submit"]');
                     submitBtn.disabled = true;
                     submitBtn.classList.add('loading');
                     submitBtn.innerHTML = '<div class="spinner-dual"></div> Submitting Request...';
 
                     try {
-                        // 1. Check if user already exists in user_profiles
-                        const { data: existingProfile, error: profileErr } = await supabase
-                            .from('user_profiles')
-                            .select('id')
-                            .eq('email', email)
-                            .maybeSingle();
+                        const res = await fetch('/api/public/request-access', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                fullName,
+                                email,
+                                requestedRole,
+                                justification
+                            })
+                        });
 
-                        if (existingProfile) {
-                            alert("An active account already exists with this email address. Please sign in or use the forgot password flow.");
-                            submitBtn.disabled = false;
-                            submitBtn.classList.remove('loading');
-                            submitBtn.innerHTML = 'Submit Request <i data-lucide="send" style="width: 16px; height: 16px;"></i>';
-                            if (window.lucide) window.lucide.createIcons();
-                            return;
-                        }
-
-                        // 2. Check if a request is already pending
-                        const { data: existingRequest, error: requestErr } = await supabase
-                            .from('access_requests')
-                            .select('status')
-                            .eq('email', email)
-                            .eq('status', 'pending')
-                            .maybeSingle();
-
-                        if (existingRequest) {
-                            alert("An access request is already pending for this email address. Our administrators will review it shortly.");
-                            submitBtn.disabled = false;
-                            submitBtn.classList.remove('loading');
-                            submitBtn.innerHTML = 'Submit Request <i data-lucide="send" style="width: 16px; height: 16px;"></i>';
-                            if (window.lucide) window.lucide.createIcons();
-                            return;
-                        }
-
-                        // 3. Insert new request (Anonymous insert is permitted by RLS)
-                        const { error: insertErr } = await supabase
-                            .from('access_requests')
-                            .insert([{
-                                full_name: fullName,
-                                email: email,
-                                requested_role: requestedRole,
-                                justification: justification,
-                                status: 'pending'
-                            }]);
-
-                        if (insertErr) {
-                            throw insertErr;
+                        if (!res.ok) {
+                            const data = await res.json();
+                            throw new Error(data.error || `HTTP ${res.status}`);
                         }
 
                         // 4. Send email notification via backend Resend endpoint
@@ -287,8 +233,6 @@
                     }
                 };
             }
-
-            initSupabase();
         });
     </script>
 </body>

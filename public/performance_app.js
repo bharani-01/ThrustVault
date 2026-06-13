@@ -108,43 +108,43 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sidebarMenu) {
         if (session.role === 'admin') {
             sidebarMenu.innerHTML = `
-                <a href="admin_dashboard" class="btn-sidebar-link" id="btn-show-catalog" title="Catalog View">
+                <a href="/admin/dashboard" class="btn-sidebar-link" id="btn-show-catalog" title="Catalog View">
                     <i data-lucide="database"></i> Catalog Dashboard
                 </a>
-                <a href="admin_users" class="btn-sidebar-link" id="btn-show-users" title="User Management">
+                <a href="/admin/users" class="btn-sidebar-link" id="btn-show-users" title="User Management">
                     <i data-lucide="users"></i> User Management
                 </a>
-                <a href="admin_access_requests" class="btn-sidebar-link" id="btn-show-requests" title="Access Requests">
+                <a href="/admin/access-requests" class="btn-sidebar-link" id="btn-show-requests" title="Access Requests">
                     <i data-lucide="user-check"></i> Access Requests <span id="requests-pending-badge" class="count-badge" style="background:#e11d48; color:#fff; display:none; margin-left: auto;">0</span>
                 </a>
-                <a href="admin_schema_customizer" class="btn-sidebar-link" id="btn-show-schema" title="Template & Schema Customizer">
+                <a href="/admin/schema-customizer" class="btn-sidebar-link" id="btn-show-schema" title="Template & Schema Customizer">
                     <i data-lucide="settings"></i> Schema Customizer
                 </a>
-                <a href="performance_analytics" class="btn-sidebar-link active" id="btn-show-performance" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
+                <a href="/admin/analytics" class="btn-sidebar-link active" id="btn-show-performance" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
                     <i data-lucide="trending-up"></i> Performance Analytics
                 </a>
-                <a href="admin_exports" class="btn-sidebar-link" id="btn-show-exports" title="Data Exporter" style="text-decoration: none; box-sizing: border-box;">
+                <a href="/admin/exports" class="btn-sidebar-link" id="btn-show-exports" title="Data Exporter" style="text-decoration: none; box-sizing: border-box;">
                     <i data-lucide="download"></i> Data Exporter
                 </a>
-                <a href="admin_audit_logs" class="btn-sidebar-link" id="btn-show-audit" title="Audit Logs" style="text-decoration: none; box-sizing: border-box;">
+                <a href="/admin/audit-logs" class="btn-sidebar-link" id="btn-show-audit" title="Audit Logs" style="text-decoration: none; box-sizing: border-box;">
                     <i data-lucide="shield-alert"></i> Audit Logs
                 </a>
             `;
         } else if (session.role === 'intern') {
             sidebarMenu.innerHTML = `
-                <a href="intern_dashboard" class="btn-sidebar-link" title="Catalog View" style="text-decoration: none; box-sizing: border-box;">
+                <a href="/intern/dashboard" class="btn-sidebar-link" title="Catalog View" style="text-decoration: none; box-sizing: border-box;">
                     <i data-lucide="database"></i> Catalog Dashboard
                 </a>
-                <a href="performance_analytics" class="btn-sidebar-link active" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
+                <a href="/intern/analytics" class="btn-sidebar-link active" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
                     <i data-lucide="trending-up"></i> Performance Analytics
                 </a>
             `;
         } else { // guest
             sidebarMenu.innerHTML = `
-                <a href="guest_dashboard" class="btn-sidebar-link" title="Catalog View" style="text-decoration: none; box-sizing: border-box;">
+                <a href="/guest/dashboard" class="btn-sidebar-link" title="Catalog View" style="text-decoration: none; box-sizing: border-box;">
                     <i data-lucide="database"></i> Catalog Dashboard
                 </a>
-                <a href="performance_analytics" class="btn-sidebar-link active" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
+                <a href="/guest/analytics" class="btn-sidebar-link active" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
                     <i data-lucide="trending-up"></i> Performance Analytics
                 </a>
             `;
@@ -1282,21 +1282,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 try {
                     if (!motorId) {
-                        let draftQuery = supabase.from('draft_test_runs').select('id, data_points');
-                        draftQuery = draftQuery.eq('motor_model', run.motorModel);
-                        draftQuery = draftQuery.eq('propeller_model', propellerModel);
-                        if (run.metadata.esc_model) {
-                            draftQuery = draftQuery.eq('esc_model', run.metadata.esc_model);
-                        } else {
-                            draftQuery = draftQuery.is('esc_model', null);
-                        }
-                        if (run.metadata.battery_info) {
-                            draftQuery = draftQuery.eq('battery_info', run.metadata.battery_info);
-                        } else {
-                            draftQuery = draftQuery.is('battery_info', null);
-                        }
-                        
-                        const { data: existingDrafts } = await draftQuery;
+                        let url = `/api/guest/draft-test-runs?motor_model=eq.${encodeURIComponent(run.motorModel)}&propeller_model=eq.${encodeURIComponent(propellerModel)}`;
+                        url += run.metadata.esc_model ? `&esc_model=eq.${encodeURIComponent(run.metadata.esc_model)}` : '&esc_model=is.null';
+                        url += run.metadata.battery_info ? `&battery_info=eq.${encodeURIComponent(run.metadata.battery_info)}` : '&battery_info=is.null';
+                        const draftRes = await fetch(url);
+                        if (!draftRes.ok) throw new Error("Failed to query draft test runs");
+                        const existingDrafts = await draftRes.json();
                         if (existingDrafts && existingDrafts.length > 0 && testVoltageVal !== null) {
                             isDuplicate = existingDrafts.some(d => {
                                 const pts = d.data_points || [];
@@ -1304,29 +1295,18 @@ document.addEventListener('DOMContentLoaded', () => {
                             });
                         }
                     } else {
-                        let runQuery = supabase.from('motor_test_runs').select('id');
-                        runQuery = runQuery.eq('motor_id', motorId);
-                        runQuery = runQuery.eq('propeller_model', propellerModel);
-                        if (run.metadata.esc_model) {
-                            runQuery = runQuery.eq('esc_model', run.metadata.esc_model);
-                        } else {
-                            runQuery = runQuery.is('esc_model', null);
-                        }
-                        if (run.metadata.battery_info) {
-                            runQuery = runQuery.eq('battery_info', run.metadata.battery_info);
-                        } else {
-                            runQuery = runQuery.is('battery_info', null);
-                        }
-                        
-                        const { data: existingRuns } = await runQuery;
+                        let url = `/api/guest/motor-test-runs?motor_id=eq.${motorId}&propeller_model=eq.${encodeURIComponent(propellerModel)}`;
+                        url += run.metadata.esc_model ? `&esc_model=eq.${encodeURIComponent(run.metadata.esc_model)}` : '&esc_model=is.null';
+                        url += run.metadata.battery_info ? `&battery_info=eq.${encodeURIComponent(run.metadata.battery_info)}` : '&battery_info=is.null';
+                        const runsRes = await fetch(url);
+                        if (!runsRes.ok) throw new Error("Failed to query motor test runs");
+                        const existingRuns = await runsRes.json();
                         if (existingRuns && existingRuns.length > 0 && testVoltageVal !== null) {
                             const runIds = existingRuns.map(r => r.id);
-                            const { data: existingPoints } = await supabase
-                                .from('motor_test_data_points')
-                                .select('test_run_id, voltage')
-                                .in('test_run_id', runIds)
-                                .eq('voltage', testVoltageVal)
-                                .limit(1);
+                            const runIdsParam = runIds.join(',');
+                            const ptsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=in.(${runIdsParam})&voltage=eq.${testVoltageVal}&limit=1`);
+                            if (!ptsRes.ok) throw new Error("Failed to query data points");
+                            const existingPoints = await ptsRes.json();
                             if (existingPoints && existingPoints.length > 0) {
                                 isDuplicate = true;
                             }
@@ -1343,9 +1323,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (!motorId) {
                     try {
-                        const { error: draftError } = await supabase
-                            .from('draft_test_runs')
-                            .insert([{
+                        const draftRes = await fetch('/api/intern/draft-test-runs', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
                                 motor_model: run.motorModel,
                                 propeller_model: run.propellerModel,
                                 esc_model: run.metadata.esc_model || null,
@@ -1362,9 +1343,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                     temperature: pt.temperature,
                                     extra_data: pt.extra_data
                                 }))
-                            }]);
-
-                        if (draftError) throw draftError;
+                            })
+                        });
+                        if (!draftRes.ok) throw new Error("Failed to insert draft");
                         savedCount++;
                     } catch (err) {
                         console.error("Failed to import draft:", run.motorModel, err);
@@ -1374,20 +1355,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     try {
                         // 1. Insert into motor_test_runs
-                        const { data: runData, error: runError } = await supabase
-                            .from('motor_test_runs')
-                            .insert([{
+                        const runRes = await fetch('/api/intern/motor-test-runs', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
                                 motor_id: motorId,
                                 propeller_model: propellerModel,
                                 esc_model: run.metadata.esc_model || null,
                                 battery_info: run.metadata.battery_info || null,
                                 test_conducted_by: run.metadata.test_conducted_by || null
-                            }])
-                            .select()
-                            .single();
-
-                        if (runError) throw runError;
-                        const runId = runData.id;
+                            })
+                        });
+                        if (!runRes.ok) throw new Error("Failed to save test run");
+                        const runData = await runRes.json();
+                        const runId = runData[0].id;
 
                         // 2. Insert all data points
                         const pointsPayload = run.rows.map(pt => ({
@@ -1403,11 +1384,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             extra_data: pt.extra_data
                         }));
 
-                        const { error: pointsError } = await supabase
-                            .from('motor_test_data_points')
-                            .insert(pointsPayload);
-
-                        if (pointsError) throw pointsError;
+                        const ptsRes = await fetch('/api/intern/motor-test-data-points', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(pointsPayload)
+                        });
+                        if (!ptsRes.ok) throw new Error("Failed to save data points");
                         savedCount++;
                     } catch (err) {
                         console.error("Failed to import run:", run.motorModel, err);
@@ -1486,15 +1468,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const cleanPropeller = run.propeller_model.replace(/^\[DRAFT:.*?\]\s*/, '');
-                const { error } = await supabase
-                    .from('motor_test_runs')
-                    .update({
+                const res = await fetch(`/api/intern/motor-test-runs?id=eq.${run.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
                         motor_id: selectedMotorId,
                         propeller_model: cleanPropeller
                     })
-                    .eq('id', run.id);
-
-                if (error) throw error;
+                });
+                if (!res.ok) throw new Error("Failed to finalize run");
 
                 alert("Successfully finalized draft run!");
                 closeModal(modal);
@@ -1744,24 +1726,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             if (isDraft) {
-                let draftQuery = supabase.from('draft_test_runs').select('id, data_points');
-                draftQuery = draftQuery.eq('motor_model', draftMotorName);
-                draftQuery = draftQuery.eq('propeller_model', propeller);
-                if (esc) {
-                    draftQuery = draftQuery.eq('esc_model', esc);
-                } else {
-                    draftQuery = draftQuery.is('esc_model', null);
-                }
-                if (battery) {
-                    draftQuery = draftQuery.eq('battery_info', battery);
-                } else {
-                    draftQuery = draftQuery.is('battery_info', null);
-                }
+                let url = `/api/guest/draft-test-runs?motor_model=eq.${encodeURIComponent(draftMotorName)}&propeller_model=eq.${encodeURIComponent(propeller)}`;
+                url += esc ? `&esc_model=eq.${encodeURIComponent(esc)}` : '&esc_model=is.null';
+                url += battery ? `&battery_info=eq.${encodeURIComponent(battery)}` : '&battery_info=is.null';
                 if (runIdForCheck) {
-                    draftQuery = draftQuery.ne('id', runIdForCheck);
+                    url += `&id=ne.${runIdForCheck}`;
                 }
-                
-                const { data: existingDrafts } = await draftQuery;
+                const draftRes = await fetch(url);
+                if (!draftRes.ok) throw new Error("Failed to query draft test runs");
+                const existingDrafts = await draftRes.json();
                 if (existingDrafts && existingDrafts.length > 0 && testVoltage !== null) {
                     isDuplicate = existingDrafts.some(d => {
                         const pts = d.data_points || [];
@@ -1769,40 +1742,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
             } else {
-                let runQuery = supabase.from('motor_test_runs').select('id');
-                runQuery = runQuery.eq('motor_id', motorId);
-                runQuery = runQuery.eq('propeller_model', propeller);
-                if (esc) {
-                    runQuery = runQuery.eq('esc_model', esc);
-                } else {
-                    runQuery = runQuery.is('esc_model', null);
-                }
-                if (battery) {
-                    runQuery = runQuery.eq('battery_info', battery);
-                } else {
-                    runQuery = runQuery.is('battery_info', null);
-                }
+                let url = `/api/guest/motor-test-runs?motor_id=eq.${motorId}&propeller_model=eq.${encodeURIComponent(propeller)}`;
+                url += esc ? `&esc_model=eq.${encodeURIComponent(esc)}` : '&esc_model=is.null';
+                url += battery ? `&battery_info=eq.${encodeURIComponent(battery)}` : '&battery_info=is.null';
                 if (runIdForCheck) {
-                    // If we're updating a run, exclude it unless it is a draft run being finalized
-                    const { data: draftCheck } = await supabase
-                        .from('draft_test_runs')
-                        .select('id')
-                        .eq('id', runIdForCheck)
-                        .maybeSingle();
-                    if (!draftCheck) {
-                        runQuery = runQuery.ne('id', runIdForCheck);
+                    const draftCheckRes = await fetch(`/api/guest/draft-test-runs?id=eq.${runIdForCheck}`);
+                    const draftCheck = draftCheckRes.ok ? await draftCheckRes.json() : [];
+                    if (draftCheck.length === 0) {
+                        url += `&id=ne.${runIdForCheck}`;
                     }
                 }
-                
-                const { data: existingRuns } = await runQuery;
+                const runsRes = await fetch(url);
+                if (!runsRes.ok) throw new Error("Failed to query motor test runs");
+                const existingRuns = await runsRes.json();
                 if (existingRuns && existingRuns.length > 0 && testVoltage !== null) {
                     const runIds = existingRuns.map(r => r.id);
-                    const { data: existingPoints } = await supabase
-                        .from('motor_test_data_points')
-                        .select('test_run_id, voltage')
-                        .in('test_run_id', runIds)
-                        .eq('voltage', testVoltage)
-                        .limit(1);
+                    const runIdsParam = runIds.join(',');
+                    const ptsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=in.(${runIdsParam})&voltage=eq.${testVoltage}&limit=1`);
+                    if (!ptsRes.ok) throw new Error("Failed to query data points");
+                    const existingPoints = await ptsRes.json();
                     if (existingPoints && existingPoints.length > 0) {
                         isDuplicate = true;
                     }
@@ -1829,9 +1787,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isDraft) {
                 if (runId) {
                     // Update existing draft in draft_test_runs
-                    const { error } = await supabase
-                        .from('draft_test_runs')
-                        .update({
+                    const res = await fetch(`/api/intern/draft-test-runs?id=eq.${runId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
                             motor_model: draftMotorName,
                             propeller_model: propeller,
                             esc_model: esc,
@@ -1839,62 +1798,55 @@ document.addEventListener('DOMContentLoaded', () => {
                             test_conducted_by: tester,
                             data_points: stepsData
                         })
-                        .eq('id', runId);
-
-                    if (error) throw error;
+                    });
+                    if (!res.ok) throw new Error("Failed to update draft");
                 } else {
                     // Insert new draft in draft_test_runs
-                    const { error } = await supabase
-                        .from('draft_test_runs')
-                        .insert([{
+                    const res = await fetch('/api/intern/draft-test-runs', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
                             motor_model: draftMotorName,
                             propeller_model: propeller,
                             esc_model: esc,
                             battery_info: battery,
                             test_conducted_by: tester,
                             data_points: stepsData
-                        }]);
-
-                    if (error) throw error;
+                        })
+                    });
+                    if (!res.ok) throw new Error("Failed to create draft");
                 }
             } else {
                 let wasEditingDraft = false;
 
                 if (runId) {
-                    // Check if the run was loaded from draft_test_runs
-                    const { data: draftCheck } = await supabase
-                        .from('draft_test_runs')
-                        .select('id')
-                        .eq('id', runId)
-                        .maybeSingle();
-
-                    if (draftCheck) {
+                    const draftCheckRes = await fetch(`/api/guest/draft-test-runs?id=eq.${runId}`);
+                    const draftCheck = draftCheckRes.ok ? await draftCheckRes.json() : [];
+                    if (draftCheck && draftCheck.length > 0) {
                         wasEditingDraft = true;
                     }
                 }
 
                 if (runId && !wasEditingDraft) {
                     // Update existing finalized run in motor_test_runs
-                    const { error: runError } = await supabase
-                        .from('motor_test_runs')
-                        .update({
+                    const runRes = await fetch(`/api/intern/motor-test-runs?id=eq.${runId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
                             motor_id: motorId,
                             propeller_model: propeller,
                             esc_model: esc,
                             battery_info: battery,
                             test_conducted_by: tester
                         })
-                        .eq('id', runId);
-
-                    if (runError) throw runError;
+                    });
+                    if (!runRes.ok) throw new Error("Failed to update test run");
 
                     // Delete existing points
-                    const { error: deleteError } = await supabase
-                        .from('motor_test_data_points')
-                        .delete()
-                        .eq('test_run_id', runId);
-
-                    if (deleteError) throw deleteError;
+                    const delRes = await fetch(`/api/intern/motor-test-data-points?test_run_id=eq.${runId}`, {
+                        method: 'DELETE'
+                    });
+                    if (!delRes.ok) throw new Error("Failed to clear old data points");
 
                     // Insert new points
                     const pointsPayload = stepsData.map(pt => ({
@@ -1902,28 +1854,29 @@ document.addEventListener('DOMContentLoaded', () => {
                         ...pt
                     }));
 
-                    const { error: pointsError } = await supabase
-                        .from('motor_test_data_points')
-                        .insert(pointsPayload);
-
-                    if (pointsError) throw pointsError;
+                    const ptsRes = await fetch('/api/intern/motor-test-data-points', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(pointsPayload)
+                    });
+                    if (!ptsRes.ok) throw new Error("Failed to save data points");
                     finalizedRunId = runId;
                 } else {
                     // Insert brand new finalized run in motor_test_runs
-                    const { data: runData, error: runError } = await supabase
-                        .from('motor_test_runs')
-                        .insert([{
+                    const runRes = await fetch('/api/intern/motor-test-runs', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
                             motor_id: motorId,
                             propeller_model: propeller,
                             esc_model: esc,
                             battery_info: battery,
                             test_conducted_by: tester
-                        }])
-                        .select()
-                        .single();
-
-                    if (runError) throw runError;
-                    finalizedRunId = runData.id;
+                        })
+                    });
+                    if (!runRes.ok) throw new Error("Failed to create test run");
+                    const runData = await runRes.json();
+                    finalizedRunId = runData[0].id;
 
                     // Insert data points
                     const pointsPayload = stepsData.map(pt => ({
@@ -1931,19 +1884,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         ...pt
                     }));
 
-                    const { error: pointsError } = await supabase
-                        .from('motor_test_data_points')
-                        .insert(pointsPayload);
-
-                    if (pointsError) throw pointsError;
+                    const ptsRes = await fetch('/api/intern/motor-test-data-points', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(pointsPayload)
+                    });
+                    if (!ptsRes.ok) throw new Error("Failed to save data points");
 
                     // Clean up and delete draft row if finalizing
                     if (wasEditingDraft) {
-                        const { error: deleteDraftErr } = await supabase
-                            .from('draft_test_runs')
-                            .delete()
-                            .eq('id', runId);
-                        if (deleteDraftErr) console.error("Failed to delete finalized draft:", deleteDraftErr);
+                        const delDraftRes = await fetch(`/api/intern/draft-test-runs/${runId}`, {
+                            method: 'DELETE'
+                        });
+                        if (!delDraftRes.ok) console.error("Failed to delete finalized draft");
                     }
                 }
             }
@@ -2009,21 +1962,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch quick counts
     async function fetchStats() {
         try {
-            const { count: runsCount, error: runsError } = await supabase
-                .from('motor_test_runs')
-                .select('*', { count: 'exact', head: true });
-            if (runsError) throw runsError;
+            const runsRes = await fetch('/api/guest/motor-test-runs');
+            if (!runsRes.ok) throw new Error("Failed to fetch runs");
+            const runs = await runsRes.json();
+            const runsCount = runs ? runs.length : 0;
 
-            const { count: ptsCount, error: ptsError } = await supabase
-                .from('motor_test_data_points')
-                .select('*', { count: 'exact', head: true });
-            if (ptsError) throw ptsError;
+            const ptsRes = await fetch('/api/guest/motor-test-data-points');
+            if (!ptsRes.ok) throw new Error("Failed to fetch points");
+            const pts = await ptsRes.json();
+            const ptsCount = pts ? pts.length : 0;
 
-            // Count distinct motors with at least one test run
-            const { data: motorRunData } = await supabase
-                .from('motor_test_runs')
-                .select('motor_id');
-            const activeMotors = motorRunData ? new Set(motorRunData.map(r => r.motor_id).filter(Boolean)).size : 0;
+            const activeMotors = runs ? new Set(runs.map(r => r.motor_id).filter(Boolean)).size : 0;
 
             const runsEl = document.getElementById('total-test-runs-count');
             const ptsEl = document.getElementById('total-data-points-count');
@@ -2218,12 +2167,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadSavedDraftsList() {
         try {
-            const { data: drafts, error } = await supabase
-                .from('draft_test_runs')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
+            const res = await fetch('/api/guest/draft-test-runs?order=created_at.desc');
+            if (!res.ok) throw new Error("Failed to load drafts");
+            const drafts = await res.json();
 
             const listEl = document.getElementById('creator-drafts-list');
             const badgeEl = document.getElementById('drafts-count-badge');
@@ -2275,8 +2221,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const runId = btn.dataset.runId;
                     if (!confirm("Are you sure you want to delete this draft?")) return;
                     try {
-                        const { error } = await supabase.from('draft_test_runs').delete().eq('id', runId);
-                        if (error) throw error;
+                        const res = await fetch(`/api/intern/draft-test-runs/${runId}`, {
+                            method: 'DELETE'
+                        });
+                        if (!res.ok) throw new Error("Failed to delete draft");
                         alert("Deleted draft successfully!");
                         if (state.editingDraftRunId === runId) {
                             resetDraftEditingState();
@@ -2419,19 +2367,14 @@ document.addEventListener('DOMContentLoaded', () => {
     async function refreshVisualizerData() {
         try {
             // Fetch categories (with description)
-            const { data: categories, error: categoryError } = await supabase
-                .from('categories')
-                .select('id, name, description')
-                .order('name');
-            if (categoryError) throw categoryError;
+            const catRes = await fetch('/api/guest/categories?order=name');
+            if (!catRes.ok) throw new Error("Failed to fetch categories");
+            const categories = await catRes.json();
 
             // Fetch all motors
-            const { data: motors, error: motorError } = await supabase
-                .from('motors')
-                .select('id, motor_name, company, category_id, max_thrust')
-                .order('company')
-                .order('motor_name');
-            if (motorError) throw motorError;
+            const motorRes = await fetch('/api/guest/motors?order=company,motor_name');
+            if (!motorRes.ok) throw new Error("Failed to fetch motors");
+            const motors = await motorRes.json();
 
             state.categories = categories || [];
             state.allMotors  = motors || [];
@@ -2526,13 +2469,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load available runs for a specific motor
     async function loadMotorRuns(motorId) {
         try {
-            const { data: runs, error } = await supabase
-                .from('motor_test_runs')
-                .select('*')
-                .eq('motor_id', motorId)
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
+            const runsRes = await fetch(`/api/guest/motor-test-runs?motor_id=eq.${motorId}&order=created_at.desc`);
+            if (!runsRes.ok) throw new Error("Failed to load test runs");
+            const runs = await runsRes.json();
             state.testRuns = runs || [];
 
             if (state.testRuns.length === 0) {
@@ -2631,11 +2570,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         const confirmDelete = await customConfirm("Delete Test Run?", "Are you sure you want to delete this test run and all its recorded calibration data points?");
                         if (confirmDelete) {
                             try {
-                                const { error } = await supabase
-                                    .from('motor_test_runs')
-                                    .delete()
-                                    .eq('id', runId);
-                                if (error) throw error;
+                                const res = await fetch(`/api/intern/motor-test-runs?id=eq.${runId}`, {
+                                    method: 'DELETE'
+                                });
+                                if (!res.ok) throw new Error("Failed to delete test run");
                                 
                                 logUserActivity(session.email, session.role, 'Performance Dataset Deleted', `Deleted test run ${runId}`);
                                 
@@ -2670,13 +2608,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load data points table for selected run
     async function loadGridPoints(runId) {
         try {
-            const { data: pts, error } = await supabase
-                .from('motor_test_data_points')
-                .select('*')
-                .eq('test_run_id', runId)
-                .order('throttle', { ascending: true });
-            
-            if (error) throw error;
+            const ptsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=eq.${runId}&order=throttle.asc`);
+            if (!ptsRes.ok) throw new Error("Failed to load data points");
+            const pts = await ptsRes.json();
             
             if (!pts || pts.length === 0) {
                 elements.dataPointsGridRows.innerHTML = `
@@ -2732,13 +2666,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Fetch all data points for all runs of this motor
             const runIds = state.testRuns.map(r => r.id);
             
-            const { data: pts, error } = await supabase
-                .from('motor_test_data_points')
-                .select('*')
-                .in('test_run_id', runIds)
-                .order('throttle', { ascending: true });
-
-            if (error) throw error;
+            const runIdsParam = runIds.join(',');
+            const ptsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=in.(${runIdsParam})&order=throttle.asc`);
+            if (!ptsRes.ok) throw new Error("Failed to load data points");
+            const pts = await ptsRes.json();
 
             const datasets = [];
             const borderColors = ['#2563eb', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4'];
@@ -2897,24 +2828,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchSidebarCounts() {
         try {
-            if (!supabase) {
-                const res = await fetch('/api/config');
-                const config = await res.json();
-                supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-            }
-            const [motorsRes, catsRes, requestsRes] = await Promise.all([
-                supabase.from('motors').select('id, category_id, motor_name, company, max_thrust'),
-                supabase.from('categories').select('*').order('name'),
-                supabase.from('access_requests').select('*').order('created_at', { ascending: false })
+            const [motorsRes, catsRes] = await Promise.all([
+                fetch('/api/guest/motors'),
+                fetch('/api/guest/categories?order=name')
             ]);
 
-            if (motorsRes.error) throw motorsRes.error;
-            if (catsRes.error) throw catsRes.error;
-            if (requestsRes.error) throw requestsRes.error;
+            if (!motorsRes.ok) throw new Error("Failed to load motors");
+            if (!catsRes.ok) throw new Error("Failed to load categories");
 
-            state.allMotors = motorsRes.data || [];
-            state.categories = catsRes.data || [];
-            state.accessRequests = requestsRes.data || [];
+            state.allMotors = await motorsRes.json();
+            state.categories = await catsRes.json();
+            state.accessRequests = [];
+
+            if (session && session.role === 'admin') {
+                try {
+                    const reqsRes = await fetch('/api/admin/access-requests?order=created_at.desc');
+                    if (reqsRes.ok) {
+                        state.accessRequests = await reqsRes.json();
+                    }
+                } catch (e) {
+                    console.warn("Could not load access requests:", e);
+                }
+            }
 
             if (elements.totalMotors) elements.totalMotors.textContent = state.allMotors.length;
             if (elements.totalCats) elements.totalCats.textContent = state.categories.length;
@@ -2967,11 +2902,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const { error } = await supabase
-                            .from('categories')
-                            .delete()
-                            .eq('id', cat.id);
-                        if (error) throw error;
+                        const res = await fetch(`/api/intern/categories/${cat.id}`, {
+                            method: 'DELETE'
+                        });
+                        if (!res.ok) {
+                            const errData = await res.json();
+                            throw new Error(errData.error || `HTTP ${res.status}`);
+                        }
                         logUserActivity(session.email, session.role, 'Category Deleted', `Deleted category: ${cat.name}`);
                         await fetchSidebarCounts();
                         // also refresh local UI selects
@@ -3000,46 +2937,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Init App
     async function init() {
         try {
-            const res = await fetch('/api/config');
-            const config = await res.json();
-            
-            let sbSession = null;
-            let profile = null;
-
-            if (localStorage.getItem('bypass_auth') === 'true') {
-                const bypassKey = localStorage.getItem('bypass_service_role_key') || config.SUPABASE_ANON_KEY;
-                supabase = window.supabase.createClient(config.SUPABASE_URL, bypassKey);
-                sbSession = { user: { id: localStorage.getItem('bypass_uid') || 'a3fbdcab-d0ea-425b-8cdc-349a81868519', email: 'bypass@thrustvault.com' } };
-                profile = { role: localStorage.getItem('bypass_role') || 'admin' };
-            } else {
-                supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-                
-                // Check active session with Supabase
-                const { data: { session: sbSess }, error: sessionError } = await supabase.auth.getSession();
-                if (sessionError || !sbSess) {
-                    console.warn("No active Supabase session found.");
-                    logoutAndRedirect();
-                    return;
-                }
-                sbSession = sbSess;
-
-                // Verify role matches local storage
-                const { data: prof, error: profileError } = await supabase
-                    .from('user_profiles')
-                    .select('role')
-                    .eq('id', sbSession.user.id)
-                    .single();
-
-                if (profileError || !prof || prof.role !== session.role) {
-                    console.error("Session verification failed: invalid profile or role mismatch.");
-                    logoutAndRedirect();
-                    return;
-                }
-                profile = prof;
-            }
-
-            // No draft category/motor initialization needed
-
             // Load visualizer options and data creator rows
             await fetchSidebarCounts();
             await refreshVisualizerData();
@@ -3105,9 +3002,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function logoutAndRedirect(action = 'Logout', details = 'Logged out successfully.') {
         if (session) {
             logUserActivity(session.email, session.role, action, details);
-        }
-        if (supabase) {
-            supabase.auth.signOut().catch(e => console.error("SignOut error:", e));
         }
         localStorage.removeItem('thrustvault_session');
         // Clear cookie

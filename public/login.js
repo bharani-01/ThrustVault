@@ -25,20 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let forgotEmail = '';
     let forgotOtp = '';
 
-    // Initialize Supabase Client
+    // Initialize Supabase Client (Deprecated on frontend)
     async function init() {
-        try {
-            const res = await fetch('/api/config');
-            const config = await res.json();
-            if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) {
-                console.error("Supabase config is missing!");
-                alert("Database configuration not loaded. Ensure .env is set up.");
-                return;
-            }
-            supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-        } catch (e) {
-            console.error("Initialization failed", e);
-        }
+        // No client-side initialization needed.
     }
 
     function logUserActivity(email, role, action, details) {
@@ -173,11 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = emailInput.value.trim();
         const password = passwordInput.value;
 
-        if (!supabase) {
-            alert("Database connection is initializing. Please try again.");
-            return;
-        }
-
         const submitBtn = loginForm.querySelector('button[type="submit"]');
         submitBtn.disabled = true;
         submitBtn.classList.add('loading');
@@ -186,13 +170,15 @@ document.addEventListener('DOMContentLoaded', () => {
         passwordInput.disabled = true;
 
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: email,
-                password: password
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
             });
+            const data = await res.json();
 
-            if (error) {
-                alert("Login failed: " + error.message);
+            if (!res.ok || data.error) {
+                alert("Login failed: " + (data.error || "Unknown error"));
                 submitBtn.disabled = false;
                 submitBtn.classList.remove('loading');
                 submitBtn.innerHTML = 'Sign In <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>';
@@ -202,61 +188,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (data && data.user) {
-                const { data: profile, error: profileError } = await supabase
-                    .from('user_profiles')
-                    .select('role')
-                    .eq('id', data.user.id)
-                    .single();
+            const sessionData = {
+                email: data.email,
+                role: data.role,
+                uid: data.uid,
+                timestamp: data.timestamp
+            };
+            localStorage.setItem('thrustvault_session', JSON.stringify(sessionData));
+            
+            logUserActivity(data.email, data.role, 'Login', 'Logged in successfully.');
 
-                if (profileError || !profile) {
-                    alert("Authentication succeeded, but no profile role was found for this user.");
-                    await supabase.auth.signOut();
-                    submitBtn.disabled = false;
-                    submitBtn.classList.remove('loading');
-                    submitBtn.innerHTML = 'Sign In <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>';
-                    emailInput.disabled = false;
-                    passwordInput.disabled = false;
-                    if (window.lucide) window.lucide.createIcons();
-                    return;
-                }
-
-                const session = {
-                    email: data.user.email,
-                    role: profile.role,
-                    uid: data.user.id,
-                    token: data.session.access_token,
-                    timestamp: new Date().getTime()
-                };
-                localStorage.setItem('thrustvault_session', JSON.stringify(session));
-                
-                // Set secure server-readable cookie for dashboard route verification
-                const cookieValue = encodeURIComponent(JSON.stringify({
-                    email: data.user.email,
-                    role: profile.role,
-                    timestamp: new Date().getTime()
-                }));
-                const secureFlag = window.location.protocol === 'https:' ? '; Secure' : '';
-                document.cookie = `thrustvault_session=${cookieValue}; path=/; max-age=86400; SameSite=Strict${secureFlag}`;
-
-                logUserActivity(data.user.email, profile.role, 'Login', 'Logged in successfully.');
-
-                if (profile.role === 'admin') {
-                    window.location.href = 'admin_dashboard';
-                } else if (profile.role === 'intern') {
-                    window.location.href = 'intern_dashboard';
-                } else if (profile.role === 'guest') {
-                    window.location.href = 'guest_dashboard';
-                } else {
-                    alert("Invalid role assigned to this account.");
-                    await supabase.auth.signOut();
-                    submitBtn.disabled = false;
-                    submitBtn.classList.remove('loading');
-                    submitBtn.innerHTML = 'Sign In <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>';
-                    emailInput.disabled = false;
-                    passwordInput.disabled = false;
-                    if (window.lucide) window.lucide.createIcons();
-                }
+            if (data.role === 'admin') {
+                window.location.href = '/admin/dashboard';
+            } else if (data.role === 'intern') {
+                window.location.href = '/intern/dashboard';
+            } else if (data.role === 'guest') {
+                window.location.href = '/guest/dashboard';
+            } else {
+                alert("Invalid role assigned to this account.");
+                await fetch('/api/auth/logout', { method: 'POST' });
+                localStorage.removeItem('thrustvault_session');
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('loading');
+                submitBtn.innerHTML = 'Sign In <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>';
+                emailInput.disabled = false;
+                passwordInput.disabled = false;
+                if (window.lucide) window.lucide.createIcons();
             }
         } catch (err) {
             console.error("Login request failed:", err);
@@ -278,26 +235,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = document.getElementById('forgot-email').value.trim();
             if (!email) return;
 
-            if (!supabase) {
-                alert("Supabase client not initialized.");
-                return;
-            }
-
             const submitBtn = forgotEmailForm.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
             submitBtn.classList.add('loading');
             submitBtn.innerHTML = '<div class="spinner-dual"></div> Sending...';
 
             try {
-                const { error } = await supabase.auth.signInWithOtp({
-                    email: email,
-                    options: {
-                        shouldCreateUser: false
-                    }
+                const res = await fetch('/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
                 });
+                const data = await res.json();
 
-                if (error) {
-                    alert("Failed to send code: " + error.message);
+                if (!res.ok || data.error) {
+                    alert("Failed to send code: " + (data.error || "Unknown error"));
                     return;
                 }
 
@@ -326,25 +278,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (!supabase) {
-                alert("Supabase client not initialized.");
-                return;
-            }
-
             const submitBtn = forgotOtpForm.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
             submitBtn.classList.add('loading');
             submitBtn.innerHTML = '<div class="spinner-dual"></div> Verifying...';
 
             try {
-                const { error } = await supabase.auth.verifyOtp({
-                    email: forgotEmail,
-                    token: code,
-                    type: 'email'
+                const res = await fetch('/api/auth/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: forgotEmail, token: code })
                 });
+                const data = await res.json();
 
-                if (error) {
-                    alert("Verification failed: " + error.message);
+                if (!res.ok || data.error) {
+                    alert("Verification failed: " + (data.error || "Unknown error"));
                     return;
                 }
 
@@ -374,13 +322,15 @@ document.addEventListener('DOMContentLoaded', () => {
             linkResendOtp.textContent = 'Sending...';
 
             try {
-                const { error } = await supabase.auth.signInWithOtp({
-                    email: forgotEmail,
-                    options: { shouldCreateUser: false }
+                const res = await fetch('/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: forgotEmail })
                 });
+                const data = await res.json();
 
-                if (error) {
-                    alert("Failed to resend code: " + error.message);
+                if (!res.ok || data.error) {
+                    alert("Failed to resend code: " + (data.error || "Unknown error"));
                     return;
                 }
                 alert("A new verification code has been sent to your email.");
@@ -419,19 +369,20 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.innerHTML = '<div class="spinner-dual"></div> Updating...';
 
             try {
-                const { error } = await supabase.auth.updateUser({
-                    password: password
+                const res = await fetch('/api/auth/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
                 });
+                const data = await res.json();
 
-                if (error) {
-                    alert("Password update failed: " + error.message);
+                if (!res.ok || data.error) {
+                    alert("Password update failed: " + (data.error || "Unknown error"));
                     return;
                 }
 
                 alert("Your password has been reset successfully! Please log in with your new credentials.");
                 
-                // Sign out to clear temporary session
-                await supabase.auth.signOut().catch(e => console.error("SignOut error after reset:", e));
                 localStorage.removeItem('thrustvault_session');
                 
                 // Return to Sign In view

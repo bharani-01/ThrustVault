@@ -188,8 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
         chartInstances: {}
     };
 
-    let supabase = null;
-
     // DOM Elements
     const elements = {
         get catList() { return document.getElementById('category-list-container'); },
@@ -340,13 +338,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchAccessRequestsCount() {
         try {
-            const { data, error, count } = await supabase
-                .from('access_requests')
-                .select('*', { count: 'exact', head: true })
-                .eq('status', 'pending');
-            
-            if (error) throw error;
-            const pending = count || 0;
+            const res = await fetch('/api/admin/access-requests?status=eq.pending');
+            if (!res.ok) throw new Error("Failed to fetch pending requests");
+            const data = await res.json();
+            const pending = data ? data.length : 0;
             const badge = document.getElementById('requests-pending-badge');
             if (badge) {
                 if (pending > 0) {
@@ -361,15 +356,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Data Fetching from Supabase
+    // Data Fetching from Database
     async function fetchData() {
         try {
-            const { data: categories, error: catError } = await supabase
-                .from('categories')
-                .select('*')
-                .order('name');
-                
-            if (catError) throw catError;
+            const catRes = await fetch('/api/guest/categories?order=name');
+            if (!catRes.ok) throw new Error("Failed to load categories");
+            const categories = await catRes.json();
             
             state.categories = (categories || []).map(c => ({
                 id: c.id,
@@ -377,11 +369,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 desc: c.description
             }));
             
-            const { data: motors, error: motorError } = await supabase
-                .from('motors')
-                .select('*');
-                
-            if (motorError) throw motorError;
+            const motorRes = await fetch('/api/guest/motors');
+            if (!motorRes.ok) throw new Error("Failed to load motors");
+            const motors = await motorRes.json();
             
             state.motors = (motors || []).map(m => ({
                 id: m.id,
@@ -400,14 +390,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Fetch dynamic schema custom definitions
             let customSchema = [];
             try {
-                const { data, error } = await supabase
-                    .from('custom_specs_schema')
-                    .select('*')
-                    .order('created_at');
-                if (!error && data) {
-                    customSchema = data;
+                const schemaRes = await fetch('/api/guest/custom-specs?order=created_at');
+                if (schemaRes.ok) {
+                    customSchema = await schemaRes.json();
                 } else {
-                    throw error || new Error("Failed to load schema from Supabase");
+                    throw new Error("Failed to load schema from Database");
                 }
             } catch (err) {
                 console.warn("Falling back to localStorage for custom schema:", err);
@@ -430,7 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             renderApp();
         } catch (e) {
-            console.error("Error fetching data from Supabase:", e);
+            console.error("Error fetching data from Database:", e);
         }
     }
 
@@ -795,19 +782,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const { error } = await supabase
-                            .from('categories')
-                            .delete()
-                            .eq('id', cat.id);
-                        if (error) throw error;
+                        const res = await fetch(`/api/intern/categories/${cat.id}`, {
+                            method: 'DELETE'
+                        });
+                        if (!res.ok) {
+                            const errData = await res.json();
+                            throw new Error(errData.error || `HTTP ${res.status}`);
+                        }
                         logUserActivity(session.email, session.role, 'Category Deleted', `Deleted category: ${cat.name}`);
                         
-                        const remainingMotors = state.motors.filter(m => m.categoryId !== cat.id);
-                        state.compareItems = state.compareItems.filter(id => remainingMotors.some(m => m.id === id));
-                        
-                        if (state.activeCategory === cat.id) {
-                            state.activeCategory = null;
-                        }
+                        // Fallback active category
+                        state.activeCategory = state.categories.find(c => c.id !== cat.id)?.id || null;
                         await fetchData();
                     } catch (err) {
                         console.error("Error deleting category:", err);
@@ -990,11 +975,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const { error } = await supabase
-                            .from('motors')
-                            .delete()
-                            .eq('id', motorId);
-                        if (error) throw error;
+                        const res = await fetch(`/api/admin/motors/${motorId}`, {
+                            method: 'DELETE'
+                        });
+                        if (!res.ok) {
+                            const errData = await res.json();
+                            throw new Error(errData.error || `HTTP ${res.status}`);
+                        }
                         logUserActivity(session.email, session.role, 'Motor Entry Deleted', `Deleted motor: ${motor.motor} (Brand: ${motor.company})`);
                         
                         state.compareItems = state.compareItems.filter(id => id !== motorId);
@@ -1707,11 +1694,13 @@ document.addEventListener('DOMContentLoaded', () => {
             let categoryId = categoryMap[catName.toLowerCase()];
             if (!categoryId) {
                 const catDesc = catDescIdx !== -1 ? row[catDescIdx].trim() : '';
-                const { data, error } = await supabase
-                    .from('categories')
-                    .insert([{ name: catName, description: catDesc }])
-                    .select();
-                if (error) throw error;
+                const res = await fetch('/api/intern/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: catName, description: catDesc })
+                });
+                if (!res.ok) throw new Error("Failed to create category");
+                const data = await res.json();
                 categoryId = data[0].id;
                 categoryMap[catName.toLowerCase()] = categoryId;
                 state.categories.push({ id: categoryId, name: catName, desc: catDesc });
@@ -1743,8 +1732,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 link_propeller: linkPropIdx !== -1 && row[linkPropIdx] ? row[linkPropIdx].trim() : null,
                 custom_parameters: customParams
             };
-            const { error } = await supabase.from('motors').insert([motorData]);
-            if (error) throw error;
+            const motorRes = await fetch('/api/intern/motors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(motorData)
+            });
+            if (!motorRes.ok) throw new Error("Failed to insert motor specifications");
             importCount++;
         }
         logUserActivity(session.email, session.role, 'Imported Data', `Imported ${importCount} motor entries from CSV.`);
@@ -1761,11 +1754,13 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const cat of imported.categories) {
             let newId = categoryMap[cat.name.toLowerCase()];
             if (!newId) {
-                const { data, error } = await supabase
-                    .from('categories')
-                    .insert([{ name: cat.name, description: cat.desc || cat.description || '' }])
-                    .select();
-                if (error) throw error;
+                const res = await fetch('/api/intern/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: cat.name, description: cat.desc || cat.description || '' })
+                });
+                if (!res.ok) throw new Error("Failed to create category");
+                const data = await res.json();
                 newId = data[0].id;
                 categoryMap[cat.name.toLowerCase()] = newId;
                 state.categories.push({ id: newId, name: cat.name, desc: cat.desc || cat.description || '' });
@@ -1790,8 +1785,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 link_propeller: m.linkProp || m.link_propeller || null,
                 custom_parameters: m.custom_parameters || {}
             };
-            const { error } = await supabase.from('motors').insert([motorData]);
-            if (error) throw error;
+            const motorRes = await fetch('/api/intern/motors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(motorData)
+            });
+            if (!motorRes.ok) throw new Error("Failed to insert motor specifications");
             importCount++;
         }
         logUserActivity(session.email, session.role, 'Imported Data', `Imported ${importCount} motor entries from JSON.`);
@@ -1805,8 +1804,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const name = document.getElementById('form-cat-name').value.trim();
         const desc = document.getElementById('form-cat-desc').value.trim();
         try {
-            const { data, error } = await supabase.from('categories').insert([{ name, description: desc }]).select();
-            if (error) throw error;
+            const res = await fetch('/api/intern/categories', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, description: desc })
+            });
+            if (!res.ok) throw new Error("Failed to create category");
+            const data = await res.json();
             logUserActivity(session.email, session.role, 'Category Created', `Created category: ${name}`);
             closeModal(elements.catModal);
             if (data && data[0]) { state.activeCategory = data[0].id; }
@@ -1863,12 +1867,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             if (id) {
-                const { error } = await supabase.from('motors').update(motorData).eq('id', id);
-                if (error) throw error;
+                const res = await fetch(`/api/intern/motors/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(motorData)
+                });
+                if (!res.ok) throw new Error("Failed to update motor");
                 logUserActivity(session.email, session.role, 'Motor Entry Updated', `Updated motor: ${motorData.motor_name} (Brand: ${motorData.company})`);
             } else {
-                const { error } = await supabase.from('motors').insert([motorData]);
-                if (error) throw error;
+                const res = await fetch('/api/intern/motors', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(motorData)
+                });
+                if (!res.ok) throw new Error("Failed to create motor");
                 logUserActivity(session.email, session.role, 'Motor Entry Created', `Added motor: ${motorData.motor_name} (Brand: ${motorData.company})`);
             }
             closeModal(elements.motorModal);
@@ -1993,11 +2005,13 @@ document.addEventListener('DOMContentLoaded', () => {
             let categoryId = categoryMap[catName.toLowerCase()];
             if (!categoryId) {
                 const catDesc = catDescIdx !== -1 && row[catDescIdx] ? row[catDescIdx].toString().trim() : '';
-                const { data, error } = await supabase
-                    .from('categories')
-                    .insert([{ name: catName, description: catDesc }])
-                    .select();
-                if (error) throw error;
+                const res = await fetch('/api/intern/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: catName, description: catDesc })
+                });
+                if (!res.ok) throw new Error("Failed to create category");
+                const data = await res.json();
                 categoryId = data[0].id;
                 categoryMap[catName.toLowerCase()] = categoryId;
                 state.categories.push({ id: categoryId, name: catName, desc: catDesc });
@@ -2031,8 +2045,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 custom_parameters: customParams
             };
             
-            const { error } = await supabase.from('motors').insert([motorData]);
-            if (error) throw error;
+            const motorRes = await fetch('/api/intern/motors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(motorData)
+            });
+            if (!motorRes.ok) throw new Error("Failed to insert motor specifications");
             importCount++;
         }
         logUserActivity(session.email, session.role, 'Imported Data', `Imported ${importCount} motor entries from Excel sheet.`);
@@ -2271,9 +2289,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (session) {
             logUserActivity(session.email, session.role, action, details);
         }
-        if (supabase) {
-            supabase.auth.signOut().catch(e => console.error("SignOut error:", e));
-        }
         localStorage.removeItem('thrustvault_session');
         // Clear cookie
         const secureFlag = window.location.protocol === 'https:' ? '; Secure' : '';
@@ -2407,13 +2422,9 @@ document.addEventListener('DOMContentLoaded', () => {
         destroyProfileCharts();
 
         try {
-            const { data: runs, error: runsError } = await supabase
-                .from('motor_test_runs')
-                .select('*')
-                .eq('motor_id', motorId)
-                .order('tested_at', { ascending: false });
-
-            if (runsError) throw runsError;
+            const runsRes = await fetch(`/api/guest/motor-test-runs?motor_id=eq.${motorId}&order=tested_at.desc`);
+            if (!runsRes.ok) throw new Error("Failed to load test runs");
+            const runs = await runsRes.json();
 
             if (!runs || runs.length === 0) {
                 runsList.innerHTML = '<div style="color:var(--text-muted); font-size:0.9rem; padding:10px; font-style:italic;">No test runs found.</div>';
@@ -2422,13 +2433,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const runIds = runs.map(r => r.id);
-            const { data: dataPoints, error: pointsError } = await supabase
-                .from('motor_test_data_points')
-                .select('*')
-                .in('test_run_id', runIds)
-                .order('throttle', { ascending: true });
-
-            if (pointsError) throw pointsError;
+            const runIdsParam = runIds.join(',');
+            const ptsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=in.(${runIdsParam})&order=throttle.asc`);
+            if (!ptsRes.ok) throw new Error("Failed to load test run data points");
+            const dataPoints = await ptsRes.json();
 
             const pointsByRun = {};
             dataPoints.forEach(pt => {
@@ -2721,41 +2729,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Init App
     async function init() {
         try {
-            const res = await fetch('/api/config');
-            const config = await res.json();
-            supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-            
-            // Check active session with Supabase
-            const { data: { session: sbSession }, error: sessionError } = await supabase.auth.getSession();
-            if (sessionError || !sbSession) {
-                console.warn("No active Supabase session found.");
-                await logoutAndRedirect();
-                return;
-            }
-
-            // Verify user profile role from DB
-            const { data: profile, error: profileError } = await supabase
-                .from('user_profiles')
-                .select('role')
-                .eq('id', sbSession.user.id)
-                .single();
-
-            if (profileError || !profile || profile.role !== 'admin') {
-                console.error("Session verification failed: invalid profile or role mismatch.");
-                await logoutAndRedirect();
-                return;
-            }
-
-            // Sync local storage session
-            const sessionData = {
-                email: sbSession.user.email,
-                role: profile.role,
-                uid: sbSession.user.id,
-                token: sbSession.access_token,
-                timestamp: new Date().getTime()
-            };
-            localStorage.setItem('thrustvault_session', JSON.stringify(sessionData));
-            const userEmail = sbSession.user.email;
+            const userEmail = session.email;
             const emailEl = document.getElementById('session-email');
             if (emailEl) emailEl.textContent = userEmail;
             const avatarInit = document.getElementById('user-avatar-initials');

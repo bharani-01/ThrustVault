@@ -153,14 +153,14 @@
 
     function getPageSlug() {
         const path = window.location.pathname.toLowerCase();
-        if (path.includes('admin_audit_logs'))       return 'audit_logs';
-        if (path.includes('performance'))            return 'performance';
-        if (path.includes('admin_exports'))          return 'exports';
-        if (path.includes('intern_dashboard'))       return 'intern_catalog';
-        if (path.includes('guest_dashboard'))        return 'guest_catalog';
-        if (path.includes('admin_users'))            return 'admin_users';
-        if (path.includes('admin_access_requests'))  return 'admin_access_requests';
-        if (path.includes('admin_schema_customizer'))return 'admin_schema';
+        if (path.includes('admin_audit_logs') || path.includes('audit-logs'))       return 'audit_logs';
+        if (path.includes('performance') || path.includes('analytics'))            return 'performance';
+        if (path.includes('admin_exports') || path.includes('exports'))          return 'exports';
+        if (path.includes('intern_dashboard') || path.includes('intern/dashboard'))       return 'intern_catalog';
+        if (path.includes('guest_dashboard') || path.includes('guest/dashboard'))        return 'guest_catalog';
+        if (path.includes('admin_users') || path.includes('admin/users'))            return 'admin_users';
+        if (path.includes('admin_access_requests') || path.includes('access-requests'))  return 'admin_access_requests';
+        if (path.includes('admin_schema_customizer') || path.includes('schema-customizer'))return 'admin_schema';
         return 'admin_catalog';
     }
 
@@ -1136,44 +1136,18 @@
         return getPagesForRole().some(p => isPageDone(p.slug));
     }
 
-    // ── Supabase client (lazy, cached) ──────────────────────────────────────
-    let _sbClientPromise = null;
-    function getSupabaseClient() {
-        if (_sbClientPromise) return _sbClientPromise;
-        _sbClientPromise = (async () => {
-            try {
-                const res = await fetch('/api/config');
-                const cfg = await res.json();
-                if (window.supabase && cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY) {
-                    return window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
-                        auth: {
-                            persistSession: false,
-                            autoRefreshToken: false
-                        }
-                    });
-                }
-            } catch (e) { /* silent */ }
-            return null;
-        })();
-        return _sbClientPromise;
-    }
-
+    // ── Onboarding API (Server-Side Proxy) ──────────────────────────────────
+    
     /**
-     * Pull pages_progress from Supabase and merge into localStorage.
+     * Pull pages_progress from backend and merge into localStorage.
      * Called once on page load — keeps progress in sync across devices.
-     * Shape in Supabase: { "admin_catalog": true, "performance": true, ... }
      */
     async function syncProgressFromSupabase() {
         const session = JSON.parse(localStorage.getItem('thrustvault_session') || 'null');
         if (!session || !session.uid) return;
         try {
-            const client = await getSupabaseClient();
-            if (!client) return;
-            const { data } = await client
-                .from('user_onboarding')
-                .select('pages_progress')
-                .eq('user_id', session.uid)
-                .maybeSingle();
+            const res = await fetch('/api/guest/onboarding');
+            const data = await res.json();
             if (!data || !data.pages_progress) return;
             let changed = false;
             Object.entries(data.pages_progress).forEach(([slug, done]) => {
@@ -1184,50 +1158,49 @@
     }
 
     /**
-     * Push a single page slug as done into Supabase pages_progress JSONB.
-     * Does a safe read-modify-write so other slugs are never lost.
+     * Push a single page slug as done into backend pages_progress JSONB.
      * Fire-and-forget — does not block the UI.
      */
     async function pushPageDoneToSupabase(slug) {
         const session = JSON.parse(localStorage.getItem('thrustvault_session') || 'null');
         if (!session || !session.uid) return;
         try {
-            const client = await getSupabaseClient();
-            if (!client) return;
-            // Read existing progress
-            const { data: existing } = await client
-                .from('user_onboarding')
-                .select('pages_progress')
-                .eq('user_id', session.uid)
-                .maybeSingle();
-            const current = (existing && existing.pages_progress) ? existing.pages_progress : {};
-            const updated = { ...current, [slug]: true };
-            // Mark tour_completed true if every page for this role is done
+            let existingProgress = {};
+            const pages = getPagesForRole();
+            pages.forEach(p => {
+                if (isPageDone(p.slug)) {
+                    existingProgress[p.slug] = true;
+                }
+            });
+            const updated = { ...existingProgress, [slug]: true };
             const allDone = getPagesForRole().every(p => updated[p.slug] === true);
-            await client.from('user_onboarding').upsert({
-                user_id:        session.uid,
-                pages_progress: updated,
-                tour_completed: allDone,
-                updated_at:     new Date().toISOString()
-            }, { onConflict: 'user_id' });
+            
+            await fetch('/api/guest/onboarding', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pages_progress: updated,
+                    tour_completed: allDone
+                })
+            });
         } catch (e) { /* silent */ }
     }
 
     /**
-     * Reset progress in Supabase for this user (used by resetOnboarding).
+     * Reset progress in backend for this user (used by resetOnboarding).
      */
     async function clearProgressInSupabase() {
         const session = JSON.parse(localStorage.getItem('thrustvault_session') || 'null');
         if (!session || !session.uid) return;
         try {
-            const client = await getSupabaseClient();
-            if (!client) return;
-            await client.from('user_onboarding').upsert({
-                user_id:        session.uid,
-                pages_progress: {},
-                tour_completed: false,
-                updated_at:     new Date().toISOString()
-            }, { onConflict: 'user_id' });
+            await fetch('/api/guest/onboarding', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pages_progress: {},
+                    tour_completed: false
+                })
+            });
         } catch (e) { /* silent */ }
     }
 

@@ -93,9 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (session) {
             logUserActivity(session.email, session.role, action, details);
         }
-        if (supabase) {
-            supabase.auth.signOut().catch(e => console.error("SignOut error:", e));
-        }
+        fetch('/api/auth/logout', { method: 'POST' }).catch(e => console.error("Logout error:", e));
         localStorage.removeItem('thrustvault_session');
         const secureFlag = window.location.protocol === 'https:' ? '; Secure' : '';
         document.cookie = `thrustvault_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict${secureFlag}`;
@@ -147,21 +145,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
     async function fetchSidebarCounts() {
         try {
-            if (!supabase) {
-                const res = await fetch('/api/config');
-                const config = await res.json();
-                supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-            }
-            const [motorsRes, catsRes] = await Promise.all([
-                supabase.from('motors').select('id, category_id'),
-                supabase.from('categories').select('*').order('name')
+            const [motorsData, catsData] = await Promise.all([
+                fetch('/api/guest/motors').then(r => r.json()),
+                fetch('/api/guest/categories').then(r => r.json())
             ]);
 
-            if (motorsRes.error) throw motorsRes.error;
-            if (catsRes.error) throw catsRes.error;
-
-            state.motors = motorsRes.data || [];
-            state.categories = catsRes.data || [];
+            state.motors = motorsData || [];
+            state.categories = catsData || [];
 
             if (elements.totalMotors) elements.totalMotors.textContent = state.motors.length;
             if (elements.totalCats) elements.totalCats.textContent = state.categories.length;
@@ -202,11 +192,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const { error } = await supabase
-                            .from('categories')
-                            .delete()
-                            .eq('id', cat.id);
-                        if (error) throw error;
+                        const res = await fetch(`/api/intern/categories?id=eq.${cat.id}`, {
+                            method: 'DELETE'
+                        });
+                        if (!res.ok) {
+                            const errData = await res.json();
+                            throw new Error(errData.error || `HTTP ${res.status}`);
+                        }
                         logUserActivity(session.email, session.role, 'Category Deleted', `Deleted category: ${cat.name}`);
                         await fetchSidebarCounts();
                     } catch (err) {
@@ -233,12 +225,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
     async function fetchAccessRequests() {
         try {
-            const { data: requests, error } = await supabase
-                .from('access_requests')
-                .select('*')
-                .order('created_at', { ascending: false });
-            
-            if (error) throw error;
+            const res = await fetch('/api/admin/access-requests?order=created_at.desc');
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || `HTTP ${res.status}`);
+            }
+            const requests = await res.json();
             state.accessRequests = requests || [];
             
             renderAccessRequestsList();
@@ -358,12 +350,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!confirmReject) return;
 
             try {
-                const { error: updateErr } = await supabase
-                    .from('access_requests')
-                    .update({ status: 'rejected' })
-                    .eq('id', requestId);
-                
-                if (updateErr) throw updateErr;
+                const res = await fetch(`/api/admin/access-requests?id=eq.${requestId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'rejected' })
+                });
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.error || `HTTP ${res.status}`);
+                }
 
                 logUserActivity(session.email, session.role, 'Access Request Rejected', `Rejected access request from ${req.email}`);
 
@@ -410,50 +405,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Check if user account already exists
-            const { data: existingUser } = await supabase
-                .from('user_profiles')
-                .select('id')
-                .eq('email', req.email)
-                .maybeSingle();
+            const profileRes = await fetch(`/api/admin/users?email=eq.${req.email}`);
+            if (!profileRes.ok) {
+                const errData = await profileRes.json();
+                throw new Error(errData.error || `HTTP ${profileRes.status}`);
+            }
+            const profiles = await profileRes.json();
+            const existingUser = profiles && profiles.length > 0 ? profiles[0] : null;
 
             if (existingUser) {
                 alert(`An active user profile already exists for "${req.email}". Request marked as approved.`);
-                await supabase.from('access_requests').update({ status: 'approved' }).eq('id', requestId);
+                await fetch(`/api/admin/access-requests?id=eq.${requestId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'approved' })
+                });
                 await fetchAccessRequests();
                 return;
             }
 
-            const btn = document.querySelector(`.row-actions button[data-id="${requestId}"]`);
-            if (btn) btn.textContent = 'Creating User...';
-
-            const { data: newUid, error: createErr } = await supabase.rpc('create_vault_user', {
-                email_val: req.email,
-                password_val: password,
-                role_val: req.requested_role
+            const rpcRes = await fetch('/api/admin/rpc/create_vault_user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email_val: req.email,
+                    password_val: password,
+                    role_val: req.requested_role
+                })
             });
-
-            if (createErr) throw createErr;
+            if (!rpcRes.ok) {
+                const errData = await rpcRes.json();
+                throw new Error(errData.error || `HTTP ${rpcRes.status}`);
+            }
+            const newUid = await rpcRes.json();
 
             let resetLink = '';
             try {
-                const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
-                    type: 'recovery',
-                    email: req.email,
-                    options: { redirectTo: window.location.origin + '/login' }
+                const linkRes = await fetch('/api/admin/auth/generate-link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'recovery',
+                        email: req.email,
+                        options: { redirectTo: window.location.origin + '/login' }
+                    })
                 });
-                if (!linkErr && linkData && linkData.properties) {
-                    resetLink = linkData.properties.action_link;
+                if (linkRes.ok) {
+                    const linkData = await linkRes.json();
+                    if (linkData && linkData.properties) {
+                        resetLink = linkData.properties.action_link;
+                    }
                 }
             } catch (err) {
                 console.warn("Failed to generate password recovery link:", err);
             }
 
-            const { error: updateErr } = await supabase
-                .from('access_requests')
-                .update({ status: 'approved' })
-                .eq('id', requestId);
-
-            if (updateErr) throw updateErr;
+            const updateRes = await fetch(`/api/admin/access-requests?id=eq.${requestId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'approved' })
+            });
+            if (!updateRes.ok) {
+                const errData = await updateRes.json();
+                throw new Error(errData.error || `HTTP ${updateRes.status}`);
+            }
 
             logUserActivity(session.email, session.role, 'Access Request Approved', `Approved request for ${req.email} with role ${req.requested_role.toUpperCase()}`);
 
@@ -581,18 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
     async function init() {
         try {
-            const res = await fetch('/api/config');
-            const config = await res.json();
-            supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-            
-            const { data: { session: sbSession }, error: sessionError } = await supabase.auth.getSession();
-            if (sessionError || !sbSession) {
-                console.warn("No active Supabase session found.");
-                await logoutAndRedirect();
-                return;
-            }
-
-            const userEmail = sbSession.user.email;
+            const userEmail = session.email;
             const avatarInit = document.getElementById('user-avatar-initials');
             if (avatarInit && userEmail) {
                 avatarInit.textContent = userEmail.charAt(0).toUpperCase();

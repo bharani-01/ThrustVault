@@ -41,16 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
 
     let state = {
-        motors: [],
         categories: [],
-        customSchema: [],
+        motors: [],
         testRuns: [],
         selectedMotorIds: new Set(),
-        selectedTestRunIds: new Set(),
         selectedMotorIdsInitialized: false,
-        selectedTestRunIdsInitialized: false
-    };
-
     let supabase = null;
 
     // DOM Elements
@@ -481,13 +476,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         elements.detailsPreviewModal.classList.add('show');
 
                         try {
-                            const { data, error } = await supabase
-                                .from('motor_test_data_points')
-                                .select('*')
-                                .eq('test_run_id', run.id)
-                                .order('throttle', { ascending: true });
-                            
-                            if (error) throw error;
+                            const ptsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=eq.${run.id}&order=throttle.asc`);
+                            if (!ptsRes.ok) throw new Error("Failed to load data points");
+                            const data = await ptsRes.json();
                             
                             const readingsContainer = document.getElementById('modal-readings-section');
                             if (!readingsContainer) return;
@@ -810,17 +801,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (elements.previewGridBox) elements.previewGridBox.innerHTML = loadingMsg;
                 elements.previewContentBox.innerHTML = '<span style="color:#64748b;">Loading preview data points...</span>';
                 try {
-                    const { data, error } = await supabase
-                        .from('motor_test_data_points')
-                        .select('*, motor_test_runs(*)')
-                        .eq('test_run_id', targetRunId);
-                    if (!error && data) {
-                        previewDataPoints = data;
-                        lastFetchedRunId = targetRunId;
-                        previewDataPoints.sort((a, b) => (a.throttle || 0) - (b.throttle || 0));
-                    } else {
-                        throw error || new Error("Failed to load run points");
-                    }
+                    const res = await fetch(`/api/guest/motor-test-data-points?test_run_id=eq.${targetRunId}&select=*,motor_test_runs(*)`);
+                    if (!res.ok) throw new Error("Failed to load run points");
+                    const data = await res.json();
+                    previewDataPoints = data || [];
+                    lastFetchedRunId = targetRunId;
+                    previewDataPoints.sort((a, b) => (a.throttle || 0) - (b.throttle || 0));
                 } catch (e) {
                     const errorMsg = `<span style="color:#ef4444; font-size:0.85rem;">Failed to load preview: ${e.message}</span>`;
                     if (elements.previewGridBox) elements.previewGridBox.innerHTML = errorMsg;
@@ -1074,22 +1060,18 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadMetadata() {
         try {
             // Categories
-            const { data: categories, error: catError } = await supabase
-                .from('categories')
-                .select('*')
-                .order('name');
-            if (catError) throw catError;
+            const catRes = await fetch('/api/guest/categories?order=name');
+            if (!catRes.ok) throw new Error("Failed to fetch categories");
+            const categories = await catRes.json();
             state.categories = categories || [];
 
             elements.catFilterSelect.innerHTML = '<option value="all">All Categories</option>' +
                 state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
             // Motors
-            const { data: motors, error: motorError } = await supabase
-                .from('motors')
-                .select('*')
-                .order('motor_name');
-            if (motorError) throw motorError;
+            const motorRes = await fetch('/api/guest/motors?order=motor_name');
+            if (!motorRes.ok) throw new Error("Failed to fetch motors");
+            const motors = await motorRes.json();
             state.motors = motors || [];
             if (elements.totalMotors) elements.totalMotors.textContent = state.motors.length;
             if (!state.selectedMotorIdsInitialized) {
@@ -1105,14 +1087,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Custom Parameters Schema
             let customSchema = [];
             try {
-                const { data, error } = await supabase
-                    .from('custom_specs_schema')
-                    .select('*')
-                    .order('created_at');
-                if (!error && data) {
-                    customSchema = data;
+                const schemaRes = await fetch('/api/guest/custom-specs?order=created_at');
+                if (schemaRes.ok) {
+                    customSchema = await schemaRes.json();
                 } else {
-                    throw error || new Error("Failed to load schema");
+                    throw new Error("Failed to load schema");
                 }
             } catch (err) {
                 console.warn("Using localStorage fallback for schema:", err);
@@ -1134,11 +1113,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             // Test Runs
-            const { data: testRuns, error: runError } = await supabase
-                .from('motor_test_runs')
-                .select('*')
-                .order('tested_at', { ascending: false });
-            if (runError) throw runError;
+            const runsRes = await fetch('/api/guest/motor-test-runs?order=tested_at.desc');
+            if (!runsRes.ok) throw new Error("Failed to fetch test runs");
+            const testRuns = await runsRes.json();
             state.testRuns = testRuns || [];
             if (!state.selectedTestRunIdsInitialized) {
                 state.testRuns.forEach(run => state.selectedTestRunIds.add(run.id));
@@ -1560,11 +1537,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(async () => {
             try {
                 let dataPoints = [];
-                const { data, error } = await supabase
-                    .from('motor_test_data_points')
-                    .select('*, motor_test_runs(*)')
-                    .in('test_run_id', checkedRuns);
-                if (error) throw error;
+                const runIdsParam = checkedRuns.join(',');
+                const ptsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=in.(${runIdsParam})&select=*,motor_test_runs(*)`);
+                if (!ptsRes.ok) throw new Error("Failed to load telemetry points");
+                const data = await ptsRes.json();
                 dataPoints = data || [];
 
                 if (dataPoints.length === 0) {
@@ -2000,9 +1976,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (session) {
             logUserActivity(session.email, session.role, action, details);
         }
-        if (supabase) {
-            supabase.auth.signOut().catch(e => console.error("SignOut error:", e));
-        }
         localStorage.removeItem('thrustvault_session');
         // Clear cookie
         const secureFlag = window.location.protocol === 'https:' ? '; Secure' : '';
@@ -2059,24 +2032,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchSidebarCounts() {
         try {
-            if (!supabase) {
-                const res = await fetch('/api/config');
-                const config = await res.json();
-                supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-            }
-            const [motorsRes, catsRes, requestsRes] = await Promise.all([
-                supabase.from('motors').select('id, category_id'),
-                supabase.from('categories').select('*').order('name'),
-                supabase.from('access_requests').select('*').order('created_at', { ascending: false })
+            const [motorsRes, catsRes] = await Promise.all([
+                fetch('/api/guest/motors'),
+                fetch('/api/guest/categories?order=name')
             ]);
 
-            if (motorsRes.error) throw motorsRes.error;
-            if (catsRes.error) throw catsRes.error;
-            if (requestsRes.error) throw requestsRes.error;
+            if (!motorsRes.ok) throw new Error("Failed to load motors");
+            if (!catsRes.ok) throw new Error("Failed to load categories");
 
-            state.motors = motorsRes.data || [];
-            state.categories = catsRes.data || [];
-            state.accessRequests = requestsRes.data || [];
+            state.motors = await motorsRes.json();
+            state.categories = await catsRes.json();
+            state.accessRequests = [];
+
+            if (session && session.role === 'admin') {
+                try {
+                    const reqsRes = await fetch('/api/admin/access-requests?order=created_at.desc');
+                    if (reqsRes.ok) {
+                        state.accessRequests = await reqsRes.json();
+                    }
+                } catch (e) {
+                    console.warn("Could not load access requests:", e);
+                }
+            }
 
             if (elements.totalMotors) elements.totalMotors.textContent = state.motors.length;
             if (elements.totalCats) elements.totalCats.textContent = state.categories.length;
@@ -2128,11 +2105,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const { error } = await supabase
-                            .from('categories')
-                            .delete()
-                            .eq('id', cat.id);
-                        if (error) throw error;
+                        const res = await fetch(`/api/intern/categories/${cat.id}`, {
+                            method: 'DELETE'
+                        });
+                        if (!res.ok) {
+                            const errData = await res.json();
+                            throw new Error(errData.error || `HTTP ${res.status}`);
+                        }
                         logUserActivity(session.email, session.role, 'Category Deleted', `Deleted category: ${cat.name}`);
                         await fetchSidebarCounts();
                         // Also refresh the filter dropdown if on exports page
@@ -2161,20 +2140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Init App
     async function init() {
         try {
-            const res = await fetch('/api/config');
-            const config = await res.json();
-            supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-
-            // Check session
-            const { data: { session: sbSession }, error: sessionError } = await supabase.auth.getSession();
-            if (sessionError || !sbSession) {
-                console.warn("No Supabase session.");
-                logoutAndRedirect();
-                return;
-            }
-
-            // Sync user details
-            const userEmail = sbSession.user.email;
+            const userEmail = session.email;
             const emailEl = document.getElementById('session-email');
             if (emailEl) emailEl.textContent = userEmail;
             const avatarInit = document.getElementById('user-avatar-initials');

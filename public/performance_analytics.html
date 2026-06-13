@@ -15,7 +15,6 @@
     <!-- Chart.js -->
     <script src="libs/chart.umd.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/chart.js';"></script>
     <!-- Supabase JS Client -->
-    <script src="libs/supabase.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';"></script>
     <!-- SheetJS Excel/CSV Parser -->
     <script src="libs/xlsx.full.min.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';"></script>
     <!-- Main Stylesheet -->
@@ -181,6 +180,7 @@
             flex-direction: column;
             gap: 8px;
             box-shadow: var(--shadow-sm);
+            flex-shrink: 0;
         }
         .run-card::before {
             content: '';

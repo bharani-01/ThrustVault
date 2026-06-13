@@ -57,7 +57,6 @@ thrustvault-workspace/
 │   │
 │   ├── login.js                      # Controller for signin, password recovery, and OTP
 │   ├── onboarding.js                 # Controller for request access submissions
-│   ├── app.js                        # Core application runtime variables & Supabase instance
 │   ├── guest_app.js                  # Controller for guest catalog actions & comparison sets
 │   ├── intern_app.js                 # Controller for intern uploads, motor additions & edits
 │   ├── admin_app.js                  # Controller for admin dashboard visualizations
@@ -71,7 +70,6 @@ thrustvault-workspace/
 │   └── libs/                         # Externally cached third-party Javascript engines
 │       ├── chart.umd.js              # Chart.js charting engine
 │       ├── lucide.min.js             # SVG icon runtime loader
-│       ├── supabase.js               # Supabase JS SDK client
 │       └── xlsx.full.min.js          # SheetJS spreadsheet creation engine
 │
 └── motor_scraper/                    # Scraper utilities (external catalog ingestion tools)

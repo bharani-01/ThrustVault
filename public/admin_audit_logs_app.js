@@ -105,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("Error writing activity log:", e);
             }
         }
+        fetch('/api/auth/logout', { method: 'POST' }).catch(e => console.error("Logout error:", e));
         localStorage.removeItem('thrustvault_session');
         const secureFlag = window.location.protocol === 'https:' ? '; Secure' : '';
         document.cookie = `thrustvault_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict${secureFlag}`;
@@ -160,26 +161,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchSidebarCounts() {
         try {
-            // Load configuration if not loaded yet
-            if (!supabase) {
-                const res = await fetch('/api/config');
-                const config = await res.json();
-                supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-            }
-
-            const [motorsRes, catsRes, requestsRes] = await Promise.all([
-                supabase.from('motors').select('id, category_id'),
-                supabase.from('categories').select('*').order('name'),
-                supabase.from('access_requests').select('*').order('created_at', { ascending: false })
+            const [motorsData, catsData, requestsData] = await Promise.all([
+                fetch('/api/guest/motors').then(r => r.json()),
+                fetch('/api/guest/categories').then(r => r.json()),
+                fetch('/api/admin/access-requests').then(r => r.json())
             ]);
 
-            if (motorsRes.error) throw motorsRes.error;
-            if (catsRes.error) throw catsRes.error;
-            if (requestsRes.error) throw requestsRes.error;
-
-            state.motors = motorsRes.data || [];
-            state.categories = catsRes.data || [];
-            state.accessRequests = requestsRes.data || [];
+            state.motors = motorsData || [];
+            state.categories = catsData || [];
+            state.accessRequests = requestsData || [];
 
             if (elements.totalMotors) elements.totalMotors.textContent = state.motors.length;
             if (elements.totalCats) elements.totalCats.textContent = state.categories.length;
@@ -231,11 +221,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const { error } = await supabase
-                            .from('categories')
-                            .delete()
-                            .eq('id', cat.id);
-                        if (error) throw error;
+                        const res = await fetch(`/api/intern/categories/${cat.id}`, {
+                            method: 'DELETE'
+                        });
+                        if (!res.ok) {
+                            const errData = await res.json();
+                            throw new Error(errData.error || `HTTP ${res.status}`);
+                        }
                         // log activity on server
                         fetch('/api/log-activity', {
                             method: 'POST',

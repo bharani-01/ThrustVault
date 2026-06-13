@@ -192,9 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (session) {
             logUserActivity(session.email, session.role, action, details);
         }
-        if (supabase) {
-            supabase.auth.signOut().catch(e => console.error("SignOut error:", e));
-        }
+        fetch('/api/auth/logout', { method: 'POST' }).catch(e => console.error("Logout error:", e));
         localStorage.removeItem('thrustvault_session');
         const secureFlag = window.location.protocol === 'https:' ? '; Secure' : '';
         document.cookie = `thrustvault_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict${secureFlag}`;
@@ -246,24 +244,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
     async function fetchSidebarCounts() {
         try {
-            if (!supabase) {
-                const res = await fetch('/api/config');
-                const config = await res.json();
-                supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-            }
-            const [motorsRes, catsRes, requestsRes] = await Promise.all([
-                supabase.from('motors').select('id, category_id'),
-                supabase.from('categories').select('*').order('name'),
-                supabase.from('access_requests').select('*').order('created_at', { ascending: false })
+            const [motorsData, catsData, requestsData] = await Promise.all([
+                fetch('/api/guest/motors').then(r => r.json()),
+                fetch('/api/guest/categories').then(r => r.json()),
+                fetch('/api/admin/access-requests').then(r => r.json())
             ]);
 
-            if (motorsRes.error) throw motorsRes.error;
-            if (catsRes.error) throw catsRes.error;
-            if (requestsRes.error) throw requestsRes.error;
-
-            state.motors = motorsRes.data || [];
-            state.categories = catsRes.data || [];
-            state.accessRequests = requestsRes.data || [];
+            state.motors = motorsData || [];
+            state.categories = catsData || [];
+            state.accessRequests = requestsData || [];
 
             if (elements.totalMotors) elements.totalMotors.textContent = state.motors.length;
             if (elements.totalCats) elements.totalCats.textContent = state.categories.length;
@@ -315,11 +304,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const { error } = await supabase
-                            .from('categories')
-                            .delete()
-                            .eq('id', cat.id);
-                        if (error) throw error;
+                        const res = await fetch(`/api/intern/categories/${cat.id}`, {
+                            method: 'DELETE'
+                        });
+                        if (!res.ok) {
+                            const errData = await res.json();
+                            throw new Error(errData.error || `HTTP ${res.status}`);
+                        }
                         logUserActivity(session.email, session.role, 'Category Deleted', `Deleted category: ${cat.name}`);
                         await fetchSidebarCounts();
                     } catch (err) {
@@ -380,12 +371,12 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchUserAccounts() {
         try {
             renderUserAccountsSkeleton();
-            const { data: users, error } = await supabase
-                .from('user_profiles')
-                .select('*')
-                .order('email');
-            
-            if (error) throw error;
+            const res = await fetch('/api/admin/users?order=email.asc');
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || `HTTP ${res.status}`);
+            }
+            const users = await res.json();
             state.users = users || [];
             renderUserAccountsList();
 
@@ -505,11 +496,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const targetUser = state.users.find(x => x.id === userId);
                 const oldRole = targetUser ? targetUser.role : '';
                 try {
-                    const { error } = await supabase
-                        .from('user_profiles')
-                        .update({ role: newRole })
-                        .eq('id', userId);
-                    if (error) throw error;
+                    const res = await fetch(`/api/admin/users/${userId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ role: newRole })
+                    });
+                    if (!res.ok) {
+                        const errData = await res.json();
+                        throw new Error(errData.error || `HTTP ${res.status}`);
+                    }
                     logUserActivity(session.email, session.role, 'User Role Changed', `Changed role of ${targetUser ? targetUser.email : userId} from ${oldRole.toUpperCase()} to ${newRole.toUpperCase()}`);
                     await fetchUserAccounts();
                 } catch (err) {
@@ -529,10 +524,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const { error } = await supabase.rpc('delete_vault_user', {
-                            user_id: userId
+                        const res = await fetch('/api/admin/rpc/delete_vault_user', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: userId })
                         });
-                        if (error) throw error;
+                        if (!res.ok) {
+                            const errData = await res.json();
+                            throw new Error(errData.error || `HTTP ${res.status}`);
+                        }
                         logUserActivity(session.email, session.role, 'User Account Deleted', `Permanently deleted user account: ${targetUser.email}`);
                         await fetchUserAccounts();
                     } catch (err) {
@@ -555,13 +555,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!emailVal || !passVal || !roleVal) return;
 
         try {
-            const { data, error } = await supabase.rpc('create_vault_user', {
-                email_val: emailVal,
-                password_val: passVal,
-                role_val: roleVal
+            const res = await fetch('/api/admin/rpc/create_vault_user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email_val: emailVal,
+                    password_val: passVal,
+                    role_val: roleVal
+                })
             });
-
-            if (error) throw error;
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || `HTTP ${res.status}`);
+            }
 
             logUserActivity(session.email, session.role, 'User Account Created', `Created ${roleVal.toUpperCase()} account for: ${emailVal}`);
             elements.userForm.reset();
@@ -1230,20 +1236,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
     async function init() {
         try {
-            const res = await fetch('/api/config');
-            const config = await res.json();
-            supabase = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
-            
-            // Check active session with Supabase
-            const { data: { session: sbSession }, error: sessionError } = await supabase.auth.getSession();
-            if (sessionError || !sbSession) {
-                console.warn("No active Supabase session found.");
-                await logoutAndRedirect();
-                return;
-            }
-
-            // Sync user avatar initials
-            const userEmail = sbSession.user.email;
+            const userEmail = session.email;
             const avatarInit = document.getElementById('user-avatar-initials');
             if (avatarInit && userEmail) {
                 avatarInit.textContent = userEmail.charAt(0).toUpperCase();
