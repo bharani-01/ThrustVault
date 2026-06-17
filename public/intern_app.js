@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const session = JSON.parse(localStorage.getItem('thrustvault_session'));
     if (!session || session.role !== 'intern') {
         localStorage.removeItem('thrustvault_session');
-        window.location.href = 'index.html';
+        window.location.href = '/';
         return;
     }
 
@@ -628,7 +628,7 @@ document.addEventListener('DOMContentLoaded', () => {
         allTab.className = 'category-tab';
         allTab.innerHTML = '<span>All Motors</span>';
         allTab.onclick = () => {
-            window.location.href = 'motor_explorer';
+            window.location.href = '/intern/explorer';
         };
         elements.catList.appendChild(allTab);
         
@@ -2030,7 +2030,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear cookie
         const secureFlag = window.location.protocol === 'https:' ? '; Secure' : '';
         document.cookie = `thrustvault_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict${secureFlag}`;
-        window.location.href = 'index.html';
+        window.location.href = '/';
     }
 
     function renderCustomFieldsInMotorForm(motorObj = null) {

@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         if (!session || !['admin', 'intern', 'guest'].includes(session.role)) {
-            window.location.href = 'login';
+            window.location.href = '/login';
             return;
         }
 
@@ -1166,7 +1166,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sidebarProfileCard.title = 'View My Profile';
             sidebarProfileCard.onclick = () => {
                 sessionStorage.setItem('showMyProfile', 'true');
-                window.location.href = 'admin_users';
+                window.location.href = '/admin/users';
             };
         }
     }
@@ -1187,7 +1187,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             div.onclick = () => {
                 sessionStorage.setItem('activeCategory', cat.id);
-                const roleDash = session.role === 'admin' ? 'admin_dashboard' : (session.role === 'intern' ? 'intern_dashboard' : 'guest_dashboard');
+                const roleDash = session.role === 'admin' ? '/admin/dashboard' : (session.role === 'intern' ? '/intern/dashboard' : '/guest/dashboard');
                 window.location.href = roleDash;
             };
             elements.catList.appendChild(div);

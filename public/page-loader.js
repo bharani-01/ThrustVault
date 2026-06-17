@@ -1,5 +1,5 @@
 // page-loader.js
-// Handles premium, lightweight page loading and transition animations
+// Handles premium, lightweight page loading, transition animations, and persistent sidebar UX
 (function() {
     // Immediately set data-theme to prevent flash
     const isLandingPage = window.location.pathname === '/' || 
@@ -9,18 +9,32 @@
     const currentTheme = isLandingPage ? 'light' : (localStorage.getItem('thrustvault_theme') || 'light');
     document.documentElement.setAttribute('data-theme', currentTheme);
 
+    // Detect if page has a sidebar (all routes except landing, login, and access request)
+    const path = window.location.pathname;
+    const hasSidebar = path.includes('/admin/') || path.includes('/intern/') || path.includes('/guest/') ||
+                       path.includes('dashboard') || path.includes('analytics') || path.includes('explorer') ||
+                       path.includes('users') || path.includes('requests') || path.includes('schema') ||
+                       path.includes('exports') || path.includes('imports') || path.includes('audit');
+    const transitionSelector = hasSidebar ? '.main-content-wrapper' : 'body';
+
     // 1. Immediately inject preload styling to prevent Content Flash (FOUC)
     const style = document.createElement('style');
     style.id = 'tv-loader-preload-style';
     style.innerHTML = `
-        html.tv-loading-state body {
+        .main-content-wrapper {
+            position: relative;
+        }
+        html.tv-loading-state ${transitionSelector} {
             opacity: 0 !important;
             pointer-events: none !important;
         }
-        html.tv-loading-state.tv-loaded body {
+        html.tv-loading-state.tv-loaded ${transitionSelector} {
             opacity: 1 !important;
             pointer-events: auto !important;
             transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+        html.tv-sidebar-loaded .sidebar-skeleton-wrapper {
+            display: none !important;
         }
         #tv-progress-bar {
             position: fixed;
@@ -36,12 +50,12 @@
             animation: tv-bar-flow 2s linear infinite;
         }
         #tv-page-loader-overlay {
-            position: fixed;
+            position: ${hasSidebar ? 'absolute' : 'fixed'};
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(15, 23, 42, 0.35);
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.4);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             z-index: 99999;
@@ -52,6 +66,9 @@
             opacity: 1;
             transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             pointer-events: all;
+        }
+        [data-theme="dark"] #tv-page-loader-overlay {
+            background: rgba(15, 23, 42, 0.4) !important;
         }
         #tv-page-loader-overlay.fade-out {
             opacity: 0 !important;
@@ -69,6 +86,11 @@
             box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.15);
             transform: scale(0.95);
             animation: tv-card-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        [data-theme="dark"] .tv-loader-card {
+            background: rgba(30, 41, 59, 0.9) !important;
+            border: 1px solid rgba(255, 255, 255, 0.05) !important;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
         }
         .tv-loader-logo {
             width: 50px;
@@ -89,6 +111,9 @@
             font-weight: 600;
             color: #0f172a;
             letter-spacing: -0.01em;
+        }
+        [data-theme="dark"] .tv-loader-text {
+            color: #f8fafc !important;
         }
         .tv-loader-pulse {
             width: 80px;
@@ -156,14 +181,98 @@
         }
     }
 
-    // 2. Initialize loader components on DOMContentLoaded
+    // Sidebar Utilities
+    function highlightActiveSidebarLink(sidebarEl) {
+        const currentPath = window.location.pathname;
+        const currentPage = currentPath.substring(currentPath.lastIndexOf('/') + 1) || 'index.html';
+        sidebarEl.querySelectorAll('.btn-sidebar-link').forEach(link => {
+            const href = link.getAttribute('href');
+            if (href) {
+                const isExactMatch = currentPath === href || currentPath.replace(/\/$/, '') === href.replace(/\/$/, '');
+                const isRelativeMatch = currentPage.startsWith(href) || href.startsWith(currentPage);
+                if (isExactMatch || isRelativeMatch) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            }
+        });
+    }
+
+    function syncSidebarUserProfiles(sidebarEl) {
+        const sessionEmailEl = sidebarEl.querySelector('#session-email');
+        const sessionInitialsEl = sidebarEl.querySelector('#user-avatar-initials');
+        const sessionStr = localStorage.getItem('thrustvault_session');
+        if (sessionStr && sessionEmailEl) {
+            try {
+                const session = JSON.parse(sessionStr);
+                sessionEmailEl.textContent = session.email;
+                if (sessionInitialsEl && session.email) {
+                    sessionInitialsEl.textContent = session.email.charAt(0).toUpperCase();
+                }
+            } catch(e) {}
+        }
+    }
+
+    // 2. DOM Observer to immediately inject cached sidebar HTML during page parsing (prevents flicker of skeletons)
+    let sidebarObserver = null;
+    if (hasSidebar) {
+        sidebarObserver = new MutationObserver(() => {
+            const sidebarEl = document.querySelector('.sidebar');
+            if (sidebarEl) {
+                sidebarObserver.disconnect();
+                
+                let sidebarRole = sidebarEl.getAttribute('data-sidebar');
+                if (sidebarRole === 'dynamic') {
+                    const sessionStr = localStorage.getItem('thrustvault_session');
+                    if (sessionStr) {
+                        try {
+                            const session = JSON.parse(sessionStr);
+                            sidebarRole = session.role;
+                        } catch(e) {
+                            sidebarRole = 'guest';
+                        }
+                    } else {
+                        sidebarRole = 'guest';
+                    }
+                }
+                
+                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}`;
+                const cachedHTML = sessionStorage.getItem(cacheKey);
+                if (cachedHTML) {
+                    const existingScript = sidebarEl.querySelector('script');
+                    sidebarEl.innerHTML = '';
+                    if (existingScript) {
+                        sidebarEl.appendChild(existingScript);
+                    }
+                    
+                    const templateWrapper = document.createElement('div');
+                    templateWrapper.innerHTML = cachedHTML;
+                    while (templateWrapper.firstChild) {
+                        sidebarEl.appendChild(templateWrapper.firstChild);
+                    }
+                    
+                    highlightActiveSidebarLink(sidebarEl);
+                    syncSidebarUserProfiles(sidebarEl);
+                    
+                    window.sidebarLoaded = true;
+                    window.sidebarRole = sidebarRole;
+                    document.documentElement.classList.add('tv-sidebar-loaded');
+                    if (window.lucide) window.lucide.createIcons();
+                }
+            }
+        });
+        sidebarObserver.observe(document.documentElement, { childList: true, subtree: true });
+    }
+
+    // 3. Initialize loader components on DOMContentLoaded
     document.addEventListener('DOMContentLoaded', () => {
         // Inject progress bar
         const pb = document.createElement('div');
         pb.id = 'tv-progress-bar';
         document.body.appendChild(pb);
         
-        // Inject glassmorphic transition overlay
+        // Inject glassmorphic transition overlay inside the correct container
         const overlay = document.createElement('div');
         overlay.id = 'tv-page-loader-overlay';
         overlay.innerHTML = `
@@ -180,12 +289,21 @@
                 </div>
             </div>
         `;
-        document.body.appendChild(overlay);
+        
+        const loaderContainer = hasSidebar ? (document.querySelector('.main-content-wrapper') || document.body) : document.body;
+        loaderContainer.appendChild(overlay);
 
         startProgress(pb);
 
+        // Sidebar handler
         const sidebarEl = document.querySelector('.sidebar');
         if (sidebarEl) {
+            // Remove skeleton placeholder from DOM if cached sidebar is active
+            if (window.sidebarLoaded) {
+                const skeleton = sidebarEl.querySelector('.sidebar-skeleton-wrapper');
+                if (skeleton) skeleton.remove();
+            }
+
             let sidebarRole = sidebarEl.getAttribute('data-sidebar');
             if (sidebarRole === 'dynamic') {
                 const sessionStr = localStorage.getItem('thrustvault_session');
@@ -200,39 +318,15 @@
                     sidebarRole = 'guest';
                 }
             }
-            
-            fetch(`sidebar_${sidebarRole}.html`)
-                .then(res => {
-                    if (!res.ok) throw new Error("Failed to load sidebar template");
-                    return res.text();
-                })
-                .then(html => {
-                    const existingScript = sidebarEl.querySelector('script');
-                    sidebarEl.innerHTML = '';
-                    if (existingScript) {
-                        sidebarEl.appendChild(existingScript);
-                    }
-                    
-                    const templateWrapper = document.createElement('div');
-                    templateWrapper.innerHTML = html;
-                    while (templateWrapper.firstChild) {
-                        sidebarEl.appendChild(templateWrapper.firstChild);
-                    }
-                    
-                    const currentPath = window.location.pathname;
-                    const currentPage = currentPath.substring(currentPath.lastIndexOf('/') + 1) || 'index.html';
-                    sidebarEl.querySelectorAll('.btn-sidebar-link').forEach(link => {
-                        const href = link.getAttribute('href');
-                        if (href && (currentPage.startsWith(href) || href.startsWith(currentPage))) {
-                            link.classList.add('active');
-                        } else {
-                            link.classList.remove('active');
-                        }
-                    });
-                    
-                    const sidebarFooter = sidebarEl.querySelector('.sidebar-footer');
-                    if (sidebarFooter) {
-                        const toggleBtn = document.createElement('button');
+
+            // Centralized Sidebar Event Initializer (reusable for cached and fetched versions)
+            function initializeSidebarEvents(sidebarEl, role) {
+                const sidebarFooter = sidebarEl.querySelector('.sidebar-footer');
+                if (sidebarFooter) {
+                    // Check if toggleBtn is already added
+                    let toggleBtn = sidebarFooter.querySelector('#btn-theme-toggle');
+                    if (!toggleBtn) {
+                        toggleBtn = document.createElement('button');
                         toggleBtn.className = 'btn-theme-toggle';
                         toggleBtn.id = 'btn-theme-toggle';
                         toggleBtn.title = 'Toggle Theme';
@@ -247,94 +341,122 @@
                         const logoutBtn = sidebarFooter.querySelector('#btn-logout') || sidebarFooter.querySelector('.btn-logout-premium');
                         if (logoutBtn) {
                             sidebarFooter.insertBefore(toggleBtn, logoutBtn);
-                            logoutBtn.onclick = (e) => {
-                                e.preventDefault();
-                                if (confirm("Are you sure you want to log out of ThrustVault?")) {
-                                    const sessionStr = localStorage.getItem('thrustvault_session');
-                                    if (sessionStr) {
-                                        try {
-                                            const session = JSON.parse(sessionStr);
-                                            fetch('/api/log-activity', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({
-                                                    email: session.email,
-                                                    role: session.role,
-                                                    action: 'Logout',
-                                                    details: 'Logged out successfully.'
-                                                })
-                                            }).catch(err => console.error(err));
-                                        } catch(err) {}
-                                    }
-                                    localStorage.removeItem('thrustvault_session');
-                                    
-                                    fetch('/api/auth/logout', { method: 'POST' })
-                                        .finally(() => {
-                                            window.location.href = 'login';
-                                        });
-                                }
-                            };
                         } else {
                             sidebarFooter.appendChild(toggleBtn);
                         }
-                        
-                        toggleBtn.onclick = () => {
-                            const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-                            document.documentElement.setAttribute('data-theme', theme);
-                            localStorage.setItem('thrustvault_theme', theme);
-                            
-                            const newIcon = theme === 'dark' ? 'sun' : 'moon';
-                            const newText = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
-                            toggleBtn.innerHTML = `<i data-lucide="${newIcon}" style="width:16px; height:16px;"></i> <span>${newText}</span>`;
-                            if (window.lucide) window.lucide.createIcons();
-                        };
                     }
                     
-                    const toggleBtn = sidebarEl.querySelector('.btn-toggle-sidebar');
-                    if (toggleBtn) {
-                        toggleBtn.onclick = () => {
-                            sidebarEl.classList.toggle('collapsed');
-                            const isCollapsed = sidebarEl.classList.contains('collapsed');
-                            localStorage.setItem('thrustvault_sidebar_collapsed', isCollapsed);
-                        };
-                    }
-                    
-                    const catalogDropdownToggle = sidebarEl.querySelector('#catalog-dropdown-toggle');
-                    if (catalogDropdownToggle) {
-                        catalogDropdownToggle.onclick = (e) => {
+                    const logoutBtn = sidebarFooter.querySelector('#btn-logout') || sidebarFooter.querySelector('.btn-logout-premium');
+                    if (logoutBtn) {
+                        logoutBtn.onclick = (e) => {
                             e.preventDefault();
-                            const dropdownWrapper = catalogDropdownToggle.closest('.sidebar-dropdown-wrapper');
-                            if (dropdownWrapper) {
-                                dropdownWrapper.classList.toggle('expanded');
+                            if (confirm("Are you sure you want to log out of ThrustVault?")) {
+                                const sessionStr = localStorage.getItem('thrustvault_session');
+                                if (sessionStr) {
+                                    try {
+                                        const session = JSON.parse(sessionStr);
+                                        fetch('/api/log-activity', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                email: session.email,
+                                                role: session.role,
+                                                action: 'Logout',
+                                                details: 'Logged out successfully.'
+                                            })
+                                        }).catch(err => console.error(err));
+                                    } catch(err) {}
+                                }
+                                localStorage.removeItem('thrustvault_session');
+                                
+                                fetch('/api/auth/logout', { method: 'POST' })
+                                    .finally(() => {
+                                        window.location.href = '/login';
+                                    });
                             }
                         };
                     }
                     
-                    const sessionEmailEl = sidebarEl.querySelector('#session-email');
-                    const sessionInitialsEl = sidebarEl.querySelector('#user-avatar-initials');
-                    const sessionStr = localStorage.getItem('thrustvault_session');
-                    if (sessionStr && sessionEmailEl) {
-                        try {
-                            const session = JSON.parse(sessionStr);
-                            sessionEmailEl.textContent = session.email;
-                            if (sessionInitialsEl && session.email) {
-                                sessionInitialsEl.textContent = session.email.charAt(0).toUpperCase();
-                            }
-                        } catch(e) {}
-                    }
-                    
-                    window.sidebarLoaded = true;
-                    window.sidebarRole = sidebarRole;
-                    if (window.lucide) window.lucide.createIcons();
-                    window.dispatchEvent(new CustomEvent('sidebarLoaded', { detail: { role: sidebarRole } }));
-                })
-                .catch(err => {
-                    console.error("Sidebar loading error:", err);
-                });
+                    toggleBtn.onclick = () => {
+                        const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                        document.documentElement.setAttribute('data-theme', theme);
+                        localStorage.setItem('thrustvault_theme', theme);
+                        
+                        const newIcon = theme === 'dark' ? 'sun' : 'moon';
+                        const newText = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+                        toggleBtn.innerHTML = `<i data-lucide="${newIcon}" style="width:16px; height:16px;"></i> <span>${newText}</span>`;
+                        if (window.lucide) window.lucide.createIcons();
+                    };
+                }
+                
+                const toggleBtn = sidebarEl.querySelector('.btn-toggle-sidebar');
+                if (toggleBtn) {
+                    toggleBtn.onclick = () => {
+                        sidebarEl.classList.toggle('collapsed');
+                        const isCollapsed = sidebarEl.classList.contains('collapsed');
+                        localStorage.setItem('thrustvault_sidebar_collapsed', isCollapsed);
+                    };
+                }
+                
+                const catalogDropdownToggle = sidebarEl.querySelector('#catalog-dropdown-toggle');
+                if (catalogDropdownToggle) {
+                    catalogDropdownToggle.onclick = (e) => {
+                        e.preventDefault();
+                        const dropdownWrapper = catalogDropdownToggle.closest('.sidebar-dropdown-wrapper');
+                        if (dropdownWrapper) {
+                            dropdownWrapper.classList.toggle('expanded');
+                        }
+                    };
+                }
+                
+                syncSidebarUserProfiles(sidebarEl);
+                if (window.lucide) window.lucide.createIcons();
+                window.dispatchEvent(new CustomEvent('sidebarLoaded', { detail: { role: role } }));
+            }
+
+            if (window.sidebarLoaded) {
+                // Already injected synchronously, just bind event listeners
+                initializeSidebarEvents(sidebarEl, sidebarRole);
+            } else {
+                // First load: fetch, cache, and then render
+                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}`;
+                fetch(`sidebar_${sidebarRole}.html`)
+                    .then(res => {
+                        if (!res.ok) throw new Error("Failed to load sidebar template");
+                        return res.text();
+                    })
+                    .then(html => {
+                        sessionStorage.setItem(cacheKey, html);
+                        
+                        const existingScript = sidebarEl.querySelector('script');
+                        sidebarEl.innerHTML = '';
+                        if (existingScript) {
+                            sidebarEl.appendChild(existingScript);
+                        }
+                        
+                        const templateWrapper = document.createElement('div');
+                        templateWrapper.innerHTML = html;
+                        while (templateWrapper.firstChild) {
+                            sidebarEl.appendChild(templateWrapper.firstChild);
+                        }
+                        
+                        // Clean up skeletons if parsed
+                        const skeleton = sidebarEl.querySelector('.sidebar-skeleton-wrapper');
+                        if (skeleton) skeleton.remove();
+
+                        highlightActiveSidebarLink(sidebarEl);
+                        window.sidebarLoaded = true;
+                        window.sidebarRole = sidebarRole;
+                        document.documentElement.classList.add('tv-sidebar-loaded');
+                        initializeSidebarEvents(sidebarEl, sidebarRole);
+                    })
+                    .catch(err => {
+                        console.error("Sidebar loading error:", err);
+                    });
+            }
         }
 
-        // 2b. Background session validation check
-        const path = window.location.pathname;
+        // 3b. Background session validation check
         const isProtectedRoute = path.includes('/admin/') || path.includes('/intern/') || path.includes('/guest/') ||
                                  path.includes('dashboard') || path.includes('analytics') || path.includes('explorer') ||
                                  path.includes('users') || path.includes('requests') || path.includes('schema') ||
@@ -348,7 +470,6 @@
                         localStorage.removeItem('thrustvault_session');
                         window.location.href = '/login';
                     } else {
-                        // Sync localStorage with session metadata safely (no token stored)
                         const sessionData = {
                             email: sessionRes.email,
                             role: sessionRes.role,
@@ -364,7 +485,7 @@
         }
     });
 
-    // 3. Page load completed event
+    // 4. Page load completed event
     window.addEventListener('load', () => {
         const pb = document.getElementById('tv-progress-bar');
         const overlay = document.getElementById('tv-page-loader-overlay');
@@ -383,7 +504,7 @@
         if (window.lucide) window.lucide.createIcons();
     });
 
-    // 4. Intercept link navigation to trigger slide-out animations
+    // 5. Intercept link navigation to trigger slide-out animations
     document.addEventListener('click', (e) => {
         const anchor = e.target.closest('a');
         if (!anchor) return;
@@ -391,12 +512,6 @@
         const href = anchor.getAttribute('href');
         const target = anchor.getAttribute('target');
         
-        // Exclude specific links:
-        // - Hash links/Javascript voids
-        // - Outer targets (like _blank)
-        // - Download actions
-        // - Key-modifier clicks (Ctrl/Cmd)
-        // - Disabled anchors
         if (href && 
             !href.startsWith('#') && 
             !href.startsWith('javascript:') && 
@@ -408,7 +523,7 @@
             
             e.preventDefault();
             
-            // Re-inject overlay or restore it
+            // Re-inject overlay or restore it inside the scoped container
             let overlay = document.getElementById('tv-page-loader-overlay');
             if (!overlay) {
                 overlay = document.createElement('div');
@@ -428,7 +543,8 @@
                         </div>
                     </div>
                 `;
-                document.body.appendChild(overlay);
+                const loaderContainer = hasSidebar ? (document.querySelector('.main-content-wrapper') || document.body) : document.body;
+                loaderContainer.appendChild(overlay);
             }
             
             // Adjust overlay text based on destination
@@ -453,7 +569,7 @@
                 }, 10);
             }
 
-            // Start fade out of current page, fade in of transition loader
+            // Start fade out of transition target selector, fade in of transition loader
             document.documentElement.classList.remove('tv-loaded');
             overlay.classList.remove('fade-out');
             
@@ -463,7 +579,7 @@
         }
     });
 
-    // 5. Handle back-forward cache restores
+    // 6. Handle back-forward cache restores
     window.addEventListener('pageshow', (event) => {
         if (event.persisted) {
             document.documentElement.classList.add('tv-loaded');

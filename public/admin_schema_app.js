@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const session = JSON.parse(localStorage.getItem('thrustvault_session'));
     if (!session || session.role !== 'admin') {
         localStorage.removeItem('thrustvault_session');
-        window.location.href = 'index.html';
+        window.location.href = '/';
         return;
     }
 
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('thrustvault_session');
         const secureFlag = window.location.protocol === 'https:' ? '; Secure' : '';
         document.cookie = `thrustvault_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict${secureFlag}`;
-        window.location.href = 'index.html';
+        window.location.href = '/';
     }
 
     
@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
             div.onclick = (e) => {
                 if (e.target.closest('.btn-delete-cat')) return;
                 sessionStorage.setItem('activeCategory', cat.id);
-                window.location.href = 'admin_dashboard';
+                window.location.href = '/admin/dashboard';
             };
             
             const delBtn = div.querySelector('.btn-delete-cat');
@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
         allTab.className = 'category-tab';
         allTab.innerHTML = '<span>All Motors</span>';
         allTab.onclick = () => {
-            window.location.href = 'motor_explorer';
+            window.location.href = '/admin/explorer';
         };
         elements.catList.appendChild(allTab);
         if (window.lucide) window.lucide.createIcons();
@@ -379,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (elements.btnAddCat) {
             elements.btnAddCat.onclick = () => {
                 sessionStorage.setItem('triggerAddCategory', 'true');
-                window.location.href = 'admin_dashboard';
+                window.location.href = '/admin/dashboard';
             };
         }
 
@@ -389,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sidebarProfileCard.title = 'View My Profile';
             sidebarProfileCard.onclick = () => {
                 sessionStorage.setItem('showMyProfile', 'true');
-                window.location.href = 'admin_users';
+                window.location.href = '/admin/users';
             };
         }
     }

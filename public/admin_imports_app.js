@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const session = JSON.parse(localStorage.getItem('thrustvault_session'));
     if (!session || session.role !== 'admin') {
         localStorage.removeItem('thrustvault_session');
-        window.location.href = 'index.html';
+        window.location.href = '/';
         return;
     }
 
@@ -54,7 +54,12 @@ document.addEventListener('DOMContentLoaded', () => {
         previewTableRows: document.getElementById('preview-table-rows'),
         btnCancelPreview: document.getElementById('btn-cancel-preview'),
         btnSaveImports: document.getElementById('btn-save-imports'),
-        confirmModal: document.getElementById('confirm-modal')
+        confirmModal: document.getElementById('confirm-modal'),
+        get totalMotors() { return document.getElementById('total-motors-count'); },
+        get totalCats() { return document.getElementById('total-categories-count'); },
+        get catList() { return document.getElementById('category-list-container'); },
+        get btnAddCat() { return document.getElementById('btn-add-category'); },
+        get requestsPendingBadge() { return document.getElementById('requests-pending-badge'); }
     };
 
     // Stepper progress modal helper
@@ -184,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Initialization error:", err);
             alert("Database connection failed. Logging out.");
             localStorage.removeItem('thrustvault_session');
-            window.location.href = 'login';
+            window.location.href = '/login';
         }
     }
 
@@ -1001,7 +1006,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert(`Import successful! Added ${inserts.length} motors and updated ${updates.length} duplicates.`);
             
             // Redirect to dashboard Catalog View
-            window.location.href = 'admin_dashboard';
+            window.location.href = '/admin/dashboard';
 
         } catch (err) {
             console.error("Import error:", err);
@@ -1010,6 +1015,137 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function fetchSidebarCounts() {
+        try {
+            const [motorsRes, catsRes] = await Promise.all([
+                fetch('/api/guest/motors'),
+                fetch('/api/guest/categories?order=name')
+            ]);
+
+            if (!motorsRes.ok) throw new Error("Failed to load motors");
+            if (!catsRes.ok) throw new Error("Failed to load categories");
+
+            state.motors = await motorsRes.json();
+            state.categories = await catsRes.json();
+            
+            let accessRequests = [];
+            if (session && session.role === 'admin') {
+                try {
+                    const reqsRes = await fetch('/api/admin/access-requests?order=created_at.desc');
+                    if (reqsRes.ok) {
+                        accessRequests = await reqsRes.json();
+                    }
+                } catch (e) {
+                    console.warn("Could not load access requests:", e);
+                }
+            }
+
+            if (elements.totalMotors) elements.totalMotors.textContent = state.motors.length;
+            if (elements.totalCats) elements.totalCats.textContent = state.categories.length;
+
+            const pendingRequests = accessRequests.filter(r => r.status === 'pending').length;
+            if (elements.requestsPendingBadge) {
+                if (pendingRequests > 0) {
+                    elements.requestsPendingBadge.style.display = 'inline-block';
+                    elements.requestsPendingBadge.textContent = pendingRequests;
+                } else {
+                    elements.requestsPendingBadge.style.display = 'none';
+                }
+            }
+
+            renderSidebar();
+        } catch (err) {
+            console.error("Error fetching sidebar metrics:", err);
+        }
+    }
+
+    function renderSidebar() {
+        if (!elements.catList) return;
+        elements.catList.innerHTML = '';
+        state.categories.forEach(cat => {
+            const count = state.motors.filter(m => m.category_id === cat.id).length;
+            const div = document.createElement('div');
+            div.className = 'category-tab';
+            div.innerHTML = `
+                <span>${cat.name}</span>
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <span class="cat-count">${count}</span>
+                    <button class="btn-delete-cat" data-id="${cat.id}" title="Delete Category"><i data-lucide="trash-2" style="width:14px;"></i></button>
+                </div>
+            `;
+            
+            div.onclick = (e) => {
+                if (e.target.closest('.btn-delete-cat')) return;
+                sessionStorage.setItem('activeCategory', cat.id);
+                window.location.href = '/admin/dashboard';
+            };
+            
+            const delBtn = div.querySelector('.btn-delete-cat');
+            delBtn.onclick = async (e) => {
+                e.stopPropagation();
+                const confirmDelete = await customConfirm(
+                    "Delete Category?",
+                    `Are you sure you want to delete the category "${cat.name}"? All specifications inside it will be permanently deleted.`
+                );
+                if (confirmDelete) {
+                    try {
+                        const res = await fetch(`/api/intern/categories/${cat.id}`, {
+                            method: 'DELETE'
+                        });
+                        if (!res.ok) {
+                            const errData = await res.json();
+                            throw new Error(errData.error || `HTTP ${res.status}`);
+                        }
+                        logUserActivity(session.email, session.role, 'Category Deleted', `Deleted category: ${cat.name}`);
+                        await fetchSidebarCounts();
+                        renderCategoriesSelect(); // refresh options select in bulk importer
+                    } catch (err) {
+                        alert("Failed to delete category: " + err.message);
+                    }
+                }
+            };
+            elements.catList.appendChild(div);
+        });
+
+        const allTab = document.createElement('div');
+        allTab.className = 'category-tab';
+        allTab.innerHTML = '<span>All Motors</span>';
+        allTab.onclick = () => {
+            window.location.href = '/admin/explorer';
+        };
+        elements.catList.appendChild(allTab);
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    function setupSidebar() {
+        if (typeof fetchSidebarCounts === 'function') {
+            fetchSidebarCounts();
+        }
+
+        if (elements.btnAddCat) {
+            elements.btnAddCat.onclick = () => {
+                sessionStorage.setItem('triggerAddCategory', 'true');
+                window.location.href = '/admin/dashboard';
+            };
+        }
+
+        const sidebarProfileCard = document.querySelector('.sidebar-user-profile');
+        if (sidebarProfileCard) {
+            sidebarProfileCard.style.cursor = 'pointer';
+            sidebarProfileCard.title = 'View My Profile';
+            sidebarProfileCard.onclick = () => {
+                sessionStorage.setItem('showMyProfile', 'true');
+                window.location.href = '/admin/users';
+            };
+        }
+    }
+
     // Bootstrap app
     init();
+
+    if (window.sidebarLoaded) {
+        setupSidebar();
+    } else {
+        window.addEventListener('sidebarLoaded', setupSidebar);
+    }
 });

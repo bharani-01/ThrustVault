@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const session = JSON.parse(localStorage.getItem('thrustvault_session'));
     if (!session || session.role !== 'guest') {
         localStorage.removeItem('thrustvault_session');
-        window.location.href = 'index.html';
+        window.location.href = '/';
         return;
     }
 
@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
         allTab.className = 'category-tab';
         allTab.innerHTML = '<span>All Motors</span>';
         allTab.onclick = () => {
-            window.location.href = 'motor_explorer';
+            window.location.href = '/guest/explorer';
         };
         elements.catList.appendChild(allTab);
     }
@@ -1172,7 +1172,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('thrustvault_session');
         fetch('/api/auth/logout', { method: 'POST' })
             .finally(() => {
-                window.location.href = 'login';
+                window.location.href = '/login';
             });
     }
 

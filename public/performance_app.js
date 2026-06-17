@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const session = JSON.parse(localStorage.getItem('thrustvault_session'));
     if (!session) {
         localStorage.removeItem('thrustvault_session');
-        window.location.href = 'index.html';
+        window.location.href = '/';
         return;
     }
 
@@ -95,61 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Update sidebar header subtitle to match the actual logged-in role
-    const sidebarSubtitle = document.querySelector('.logo-text p');
-    if (sidebarSubtitle) {
-        if (session.role === 'intern') sidebarSubtitle.textContent = 'Intern Workspace';
-        else if (session.role === 'guest') sidebarSubtitle.textContent = 'Guest Access';
-        else sidebarSubtitle.textContent = 'Administrator Console';
-    }
 
-    // Setup sidebar nav links based on role
-    const sidebarMenu = document.querySelector('.sidebar-menu-links');
-    if (sidebarMenu) {
-        if (session.role === 'admin') {
-            sidebarMenu.innerHTML = `
-                <a href="/admin/dashboard" class="btn-sidebar-link" id="btn-show-catalog" title="Catalog View">
-                    <i data-lucide="database"></i> Catalog Dashboard
-                </a>
-                <a href="/admin/users" class="btn-sidebar-link" id="btn-show-users" title="User Management">
-                    <i data-lucide="users"></i> User Management
-                </a>
-                <a href="/admin/access-requests" class="btn-sidebar-link" id="btn-show-requests" title="Access Requests">
-                    <i data-lucide="user-check"></i> Access Requests <span id="requests-pending-badge" class="count-badge" style="background:#e11d48; color:#fff; display:none; margin-left: auto;">0</span>
-                </a>
-                <a href="/admin/schema-customizer" class="btn-sidebar-link" id="btn-show-schema" title="Template & Schema Customizer">
-                    <i data-lucide="settings"></i> Schema Customizer
-                </a>
-                <a href="/admin/analytics" class="btn-sidebar-link active" id="btn-show-performance" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
-                    <i data-lucide="trending-up"></i> Performance Analytics
-                </a>
-                <a href="/admin/exports" class="btn-sidebar-link" id="btn-show-exports" title="Data Exporter" style="text-decoration: none; box-sizing: border-box;">
-                    <i data-lucide="download"></i> Data Exporter
-                </a>
-                <a href="/admin/audit-logs" class="btn-sidebar-link" id="btn-show-audit" title="Audit Logs" style="text-decoration: none; box-sizing: border-box;">
-                    <i data-lucide="shield-alert"></i> Audit Logs
-                </a>
-            `;
-        } else if (session.role === 'intern') {
-            sidebarMenu.innerHTML = `
-                <a href="/intern/dashboard" class="btn-sidebar-link" title="Catalog View" style="text-decoration: none; box-sizing: border-box;">
-                    <i data-lucide="database"></i> Catalog Dashboard
-                </a>
-                <a href="/intern/analytics" class="btn-sidebar-link active" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
-                    <i data-lucide="trending-up"></i> Performance Analytics
-                </a>
-            `;
-        } else { // guest
-            sidebarMenu.innerHTML = `
-                <a href="/guest/dashboard" class="btn-sidebar-link" title="Catalog View" style="text-decoration: none; box-sizing: border-box;">
-                    <i data-lucide="database"></i> Catalog Dashboard
-                </a>
-                <a href="/guest/analytics" class="btn-sidebar-link active" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
-                    <i data-lucide="trending-up"></i> Performance Analytics
-                </a>
-            `;
-        }
-    }
 
     // createIcons AFTER sidebar HTML is fully written so all injected icons render
     lucide.createIcons();
@@ -2890,7 +2836,8 @@ document.addEventListener('DOMContentLoaded', () => {
             div.onclick = (e) => {
                 if (e.target.closest('.btn-delete-cat')) return;
                 sessionStorage.setItem('activeCategory', cat.id);
-                window.location.href = 'admin_dashboard';
+                const targetDash = (session && session.role === 'intern') ? '/intern/dashboard' : ((session && session.role === 'guest') ? '/guest/dashboard' : '/admin/dashboard');
+                window.location.href = targetDash;
             };
             
             const delBtn = div.querySelector('.btn-delete-cat');
@@ -2928,7 +2875,7 @@ document.addEventListener('DOMContentLoaded', () => {
         allTab.className = 'category-tab';
         allTab.innerHTML = '<span>All Motors</span>';
         allTab.onclick = () => {
-            window.location.href = 'motor_explorer';
+            window.location.href = `/${session.role}/explorer`;
         };
         elements.catList.appendChild(allTab);
         if (window.lucide) window.lucide.createIcons();
@@ -3007,7 +2954,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear cookie
         const secureFlag = window.location.protocol === 'https:' ? '; Secure' : '';
         document.cookie = `thrustvault_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict${secureFlag}`;
-        window.location.href = 'index.html';
+        window.location.href = '/';
     }
 
     // Sidebar Profile Click Trigger is setup dynamically in setupSidebar()
@@ -3062,7 +3009,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (elements.btnAddCat) {
             elements.btnAddCat.onclick = () => {
                 sessionStorage.setItem('triggerAddCategory', 'true');
-                const targetDash = (session && session.role === 'intern') ? 'intern_dashboard' : 'admin_dashboard';
+                const targetDash = (session && session.role === 'intern') ? '/intern/dashboard' : '/admin/dashboard';
                 window.location.href = targetDash;
             };
         }
@@ -3074,7 +3021,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 sidebarProfileCard.title = 'View My Profile';
                 sidebarProfileCard.onclick = () => {
                     sessionStorage.setItem('showMyProfile', 'true');
-                    window.location.href = 'admin_users';
+                    window.location.href = '/admin/users';
                 };
             }
         }

@@ -909,12 +909,112 @@ def performance_app_js():
 
 @app.route('/admin/explorer')
 @app.route('/admin_explorer')
-@app.route('/motor_explorer')
-@app.route('/motor_explorer.html')
 def admin_explorer():
     if request.path != '/admin/explorer':
         return redirect('/admin/explorer')
     return verify_dashboard_access('admin', 'motor_explorer.html')
+
+@app.route('/admin/motor_explorer')
+@app.route('/admin/motor_explorer.html')
+def admin_motor_explorer_redirect():
+    return redirect('/admin/explorer')
+
+@app.route('/intern/motor_explorer')
+@app.route('/intern/motor_explorer.html')
+def intern_motor_explorer_redirect():
+    return redirect('/intern/explorer')
+
+@app.route('/guest/motor_explorer')
+@app.route('/guest/motor_explorer.html')
+def guest_motor_explorer_redirect():
+    return redirect('/guest/explorer')
+
+@app.route('/admin/admin_dashboard')
+@app.route('/admin/admin_dashboard.html')
+def admin_dashboard_fallback():
+    return redirect('/admin/dashboard')
+
+@app.route('/intern/intern_dashboard')
+@app.route('/intern/intern_dashboard.html')
+def intern_dashboard_fallback():
+    return redirect('/intern/dashboard')
+
+@app.route('/guest/guest_dashboard')
+@app.route('/guest/guest_dashboard.html')
+def guest_dashboard_fallback():
+    return redirect('/guest/dashboard')
+
+@app.route('/admin/admin_users')
+@app.route('/admin/admin_users.html')
+def admin_users_fallback():
+    return redirect('/admin/users')
+
+@app.route('/admin/login')
+@app.route('/intern/login')
+@app.route('/guest/login')
+def subpath_login_fallback():
+    return redirect('/login')
+
+@app.route('/admin/index.html')
+@app.route('/intern/index.html')
+@app.route('/guest/index.html')
+def subpath_index_fallback():
+    return redirect('/')
+
+# Additional Admin / User action fallbacks
+@app.route('/admin/admin_imports')
+@app.route('/admin/admin_imports.html')
+def admin_imports_fallback_spec():
+    return redirect('/admin/imports')
+
+@app.route('/admin/admin_exports')
+@app.route('/admin/admin_exports.html')
+def admin_exports_fallback_spec():
+    return redirect('/admin/exports')
+
+@app.route('/admin/admin_audit_logs')
+@app.route('/admin/admin_audit_logs.html')
+def admin_audit_logs_fallback_spec():
+    return redirect('/admin/audit-logs')
+
+@app.route('/admin/admin_access_requests')
+@app.route('/admin/admin_access_requests.html')
+def admin_access_requests_fallback_spec():
+    return redirect('/admin/access-requests')
+
+@app.route('/admin/admin_schema_customizer')
+@app.route('/admin/admin_schema_customizer.html')
+def admin_schema_customizer_fallback_spec():
+    return redirect('/admin/schema-customizer')
+
+@app.route('/admin/performance_analytics')
+@app.route('/admin/performance_analytics.html')
+def admin_performance_analytics_fallback():
+    return redirect('/admin/analytics')
+
+@app.route('/intern/performance_analytics')
+@app.route('/intern/performance_analytics.html')
+def intern_performance_analytics_fallback():
+    return redirect('/intern/analytics')
+
+@app.route('/guest/performance_analytics')
+@app.route('/guest/performance_analytics.html')
+def guest_performance_analytics_fallback():
+    return redirect('/guest/analytics')
+
+
+
+@app.route('/motor_explorer')
+@app.route('/motor_explorer.html')
+def motor_explorer_redirect():
+    role = session.get('role')
+    if role == 'admin':
+        return redirect('/admin/explorer')
+    elif role == 'intern':
+        return redirect('/intern/explorer')
+    elif role == 'guest':
+        return redirect('/guest/explorer')
+    return redirect('/login')
 
 @app.route('/intern/explorer')
 @app.route('/intern_explorer')

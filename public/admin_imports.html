@@ -47,6 +47,26 @@
             position: relative;
         }
 
+        /* Guidelines Card */
+        .guidelines-card {
+            background: rgba(37, 99, 235, 0.03);
+            border: 1px solid rgba(37, 99, 235, 0.15);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            transition: all 0.2s ease;
+        }
+        [data-theme="dark"] .guidelines-card {
+            background: rgba(59, 130, 246, 0.03);
+            border: 1px solid rgba(59, 130, 246, 0.18);
+        }
+        .guidelines-card:hover {
+            border-color: rgba(37, 99, 235, 0.3);
+            box-shadow: var(--shadow-sm);
+        }
+        [data-theme="dark"] .guidelines-card:hover {
+            border-color: rgba(59, 130, 246, 0.35);
+        }
+
         /* File Dropzone Styles */
         .dropzone-container {
             border: 2px dashed var(--border-color);
@@ -55,7 +75,7 @@
             padding: 35px 20px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -64,22 +84,35 @@
         .dropzone-container:hover, .dropzone-container.dragover {
             border-color: var(--primary-color);
             background: rgba(37, 99, 235, 0.02);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px -5px rgba(37, 99, 235, 0.1);
         }
         [data-theme="dark"] .dropzone-container:hover, [data-theme="dark"] .dropzone-container.dragover {
-            background: rgba(59, 130, 246, 0.04);
+            background: rgba(59, 130, 246, 0.03);
+            box-shadow: 0 4px 20px -5px rgba(59, 130, 246, 0.15);
         }
         .dropzone-icon {
             color: var(--text-muted);
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: rgba(0, 0, 0, 0.02);
             border-radius: var(--radius-md);
+            transition: all 0.25s ease;
         }
         [data-theme="dark"] .dropzone-icon {
             background: rgba(255, 255, 255, 0.05);
+        }
+        .dropzone-container:hover .dropzone-icon {
+            color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.06);
+            transform: scale(1.05);
+        }
+        [data-theme="dark"] .dropzone-container:hover .dropzone-icon {
+            color: var(--primary-hover);
+            background: rgba(59, 130, 246, 0.1);
         }
         .dropzone-title {
             font-size: 0.9rem;
@@ -164,21 +197,109 @@
             margin-bottom: 8px;
         }
 
+        /* Mapper Select Dropdown Styling */
+        .mapper-select {
+            width: 100%;
+            min-width: 140px;
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: var(--bg-panel-solid);
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-weight: 550;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .mapper-select:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+        .mapper-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+        [data-theme="dark"] .mapper-select:hover {
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+        }
+
+        /* Stats Strip Enhancements */
+        .stats-strip {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 5px;
+        }
+        .stat-box {
+            flex: 1;
+            padding: 14px 16px;
+            background: var(--bg-panel-solid);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: default;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-box::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--text-muted);
+            opacity: 0.7;
+            transition: width 0.2s ease;
+        }
+        .stat-box:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .stat-box:hover::before {
+            width: 6px;
+        }
+        .stat-box.stat-total::before { background: var(--primary-color); }
+        .stat-box.stat-valid::before { background: var(--success-color); }
+        .stat-box.stat-dup::before { background: #d97706; }
+        .stat-box.stat-err::before { background: var(--danger-color); }
+        
+        .stat-box.stat-total:hover {
+            border-color: rgba(37, 99, 235, 0.2);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.05);
+        }
+        .stat-box.stat-valid:hover {
+            border-color: rgba(16, 185, 129, 0.25);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.05);
+        }
+        .stat-box.stat-dup:hover {
+            border-color: rgba(217, 119, 6, 0.25);
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.05);
+        }
+        .stat-box.stat-err:hover {
+            border-color: rgba(225, 29, 72, 0.25);
+            box-shadow: 0 4px 12px rgba(225, 29, 72, 0.05);
+        }
+
         /* Validation Badge Styles */
         .validation-badge {
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            padding: 3px 8px;
-            border-radius: 20px;
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
             font-size: 0.72rem;
             font-weight: 700;
             white-space: nowrap;
+            letter-spacing: 0.02em;
         }
         .validation-badge.valid {
-            background: #f0fdf4;
+            background: rgba(16, 185, 129, 0.08);
             color: #059669;
-            border: 1px solid #bbf7d0;
+            border: 1px solid rgba(16, 185, 129, 0.18);
         }
         [data-theme="dark"] .validation-badge.valid {
             background: rgba(16, 185, 129, 0.15);
@@ -186,9 +307,9 @@
             border: 1px solid rgba(16, 185, 129, 0.25);
         }
         .validation-badge.duplicate {
-            background: #fffbeb;
+            background: rgba(217, 119, 6, 0.08);
             color: #d97706;
-            border: 1px solid #fde68a;
+            border: 1px solid rgba(217, 119, 6, 0.18);
         }
         [data-theme="dark"] .validation-badge.duplicate {
             background: rgba(217, 119, 6, 0.15);
@@ -196,9 +317,9 @@
             border: 1px solid rgba(217, 119, 6, 0.25);
         }
         .validation-badge.invalid {
-            background: #fff1f2;
+            background: rgba(225, 29, 72, 0.08);
             color: #e11d48;
-            border: 1px solid #fecdd3;
+            border: 1px solid rgba(225, 29, 72, 0.18);
         }
         [data-theme="dark"] .validation-badge.invalid {
             background: rgba(225, 29, 72, 0.15);
@@ -210,6 +331,73 @@
         }
         [data-theme="dark"] tr.row-invalid {
             background: rgba(225, 29, 72, 0.05) !important;
+        }
+
+        /* Custom scrollbar for preview table */
+        .preview-table-scroll-wrapper::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .preview-table-scroll-wrapper::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .preview-table-scroll-wrapper::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: var(--radius-full);
+        }
+        .preview-table-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Glassmorphic Modals and Animations */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+        .modal-overlay.show {
+            display: flex !important;
+            opacity: 1;
+        }
+        .modal-container {
+            background: var(--bg-panel-solid);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            padding: 25px;
+            width: 100%;
+            max-width: 480px;
+            box-sizing: border-box;
+            transform: scale(0.95);
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .modal-overlay.show .modal-container {
+            transform: scale(1);
+        }
+
+        /* Progress Shimmer Animation */
+        #import-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            background-size: 200% 100%;
+            animation: progress-shimmer 2s linear infinite;
+            transition: width 0.2s ease;
+        }
+        @keyframes progress-shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
 
         /* Stepper Milestones Styles */
@@ -240,6 +428,10 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            transition: transform 0.2s ease;
+        }
+        .stepper-step.active .step-indicator {
+            transform: scale(1.1);
         }
         .step-content {
             display: flex;
@@ -256,6 +448,12 @@
             font-size: 0.75rem;
             color: var(--text-secondary);
             margin: 0;
+        }
+        .spin-animation {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
         }
     </style>
     <!-- Page Loader Transition Script -->
@@ -290,13 +488,33 @@
                     <!-- Left Panel: Upload Controls -->
                     <div class="glass-panel importer-left-pane">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <a href="admin_dashboard" class="btn-secondary-sm" style="text-decoration:none;">
+                            <a href="/admin/dashboard" class="btn-secondary-sm" style="text-decoration:none;">
                                 <i data-lucide="arrow-left" style="width:14px; height:14px;"></i> Back
                             </a>
                         </div>
                         <h2 style="font-family:'Outfit', sans-serif; font-size:1.4rem; font-weight:700; color:var(--text-primary); margin-top:5px; margin-bottom:0;">Bulk Import Console</h2>
-                        <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">Prepare and upload a spreadsheet to bulk-populate motor specifications.</p>
+                        <p style="font-size:0.85rem; color:var(--text-muted); margin:0; margin-bottom:5px;">Prepare and upload a spreadsheet to bulk-populate motor specifications.</p>
                         
+                        <!-- Guidelines Panel -->
+                        <div class="guidelines-card" id="guidelines-card">
+                            <div class="guidelines-header" id="guidelines-toggle" style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none;">
+                                <div style="display:flex; align-items:center; gap:8px; font-size:0.82rem; font-weight:600; color:var(--primary-color);">
+                                    <i data-lucide="info" style="width:16px; height:16px;"></i>
+                                    <span>Import Requirements & Format</span>
+                                </div>
+                                <i data-lucide="chevron-down" id="guidelines-chevron" style="width:16px; height:16px; color:var(--text-muted); transition: transform 0.2s;"></i>
+                            </div>
+                            <div class="guidelines-content" id="guidelines-content" style="display:none; flex-direction:column; gap:10px; margin-top:12px; font-size:0.78rem; color:var(--text-secondary); line-height:1.45; border-top:1px solid var(--border-color); padding-top:12px;">
+                                <p style="margin:0;">To ensure a successful bulk import, please make sure your spreadsheet matches the requirements below:</p>
+                                <ul style="margin:0; padding-left:20px; display:flex; flex-direction:column; gap:6px;">
+                                    <li><strong>Required fields</strong>: A column for <code>Motor Model Name</code> is mandatory. If assigning categories <em>By Row</em>, a <code>Category</code> column is also required.</li>
+                                    <li><strong>Extensions</strong>: Excel (<code>.xlsx</code>, <code>.xls</code>), CSV (<code>.csv</code>), or JSON formats are accepted.</li>
+                                    <li><strong>Dynamic Columns</strong>: Any custom specs configured on ThrustVault (e.g. KV, weight) can be mapped dynamically from columns.</li>
+                                    <li><strong>Duplicates</strong>: Select whether to skip or overwrite existing motors in the system using the strategy dropdown.</li>
+                                </ul>
+                            </div>
+                        </div>
+
                         <button class="btn-secondary" id="btn-download-template" style="width:100%; justify-content:center; padding: 10px 14px; font-weight: 600;">
                             <i data-lucide="download-cloud" style="width:16px; height:16px;"></i> Download Import Template
                         </button>
@@ -373,20 +591,20 @@
                             </div>
 
                             <!-- Stats Counters strip -->
-                            <div class="stats-strip" style="display:flex; gap:15px; margin-bottom: 5px;">
-                                <div class="stat-box" style="flex:1; padding:12px; background:var(--bg-base); border-radius:var(--radius-md); border:1px solid var(--border-color); display:flex; flex-direction:column; gap:4px;">
+                            <div class="stats-strip">
+                                <div class="stat-box stat-total">
                                     <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Total Rows</span>
                                     <span id="stats-total-rows" style="font-size:1.3rem; font-weight:700; color:var(--text-primary);">0</span>
                                 </div>
-                                <div class="stat-box" style="flex:1; padding:12px; background:var(--bg-base); border-radius:var(--radius-md); border:1px solid var(--border-color); display:flex; flex-direction:column; gap:4px;">
+                                <div class="stat-box stat-valid">
                                     <span style="font-size:0.75rem; color:#059669; font-weight:600;">Ready to Import</span>
                                     <span id="stats-valid-rows" style="font-size:1.3rem; font-weight:700; color:#059669;">0</span>
                                 </div>
-                                <div class="stat-box" style="flex:1; padding:12px; background:var(--bg-base); border-radius:var(--radius-md); border:1px solid var(--border-color); display:flex; flex-direction:column; gap:4px;">
+                                <div class="stat-box stat-dup">
                                     <span style="font-size:0.75rem; color:#d97706; font-weight:600;">Duplicates</span>
                                     <span id="stats-dup-rows" style="font-size:1.3rem; font-weight:700; color:#d97706;">0</span>
                                 </div>
-                                <div class="stat-box" style="flex:1; padding:12px; background:var(--bg-base); border-radius:var(--radius-md); border:1px solid var(--border-color); display:flex; flex-direction:column; gap:4px;">
+                                <div class="stat-box stat-err">
                                     <span style="font-size:0.75rem; color:#e11d48; font-weight:600;">Errors</span>
                                     <span id="stats-err-rows" style="font-size:1.3rem; font-weight:700; color:#e11d48;">0</span>
                                 </div>
@@ -427,7 +645,7 @@
 
     <!-- Stepper progress modal overlay -->
     <div class="modal-overlay" id="import-progress-modal" style="display: none;">
-        <div class="modal-container" style="max-width: 480px; padding: 25px; border-radius: var(--radius-lg); background: var(--bg-panel-solid); border: 1px solid var(--border-color); box-shadow: var(--shadow-lg);">
+        <div class="modal-container">
             <div class="modal-header" style="margin-bottom:15px; border-bottom:1px solid var(--border-color); padding-bottom:10px;">
                 <h3 id="import-modal-title" style="font-family:'Outfit'; font-size:1.2rem; font-weight:700; color:var(--text-primary); margin:0;">Importing Motors</h3>
             </div>
@@ -435,8 +653,8 @@
                 <p id="import-modal-status" style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:15px;">Preparing upload...</p>
                 
                 <!-- Progress Bar -->
-                <div class="progress-bar-container" style="width:100%; height:8px; background:var(--bg-base); border:1px solid var(--border-color); border-radius:4px; overflow:hidden; margin-bottom:8px; position:relative;">
-                    <div id="import-progress-bar" style="height:100%; width:0%; background:var(--primary-color); transition:width 0.2s ease;"></div>
+                <div class="progress-bar-container">
+                    <div id="import-progress-bar" style="width: 0%;"></div>
                 </div>
                 <div style="text-align:right; font-size:0.8rem; font-weight:600; color:var(--primary-color); margin-bottom:20px;" id="import-progress-percent">0%</div>
 
@@ -477,7 +695,7 @@
 
     <!-- Confirm Modal -->
     <div class="modal-overlay" id="confirm-modal" style="display: none;">
-        <div class="modal-container" style="max-width: 400px; padding: 25px; border-radius: var(--radius-lg); background: var(--bg-panel-solid); border: 1px solid var(--border-color); box-shadow: var(--shadow-lg);">
+        <div class="modal-container" style="max-width: 400px;">
             <h3 id="confirm-title" style="font-family:'Outfit'; font-size:1.2rem; font-weight:700; color:var(--text-primary); margin:0; margin-bottom:10px;">Action Confirmation</h3>
             <p id="confirm-message" style="font-size:0.9rem; color:var(--text-secondary); line-height:1.5; margin:0; margin-bottom:20px;">Are you sure you want to perform this action?</p>
             <div style="display:flex; justify-content:flex-end; gap:10px;">
@@ -491,5 +709,25 @@
     <script src="admin_imports_app.js"></script>
     <!-- Onboarding Tour -->
     <script src="onboarding.js"></script>
+    <!-- Collapsible Guidelines script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggle = document.getElementById('guidelines-toggle');
+            const content = document.getElementById('guidelines-content');
+            const chevron = document.getElementById('guidelines-chevron');
+            if (toggle && content && chevron) {
+                toggle.addEventListener('click', () => {
+                    const isHidden = content.style.display === 'none';
+                    if (isHidden) {
+                        content.style.display = 'flex';
+                        chevron.style.transform = 'rotate(180deg)';
+                    } else {
+                        content.style.display = 'none';
+                        chevron.style.transform = 'rotate(0deg)';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
