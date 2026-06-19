@@ -1,0 +1,108 @@
+<!-- Logo Container (Left) -->
+<div class="logo-container" style="display: flex; align-items: center; width: auto;">
+    <a href="/admin/dashboard" class="logo-link">
+        <img src="logo_light.png" alt="ThrustVault Logo" class="logo-image logo-light" style="height: 32px; width: auto;">
+        <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark" style="height: 32px; width: auto;">
+    </a>
+</div>
+
+<!-- Navigation Links (Center) -->
+<nav class="sidebar-nav" style="display: flex !important; align-items: center; gap: 15px; padding: 0; margin: 0 auto !important; flex: none !important; overflow: visible;">
+    <div class="sidebar-menu-links" style="margin: 0; display: flex; flex-direction: row; gap: 10px; align-items: center;">
+        <a href="/admin/dashboard" class="btn-sidebar-link" id="btn-show-catalog" title="Catalog View" style="text-decoration: none;">
+            Catalog
+        </a>
+        <a href="/admin/analytics" class="btn-sidebar-link" title="Test Runs" style="text-decoration: none;">
+            Test Runs
+        </a>
+    </div>
+
+    <!-- Catalog Dropdown (Thrust Levels) -->
+    <div class="sidebar-dropdown-wrapper" style="position: relative; display: flex; align-items: center;">
+        <a href="#" class="btn-sidebar-link" id="catalog-dropdown-toggle" style="margin: 0;">
+            Thrust Levels
+            <i data-lucide="chevron-down" class="dropdown-chevron" style="width: 14px; height: 14px;"></i>
+        </a>
+        
+        <div class="category-list">
+            <div id="category-list-container" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Dynamic Categories will be injected here -->
+            </div>
+            <!-- Static Add Category button inside the dropdown wrapper, so it is never cleared! -->
+            <div class="dropdown-footer" style="border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 4px; display: flex; justify-content: center; width: 100%;">
+                <button class="btn-primary-sm" id="btn-add-category" style="width: 100%; justify-content: center; font-size: 0.8rem; padding: 6px 12px; border-radius: 6px;">
+                    Add Level
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Management Dropdown -->
+    <div class="sidebar-dropdown-wrapper" style="position: relative; display: flex; align-items: center;">
+        <a href="#" class="btn-sidebar-link" style="margin: 0;">
+            Data Management
+            <i data-lucide="chevron-down" class="dropdown-chevron" style="width: 14px; height: 14px;"></i>
+        </a>
+        <div class="category-list">
+            <a href="/admin/imports" class="btn-sidebar-link" id="btn-sidebar-import" title="Import Data" style="text-decoration: none; width: 100%;">
+                Bulk Imports
+            </a>
+            <a href="/admin/exports" class="btn-sidebar-link" title="Data Exporter" style="text-decoration: none; width: 100%;">
+                Data Exporter
+            </a>
+        </div>
+    </div>
+
+    <!-- Admin Tools Dropdown -->
+    <div class="sidebar-dropdown-wrapper" style="position: relative; display: flex; align-items: center;">
+        <a href="#" class="btn-sidebar-link" style="margin: 0;">
+            Admin Tools
+            <i data-lucide="chevron-down" class="dropdown-chevron" style="width: 14px; height: 14px;"></i>
+        </a>
+        <div class="category-list">
+            <a href="/admin/users" class="btn-sidebar-link" id="btn-show-users" title="User Management" style="text-decoration: none; width: 100%;">
+                User Management
+            </a>
+            <a href="/admin/access-requests" class="btn-sidebar-link" id="btn-show-requests" title="Access Requests" style="text-decoration: none; width: 100%; display: flex; justify-content: space-between; align-items: center;">
+                <span>Access Requests</span>
+                <span id="requests-pending-badge" class="count-badge" style="background:#e11d48; color:#fff; display:none; margin-left: 8px;">0</span>
+            </a>
+            <a href="/admin/schema-customizer" class="btn-sidebar-link" id="btn-show-schema" title="Template & Schema Customizer" style="text-decoration: none; width: 100%;">
+                Schema Customizer
+            </a>
+            <a href="/admin/audit-logs" class="btn-sidebar-link" title="Audit Logs" style="text-decoration: none; width: 100%;">
+                Audit Logs
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- Right Side Actions (Right) -->
+<div class="navbar-right" style="display: flex; align-items: center; gap: 20px;">
+    <!-- Stats Widgets (kept hidden to satisfy DOM counters if needed) -->
+    <div class="sidebar-stats" style="display: none;">
+        <span id="total-motors-count">0</span>
+        <span id="total-categories-count">0</span>
+    </div>
+
+    <!-- User Profile Dropdown Card -->
+    <div class="sidebar-footer" style="display: flex; align-items: center; margin: 0; padding: 0; border: none; background: transparent;">
+        <div class="user-profile-menu-wrapper">
+            <div class="user-avatar-trigger">
+                <div class="user-avatar" id="user-avatar-initials">A</div>
+                <i data-lucide="chevron-down" class="avatar-chevron"></i>
+            </div>
+            <div class="user-dropdown-card">
+                <div class="dropdown-user-details">
+                    <span class="user-email" id="session-email">admin@thrustvault.com</span>
+                    <span class="badge-role role-admin">Admin</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <!-- Logout Button -->
+                <button class="btn-logout-premium" id="btn-logout" title="Log Out">
+                    Log Out
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
