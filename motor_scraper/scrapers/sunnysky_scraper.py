@@ -21,25 +21,53 @@ class SunnySkyScraper(BaseScraper):
     name = "sunnysky"
     base_url = "https://sunnyskyusa.com"
 
+    # Only scrape motor-specific collections — NOT /collections/all which includes everything
     CATALOG_URLS = [
         "https://sunnyskyusa.com/collections/multi-rotor-motors",
         "https://sunnyskyusa.com/collections/x-series",
         "https://sunnyskyusa.com/collections/v-series",
-        "https://sunnyskyusa.com/collections/all",
+        "https://sunnyskyusa.com/collections/a-series",
+        "https://sunnyskyusa.com/collections/r-series",
     ]
+
+    # Products to skip — ESCs, accessories, non-motor hardware, helicopter/airplane motors
+    _SKIP_KEYWORDS = [
+        # Electronics / ESCs
+        "esc", "regulator", "bec", "ubec", "power module", "power regulator",
+        "speed controller", "amp", "30a", "40a", "60a", "80a", "100a", "120a", "160a",
+        # Mechanical accessories
+        "prop", "propeller", "shaft", "adapter", "mount", "stand", "case", "bag",
+        "cable", "wire", "plug", "connector", "bullet", "screw", "nut", "collet",
+        "kit", "spare", "part", "accessory", "accessories", "set",
+        # Non-SunnySky brand products / OEM re-badged items
+        "omp hobby", "lanyu", "langyu", "bluetooth", "program",
+        # Non-multirotor motor types (we want UAV/multirotor motors only)
+        "helicopter", "heli", "airplane", "plane", "fixed wing", "fixedwing",
+        "eolo", "folding",
+    ]
+
+    # Motor-name patterns — at least one must match for catalog (no-query) scrapes
+    # These match SunnySky's own naming convention: X2216, V5210, A2212, R2205 etc.
+    _MOTOR_PATTERN = re.compile(
+        r'\b([XVARxvar]\d{4}[Ss]?)\b'   # X2216, V5210S, A2212, R2205
+        r'|\b\d{4}\s*[Kk][Vv]\b'         # 2300KV, 880KV
+        r'|\d{2,5}\s*[Kk][Vv]',          # loose KV numbers
+        re.IGNORECASE,
+    )
 
     def scrape(self, query: str = "") -> list[dict]:
         results = []
 
         if query.strip():
-            # Shopify search endpoint
+            # Shopify search endpoint — usually finds the right product immediately
             search_url = f"{self.base_url}/search?type=product&q={query.replace(' ', '+')}"
             log.info(f"[sunnysky] Searching: {search_url}")
             results.extend(self._scrape_collection(search_url, query))
 
-        # Browse catalog pages for broader coverage
-        for cat_url in self.CATALOG_URLS:
-            results.extend(self._scrape_collection(cat_url, query))
+        # Only browse catalog pages when query is empty or search returned nothing
+        if not results:
+            for cat_url in self.CATALOG_URLS:
+                results.extend(self._scrape_collection(cat_url, query))
 
         # Deduplicate by link
         seen = set()
@@ -52,6 +80,15 @@ class SunnySkyScraper(BaseScraper):
 
         log.info(f"[sunnysky] Total items scraped: {len(deduped)}")
         return deduped
+
+    def _is_skip(self, name: str, href: str) -> bool:
+        """Return True if this product should be excluded."""
+        combined = (name + " " + href).lower()
+        return any(kw in combined for kw in self._SKIP_KEYWORDS)
+
+    def _looks_like_motor(self, name: str) -> bool:
+        """Return True if name matches SunnySky motor naming pattern."""
+        return bool(self._MOTOR_PATTERN.search(name))
 
     def _scrape_collection(self, url: str, query: str = "") -> list[dict]:
         items = []
@@ -104,21 +141,27 @@ class SunnySkyScraper(BaseScraper):
                     price = price_el.get_text(strip=True) if price_el else ""
                     href = link_el.get("href", "") if link_el else ""
 
+                    # Skip too-short names
                     if not name or len(name) < 3:
                         continue
 
-                    # Skip non-motor results (accessories, etc.)
-                    skip_keywords = ["prop", "stand", "mount", "adapter", "cable", "case", "bag"]
-                    if any(kw in name.lower() for kw in skip_keywords):
+                    # Skip non-motor products (ESCs, accessories, helicopter, etc.)
+                    if self._is_skip(name, href):
+                        log.debug(f"[sunnysky] Skipped (blocklist): {name!r}")
                         continue
 
-                    # Apply query filter
+                    # For catalog (no query) scrapes, require recognisable motor name pattern
+                    if not query.strip() and not self._looks_like_motor(name):
+                        log.debug(f"[sunnysky] Skipped (no motor pattern): {name!r}")
+                        continue
+
+                    # For query-based scrapes, apply token match filter
                     if query.strip():
                         q_lower = query.lower()
                         name_lower = name.lower()
                         href_lower = href.lower()
-                        tokens = re.split(r'[\s\-_/]+', q_lower)
-                        tokens = [t for t in tokens if len(t) >= 2]
+                        tokens = [t for t in re.split(r'[\s\-_/]+', q_lower) if len(t) >= 2]
+                        # Require at least 1 meaningful token to match (name OR url)
                         if not any(t in name_lower or t in href_lower for t in tokens):
                             continue
 

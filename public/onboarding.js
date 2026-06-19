@@ -156,7 +156,7 @@
         if (path.includes('admin_audit_logs') || path.includes('audit-logs'))       return 'audit_logs';
         if (path.includes('performance') || path.includes('analytics'))            return 'performance';
         if (path.includes('admin_exports') || path.includes('exports'))          return 'exports';
-        if (path.includes('intern_dashboard') || path.includes('intern/dashboard'))       return 'intern_catalog';
+        if (path.includes('user_dashboard') || path.includes('intern/dashboard'))       return 'intern_catalog';
         if (path.includes('guest_dashboard') || path.includes('guest/dashboard'))        return 'guest_catalog';
         if (path.includes('admin_users') || path.includes('admin/users'))            return 'admin_users';
         if (path.includes('admin_access_requests') || path.includes('access-requests'))  return 'admin_access_requests';
@@ -517,7 +517,7 @@
             icon: 'layout',
             content: `<p>The sidebar links give you access to all admin sections:</p>
                       <ul style="margin:8px 0 0 16px;font-size:0.85rem;line-height:1.8;">
-                        <li>📊 <strong>Performance Analytics</strong> — telemetry curves & calibration data</li>
+                        <li>📊 <strong>Test Runs</strong> — create and import telemetry datasets</li>
                         <li>👥 <strong>User Management</strong> — view and manage all accounts</li>
                         <li>✅ <strong>Access Requests</strong> — approve/reject pending access</li>
                         <li>⚙️ <strong>Schema Customizer</strong> — add custom motor fields</li>
@@ -609,7 +609,7 @@
             target: null,
             title: "You're Ready to Go! 🚀",
             icon: 'check-circle',
-            content: `<p>Explore the sidebar to navigate to <strong>Performance Analytics</strong> where you can view telemetry calibration curves.</p>
+            content: `<p>Explore the sidebar to navigate to <strong>Test Runs</strong> where you can create and import telemetry datasets.</p>
                       <p style="margin-top:10px;font-size:0.82rem;color:#64748b;">You can replay this tour anytime from the <strong>How it works</strong> button.</p>`,
             position: 'center'
         }
@@ -667,174 +667,68 @@
             target: null,
             title: "Explore More Features",
             icon: 'trending-up',
-            content: `<p>You also have access to <strong>Performance Analytics</strong> in the sidebar — view telemetry calibration curves and test run data for any motor.</p>
-                      ${demoCurve()}
+            content: `<p>You also have access to <strong>Test Runs</strong> in the sidebar — create and import telemetry datasets for any motor.</p>
                       <p style="margin-top:8px;font-size:0.82rem;color:#64748b;">You can replay this tour anytime from the <strong>How it works</strong> button.</p>`,
             position: 'center'
         }
     ];
 
-    // ── PERFORMANCE ANALYTICS ────────────────────────────────────────────────
+    // ── TEST RUNS ────────────────────────────────────────────────────────────
     function buildPerformanceSteps() {
         const role = getPageRole();
         const isAdmin = role === 'admin';
-        const isIntern = role === 'intern';
+        const isIntern = role === 'user';
         const canWrite = isAdmin || isIntern;
 
         const roleNote = isAdmin
-            ? `<p style="margin-top:10px;font-size:0.82rem;color:#64748b;">As an <strong>Admin</strong>, you can also upload new test run data and manage draft runs from this page.</p>`
+            ? `<p style="margin-top:10px;font-size:0.82rem;color:#64748b;">As an <strong>Admin</strong>, you can create new test runs, import sheets, and delete runs.</p>`
             : isIntern
-            ? `<p style="margin-top:10px;font-size:0.82rem;color:#64748b;">As an <strong>Intern</strong>, you can view all telemetry data, upload new datasets, and download charts.</p>`
-            : `<p style="margin-top:10px;font-size:0.82rem;color:#64748b;">As a <strong>Guest</strong>, you have full read access to all test data, curves, and the calibration grid.</p>`;
+            ? `<p style="margin-top:10px;font-size:0.82rem;color:#64748b;">As an <strong>Intern</strong>, you can create new test runs and import spreadsheet data.</p>`
+            : `<p style="margin-top:10px;font-size:0.82rem;color:#64748b;">As a <strong>Guest</strong>, you have read-only access to this page (data entry is restricted).</p>`;
 
         const steps = [
             {
                 target: null,
-                title: 'Performance Analytics 📈',
-                icon: 'trending-up',
-                content: `<p>This page lets you explore motor telemetry from real physical test runs — calibration curves that plot thrust, efficiency, current draw, and RPM against throttle.</p>
+                title: 'Test Runs 📋',
+                icon: 'clipboard-list',
+                content: `<p>Welcome to the Test Runs portal. Here, you can compile and import calibration datasets for brushless motors.</p>
                           ${roleNote}`,
                 position: 'center'
-            },
-            {
-                target: '.analytics-tabs',
-                title: 'Two Main Tabs',
-                icon: 'layout',
-                content: `<p>The page has two tabs at the top:</p>
-                          <ul style="margin:8px 0 0 16px;font-size:0.85rem;line-height:1.8;">
-                            <li>📊 <strong>Curves Visualizer</strong> — browse and compare calibration curves across motors</li>
-                            ${canWrite ? '<li>📝 <strong>Create Performance Dataset</strong> — manually enter or import test run data</li>' : ''}
-                          </ul>
-                          ${tip('Click a tab to switch views. Your selections are preserved when you switch back.')}`,
-                position: 'bottom'
-            },
-            {
-                target: '#plot-category-select, .filter-group',
-                title: 'Step 1: Select Thrust Level',
-                icon: 'layers',
-                content: `<p>Start by choosing a <strong>Thrust Level</strong> from the first dropdown. This filters motors to the selected category — for example "5 kg Thrust".</p>
-                          <div class="ob-demo">
-                            <div class="ob-demo-label">📋 Selection Flow</div>
-                            <div class="ob-flow">
-                                <div class="ob-flow-step blue">1. Thrust Level</div>
-                                <span class="ob-flow-arrow">→</span>
-                                <div class="ob-flow-step amber">2. Motor</div>
-                                <span class="ob-flow-arrow">→</span>
-                                <div class="ob-flow-step green">3. Metric</div>
-                            </div>
-                          </div>
-                          <p style="margin-top:8px;font-size:0.82rem;color:#64748b;">Once a thrust level is selected, the Motor dropdown will unlock and populate.</p>`,
-                position: 'bottom'
-            },
-            {
-                target: '#performanceCurveChart',
-                title: 'Calibration Curves Chart',
-                icon: 'line-chart',
-                content: `<p>The main chart displays calibration curves for all test runs of the selected motor. Each colored line is one test run (different propeller or ESC configuration).</p>
-                          ${demoCurve()}
-                          <p style="margin-top:8px;font-size:0.85rem;"><strong>Y-Axis options:</strong></p>
-                          <ul style="margin:4px 0 0 16px;font-size:0.82rem;line-height:1.8;">
-                            <li>Thrust (g) vs. Throttle (%)</li>
-                            <li>Efficiency (g/W) vs. Thrust (g)</li>
-                            <li>Current (A) vs. Throttle (%)</li>
-                            <li>RPM vs. Throttle (%)</li>
-                          </ul>`,
-                position: 'top'
-            },
-            {
-                target: '#test-runs-list',
-                title: 'Available Test Runs',
-                icon: 'list',
-                content: `<p>The right panel lists all test runs for the selected motor. Each card shows:</p>
-                          <ul style="margin:8px 0 0 16px;font-size:0.85rem;line-height:1.8;">
-                            <li>Propeller model and size</li>
-                            <li>ESC and battery spec</li>
-                            <li>Tester name and date</li>
-                            <li>Number of throttle data points</li>
-                          </ul>
-                          ${demoDraftBanner()}
-                          <p style="margin-top:8px;font-size:0.82rem;color:#64748b;">Draft runs (from unregistered motors) show an amber banner. ${canWrite ? 'Click <strong>Finalize Draft</strong> to associate them with a registered motor.' : ''}</p>`,
-                position: 'left'
-            },
-            {
-                target: '#data-points-grid-table',
-                title: 'Calibration Specs Grid',
-                icon: 'table',
-                content: `<p>Click any test run card to populate the <strong>Calibration Specs Grid</strong> below the chart. This table shows every throttle step measurement:</p>
-                          ${demoThrottleGrid()}
-                          <p style="margin-top:8px;font-size:0.82rem;color:#64748b;">Grey italic cells (Power, Efficiency) are auto-computed — you don't enter them manually.</p>`,
-                position: 'top'
-            },
+            }
         ];
 
         if (canWrite) {
             steps.push({
-                target: '#tab-btn-creator',
-                title: 'Create Performance Dataset',
-                icon: 'file-plus',
-                content: `<p>The <strong>Create Performance Dataset</strong> tab lets you enter or import new test run data. Fill in the test configuration and throttle step measurements.</p>
-                          <div class="ob-demo">
-                            <div class="ob-demo-label">📝 Dataset Creator Fields</div>
-                            <ul style="font-size:0.8rem;line-height:1.9;margin:0 0 0 14px;">
-                                <li>Thrust Level + Motor Model</li>
-                                <li>Propeller, ESC, Battery, Tester</li>
-                                <li>Throttle Step Grid (manual or import spreadsheet)</li>
-                                <li>☑ <strong>Save as Draft</strong> — for unregistered motors</li>
-                            </ul>
-                          </div>`,
-                position: 'bottom'
+                target: '#dataset-creator-form',
+                title: 'Test Configuration',
+                icon: 'info',
+                content: `<p>Configure the physical parameters of your test run. Select the thrust category, select the motor, specify the propeller size, ESC, battery, and tester name.</p>`,
+                position: 'right'
             });
 
             steps.push({
                 target: '#btn-import-file',
-                title: 'Import Spreadsheet Directly',
+                title: 'Spreadsheet Import',
                 icon: 'upload',
-                content: `<p>Instead of typing each throttle step manually, you can <strong>import a spreadsheet</strong> (XLSX or CSV) directly into the Throttle Steps Grid.</p>
-                          ${demoImportFlow()}
-                          <p style="margin-top:8px;font-size:0.82rem;color:#64748b;">The column mapper lets you match any column header to the correct field (Throttle, Thrust, RPM, etc.).</p>`,
+                content: `<p>Use the <strong>Import Spreadsheet</strong> button to parse XLSX/CSV tables directly rather than typing throttle calibration points manually.</p>
+                          ${demoImportFlow()}`,
                 position: 'top'
             });
 
             steps.push({
                 target: '#panel-saved-drafts',
-                title: 'Saved Drafts Panel',
+                title: 'Saved Drafts',
                 icon: 'clipboard-list',
-                content: `<p>The <strong>Saved Drafts</strong> panel lists all draft runs — test data saved for motors that weren't yet registered in the database.</p>
-                          <ul style="margin:8px 0 0 16px;font-size:0.85rem;line-height:1.8;">
-                            <li><strong>Load</strong> — click to re-open a draft in the creator form</li>
-                            <li><strong>Delete</strong> — permanently remove a draft</li>
-                          </ul>
-                          ${demoBulkImport()}
-                          ${tip('Once the motor is registered, open the Visualizer tab and click "Finalize Draft" to link them.')}`,
+                content: `<p>Drafts saved for unregistered motors are stored in the drafts panel. You can reload them to finalize details, or delete them.</p>`,
                 position: 'right'
-            });
-        }
-
-        if (isAdmin) {
-            steps.push({
-                target: '#draft-run-banner, .full-width-analytics',
-                title: 'Finalizing Draft Runs (Admin)',
-                icon: 'check-square',
-                content: `<p>When you select a <strong>draft run</strong> in the Visualizer, an amber banner appears above the grid with a <strong>Finalize Draft</strong> button.</p>
-                          ${demoDraftBanner()}
-                          <p style="margin-top:8px;font-size:0.85rem;color:#374151;">Clicking <strong>Finalize Draft</strong> opens a modal where you pick the matching registered motor. The draft is then permanently linked and the banner disappears.</p>`,
-                position: 'top'
             });
         }
 
         steps.push({
             target: null,
-            title: "Performance Analytics — Done! ✅",
+            title: 'Test Runs Completed ✅',
             icon: 'check-circle',
-            content: `<p>You've completed the Performance Analytics tour. Quick recap:</p>
-                      <ul style="margin:8px 0 0 16px;font-size:0.85rem;line-height:1.8;">
-                        <li>Select Thrust → Motor → Metric to view curves</li>
-                        <li>Click a test run card → see data in the Calibration Grid</li>
-                        ${canWrite ? '<li>Creator tab → enter/import new test data</li>' : ''}
-                        ${canWrite ? '<li>Save as Draft for unregistered motors</li>' : ''}
-                        ${isAdmin ? '<li>Finalize drafts → link to registered motors</li>' : ''}
-                      </ul>
-                      <p style="margin-top:10px;font-size:0.82rem;color:#64748b;">You can replay this tour anytime from the <strong>How it works</strong> button.</p>`,
+            content: `<p>You've completed the Test Runs walkthrough. Use the sidebar to explore the rest of the application.</p>`,
             position: 'center'
         });
 
@@ -1093,7 +987,7 @@
     const PAGE_DEFS = {
         admin:  [
             { slug: 'admin_catalog',        label: 'Catalog Dashboard',     icon: '🗄️' },
-            { slug: 'performance',          label: 'Performance Analytics', icon: '📈' },
+            { slug: 'performance',          label: 'Test Runs',             icon: '📋' },
             { slug: 'admin_users',          label: 'User Management',       icon: '👥' },
             { slug: 'admin_access_requests',label: 'Access Requests',       icon: '✅' },
             { slug: 'admin_schema',         label: 'Schema Customizer',     icon: '⚙️' },
@@ -1102,11 +996,11 @@
         ],
         intern: [
             { slug: 'intern_catalog', label: 'Catalog Dashboard',     icon: '🗄️' },
-            { slug: 'performance',    label: 'Performance Analytics', icon: '📈' },
+            { slug: 'performance',    label: 'Test Runs',             icon: '📋' },
         ],
         guest: [
             { slug: 'guest_catalog', label: 'Catalog Dashboard',     icon: '🗄️' },
-            { slug: 'performance',   label: 'Performance Analytics', icon: '📈' },
+            { slug: 'performance',   label: 'Test Runs',             icon: '📋' },
         ],
     };
 
@@ -1146,7 +1040,7 @@
         const session = JSON.parse(localStorage.getItem('thrustvault_session') || 'null');
         if (!session || !session.uid) return;
         try {
-            const res = await fetch('/api/guest/onboarding');
+            const res = await fetch('/api/onboarding');
             const data = await res.json();
             if (!data || !data.pages_progress) return;
             let changed = false;
@@ -1175,7 +1069,7 @@
             const updated = { ...existingProgress, [slug]: true };
             const allDone = getPagesForRole().every(p => updated[p.slug] === true);
             
-            await fetch('/api/guest/onboarding', {
+            await fetch('/api/onboarding', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1193,7 +1087,7 @@
         const session = JSON.parse(localStorage.getItem('thrustvault_session') || 'null');
         if (!session || !session.uid) return;
         try {
-            await fetch('/api/guest/onboarding', {
+            await fetch('/api/onboarding', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1826,12 +1720,8 @@
     // =========================================================================
 
     function init() {
-        // Render pill immediately from localStorage (instant, no flicker)
-        renderProgressPill();
-        // Then sync from Supabase and re-render pill if remote has more data
-        syncProgressFromSupabase();
-        // Auto-show tour for this page if not yet done (after brief settle delay)
-        setTimeout(() => launchTour(false), 900);
+        // Disabled: for now remove that onboarding
+        return;
     }
 
     if (document.readyState === 'loading') {

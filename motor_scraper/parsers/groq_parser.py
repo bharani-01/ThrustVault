@@ -1,18 +1,29 @@
 """
 parsers/groq_parser.py — AI-powered motor spec extractor using Groq.
 
-Groq runs llama3-70b at ~800 tokens/sec, making it fast enough to process
-product pages in near real-time.
+Rate limit strategy
+-------------------
+Groq has TWO separate rate limit types — they must be handled differently:
 
-What it does:
-  - Takes raw scraped text (product description, specs table, etc.)
-  - Asks Groq to extract structured motor/ESC/prop data
-  - Returns a clean dict matching the ThrustVault schema
-  - Falls back to raw scraped values if Groq fails or key is missing
+  TPD  (tokens per day)    — daily quota exhausted.
+       → NEVER retry or sleep. Fail immediately and block ALL subsequent
+         calls for the rest of the cooldown window. Sleeping 5 minutes
+         then retrying just hits the same wall.
+
+  RPM  (requests per minute) — too many calls per minute.
+       → 1 retry after a short sleep (typically 10–60s) is appropriate.
+
+Thread safety
+-------------
+`_rate_limited_until` is protected by `_lock` so the first thread that
+hits a 429 immediately guards ALL parallel enrichment threads without
+each one independently attempting + sleeping.
 """
 
 import json
 import re
+import time
+import threading
 from typing import Optional
 from utils.logger import get_logger
 
@@ -23,6 +34,11 @@ class GroqParser:
     def __init__(self):
         self._client = None
         self._model  = None
+        self._lock   = threading.Lock()
+        # Epoch timestamp after which calls are allowed again (0 = unrestricted)
+        self._rate_limited_until: float = 0
+        # True when the daily (TPD) limit is hit — no retry until tomorrow
+        self._tpd_exhausted: bool = False
 
     def _get_client(self):
         if self._client is not None:
@@ -31,7 +47,7 @@ class GroqParser:
             from groq import Groq
             from config import GROQ_API_KEY, GROQ_MODEL
             if not GROQ_API_KEY or GROQ_API_KEY == "your_groq_api_key_here":
-                log.warning("[groq] GROQ_API_KEY not set — AI parsing disabled. Falling back to raw data.")
+                log.warning("[groq] GROQ_API_KEY not set — AI parsing disabled.")
                 return None
             self._client = Groq(api_key=GROQ_API_KEY)
             self._model  = GROQ_MODEL
@@ -41,130 +57,231 @@ class GroqParser:
             log.warning("[groq] groq package not installed. Run: pip install groq")
             return None
 
-    # ── Public API ─────────────────────────────────────────────────────────
+    # ── Rate-limit helpers ──────────────────────────────────────────────────
 
-    def extract_motor_specs(self, raw_text: str, product_name: str = "") -> dict:
+    def _is_rate_limited(self) -> tuple[bool, int]:
         """
-        Feed raw product page text to Groq and get back a clean motor spec dict.
-        Returns a dict with schema-compatible fields.
+        Thread-safe check.
+        Returns (is_limited, remaining_seconds).
+        """
+        with self._lock:
+            if self._rate_limited_until > 0 and time.time() < self._rate_limited_until:
+                remaining = int(self._rate_limited_until - time.time())
+                return True, remaining
+            # Window expired — reset
+            if self._rate_limited_until > 0:
+                self._rate_limited_until = 0
+                self._tpd_exhausted = False
+            return False, 0
+
+    def _parse_retry_after(self, error_msg: str) -> int:
+        """Extract retry-after seconds from Groq error message."""
+        m = re.search(r'try again in\s+(?:(\d+)m\s*)?(\d+(?:\.\d+)?)s', error_msg, re.IGNORECASE)
+        if m:
+            minutes = int(m.group(1) or 0)
+            seconds = float(m.group(2) or 0)
+            return int(minutes * 60 + seconds) + 5   # +5s safety buffer
+        return 60
+
+    def _classify_rate_limit(self, error_msg: str) -> str:
+        """
+        Returns 'tpd' for daily token limit, 'rpm' for per-minute limit,
+        or 'other' if not a rate limit error.
+        """
+        lower = error_msg.lower()
+        if "tokens per day" in lower or "tpd" in lower or "per day" in lower:
+            return "tpd"
+        if "requests per minute" in lower or "rpm" in lower or "rate_limit" in lower or "429" in error_msg:
+            return "rpm"
+        return "other"
+
+    def _set_cooldown(self, wait_sec: int, is_tpd: bool) -> None:
+        """Thread-safe cooldown setter."""
+        with self._lock:
+            # Only extend cooldown, never shorten it
+            new_deadline = time.time() + wait_sec
+            if new_deadline > self._rate_limited_until:
+                self._rate_limited_until = new_deadline
+            if is_tpd:
+                self._tpd_exhausted = True
+
+    # ── Core API call ───────────────────────────────────────────────────────
+
+    def _call_groq(self, prompt: str, max_tokens: int = 200) -> Optional[str]:
+        """
+        Make a Groq API call.
+
+        - TPD limit → fail immediately, no sleep, no retry.
+        - RPM limit → sleep the retry_after duration, then retry once.
+        - Other error → fail immediately.
+
+        Returns response text or None.
         """
         client = self._get_client()
         if not client:
+            return None
+
+        is_limited, remaining = self._is_rate_limited()
+        if is_limited:
+            log.debug(f"[groq] Blocked by cooldown — {remaining}s remaining")
+            return None
+
+        for attempt in range(2):   # max 2 attempts: initial + 1 RPM retry
+            try:
+                response = client.chat.completions.create(
+                    model=self._model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.1,
+                    max_tokens=max_tokens,
+                )
+                return response.choices[0].message.content.strip()
+
+            except Exception as e:
+                err_str = str(e)
+                limit_type = self._classify_rate_limit(err_str)
+
+                if limit_type == "tpd":
+                    # Daily budget exhausted — block immediately, DO NOT sleep or retry
+                    wait_sec = self._parse_retry_after(err_str)
+                    self._set_cooldown(wait_sec, is_tpd=True)
+                    log.warning(
+                        f"[groq] ⛔ Daily token limit (TPD) exhausted. "
+                        f"All Groq calls disabled for ~{wait_sec // 60}m {wait_sec % 60}s. "
+                        f"No retry."
+                    )
+                    return None
+
+                elif limit_type == "rpm" and attempt == 0:
+                    # Per-minute rate limit — sleep and retry once
+                    wait_sec = self._parse_retry_after(err_str)
+                    self._set_cooldown(wait_sec, is_tpd=False)
+                    log.warning(f"[groq] RPM rate limit — sleeping {wait_sec}s before retry...")
+                    time.sleep(wait_sec)
+                    # Reset window so the retry can proceed
+                    with self._lock:
+                        self._rate_limited_until = 0
+
+                else:
+                    log.warning(f"[groq] API call failed: {e}")
+                    return None
+
+        return None
+
+    # ── Public API ──────────────────────────────────────────────────────────
+
+    def extract_motor_specs(self, raw_text: str, product_name: str = "") -> dict:
+        """Extract motor specs from text via Groq. Keeps prompt short to save TPD budget."""
+        # Hard-trim — most specs are near the top of product pages
+        trimmed = raw_text.strip()[:800]
+
+        prompt = (
+            f"Extract motor specs from: {product_name}\n"
+            f"Text: {trimmed}\n\n"
+            "Return ONLY valid JSON with these fields (null if unknown):\n"
+            '{"motor_name":null,"company":null,"max_thrust":null,"kv_rating":null,'
+            '"stator_size":null,"weight_g":null,"recommended_esc":null,'
+            '"recommended_propeller":null,"battery_config":null,"max_current":null}'
+        )
+
+        text = self._call_groq(prompt, max_tokens=200)
+        if not text:
             return {}
-
-        prompt = f"""You are a drone motor database assistant. 
-Extract structured motor specifications from the product text below.
-
-Product name: {product_name}
-
-Product text:
-\"\"\"
-{raw_text[:4000]}
-\"\"\"
-
-Return ONLY a valid JSON object with these exact fields (use null if unknown):
-{{
-  "motor_name": "full motor model name",
-  "company": "manufacturer brand name",
-  "max_thrust": "maximum thrust in grams, e.g. 1200g or 1.2kg",
-  "kv_rating": "KV rating number, e.g. 2300KV",
-  "stator_size": "stator size, e.g. 2207 or 2306",
-  "weight_g": "motor weight in grams",
-  "shaft_diameter": "shaft diameter in mm",
-  "recommended_esc": "recommended ESC model or amperage, e.g. 30A ESC",
-  "recommended_propeller": "recommended propeller size, e.g. 5inch 3-blade",
-  "battery_config": "battery cell count, e.g. 3S-4S or 6S",
-  "max_current": "max current in Amps",
-  "description_summary": "1-2 sentence summary of what this motor is best for"
-}}
-
-Return ONLY the JSON, no explanation, no markdown.
-"""
         try:
-            response = client.chat.completions.create(
-                model=self._model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,
-                max_tokens=512,
-            )
-            text = response.choices[0].message.content.strip()
-            # Extract JSON even if wrapped in markdown code blocks
             json_match = re.search(r"\{.*\}", text, re.DOTALL)
             if json_match:
                 return json.loads(json_match.group())
         except Exception as e:
-            log.warning(f"[groq] extract_motor_specs failed: {e}")
+            log.debug(f"[groq] JSON parse error: {e}")
         return {}
 
     def enrich_motor_record(self, record: dict, raw_page_text: str = "") -> dict:
         """
-        Takes an existing scraped motor record and enriches it using Groq.
-        Only overwrites empty fields — never replaces already-filled ones.
+        Enrich a scraped motor record using Groq.
+        Only fills empty fields. Skips if record is already complete or if rate-limited.
         """
+        # Skip if already well-populated — saves tokens
+        if all([record.get("motor_name"), record.get("company"), record.get("kv_rating"),
+                record.get("max_thrust"), record.get("recommended_esc")]):
+            log.debug(f"[groq] Already complete, skipping: {record.get('motor_name')}")
+            return record
+
+        # Fast-fail if rate limited (thread-safe check)
+        is_limited, _ = self._is_rate_limited()
+        if is_limited:
+            return record
+
         if not raw_page_text:
-            raw_page_text = record.get("motor_name", "") + " " + record.get("description", "")
+            raw_page_text = " ".join(filter(None, [
+                record.get("motor_name", ""),
+                record.get("description", ""),
+                record.get("stator_size", ""),
+                record.get("kv_rating", ""),
+            ]))
 
         extracted = self.extract_motor_specs(raw_page_text, record.get("motor_name", ""))
         if not extracted:
             return record
 
-        # Merge: only fill in empty fields
+        # Merge: only fill empty fields — never overwrite existing data
         enriched = dict(record)
-        field_map = {
-            "motor_name":            "motor_name",
-            "company":               "company",
-            "max_thrust":            "max_thrust",
-            "recommended_esc":       "recommended_esc",
-            "recommended_propeller": "recommended_propeller",
-        }
-        for schema_field, groq_field in field_map.items():
-            if not enriched.get(schema_field) and extracted.get(groq_field):
-                enriched[schema_field] = extracted[groq_field]
-
-        # Store extra enriched data
-        for extra_field in ["kv_rating", "stator_size", "weight_g", "battery_config",
-                            "max_current", "description_summary"]:
-            if extracted.get(extra_field):
-                enriched[extra_field] = extracted[extra_field]
+        for field in ["motor_name", "company", "max_thrust", "recommended_esc",
+                      "recommended_propeller", "kv_rating", "stator_size",
+                      "weight_g", "battery_config", "max_current"]:
+            if not enriched.get(field) and extracted.get(field):
+                enriched[field] = extracted[field]
 
         return enriched
 
     def summarize_batch(self, motors: list[dict]) -> str:
         """
-        Generate a human-readable summary of a batch of scraped motors.
-        Useful for a quick report after scraping.
+        Generate a concise summary of scraped motors.
+        Falls back to a data-derived summary if Groq is unavailable.
         """
-        client = self._get_client()
-        if not client or not motors:
-            return f"Scraped {len(motors)} motors. (Groq summarization disabled)"
+        if not motors:
+            return "No motors scraped."
 
-        # Build a compact table for Groq
-        sample = motors[:20]  # summarize first 20
-        lines = [f"- {m.get('motor_name','?')} by {m.get('company','?')} | Thrust: {m.get('max_thrust','?')} | ESC: {m.get('recommended_esc','?')}" for m in sample]
-        table = "\n".join(lines)
-
-        prompt = f"""You are a drone engineer reviewing motor data.
-Here are the latest motors scraped from the web ({len(motors)} total, showing first {len(sample)}):
-
-{table}
-
-Write a concise 3-4 sentence summary covering:
-- The range of motor types/brands found
-- Thrust ranges observed
-- Any interesting patterns or notable motors
-Keep it technical and useful for a drone engineer.
-"""
-        try:
-            response = client.chat.completions.create(
-                model=self._model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.3,
-                max_tokens=256,
+        is_limited, remaining = self._is_rate_limited()
+        if is_limited:
+            mins, secs = remaining // 60, remaining % 60
+            companies = sorted({m.get("company", "") for m in motors if m.get("company")})
+            brand_str = ", ".join(companies[:5]) + ("..." if len(companies) > 5 else "")
+            return (
+                f"Scraped {len(motors)} motors from {len(companies)} brand(s): {brand_str}. "
+                f"(Groq AI summary unavailable — daily token limit reached. "
+                f"Resets in ~{mins}m {secs}s)"
             )
-            return response.choices[0].message.content.strip()
-        except Exception as e:
-            log.warning(f"[groq] summarize_batch failed: {e}")
-            return f"Scraped {len(motors)} motors. (Groq summary failed: {e})"
+
+        # Compact prompt — just motor names to minimise token spend
+        sample = motors[:15]
+        names = ", ".join(m.get("motor_name", "?")[:40] for m in sample)
+        total = len(motors)
+        extra = f" (+{total - len(sample)} more)" if total > len(sample) else ""
+
+        prompt = (
+            f"Drone motors scraped ({total} total): {names}{extra}\n\n"
+            "Write 2-3 sentences: brands found, KV/thrust range, notable motors. "
+            "Be technical and concise."
+        )
+
+        text = self._call_groq(prompt, max_tokens=150)
+        if text:
+            return f"Scraped {total} motors. {text}"
+
+        # Final fallback — no AI, just data
+        companies = sorted({m.get("company", "") for m in motors if m.get("company")})
+        brand_str = ", ".join(companies[:5]) + ("..." if len(companies) > 5 else "")
+        return (
+            f"Scraped {total} motors from {len(companies)} brand(s): {brand_str}. "
+            f"(Groq AI summary unavailable)"
+        )
+
+    @property
+    def is_available(self) -> bool:
+        """True if Groq is configured and not currently rate-limited."""
+        if not self._get_client():
+            return False
+        limited, _ = self._is_rate_limited()
+        return not limited
 
 
 # Singleton instance

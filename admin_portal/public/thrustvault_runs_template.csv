@@ -1,0 +1,4 @@
+Item No.,Voltage (V),Prop,Throttle,Current (A),Power (W),Thrust (G),RPM,Efficiency (G/W),Operating Temperature (C)
+MN3110 KV470,14.8,T-MOTOR 13*4.4CF,50%,1.5,22.20,290,3300,13.06,40
+MN3110 KV470,14.8,T-MOTOR 13*4.4CF,65%,2.6,38.48,410,4000,10.65,40
+MN3110 KV470,14.8,T-MOTOR 13*4.4CF,100%,5.8,85.84,780,5500,9.09,40

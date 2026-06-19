@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" type="image/png" href="thrustvault_icon_light.png" media="(prefers-color-scheme: light)">
-    <link rel="icon" type="image/png" href="thrustvault_icon_dark.png" media="(prefers-color-scheme: dark)">
+    <link rel="icon" type="image/png" href="favicon_light.png" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Performance Analytics | ThrustVault</title>
+    <title>Test Runs | ThrustVault</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +18,7 @@
     <!-- SheetJS Excel/CSV Parser -->
     <script src="libs/xlsx.full.min.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';"></script>
     <!-- Main Stylesheet -->
-    <link rel="stylesheet" href="style.css?v=1.4">
+    <link rel="stylesheet" href="style.css?v=1.6">
     <style>
         /* Extra styles for performance analytics tab system and dataset creator */
         .analytics-tabs {
@@ -413,6 +413,110 @@
             color: var(--primary-color);
             font-weight: 600;
         }
+
+        /* Redesigned Performance Analytics Layout Styles */
+        .hero-banner {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border-radius: var(--radius-lg);
+            padding: 24px 30px;
+            color: #ffffff;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .hero-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.22) 0%, transparent 70%);
+            border-radius: var(--radius-full);
+            pointer-events: none;
+        }
+        .hero-banner h1 {
+            font-size: 1.85rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #ffffff, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .hero-banner p {
+            font-size: 0.92rem;
+            color: #94a3b8;
+            max-width: 650px;
+            line-height: 1.6;
+            margin: 0;
+        }
+        
+        .stats-grid-creator {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card-creator {
+            background: var(--bg-panel-solid);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-sm);
+        }
+        .stat-card-creator:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: rgba(37, 99, 235, 0.25);
+        }
+        .stat-card-creator-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(37, 99, 235, 0.08);
+            color: var(--primary-color);
+            flex-shrink: 0;
+        }
+        .stat-card-creator-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .stat-card-creator-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .stat-card-creator-value {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            margin-top: 2px;
+        }
+        
+        /* Dark mode overrides */
+        [data-theme="dark"] .stat-card-creator {
+            background: rgba(20, 24, 33, 0.65);
+        }
+        [data-theme="dark"] .stat-card-creator-icon {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+        }
     </style>
     <!-- Page Loader Transition Script -->
     <script src="page-loader.js"></script>
@@ -427,19 +531,17 @@
                 }
             </script>
             <!-- Sidebar Placeholder Skeletons -->
-            <div class="sidebar-skeleton-wrapper" style="padding: 20px; display: flex; flex-direction: column; gap: 30px; height: 100%; box-sizing: border-box;">
-                <div class="shimmer" style="height: 44px; width: 140px; border-radius: var(--radius-md); background: var(--border-color);"></div>
-                <div style="display:flex; flex-direction:column; gap:15px; flex:1;">
-                    <div class="shimmer" style="height: 16px; width: 80px; border-radius: 4px; background: var(--border-color);"></div>
-                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
-                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
-                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+            <div class="sidebar-skeleton-wrapper" style="padding: 0 24px; display: flex; flex-direction: row; gap: 20px; height: 100%; align-items: center; width: 100%; box-sizing: border-box; justify-content: space-between;">
+                <div class="shimmer" style="height: 32px; width: 140px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                <div style="display:flex; flex-direction:row; gap:15px; flex:1; align-items:center; margin-left:30px;">
+                    <div class="shimmer" style="height: 32px; width: 120px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                    <div class="shimmer" style="height: 32px; width: 120px; border-radius: var(--radius-md); background: var(--border-color);"></div>
                 </div>
-                <div style="display:flex; align-items:center; gap:12px; border-top: 1px solid var(--border-color); padding-top:20px;">
-                    <div class="shimmer" style="height: 40px; width: 40px; border-radius: var(--radius-full); background: var(--border-color);"></div>
-                    <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
-                        <div class="shimmer" style="height: 12px; width: 100px; border-radius: 4px; background: var(--border-color);"></div>
-                        <div class="shimmer" style="height: 10px; width: 50px; border-radius: 4px; background: var(--border-color);"></div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="shimmer" style="height: 32px; width: 32px; border-radius: var(--radius-full); background: var(--border-color);"></div>
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <div class="shimmer" style="height: 10px; width: 100px; border-radius: 4px; background: var(--border-color);"></div>
+                        <div class="shimmer" style="height: 8px; width: 50px; border-radius: 4px; background: var(--border-color);"></div>
                     </div>
                 </div>
             </div>
@@ -451,129 +553,54 @@
             <!-- TOPBAR -->
             <header class="topbar">
                 <h2 style="font-family:'Outfit'; font-size:1.5rem; font-weight:700; display:flex; align-items:center; gap:10px;">
-                    <i data-lucide="trending-up" style="color:var(--primary-color); width: 28px; height: 28px;"></i>
-                    Calibration Curves & Analytics
+                    <i data-lucide="clipboard-list" style="color:var(--primary-color); width: 28px; height: 28px;"></i>
+                    Test Runs
                 </h2>
             </header>
 
             <!-- MAIN VIEWPORT -->
             <main class="main-content" style="overflow-y:auto; padding:30px;">
                 
-                <!-- View Tabs -->
-                <div class="analytics-tabs">
-                    <button class="tab-btn active" id="tab-btn-visualizer"><i data-lucide="area-chart" style="width:16px; height:16px; vertical-align:middle; margin-right:4px;"></i> Curves Visualizer</button>
-                    <button class="tab-btn" id="tab-btn-creator" style="display:none;"><i data-lucide="file-plus" style="width:16px; height:16px; vertical-align:middle; margin-right:4px;"></i> Create Performance Dataset</button>
+                <!-- View Tabs (Hidden) -->
+                <div class="analytics-tabs" style="display: none !important;">
+                    <button class="tab-btn active" id="tab-btn-visualizer"><i data-lucide="clipboard-list" style="width:16px; height:16px; vertical-align:middle; margin-right:4px;"></i> Test Runs Directory</button>
+                    <button class="tab-btn" id="tab-btn-creator" style="display:none;"><i data-lucide="plus-circle" style="width:16px; height:16px; vertical-align:middle; margin-right:4px;"></i> Create/Import Dataset</button>
                 </div>
 
-                <!-- SECTION 1: CURVES VISUALIZER -->
-                <div class="tab-section" id="section-visualizer">
-                    <div class="analytics-grid">
-                        
-                        <!-- Main Curves Plot -->
-                        <div class="glass-panel" style="display:flex; flex-direction:column; gap:15px; min-height: 450px;">
-                            <div class="section-header" style="margin-bottom:0; justify-content:space-between; flex-wrap:wrap; gap:15px;">
-                                <h3><i data-lucide="line-chart"></i> Multi-Propeller Curve Plots</h3>
-                                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-                                    <div class="filter-group" style="margin:0; flex-direction:column; align-items:flex-start; gap:4px;">
-                                        <label for="plot-category-select" style="font-size:0.8rem; font-weight:600;"><i data-lucide="layers"></i> Thrust Level:</label>
-                                        <select id="plot-category-select" style="padding:6px 12px; font-size:0.85rem; border-radius:6px; border:1px solid #cbd5e1; outline:none; cursor:pointer; min-width:185px;">
-                                            <option value="">-- Select Thrust Level --</option>
-                                        </select>
-                                    </div>
-                                    <div class="filter-group" style="margin:0; flex-direction:column; align-items:flex-start; gap:4px;">
-                                        <label for="plot-motor-input" style="font-size:0.8rem; font-weight:600;"><i data-lucide="cpu"></i> Motor:</label>
-                                        <div style="position: relative;">
-                                            <i data-lucide="search" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; color: #94a3b8;"></i>
-                                            <input type="text" id="plot-motor-input" disabled placeholder="-- Select Thrust Level First --" list="plot-motor-datalist" style="padding:6px 12px 6px 28px; font-size:0.85rem; border-radius:6px; border:1px solid #cbd5e1; outline:none; cursor:pointer; width:200px; box-sizing: border-box; transition: all 0.2s;">
-                                            <datalist id="plot-motor-datalist"></datalist>
-                                            <input type="hidden" id="plot-motor-select">
-                                        </div>
-                                    </div>
-                                    <div class="filter-group" style="margin:0; flex-direction:column; align-items:flex-start; gap:4px;">
-                                        <label for="plot-metric-select" style="font-size:0.8rem; font-weight:600;"><i data-lucide="sliders"></i> Y-Axis Metric:</label>
-                                        <select id="plot-metric-select" style="padding:6px 12px; font-size:0.85rem; border-radius:6px; border:1px solid #cbd5e1; outline:none; cursor:pointer; min-width:185px;">
-                                            <option value="thrust">Thrust (g) vs. Throttle (%)</option>
-                                            <option value="efficiency">Efficiency (g/W) vs. Thrust (g)</option>
-                                            <option value="current">Current (A) vs. Throttle (%)</option>
-                                            <option value="rpm">RPM vs. Throttle (%)</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Canvas wrapper -->
-                            <div style="flex:1; position:relative; min-height: 350px; display:flex; flex-direction:column;">
-                                <div id="chart-empty-state" style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:var(--text-muted); text-align:center; padding:20px;">
-                                    <i data-lucide="line-chart" style="width:40px; height:40px; color:var(--border-color);"></i>
-                                    <span style="font-family:'Outfit'; font-weight:600; font-size:1rem; color:var(--text-secondary);">Comparative Performance Plot Area</span>
-                                    <span style="font-size:0.82rem; max-width:280px;">Select a thrust level and motor to plot multi-propeller calibration curves.</span>
-                                </div>
-                                <canvas id="performanceCurveChart" style="display:none;"></canvas>
-                            </div>
-                        </div>
-
-                        <!-- Test Configuration Metadata Details -->
-                        <div class="glass-panel" style="display:flex; flex-direction:column; gap:15px;">
-                            <div class="section-header">
-                                <h3><i data-lucide="layers"></i> Available Runs</h3>
-                            </div>
-                            <div id="test-runs-list" style="display:flex; flex-direction:column; gap:10px; overflow-y:auto; max-height: 400px; padding-right:4px;">
-                                <div style="color: #64748b; font-size: 0.85rem; text-align: center; padding: 20px 0;">
-                                    Select a motor to view test runs.
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Data Points Specs Grid Table -->
-                        <div class="full-width-analytics glass-panel">
-                            <div class="table-header" style="padding-bottom:12px; border-bottom:1px solid #f1f5f9; margin-bottom:15px; justify-content:space-between; flex-wrap:wrap; gap:15px;">
-                                <div class="table-title">
-                                    <h3><i data-lucide="list"></i> Calibration Specs Grid</h3>
-                                    <span id="active-run-label" style="font-size:0.8rem; color:#64748b; font-weight:500; margin-left:10px;">Select a test run to inspect readings</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Draft Banner Container -->
-                            <div id="draft-run-banner" style="display:none; padding:12px 16px; background:linear-gradient(135deg, #fef3c7, #fffbeb); border:1px solid #fde68a; border-radius:8px; color:#b45309; font-size:0.85rem; font-weight:500; margin-bottom:15px; justify-content:space-between; align-items:center; gap:12px; animation:fadeIn 0.2s ease;">
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <i data-lucide="alert-triangle" style="width:18px; height:18px; flex-shrink:0; color:#d97706;"></i>
-                                    <span>This is a <strong>Draft Run</strong> (Original unmatched motor: <strong id="draft-original-motor-label">--</strong>). Associate this run with a registered motor to finalize it.</span>
-                                </div>
-                                <button type="button" class="btn-primary" id="btn-trigger-finalize" style="padding:6px 12px; font-size:0.75rem; border-radius:6px; background:#d97706; border-color:#d97706; white-space:nowrap; display:flex; align-items:center; gap:4px; font-family:'Inter',sans-serif; font-weight:500; color:#ffffff;">
-                                    <i data-lucide="check-square" style="width:14px; height:14px;"></i> Finalize Draft
-                                </button>
-                            </div>
-
-                            <div class="table-responsive">
-                                <table class="motors-table" id="data-points-grid-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Throttle (%)</th>
-                                            <th>Voltage (V)</th>
-                                            <th>Current (A)</th>
-                                            <th>Power (W)</th>
-                                            <th>Thrust (g)</th>
-                                            <th>RPM</th>
-                                            <th>Efficiency (g/W)</th>
-                                            <th>Temperature (℃)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="data-points-grid-rows">
-                                        <tr>
-                                            <td colspan="8" style="text-align:center; color:#64748b; font-size:0.85rem; padding: 30px 0;">
-                                                No configuration selected. Choose a motor and click a test run.
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
+                <!-- SECTION 1: TEST RUNS DIRECTORY (Hidden Hook Structure to prevent script crashes) -->
+                <div id="section-visualizer" style="display: none !important;">
+                    <select id="plot-category-select"></select>
+                    <input type="hidden" id="plot-motor-select">
+                    <input type="text" id="plot-motor-input">
+                    <datalist id="plot-motor-datalist"></datalist>
+                    <select id="plot-metric-select"></select>
+                    <div id="test-runs-list"></div>
+                    <span id="test-runs-count-badge">0</span>
+                    <span id="active-run-label"></span>
+                    <span id="total-test-runs-count">0</span>
+                    <span id="total-data-points-count">0</span>
+                    <div id="draft-run-banner">
+                        <strong id="draft-original-motor-label"></strong>
+                        <button type="button" id="btn-trigger-finalize"></button>
                     </div>
+                    <table id="data-points-grid-table">
+                        <tbody id="data-points-grid-rows"></tbody>
+                    </table>
                 </div>
 
                 <!-- SECTION 2: DATASET CREATOR -->
-                <div class="tab-section" id="section-creator" style="display:none;">
+                <div class="tab-section" id="section-creator" style="display: block;">
+                    <!-- Hero Banner -->
+                    <div class="hero-banner">
+                        <h1>
+                            <i data-lucide="zap" style="color:#f59e0b; width:30px; height:30px; fill:#f59e0b;"></i>
+                            Calibration Dataset Creator
+                        </h1>
+                        <p>
+                            Import spreadsheet test runs or add custom throttle calibration steps manually. Build clean UAV motor performance profiles to publish into the catalog.
+                        </p>
+                    </div>
+
                     <form id="dataset-creator-form">
                         <!-- Editing Draft Banner -->
                         <div id="creator-editing-banner" style="display:none; padding:12px 16px; background:linear-gradient(135deg, #eff6ff, #dbeafe); border:1px solid #bfdbfe; border-radius:8px; color:#1e40af; font-size:0.85rem; font-weight:500; margin-bottom:15px; justify-content:space-between; align-items:center; gap:12px;">
@@ -666,6 +693,12 @@
                                         Throttle Steps Calibration Table
                                     </h3>
                                     <div style="display:flex; gap:10px; align-items:center;">
+                                        <button type="button" class="btn-outline-sm" id="btn-download-runs-template" style="padding:6px 12px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; font-family:'Inter',sans-serif; font-weight:500; border-radius:var(--radius-md);">
+                                            <i data-lucide="download" style="width:14px; height:14px;"></i> Download XLSX Template
+                                        </button>
+                                        <a href="thrustvault_runs_template.csv" download class="btn-outline-sm" style="padding:6px 12px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; text-decoration:none; color:inherit; font-family:'Inter',sans-serif; font-weight:500; border-radius:var(--radius-md);">
+                                            <i data-lucide="download" style="width:14px; height:14px;"></i> Download CSV Template
+                                        </a>
                                         <label class="btn-outline-sm" style="padding:6px 12px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; cursor:pointer; margin:0; font-family:'Inter',sans-serif; font-weight:500; border-radius:var(--radius-md);">
                                             <i data-lucide="upload" style="width:14px; height:14px;"></i> Import Spreadsheet (XLSX, CSV)
                                             <input type="file" id="btn-import-file" accept=".xlsx,.xls,.csv" style="display:none;">
@@ -673,6 +706,37 @@
                                         <button type="button" class="btn-outline-sm" id="btn-add-step-row" style="padding:6px 12px; font-size:0.8rem; display:flex; align-items:center; gap:6px;">
                                             <i data-lucide="plus" style="width:14px;"></i> Add Throttle Step
                                         </button>
+                                    </div>
+                                </div>
+
+                                <!-- Live Stats Grid -->
+                                <div class="stats-grid-creator">
+                                    <div class="stat-card-creator">
+                                        <div class="stat-card-creator-icon">
+                                            <i data-lucide="layers" style="width:20px; height:20px;"></i>
+                                        </div>
+                                        <div class="stat-card-creator-info">
+                                            <span class="stat-card-creator-label">Total Steps</span>
+                                            <span class="stat-card-creator-value" id="stat-total-steps">5</span>
+                                        </div>
+                                    </div>
+                                    <div class="stat-card-creator">
+                                        <div class="stat-card-creator-icon" style="background: rgba(16, 185, 129, 0.08); color: #10b981;">
+                                            <i data-lucide="trending-up" style="width:20px; height:20px;"></i>
+                                        </div>
+                                        <div class="stat-card-creator-info">
+                                            <span class="stat-card-creator-label">Peak Thrust</span>
+                                            <span class="stat-card-creator-value" id="stat-max-thrust">0 g</span>
+                                        </div>
+                                    </div>
+                                    <div class="stat-card-creator">
+                                        <div class="stat-card-creator-icon" style="background: rgba(245, 158, 11, 0.08); color: #f59e0b;">
+                                            <i data-lucide="activity" style="width:20px; height:20px;"></i>
+                                        </div>
+                                        <div class="stat-card-creator-info">
+                                            <span class="stat-card-creator-label">Best Efficiency</span>
+                                            <span class="stat-card-creator-value" id="stat-peak-efficiency">0.00 g/W</span>
+                                        </div>
                                     </div>
                                 </div>
 

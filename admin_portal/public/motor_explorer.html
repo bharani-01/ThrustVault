@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/png" href="favicon_light.png" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor Explorer | ThrustVault</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    <!-- Supabase JS Client -->
+    <!-- SheetJS Library -->
+    <script src="libs/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="style.css?v=1.6">
+    <style>
+        .modal-container {
+            max-height: 90vh !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        .modal-container form {
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            flex: 1 !important;
+        }
+        .modal-container .modal-body {
+            overflow-y: auto !important;
+            flex: 1 !important;
+            padding-right: 8px;
+        }
+        .suggestions-wrapper {
+            position: relative;
+            flex: 1;
+            max-width: 480px;
+        }
+    </style>
+    <!-- Page Loader Transition Script -->
+    <script src="page-loader.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" data-sidebar="dynamic">
+            <script>
+                if (localStorage.getItem('thrustvault_sidebar_collapsed') === 'true') {
+                    document.currentScript.parentElement.classList.add('collapsed');
+                }
+            </script>
+            <!-- Sidebar Placeholder Skeletons -->
+            <div class="sidebar-skeleton-wrapper" style="padding: 20px; display: flex; flex-direction: column; gap: 30px; height: 100%; box-sizing: border-box;">
+                <div class="shimmer" style="height: 44px; width: 140px; border-radius: var(--radius-md);"></div>
+                <div style="display:flex; flex-direction:column; gap:15px; flex:1;">
+                    <div class="shimmer" style="height: 16px; width: 80px; border-radius: 4px;"></div>
+                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md);"></div>
+                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md);"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area Wrapper -->
+        <div class="main-content-wrapper" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+            <main class="main-content">
+                <!-- Top Bar -->
+                <header class="topbar">
+                    <div class="suggestions-wrapper">
+                        <div class="search-container" style="position:relative; width: 100%;">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="search-input" placeholder="Quick Search across all specifications..." autocomplete="off" style="width: 100%; box-sizing: border-box;">
+                            <button id="search-clear" class="search-clear-btn" style="display: none;">
+                                <i data-lucide="x"></i>
+                            </button>
+                        </div>
+                        <!-- Smart Suggestions dropdown panel -->
+                        <div class="search-suggestions-dropdown" id="search-suggestions" style="display: none;"></div>
+                    </div>
+
+
+                </header>
+
+                <!-- Explorer Content Body (Matches dashboard theme layout padding/flex style) -->
+                <div class="content-body" style="overflow: hidden; flex: 1; display: flex; flex-direction: column; box-sizing: border-box; gap: 20px;">
+                    <div class="explorer-container">
+                        <!-- Explorer Toolbar -->
+                        <div class="explorer-toolbar">
+                            <div class="explorer-toolbar-section">
+                                <i data-lucide="folder-open" style="color:var(--primary-color); width:20px; height:20px;"></i>
+                                <h2 style="font-family:'Outfit',sans-serif; margin:0; font-size:1.3rem;">Motor Specifications Explorer</h2>
+                            </div>
+                            
+                            <div class="explorer-toolbar-section" style="gap:15px; flex-wrap:wrap;">
+                                <!-- Group By -->
+                                <div class="explorer-toolbar-section">
+                                    <span class="explorer-toolbar-label">Group By:</span>
+                                    <select class="explorer-select" id="select-group-by">
+                                        <option value="none">None</option>
+                                        <option value="category">Category</option>
+                                        <option value="company">Company</option>
+                                        <option value="voltage">Voltage (S)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Sort By -->
+                                <div class="explorer-toolbar-section">
+                                    <span class="explorer-toolbar-label">Sort:</span>
+                                    <select class="explorer-select" id="select-sort-by">
+                                        <option value="name-asc">Name (A-Z)</option>
+                                        <option value="name-desc">Name (Z-A)</option>
+                                        <option value="thrust-desc">Thrust (High to Low)</option>
+                                        <option value="kv-desc">KV (High to Low)</option>
+                                        <option value="weight-asc">Weight (Low to High)</option>
+                                    </select>
+                                </div>
+
+                                <!-- View Toggles -->
+                                <div class="explorer-toolbar-section">
+                                    <span class="explorer-toolbar-label">Layout:</span>
+                                    <div class="explorer-btn-group">
+                                        <button class="explorer-btn-view active" id="btn-view-details" title="Details view">
+                                            <i data-lucide="align-justify" style="width:16px;height:16px;"></i>
+                                        </button>
+                                        <button class="explorer-btn-view" id="btn-view-list" title="Compact List view">
+                                            <i data-lucide="list" style="width:16px;height:16px;"></i>
+                                        </button>
+                                        <button class="explorer-btn-view" id="btn-view-tiles" title="Tiles view">
+                                            <i data-lucide="grid-3x3" style="width:16px;height:16px;"></i>
+                                        </button>
+                                        <button class="explorer-btn-view" id="btn-view-large-icons" title="Large Icons view">
+                                            <i data-lucide="layout-grid" style="width:16px;height:16px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Pane toggles -->
+                                <div class="explorer-btn-group">
+                                    <button class="explorer-btn-view" id="btn-pane-details" title="Details Pane" style="border-right:1px solid var(--border-color); padding: 8px 10px;">
+                                        <i data-lucide="file-text" style="width:16px;height:16px;margin-right:4px;"></i> Details
+                                    </button>
+                                    <button class="explorer-btn-view" id="btn-pane-preview" title="Preview Pane" style="padding: 8px 10px;">
+                                        <i data-lucide="eye" style="width:16px;height:16px;margin-right:4px;"></i> Preview
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Explorer Viewport -->
+                        <div class="explorer-viewport">
+                            <!-- Main explorer contents (left) -->
+                            <div class="explorer-content" id="explorer-content-area">
+                                <!-- Dynamically filled with items -->
+                                <div class="explorer-skeleton-row shimmer"></div>
+                                <div class="explorer-skeleton-row shimmer" style="width:80%;"></div>
+                                <div class="explorer-skeleton-row shimmer" style="width:95%;"></div>
+                            </div>
+
+                            <!-- Right details/preview side panel -->
+                            <aside class="explorer-panel" id="explorer-side-panel">
+                                <div class="panel-header">
+                                    <span class="panel-title" id="panel-title-text">Details Pane</span>
+                                    <button class="btn-icon-small" id="btn-close-side-panel" title="Close Panel" style="background:none; border:none; cursor:pointer;"><i data-lucide="x" style="width:16px;height:16px;"></i></button>
+                                </div>
+                                <div class="panel-body" id="panel-body-content">
+                                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding: 40px 10px; color:var(--text-secondary);">
+                                        <i data-lucide="info" style="width:36px; height:36px; margin-bottom:10px; opacity:0.5;"></i>
+                                        <p style="margin:0; font-size:0.85rem;">Select a motor specifications record to inspect its full properties in this pane.</p>
+                                    </div>
+                                </div>
+                            </aside>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Floating Selection Actions Bar -->
+    <div class="explorer-action-bar" id="explorer-selection-bar">
+        <span class="action-bar-text" id="action-bar-count-text">0 items selected</span>
+        <div style="width:1px; height:20px; background:var(--border-color);"></div>
+        <button class="btn-primary" id="btn-bar-compare" style="padding: 6px 16px; font-size:0.8rem; display:flex; align-items:center; gap:6px;">
+            <i data-lucide="git-compare" style="width:14px; height:14px;"></i> Compare Selected
+        </button>
+        <button class="btn-secondary" id="btn-bar-export" style="padding: 6px 16px; font-size:0.8rem; display:flex; align-items:center; gap:6px;">
+            <i data-lucide="download" style="width:14px; height:14px;"></i> Export Selection
+        </button>
+        <button class="btn-danger" id="btn-bar-delete" style="padding: 6px 16px; font-size:0.8rem; display:none; align-items:center; gap:6px;">
+            <i data-lucide="trash-2" style="width:14px; height:14px;"></i> Delete Selected
+        </button>
+        <button class="btn-secondary" id="btn-bar-clear" style="padding: 6px 12px; font-size:0.8rem; background:transparent; border:none;">
+            Clear
+        </button>
+    </div>
+
+    <!-- Custom Right Click Context Menu -->
+    <div class="explorer-context-menu" id="explorer-context-menu">
+        <button class="context-menu-item" data-action="preview"><i data-lucide="eye" style="width:14px;height:14px;"></i> View Specs Preview</button>
+        <button class="context-menu-item" data-action="compare"><i data-lucide="git-compare" style="width:14px;height:14px;"></i> Add to Comparison</button>
+        <div class="dropdown-divider"></div>
+        <button class="context-menu-item" data-action="edit" id="ctx-btn-edit" style="display:none;"><i data-lucide="edit-2" style="width:14px;height:14px;"></i> Edit Specifications</button>
+        <button class="context-menu-item danger" data-action="delete" id="ctx-btn-delete" style="display:none;"><i data-lucide="trash-2" style="width:14px;height:14px;"></i> Delete Motor Record</button>
+    </div>
+
+    <!-- Reused Comparison Modal -->
+    <div class="modal-backdrop" id="comparison-modal">
+        <div class="modal-container comparison-modal-container" style="max-width: 90vw;">
+            <div class="modal-header">
+                <h3><i data-lucide="git-compare"></i> Side-by-Side Specifications Comparison</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="comparison-table-wrapper" style="overflow-x:auto;">
+                    <table class="comparison-result-table" id="comparison-result-table" style="width:100%; border-collapse:collapse;">
+                        <!-- Filled dynamically -->
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-close-trigger">Close Comparison</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reused Motor Add/Edit Modal (For Edit Spec option) -->
+    <div class="modal-backdrop" id="motor-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="modal-title">Edit Motor Specifications</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <form id="motor-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="form-motor-name">Motor Model Name *</label>
+                        <input type="text" id="form-motor-name" required placeholder="e.g., T-Motor U8 II">
+                    </div>
+                    <div class="form-group">
+                        <label for="form-motor-company">Manufacturer / Brand *</label>
+                        <input type="text" id="form-motor-company" required placeholder="e.g., T-Motor">
+                    </div>
+                    <div class="form-group">
+                        <label for="form-motor-category">Thrust Stand Weight Class Category *</label>
+                        <select id="form-motor-category" required>
+                            <!-- Filled dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="form-motor-thrust">Max Thrust Stand Output (e.g. 5.2 kg) *</label>
+                        <input type="text" id="form-motor-thrust" required placeholder="e.g., 5.2 kg">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-motor-prop">Propeller Model Tested</label>
+                            <input type="text" id="form-motor-prop" placeholder="e.g., 28x9.2 CF">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-motor-esc">ESC Model Used</label>
+                            <input type="text" id="form-motor-esc" placeholder="e.g., Flame 80A">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-motor-link">Motor Product Link</label>
+                            <input type="url" id="form-motor-link" placeholder="https://...">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-esc-link">ESC Product Link</label>
+                            <input type="url" id="form-esc-link" placeholder="https://...">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-prop-link">Propeller Link</label>
+                            <input type="url" id="form-prop-link" placeholder="https://...">
+                        </div>
+                    </div>
+
+                    <!-- Custom parameters section -->
+                    <div class="form-divider">Custom Template Parameters</div>
+                    <div id="dynamic-fields-container" style="display:flex; flex-direction:column; gap:12px;">
+                        <!-- Filled dynamically based on schema -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary modal-close-trigger">Cancel</button>
+                    <button type="submit" class="btn-primary" id="btn-save-motor">Save Specifications</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dynamic Context Confirm Modals -->
+    <div class="modal-backdrop" id="confirm-modal">
+        <div class="modal-container" style="max-width:400px; padding: 25px;">
+            <h3 style="margin-top:0;" id="confirm-title">Confirm Action</h3>
+            <p id="confirm-message" style="color:var(--text-secondary); font-size:0.9rem; line-height:1.4; margin-bottom:20px;"></p>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn-secondary" id="btn-confirm-cancel" style="padding: 8px 16px;">Cancel</button>
+                <button class="btn-primary" id="btn-confirm-ok" style="padding: 8px 16px;">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controller Script -->
+    <script src="motor_explorer_app.js?v=1.1"></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<USER_REQUEST>
+You are a senior full-stack auditor — equal parts UI/UX design lead, frontend security reviewer, accessibility specialist, and legal-compliance checker. Conduct a comprehensive, read-only audit of this codebase/website and produce a single file called `audit.md` in the project root.
+
+---
+
+## GROUND RULES
+- Do not make any code changes. This is a read-only audit — document issues for other passes to fix.
+- Do not hallucinate issues. Only report what you can actually see or infer from the code. Report false positives only after verification.
+- If a dimension or category has no issues, write "No issues found" — do not skip it.
+- Be specific. Vague findings like "improve security" are useless. Name the file, the line, the exact selector/component, the exact problem.
+- Be honest about what's good too. The "Strengths" section is mandatory — don't inflate severity to seem thorough, and don't fabricate issues that don't exist.
+- Write for a developer who will act on this report — not for a client pitch deck.
+- Every finding needs a concrete user-impact statement: what real users experience because of this issue, not an abstract principle name-drop.
+
+---
+
+## STEP 0 — DETECT CONTEXT
+Before auditing, infer and state at the top of the report:
+- Tech stack and versions (from package.json, lockfiles, config files)
+- Project type (SaaS, marketing site, e-commerce, portfolio, dashboard, internal tool) — this calibrates what "good" looks like later
+- Primary audience and apparent business goal (from copy, routing, structure)
+- Design system maturity (tokens present? ad-hoc hex values? component library?)
+
+---
+
+## STEP 1 — ANTI-PATTERN VERDICT (do this first)
+Before the detailed scan, answer directly: does this look AI-generated? List the specific tells you see, citing file/component. Be honest, not diplomatic.
+
+Check specifically for:
+- Trending color sameness — the same indigo/purple/blue gradient every AI tool defaults to, especially purple-on-white
+- Gradient text, glassmorphism used decorative
+<truncated 8996 bytes>
+t are also straightforward to fix:
+1. [finding] (severity) — one-line fix
+2. [finding] (severity) — one-line fix
+3. [finding] (severity) — one-line fix
+
+---
+
+## Findings
+
+### P0 — Blocking
+[Findings in the format below, or "No issues found"]
+
+#### [Short title]
+- **Category:** [dimension or heuristic]
+- **Location:** `path/to/file.ts:42`
+- **Issue:** ...
+- **User impact:** ...
+- **Fix:** ...
+
+### P1 — Major
+[...]
+
+### P2 — Minor
+[...]
+
+### P3 — Polish
+[...]
+
+---
+
+## Systemic Patterns
+Recurring problems that indicate a gap in the system, not a one-off mistake — e.g. "hardcoded colors appear in N components," "touch targets under 44px recur across nav, footer, and modal controls."
+
+---
+
+## Strengths
+At least 3 specific things the implementation already does well — name files, components, or patterns. This section is mandatory even on a rough codebase.
+
+---
+
+## Recommended Priority Order
+Numbered list of what to fix first, in order, with one-line reasoning each.
+
+1. ...
+2. ...
+3. ...
+4. ...
+5. ...
+```
+
+Begin the audit now.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-20T03:23:12+05:30.
+
+The user's current state is as follows:
+Active Document: d:\motor data\.env (LANGUAGE_UNSPECIFIED)
+Cursor is on line: 25
+Other open documents:
+- d:\motor data\server.js (LANGUAGE_JAVASCRIPT)
+- d:\motor data\package.json (LANGUAGE_JSON)
+- d:\motor data\public\user_app.js (LANGUAGE_JAVASCRIPT)
+- d:\motor data\.env (LANGUAGE_UNSPECIFIED)
+Browser State:
+  Page 79DEB064AF7EA08E281B22045DEE0CE7 (User Dashboard | ThrustVault) - http://localhost:8000/dashboard [ACTIVE]
+    Viewport: 1920x945, Page Height: 945
+Running terminal commands:
+- node server.js (in d:\motor data, running for 1m8s)
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from None to Gemini 3.5 Flash (High). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>

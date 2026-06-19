@@ -42,7 +42,7 @@ _HEADERS = {
     ),
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
+    "Accept-Encoding": "gzip, deflate",
     "Connection": "keep-alive",
     "Upgrade-Insecure-Requests": "1",
     "Sec-Fetch-Dest": "document",
@@ -169,33 +169,33 @@ class BaseScraper(ABC):
     # ── Playwright (JS-heavy sites / last resort) ─────────────────────────
     def fetch_with_browser(self, url: str, wait_selector: Optional[str] = None) -> Optional[str]:
         wait_for_domain(url)
+        page = None
         try:
-            from playwright.sync_api import sync_playwright
+            from utils.browser_manager import browser_manager
             try:
                 from playwright_stealth import stealth_sync
                 use_stealth = True
             except ImportError:
                 use_stealth = False
 
-            with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
-                ctx = browser.new_context(
-                    viewport={"width": 1920, "height": 1080},
-                    user_agent=_HEADERS["User-Agent"],
-                )
-                page = ctx.new_page()
-                if use_stealth:
-                    stealth_sync(page)
-                page.goto(url, wait_until="domcontentloaded", timeout=PLAYWRIGHT_GOTO_TIMEOUT)
-                if wait_selector:
-                    page.wait_for_selector(wait_selector, timeout=PLAYWRIGHT_SELECTOR_TIMEOUT)
-                html = page.content()
-                browser.close()
-                log.debug(f"[{self.name}] Playwright OK: {url}")
-                return html
+            context, page = browser_manager.get_page(_HEADERS["User-Agent"])
+            if use_stealth:
+                stealth_sync(page)
+            page.goto(url, wait_until="domcontentloaded", timeout=PLAYWRIGHT_GOTO_TIMEOUT)
+            if wait_selector:
+                page.wait_for_selector(wait_selector, timeout=PLAYWRIGHT_SELECTOR_TIMEOUT)
+            html = page.content()
+            log.debug(f"[{self.name}] Playwright OK: {url}")
+            return html
         except Exception as e:
             log.error(f"[{self.name}] Playwright failed for {url}: {e}")
             return None
+        finally:
+            if page:
+                try:
+                    page.close()
+                except Exception:
+                    pass
 
     def parse(self, html: str) -> BeautifulSoup:
         return BeautifulSoup(html, "html.parser")

@@ -198,12 +198,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             logUserActivity(data.email, data.role, 'Login', 'Logged in successfully.');
 
-            if (data.role === 'admin') {
-                window.location.href = '/admin/dashboard';
-            } else if (data.role === 'intern') {
-                window.location.href = '/intern/dashboard';
-            } else if (data.role === 'guest') {
-                window.location.href = '/guest/dashboard';
+            if (data.role === 'admin' || data.role === 'user' || data.role === 'user' || data.role === 'guest') {
+                window.location.href = '/dashboard';
             } else {
                 alert("Invalid role assigned to this account.");
                 await fetch('/api/auth/logout', { method: 'POST' });

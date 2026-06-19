@@ -27,6 +27,7 @@ from utils.logger import get_logger
 from parsers.motor_parser import normalize_batch
 from parsers.groq_parser import groq_parser
 from utils.dedup import dedup_motors
+from utils.cache import get_cached_results, set_cached_results
 
 # ── Pre-import all scrapers at startup (main thread) to avoid
 #    Python _ModuleLock deadlocks when threads import concurrently ──────────
@@ -143,7 +144,7 @@ def smart_match(query: str, candidate: str) -> bool:
 
 
 # ── Scraper runner (runs in background thread) ─────────────────────────────
-def run_scrape_job(job_id: str, motor_query: str, sources: list[str], use_groq: bool):
+def run_scrape_job(job_id: str, motor_query: str, sources: list[str], use_groq: bool, use_cache: bool = True):
     job = JOBS[job_id]
     q: queue.Queue = job["queue"]
 
@@ -161,6 +162,36 @@ def run_scrape_job(job_id: str, motor_query: str, sources: list[str], use_groq: 
             motor_query = clean_query
             # Also update job so results/export reflect clean query
             job["query"] = clean_query
+
+        # Check Cache
+        if use_cache:
+            cached = get_cached_results(motor_query, sources)
+            if cached:
+                log_msg(f"💾 Found cached results for: '{motor_query}'", "info")
+                all_motors = cached.get("motors", [])
+                all_performance = cached.get("performance", [])
+                ai_summary = cached.get("ai_summary", "")
+
+                for src in sources:
+                    log_msg(f"🔍 [cache] Reading cached records for [{src}]...", "source")
+
+                if ai_summary:
+                    emit("ai_summary", {"summary": ai_summary})
+                    log_msg("📊 Cached AI Summary loaded", "ai")
+
+                emit("results", {
+                    "motors": all_motors,
+                    "performance": all_performance,
+                    "total_motors": len(all_motors),
+                    "total_performance": len(all_performance),
+                })
+
+                job["results"] = all_motors
+                job["performance"] = all_performance
+                job["status"] = "done"
+                log_msg(f"✅ Cache Loaded! {len(all_motors)} motors, {len(all_performance)} performance points.", "success")
+                emit("done", {"total": len(all_motors) + len(all_performance)})
+                return
 
         log_msg(f"🚀 Starting scrape for: '{motor_query}'", "info")
         log_msg(f"📡 Sources: {', '.join(sources)}", "info")
@@ -222,6 +253,13 @@ def run_scrape_job(job_id: str, motor_query: str, sources: list[str], use_groq: 
                     log_msg(f"  ❌ [{src}] {type(root).__name__}: {root}", "error")
                 else:
                     log_msg(f"  ❌ [{src}] {type(e).__name__}: {e}", "error")
+            finally:
+                # Close the thread-local Playwright browser if it was opened
+                try:
+                    from utils.browser_manager import browser_manager
+                    browser_manager.close_thread_browser()
+                except Exception:
+                    pass
             return src_motors, src_performance
 
         # 1. Run sources in parallel
@@ -285,6 +323,7 @@ def run_scrape_job(job_id: str, motor_query: str, sources: list[str], use_groq: 
                 summary = groq_parser.summarize_batch(all_motors)
                 emit("ai_summary", {"summary": summary})
                 log_msg(f"📊 AI Summary generated", "ai")
+                ai_summary = summary
 
         # Send results
         emit("results", {
@@ -297,6 +336,15 @@ def run_scrape_job(job_id: str, motor_query: str, sources: list[str], use_groq: 
         job["results"] = all_motors
         job["performance"] = all_performance
         job["status"] = "done"
+
+        # Save to cache
+        if use_cache:
+            set_cached_results(motor_query, sources, {
+                "motors": all_motors,
+                "performance": all_performance,
+                "ai_summary": ai_summary
+            })
+
         log_msg(f"✅ Done! {len(all_motors)} motors, {len(all_performance)} performance points.", "success")
         emit("done", {"total": len(all_motors) + len(all_performance)})
 
@@ -345,6 +393,7 @@ def start_scrape():
     motor_query = data.get("motor", "").strip()
     sources     = data.get("sources", ["tmotor", "getfpv", "emax", "speedybee", "rcbenchmark", "mad", "kdedirect", "sunnysky"])
     use_groq    = data.get("use_groq", True)
+    use_cache   = data.get("use_cache", True)
 
     job_id = str(uuid.uuid4())
     JOBS[job_id] = {
@@ -358,7 +407,7 @@ def start_scrape():
 
     thread = threading.Thread(
         target=run_scrape_job,
-        args=(job_id, motor_query, sources, use_groq),
+        args=(job_id, motor_query, sources, use_groq, use_cache),
         daemon=True,
     )
     thread.start()

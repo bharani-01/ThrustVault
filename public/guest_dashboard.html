@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" type="image/png" href="thrustvault_icon_light.png" media="(prefers-color-scheme: light)">
-    <link rel="icon" type="image/png" href="thrustvault_icon_dark.png" media="(prefers-color-scheme: dark)">
+    <link rel="icon" type="image/png" href="favicon_light.png" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guest Vault | ThrustVault</title>
@@ -18,7 +18,7 @@
     <!-- SheetJS Library -->
     <script src="libs/xlsx.full.min.js"></script>
     <!-- Main Stylesheet -->
-    <link rel="stylesheet" href="style.css?v=1.4">
+    <link rel="stylesheet" href="style.css?v=1.6">
     <!-- Page Loader Transition Script -->
     <script src="page-loader.js"></script>
 </head>
@@ -32,19 +32,17 @@
                 }
             </script>
             <!-- Sidebar Placeholder Skeletons -->
-            <div class="sidebar-skeleton-wrapper" style="padding: 20px; display: flex; flex-direction: column; gap: 30px; height: 100%; box-sizing: border-box;">
-                <div class="shimmer" style="height: 44px; width: 140px; border-radius: var(--radius-md); background: var(--border-color);"></div>
-                <div style="display:flex; flex-direction:column; gap:15px; flex:1;">
-                    <div class="shimmer" style="height: 16px; width: 80px; border-radius: 4px; background: var(--border-color);"></div>
-                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
-                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
-                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+            <div class="sidebar-skeleton-wrapper" style="padding: 0 24px; display: flex; flex-direction: row; gap: 20px; height: 100%; align-items: center; width: 100%; box-sizing: border-box; justify-content: space-between;">
+                <div class="shimmer" style="height: 32px; width: 140px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                <div style="display:flex; flex-direction:row; gap:15px; flex:1; align-items:center; margin-left:30px;">
+                    <div class="shimmer" style="height: 32px; width: 120px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                    <div class="shimmer" style="height: 32px; width: 120px; border-radius: var(--radius-md); background: var(--border-color);"></div>
                 </div>
-                <div style="display:flex; align-items:center; gap:12px; border-top: 1px solid var(--border-color); padding-top:20px;">
-                    <div class="shimmer" style="height: 40px; width: 40px; border-radius: var(--radius-full); background: var(--border-color);"></div>
-                    <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
-                        <div class="shimmer" style="height: 12px; width: 100px; border-radius: 4px; background: var(--border-color);"></div>
-                        <div class="shimmer" style="height: 10px; width: 50px; border-radius: 4px; background: var(--border-color);"></div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="shimmer" style="height: 32px; width: 32px; border-radius: var(--radius-full); background: var(--border-color);"></div>
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <div class="shimmer" style="height: 10px; width: 100px; border-radius: 4px; background: var(--border-color);"></div>
+                        <div class="shimmer" style="height: 8px; width: 50px; border-radius: 4px; background: var(--border-color);"></div>
                     </div>
                 </div>
             </div>
@@ -59,7 +57,7 @@
                 <!-- Alert Banner for Guest Role -->
                 <div class="banner-alert info">
                     <i data-lucide="info"></i>
-                    <span><strong>Guest Mode:</strong> You have read-only access. Log in as an Intern or Admin to modify specifications.</span>
+                    <span><strong>Guest Mode:</strong> You have read-only access. Log in as a User or Admin to modify specifications.</span>
                 </div>
 
                 <!-- Top Bar / Navigation -->
@@ -295,6 +293,32 @@
                                             </tr>
                                         </tbody>
                                     </table>
+                                </div>
+
+                                <!-- Pagination Controls -->
+                                <div class="pagination-container" id="pagination-controls">
+                                    <div class="pagination-left">
+                                        <div class="page-size-select-wrapper">
+                                            <span>Show:</span>
+                                            <select id="pagination-limit" class="page-size-select">
+                                                <option value="10">10</option>
+                                                <option value="15" selected>15</option>
+                                                <option value="25">25</option>
+                                            </select>
+                                        </div>
+                                        <span class="pagination-info" id="pagination-info-text">Showing 0-0 of 0 motors</span>
+                                    </div>
+                                    <div class="pagination-actions">
+                                        <button class="pagination-nav-btn" id="btn-prev-page">
+                                            <i data-lucide="chevron-left" style="width:14px;height:14px;"></i> Prev
+                                        </button>
+                                        <div id="pagination-pages" style="display: flex; gap: 4px; align-items: center;">
+                                            <!-- Dynamic page buttons -->
+                                        </div>
+                                        <button class="pagination-nav-btn" id="btn-next-page">
+                                            Next <i data-lucide="chevron-right" style="width:14px;height:14px;"></i>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div class="empty-state" id="table-empty-state" style="display: none;">

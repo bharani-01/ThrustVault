@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
         // Restrict actions based on role
-        if (session.role === 'admin' || session.role === 'intern') {
+        if (session.role === 'admin' || session.role === 'user') {
             elements.ctxBtnEdit.style.display = 'flex';
         }
         if (session.role === 'admin') {
@@ -102,17 +102,23 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchData() {
         try {
             // Fetch categories
-            const catRes = await fetch('/api/guest/categories');
+            const catRes = await fetch('/api/categories');
             if (!catRes.ok) throw new Error(`Categories fetch failed: HTTP ${catRes.status}`);
             const categories = await catRes.json();
+            
+            const parseMinWeight = (name) => {
+                const match = name.match(/(\d+)/);
+                return match ? parseInt(match[1], 10) : 9999;
+            };
+
             state.categories = (categories || []).map(c => ({
                 id: c.id,
                 name: c.name,
                 desc: c.description
-            }));
+            })).sort((a, b) => parseMinWeight(a.name) - parseMinWeight(b.name));
 
             // Fetch motors
-            const motorRes = await fetch('/api/guest/motors');
+            const motorRes = await fetch('/api/motors');
             if (!motorRes.ok) throw new Error(`Motors fetch failed: HTTP ${motorRes.status}`);
             const motors = await motorRes.json();
             state.motors = (motors || []).map(m => ({
@@ -132,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Fetch custom specifications schema
             let schema = [];
             try {
-                const schemaRes = await fetch('/api/guest/custom-specs');
+                const schemaRes = await fetch('/api/custom-specs');
                 if (schemaRes.ok) {
                     schema = await schemaRes.json();
                 } else {
@@ -340,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     custom_parameters: customParams
                 };
 
-                const res = await fetch(`/api/intern/motors?id=eq.${motorId}`, {
+                const res = await fetch(`/api/motors?id=eq.${motorId}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updatePayload)
@@ -798,7 +804,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const thumbStyle = `background: hsl(${hue}, 80%, 95%); color: hsl(${hue}, 80%, 40%); border: 1px solid hsl(${hue}, 80%, 85%); width:64px; height:64px; border-radius:12px; font-weight:700; display:flex; align-items:center; justify-content:center; font-size:1.8rem; margin: 0 auto;`;
 
             // Action triggers for preview panel card
-            const showEdit = (session.role === 'admin' || session.role === 'intern');
+            const showEdit = (session.role === 'admin' || session.role === 'user');
             const showDelete = (session.role === 'admin');
 
             elements.panelBody.innerHTML = `
@@ -1187,7 +1193,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             div.onclick = () => {
                 sessionStorage.setItem('activeCategory', cat.id);
-                const roleDash = session.role === 'admin' ? '/admin/dashboard' : (session.role === 'intern' ? '/intern/dashboard' : '/guest/dashboard');
+                const roleDash = session.role === 'admin' ? '/admin/dashboard' : (session.role === 'user' ? '/dashboard' : '/dashboard');
                 window.location.href = roleDash;
             };
             elements.catList.appendChild(div);

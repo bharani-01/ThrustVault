@@ -1,0 +1,86 @@
+<!-- Logo Container (Left) -->
+<div class="logo-container" style="display: flex; align-items: center; width: auto;">
+    <a href="/dashboard" class="logo-link">
+        <img src="logo_light.png" alt="ThrustVault Logo" class="logo-image logo-light" style="height: 32px; width: auto;">
+        <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark" style="height: 32px; width: auto;">
+    </a>
+</div>
+
+<!-- Navigation Links (Center) -->
+<nav class="sidebar-nav" style="display: flex !important; align-items: center; gap: 15px; padding: 0; margin: 0 auto !important; flex: none !important; overflow: visible;">
+    <div class="sidebar-menu-links" style="margin: 0; display: flex; flex-direction: row; gap: 10px; align-items: center;">
+        <a href="/dashboard" class="btn-sidebar-link" title="Catalog View" style="text-decoration: none;">
+            Catalog
+        </a>
+        <a href="/analytics" class="btn-sidebar-link" title="Test Runs" style="text-decoration: none;">
+            Test Runs
+        </a>
+    </div>
+
+    <!-- Catalog Dropdown (Thrust Levels) -->
+    <div class="sidebar-dropdown-wrapper" style="position: relative; display: flex; align-items: center;">
+        <a href="#" class="btn-sidebar-link" id="catalog-dropdown-toggle" style="margin: 0;">
+            Thrust Levels
+            <i data-lucide="chevron-down" class="dropdown-chevron" style="width: 14px; height: 14px;"></i>
+        </a>
+        
+        <div class="category-list">
+            <div id="category-list-container" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Dynamic Categories will be injected here -->
+            </div>
+            <!-- Static Add Category button inside the dropdown wrapper, so it is never cleared! -->
+            <div class="dropdown-footer" style="border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 4px; display: flex; justify-content: center; width: 100%;">
+                <button class="btn-primary-sm" id="btn-add-category" style="width: 100%; justify-content: center; font-size: 0.8rem; padding: 6px 12px; border-radius: 6px;">
+                    Add Level
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Search Bar (Navbar Center) -->
+<div style="position:relative; flex:1; max-width:420px; margin:0 20px;">
+    <i data-lucide="search" style="position:absolute; left:11px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:var(--text-muted); pointer-events:none;"></i>
+    <input
+        type="text"
+        id="search-input"
+        placeholder="Search motors, brands, ESC..."
+        autocomplete="off"
+        style="width:100%; padding:7px 34px 7px 32px; border-radius:20px; border:1.5px solid var(--border-color); background:var(--bg-card); color:var(--text-main); font-size:0.82rem; outline:none; font-family:inherit; transition:border-color 0.2s, box-shadow 0.2s;"
+        onfocus="this.style.borderColor='var(--primary-color)';this.style.boxShadow='0 0 0 3px hsla(217,91%,60%,0.15)'"
+        onblur="this.style.borderColor='var(--border-color)';this.style.boxShadow='none'">
+    <button id="search-clear" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; display:none; padding:2px; color:var(--text-muted); line-height:1;">
+        <i data-lucide="x" style="width:13px;height:13px;"></i>
+    </button>
+    <div id="search-suggestions" class="search-suggestions-dropdown" style="display:none;"></div>
+</div>
+
+<!-- Right Side Actions (Right) -->
+<div class="navbar-right" style="display: flex; align-items: center; gap: 20px;">
+    <!-- Stats Widgets (kept hidden via display:none in CSS to satisfy JS selectors without cluttering navbar) -->
+    <div class="sidebar-stats" style="display: none;">
+        <span id="total-motors-count">0</span>
+        <span id="total-categories-count">0</span>
+    </div>
+
+    <!-- User Profile Dropdown Card -->
+    <div class="sidebar-footer" style="display: flex; align-items: center; margin: 0; padding: 0; border: none; background: transparent;">
+        <div class="user-profile-menu-wrapper">
+            <div class="user-avatar-trigger">
+                <div class="user-avatar" id="user-avatar-initials">U</div>
+                <i data-lucide="chevron-down" class="avatar-chevron"></i>
+            </div>
+            <div class="user-dropdown-card">
+                <div class="dropdown-user-details">
+                    <span class="user-email" id="session-email">user@thrustvault.com</span>
+                    <span class="badge-role role-user">User</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <!-- Logout Button (Theme Toggle will be dynamically prepended here by JS) -->
+                <button class="btn-logout-premium" id="btn-logout" title="Log Out">
+                    Log Out
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

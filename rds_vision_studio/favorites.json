@@ -1,0 +1,6 @@
+{
+    "Select Limit 100": "SELECT * FROM \"table_name\" LIMIT 100;",
+    "Table Count aggregation": "SELECT COUNT(*) FROM \"table_name\";",
+    "Left join template": "SELECT * FROM \"table_a\" a\nLEFT JOIN \"table_b\" b ON a.id = b.id;",
+    "Safe Update records": "UPDATE \"table_name\"\nSET \"column_name\" = 'value'\nWHERE \"id\" = 1;"
+}

@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/png" href="favicon_light.png" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management | ThrustVault</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    <!-- Chart.js -->
+    <script src="libs/chart.umd.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/chart.js';"></script>
+    <!-- Supabase JS Client -->
+    <link rel="stylesheet" href="style.css?v=1.6">
+    <style>
+        .modal-container {
+            max-height: 90vh !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        .modal-container form {
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            flex: 1 !important;
+        }
+        .modal-container .modal-body {
+            overflow-y: auto !important;
+            flex: 1 !important;
+            padding-right: 8px;
+        }
+
+        /* Contribution Calendar Styles */
+        .contribution-calendar-wrapper {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.65);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .calendar-months-grid {
+            display: grid;
+            grid-template-columns: repeat(53, 10px);
+            gap: 2px;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            height: 14px;
+            line-height: 1;
+        }
+        .calendar-grid-wrapper {
+            display: flex;
+            gap: 8px;
+        }
+        .calendar-weekdays-grid {
+            display: grid;
+            grid-template-rows: repeat(7, 10px);
+            gap: 2px;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            width: 28px;
+            line-height: 10px;
+            text-align: left;
+        }
+        .contribution-calendar-grid {
+            display: grid;
+            grid-template-rows: repeat(7, 10px);
+            grid-auto-flow: column;
+            gap: 2px;
+            width: max-content;
+        }
+        .contrib-cell {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        .contrib-cell:hover {
+            transform: scale(1.3);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.12);
+            z-index: 5;
+        }
+        .contrib-lvl-0 { background-color: #e2e8f0; }
+        .contrib-lvl-1 { background-color: #dcfce7; }
+        .contrib-lvl-2 { background-color: #86efac; }
+        .contrib-lvl-3 { background-color: #22c55e; }
+        .contrib-lvl-4 { background-color: #15803d; }
+
+        /* Premium custom tooltip */
+        .calendar-tooltip {
+            position: absolute;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            pointer-events: none;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            transform: translate(-50%, -100%) translateY(-8px);
+        }
+        .calendar-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%) rotate(45deg);
+            width: 8px;
+            height: 8px;
+            background: #0f172a;
+        }
+
+        /* Fixed viewport height layout overrides to eliminate page scrollbars */
+        html, body {
+            height: 100vh !important;
+            margin: 0;
+            overflow: hidden !important;
+        }
+        .app-container {
+            height: 100vh !important;
+            overflow: hidden !important;
+        }
+        .main-content-wrapper {
+            height: 100vh !important;
+            overflow: hidden !important;
+        }
+        
+        #users-view-section {
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 24px !important;
+        }
+        #users-view-section .topbar {
+            flex-shrink: 0;
+            margin-bottom: 12px;
+        }
+        #users-view-section .content-body {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px !important;
+            overflow: hidden;
+            padding: 0 !important;
+        }
+        .user-management-table-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+            box-sizing: border-box;
+            padding: 24px;
+            flex: 1;
+        }
+        .user-management-table-container .table-responsive {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-panel-solid);
+        }
+        
+        /* Custom scrollbar for table responsive container */
+        .user-management-table-container .table-responsive::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .user-management-table-container .table-responsive::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .user-management-table-container .table-responsive::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: var(--radius-full);
+        }
+
+        /* Profile Viewport Scroll Override */
+        #profile-view-section {
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 24px !important;
+        }
+        #profile-view-section .topbar {
+            flex-shrink: 0;
+            margin-bottom: 12px;
+        }
+        #profile-view-section > div {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 310px 1fr;
+            gap: 20px;
+            overflow: hidden;
+            padding: 0 !important;
+        }
+        #profile-view-section > div > div:first-child {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            min-height: 0;
+            padding-right: 6px;
+        }
+        #profile-view-section > div > div:first-child::-webkit-scrollbar {
+            width: 5px;
+        }
+        #profile-view-section > div > div:first-child::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #profile-view-section > div > div:first-child::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: var(--radius-full);
+        }
+        #profile-view-section > div > div:second-child {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+            padding: 22px;
+        }
+
+        /* Contribution calendar dark-theme support overrides */
+        [data-theme="dark"] .contrib-lvl-0 { background-color: rgba(255, 255, 255, 0.08); }
+        [data-theme="dark"] .contrib-lvl-1 { background-color: #0e4429; }
+        [data-theme="dark"] .contrib-lvl-2 { background-color: #006d32; }
+        [data-theme="dark"] .contrib-lvl-3 { background-color: #26a641; }
+        [data-theme="dark"] .contrib-lvl-4 { background-color: #39d353; }
+        [data-theme="dark"] .contribution-calendar-wrapper { background: rgba(20, 24, 33, 0.45); }
+    </style>
+    <!-- Page Loader Transition Script -->
+    <script src="page-loader.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+                <aside class="sidebar" data-sidebar="admin">
+            <script>
+                if (localStorage.getItem('thrustvault_sidebar_collapsed') === 'true') {
+                    document.currentScript.parentElement.classList.add('collapsed');
+                }
+            </script>
+            <!-- Sidebar Placeholder Skeletons -->
+            <div class="sidebar-skeleton-wrapper" style="padding: 20px; display: flex; flex-direction: column; gap: 30px; height: 100%; box-sizing: border-box;">
+                <div class="shimmer" style="height: 44px; width: 140px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                <div style="display:flex; flex-direction:column; gap:15px; flex:1;">
+                    <div class="shimmer" style="height: 16px; width: 80px; border-radius: 4px; background: var(--border-color);"></div>
+                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; border-top: 1px solid var(--border-color); padding-top:20px;">
+                    <div class="shimmer" style="height: 40px; width: 40px; border-radius: var(--radius-full); background: var(--border-color);"></div>
+                    <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
+                        <div class="shimmer" style="height: 12px; width: 100px; border-radius: 4px; background: var(--border-color);"></div>
+                        <div class="shimmer" style="height: 10px; width: 50px; border-radius: 4px; background: var(--border-color);"></div>
+                    </div>
+                </div>
+            </div>
+</aside>
+
+        <!-- Main Content Area Wrapper -->
+        <div class="main-content-wrapper" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+            
+            <!-- ADMIN USER MANAGEMENT VIEWPORT -->
+            <main class="main-content" id="users-view-section">
+                <header class="topbar">
+                    <h2 style="font-family:'Outfit'; font-size:1.5rem; font-weight:700;"><i data-lucide="users" style="vertical-align:middle; margin-right:8px; color:var(--primary-color);"></i> User Account Administration</h2>
+                </header>
+
+                <div class="content-body">
+                    <!-- User Account Table -->
+                    <div class="user-management-table-container glass-panel">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--border-color); padding-bottom:12px; flex-wrap:wrap; gap:12px;">
+                            <h3 style="font-family:'Outfit'; font-size:1.1rem; display:flex; align-items:center; gap:8px; margin:0;"><i data-lucide="list"></i> Registered Accounts</h3>
+                            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                                <div style="position:relative;">
+                                    <i data-lucide="search" style="width:13px; height:13px; position:absolute; left:9px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                                    <input type="text" id="search-users-input" placeholder="Search accounts..." style="padding:7px 10px 7px 28px; border-radius:8px; border:1px solid var(--border-color); outline:none; font-size:0.8rem; width:160px; background:var(--bg-base); color:var(--text-primary); font-family:'Inter';">
+                                </div>
+                                <select id="filter-users-role" style="padding:7px 10px; border-radius:8px; border:1px solid var(--border-color); outline:none; font-size:0.8rem; background:var(--bg-base); color:var(--text-primary); cursor:pointer; font-family:'Inter';">
+                                    <option value="all">All Roles</option>
+                                    <option value="guest">Guest</option>
+                                    <option value="intern">Intern</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                                <button type="button" class="btn-primary" id="btn-create-user-trigger" style="display:inline-flex; align-items:center; gap:6px; font-weight:600; font-size:0.85rem; padding:8px 16px;">
+                                    <i data-lucide="user-plus" style="width:16px; height:16px;"></i> Create Account
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="motors-table">
+                                <thead>
+                                    <tr>
+                                        <th>Email</th>
+                                        <th>Access Role</th>
+                                        <th>Created Date</th>
+                                        <th style="width:100px; text-align:right;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-accounts-list-rows">
+                                    <!-- Dynamic User lists -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- ADMIN USER PROFILE & CONTRIBUTIONS VIEWPORT -->
+            <main class="main-content" id="profile-view-section" style="display:none;">
+                <header class="topbar">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <button class="btn-secondary-sm" id="btn-profile-back" style="padding:6px 12px; cursor:pointer; font-size:0.85rem; border-radius:8px;">
+                            <i data-lucide="arrow-left" style="width:16px; height:16px; vertical-align:middle; margin-right:4px;"></i> Back
+                        </button>
+                        <h2 style="font-family:'Outfit'; font-weight:700; font-size:1.3rem;">User Profile &amp; Contributions</h2>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span id="profile-header-role-info" style="font-size:0.82rem; color:var(--text-muted); font-weight:500;"></span>
+                    </div>
+                </header>
+
+                <div style="flex:1; overflow:hidden; display:grid; grid-template-columns: 310px 1fr; gap:20px; padding:28px; align-items:stretch;">
+                    <!-- Left Column: Sidebar Details -->
+                    <div style="display:flex; flex-direction:column; gap:20px; overflow-y:auto; height:100%; padding-right:4px;">
+                        <!-- User Hero Card -->
+                        <div class="glass-panel" style="padding:22px; border-radius:16px; display:flex; flex-direction:column; gap:14px;">
+                            <!-- Avatar + Name Row -->
+                            <div style="display:flex; align-items:center; gap:14px;">
+                                <div id="full-profile-avatar" style="width:60px; height:60px; border-radius:50%; background:linear-gradient(135deg,#2563eb,#7c3aed); border:3px solid var(--bg-panel-solid); box-shadow:0 4px 14px -2px rgba(37,99,235,0.35); display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:800; color:#fff; font-family:'Outfit'; flex-shrink:0;">U</div>
+                                <div style="min-width:0;">
+                                    <h3 id="full-profile-email" style="font-family:'Outfit'; font-size:1rem; color:var(--text-primary); word-break:break-all; margin:0 0 4px; font-weight:700;">user@thrustvault.com</h3>
+                                    <span class="badge-role role-admin" id="full-profile-role-badge" style="display:inline-block; width:fit-content;">Admin</span>
+                                </div>
+                            </div>
+
+                            <!-- Meta Info -->
+                            <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--border-color); padding-top:12px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
+                                    <span style="color:var(--text-muted); display:flex; align-items:center; gap:5px;"><i data-lucide="fingerprint" style="width:12px; height:12px;"></i> UID</span>
+                                    <div style="display:flex; align-items:center; gap:4px;">
+                                        <code id="full-profile-uid" style="background:var(--bg-base); color:var(--text-primary); padding:2px 6px; border-radius:4px; font-size:0.7rem; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:monospace;">uuid-value</code>
+                                        <button id="btn-copy-full-profile-uid" style="background:none; border:none; cursor:pointer; padding:2px; color:var(--text-muted);" title="Copy UID"><i data-lucide="copy" style="width:12px; height:12px;"></i></button>
+                                    </div>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
+                                    <span style="color:var(--text-muted); display:flex; align-items:center; gap:5px;"><i data-lucide="calendar" style="width:12px; height:12px;"></i> Registered</span>
+                                    <span id="full-profile-created-at" style="color:var(--text-secondary); font-weight:600;">—</span>
+                                </div>
+                            </div>
+
+                            <!-- Permissions -->
+                            <div style="border-top:1px solid var(--border-color); padding-top:12px;">
+                                <div style="font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px; display:flex; align-items:center; gap:5px;"><i data-lucide="shield-check" style="width:11px; height:11px; color:#2563eb;"></i> Permissions</div>
+                                <div style="display:flex; flex-direction:column; gap:7px;" id="full-profile-permissions-list"><!-- Loaded dynamically --></div>
+                            </div>
+
+                            <!-- Quick Stats -->
+                            <div style="border-top:1px solid var(--border-color); padding-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                <div class="glass-panel" style="padding:10px; border-radius:10px; display:flex; align-items:center; gap:8px; border-left:3px solid #2563eb; background:var(--bg-panel);">
+                                    <div style="width:28px; height:28px; background:rgba(37, 99, 235, 0.1); border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                        <i data-lucide="activity" style="width:14px; height:14px; color:#2563eb;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:1.1rem; font-weight:800; color:var(--text-primary); font-family:'Outfit'; line-height:1;" id="profile-total-ops">0</div>
+                                        <div style="font-size:0.65rem; color:var(--text-muted); font-weight:500; margin-top:2px;">Actions</div>
+                                    </div>
+                                </div>
+                                <div class="glass-panel" style="padding:10px; border-radius:10px; display:flex; align-items:center; gap:8px; border-left:3px solid #10b981; background:var(--bg-panel);">
+                                    <div style="width:28px; height:28px; background:rgba(16, 185, 129, 0.1); border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                        <i data-lucide="database" style="width:14px; height:14px; color:#10b981;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:1.1rem; font-weight:800; color:var(--text-primary); font-family:'Outfit'; line-height:1;" id="profile-total-mutations">0</div>
+                                        <div style="font-size:0.65rem; color:var(--text-muted); font-weight:500; margin-top:2px;">Mutations</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Breakdown Chart -->
+                        <div class="glass-panel" style="padding:20px; border-radius:16px;">
+                            <h4 style="font-family:'Outfit'; font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0 0 12px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border-color); padding-bottom:10px;">
+                                <i data-lucide="pie-chart" style="width:16px; height:16px; color:#2563eb;"></i> Activity Breakdown
+                            </h4>
+                            <div style="height:160px; position:relative; display:flex; align-items:center; justify-content:center;">
+                                <canvas id="profileActivityChart" style="max-width:160px; max-height:160px;"></canvas>
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:7px; margin-top:12px; border-top:1px solid #f1f5f9; padding-top:10px;" id="profile-breakdown-legend"><!-- Dynamic --></div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Activity Log -->
+                    <div class="glass-panel" style="padding:22px; border-radius:16px; display:flex; flex-direction:column; height:100%; overflow:hidden;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; border-bottom:1px solid var(--border-color); padding-bottom:12px;">
+                            <h4 style="font-family:'Outfit'; font-size:1rem; font-weight:700; color:var(--text-primary); margin:0; display:flex; align-items:center; gap:8px;">
+                                <i data-lucide="history" style="width:17px; height:17px; color:#2563eb;"></i> Activity History
+                                <span id="profile-log-count-badge" style="background:rgba(37, 99, 235, 0.1); color:#2563eb; font-size:0.7rem; padding:2px 8px; border-radius:20px; font-weight:600; margin-left:4px;">0 events</span>
+                            </h4>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <div style="position:relative;">
+                                    <i data-lucide="search" style="width:13px; height:13px; position:absolute; left:9px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                                    <input type="text" id="profile-activity-search" placeholder="Search..." style="padding:7px 10px 7px 28px; border-radius:8px; border:1px solid var(--border-color); outline:none; font-size:0.8rem; width:160px; background:var(--bg-base); color:var(--text-primary); font-family:'Inter';">
+                                </div>
+                                <select id="profile-activity-filter" style="padding:7px 10px; border-radius:8px; border:1px solid var(--border-color); outline:none; font-size:0.8rem; background:var(--bg-base); color:var(--text-primary); cursor:pointer; font-family:'Inter';">
+                                    <option value="all">All Activities</option>
+                                    <option value="logins">Logins &amp; Logouts</option>
+                                    <option value="catalog">Catalog Mutations</option>
+                                    <option value="schema">Schema Changes</option>
+                                    <option value="users">User Operations</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- Contribution Calendar (Heatmap) -->
+                        <div class="contribution-calendar-wrapper">
+                            <div style="font-family:'Outfit'; font-size:0.85rem; font-weight:600; color:var(--text-secondary); display:flex; justify-content:space-between; align-items:center;">
+                                <span>Activity Heatmap</span>
+                                <span id="profile-calendar-total-info" style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">0 contributions in the last year</span>
+                            </div>
+                            <div class="calendar-overflow-container" style="overflow-x: auto; width: 100%; padding-bottom: 5px; scrollbar-width: thin;">
+                                <div style="display: flex; flex-direction: column; gap: 4px; width: max-content; padding: 5px 0;">
+                                    <!-- Months Header -->
+                                    <div id="calendar-months-grid" class="calendar-months-grid">
+                                        <!-- Month labels dynamically generated -->
+                                    </div>
+                                    <!-- Weekdays + Grid -->
+                                    <div class="calendar-grid-wrapper">
+                                        <div class="calendar-weekdays-grid">
+                                            <div></div>
+                                            <div>Mon</div>
+                                            <div></div>
+                                            <div>Wed</div>
+                                            <div></div>
+                                            <div>Fri</div>
+                                            <div></div>
+                                        </div>
+                                        <div id="contribution-calendar-grid" class="contribution-calendar-grid">
+                                            <!-- Cells dynamically generated -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:var(--text-muted); border-top:1px solid var(--border-color); padding-top:10px;">
+                                <a href="#" style="color:inherit; text-decoration:none; cursor:default;" onclick="return false;">Learn how we count contributions</a>
+                                <div style="display:flex; align-items:center; gap:4px;">
+                                    <span>Less</span>
+                                    <span class="contrib-cell contrib-lvl-0" style="cursor:default; transform:none; box-shadow:none;"></span>
+                                    <span class="contrib-cell contrib-lvl-1" style="cursor:default; transform:none; box-shadow:none;"></span>
+                                    <span class="contrib-cell contrib-lvl-2" style="cursor:default; transform:none; box-shadow:none;"></span>
+                                    <span class="contrib-cell contrib-lvl-3" style="cursor:default; transform:none; box-shadow:none;"></span>
+                                    <span class="contrib-cell contrib-lvl-4" style="cursor:default; transform:none; box-shadow:none;"></span>
+                                    <span>More</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Feed -->
+                        <div id="full-profile-activity-container" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right:4px; min-height:0;"><!-- Dynamic --></div>
+                        <!-- Empty -->
+                        <div id="profile-activity-empty" style="display:none; text-align:center; padding:60px 20px; color:var(--text-muted);">
+                            <i data-lucide="inbox" style="width:44px; height:44px; opacity:0.4; margin:0 auto 14px; display:block;"></i>
+                            <h4 style="font-family:'Outfit'; font-size:1rem; font-weight:600; margin-bottom:6px; color:var(--text-secondary);">No Matching Activities</h4>
+                            <p style="font-size:0.82rem; color:var(--text-muted); margin:0;">Adjust your search or filter to find activities.</p>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Create User Account Modal Dialog -->
+    <div class="modal-backdrop" id="create-user-modal">
+        <div class="modal-container modal-sm" style="width: 380px;">
+            <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 15px;">
+                <h3 style="font-family:'Outfit'; font-weight:700; font-size:1.2rem; display:flex; align-items:center; gap:8px; margin:0;">
+                    <i data-lucide="user-plus" style="color:var(--primary-color);"></i> Create User Account
+                </h3>
+                <button type="button" class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            
+            <form id="admin-user-form">
+                <div class="modal-body">
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label for="form-user-email">Email Address</label>
+                        <input type="email" id="form-user-email" required placeholder="name@thrustvault.com" style="width:100%; box-sizing:border-box;">
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label for="form-user-password">Password</label>
+                        <div class="input-with-icon" style="margin-top: 6px;">
+                            <input type="password" id="form-user-password" class="with-toggle" required placeholder="password" style="width:100%; box-sizing:border-box;">
+                            <i data-lucide="lock"></i>
+                            <button type="button" class="btn-password-toggle" data-target="form-user-password" title="Toggle Password Visibility">
+                                <i data-lucide="eye" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>
+                            </button>
+                        </div>
+                        <div class="caps-lock-warning" id="caps-warning-user-password">
+                            <i data-lucide="alert-triangle" style="width:14px; height:14px; color:#e11d48; position:static; pointer-events:none;"></i> Caps Lock is ON
+                        </div>
+                        <div class="strength-meter-container" id="strength-user-password" style="display: none;">
+                            <div class="strength-text-label">
+                                <span>Password Strength</span>
+                                <span class="strength-label-text">Weak</span>
+                            </div>
+                            <div class="strength-bar-track">
+                                <div class="strength-bar-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom:18px;">
+                        <label for="form-user-role">Assigned Access Level</label>
+                        <select id="form-user-role" required style="width:100%;">
+                            <option value="guest">Guest (Read-only)</option>
+                            <option value="intern">Intern (Read/Write Catalog)</option>
+                            <option value="admin">Admin (Full Control)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="modal-footer" style="margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--border-color); display:flex; justify-content:flex-end; gap:10px;">
+                    <button type="button" class="btn-secondary modal-close-trigger">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Dialog -->
+    <div class="modal-backdrop" id="confirm-modal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <h3 id="confirm-title">Are you sure?</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-close-trigger">Cancel</button>
+                <button class="btn-danger" id="btn-confirm-action">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="admin_users_app.js"></script>
+    <script src="onboarding.js"></script>
+</body>
+</html>

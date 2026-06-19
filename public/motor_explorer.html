@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" type="image/png" href="thrustvault_icon_light.png" media="(prefers-color-scheme: light)">
-    <link rel="icon" type="image/png" href="thrustvault_icon_dark.png" media="(prefers-color-scheme: dark)">
+    <link rel="icon" type="image/png" href="favicon_light.png" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motor Explorer | ThrustVault</title>
@@ -15,7 +15,7 @@
     <!-- Supabase JS Client -->
     <!-- SheetJS Library -->
     <script src="libs/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="style.css?v=1.4">
+    <link rel="stylesheet" href="style.css?v=1.6">
     <style>
         .modal-container {
             max-height: 90vh !important;
@@ -52,12 +52,18 @@
                 }
             </script>
             <!-- Sidebar Placeholder Skeletons -->
-            <div class="sidebar-skeleton-wrapper" style="padding: 20px; display: flex; flex-direction: column; gap: 30px; height: 100%; box-sizing: border-box;">
-                <div class="shimmer" style="height: 44px; width: 140px; border-radius: var(--radius-md);"></div>
-                <div style="display:flex; flex-direction:column; gap:15px; flex:1;">
-                    <div class="shimmer" style="height: 16px; width: 80px; border-radius: 4px;"></div>
-                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md);"></div>
-                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md);"></div>
+            <div class="sidebar-skeleton-wrapper" style="padding: 0 24px; display: flex; flex-direction: row; gap: 20px; height: 100%; align-items: center; width: 100%; box-sizing: border-box; justify-content: space-between;">
+                <div class="shimmer" style="height: 32px; width: 140px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                <div style="display:flex; flex-direction:row; gap:15px; flex:1; align-items:center; margin-left:30px;">
+                    <div class="shimmer" style="height: 32px; width: 120px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                    <div class="shimmer" style="height: 32px; width: 120px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="shimmer" style="height: 32px; width: 32px; border-radius: var(--radius-full); background: var(--border-color);"></div>
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <div class="shimmer" style="height: 10px; width: 100px; border-radius: 4px; background: var(--border-color);"></div>
+                        <div class="shimmer" style="height: 8px; width: 50px; border-radius: 4px; background: var(--border-color);"></div>
+                    </div>
                 </div>
             </div>
         </aside>

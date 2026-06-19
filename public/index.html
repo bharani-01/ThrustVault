@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" type="image/png" href="thrustvault_icon_light.png" media="(prefers-color-scheme: light)">
-    <link rel="icon" type="image/png" href="thrustvault_icon_dark.png" media="(prefers-color-scheme: dark)">
+    <link rel="icon" type="image/png" href="favicon_light.png" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ThrustVault | Professional UAV Motor Database Console</title>
@@ -15,7 +15,7 @@
     <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
     <!-- Supabase JS Client -->
     <!-- Main Stylesheet -->
-    <link rel="stylesheet" href="style.css?v=1.4">
+    <link rel="stylesheet" href="style.css?v=1.6">
     <!-- Page Loader Transition Script -->
     <script src="page-loader.js"></script>
     <style>
@@ -1015,8 +1015,8 @@
     <header class="landing-header">
         <div class="logo-container">
             <a href="/" class="logo-link">
-                <img src="thrustvault_logo_bgremoved_light.png" alt="ThrustVault Logo" class="logo-image logo-light">
-                <img src="thrustvault_logo_bgremoved_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark">
+                <img src="logo_light.png" alt="ThrustVault Logo" class="logo-image logo-light">
+                <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark">
             </a>
         </div>
         <nav class="landing-nav">
@@ -1135,7 +1135,7 @@
             <div class="feature-card glass-panel reveal-on-scroll reveal-stagger-1">
                 <div class="feature-icon"><i data-lucide="shield-check"></i></div>
                 <h4>Role Security (RBAC)</h4>
-                <p>Secure login with separate authorization levels for Guest readers, Intern editors, and System Admins, powered by Supabase RLS.</p>
+                <p>Secure login with separate authorization levels for Guest readers, User editors, and System Admins, powered by Supabase RLS.</p>
             </div>
 
             <div class="feature-card glass-panel reveal-on-scroll reveal-stagger-2">
@@ -1147,7 +1147,7 @@
             <div class="feature-card glass-panel reveal-on-scroll reveal-stagger-3">
                 <div class="feature-icon"><i data-lucide="settings"></i></div>
                 <h4>Excel Spec Customizer</h4>
-                <p>Admin Schema Builder lets you dynamically extend database parameter columns. Automatically generates matching Excel templates for Intern batch uploads.</p>
+                <p>Admin Schema Builder lets you dynamically extend database parameter columns. Automatically generates matching Excel templates for User batch uploads.</p>
             </div>
             
             <div class="feature-card glass-panel reveal-on-scroll reveal-stagger-4">
@@ -1394,7 +1394,7 @@
                     <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
                     <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
                 </div>
-                <p class="testimonial-text">"The schema customizer let us extend columns to track custom thermal ratings, and the auto-generated Excel template kept our lab intern uploads 100% bug-free."</p>
+                <p class="testimonial-text">"The schema customizer let us extend columns to track custom thermal ratings, and the auto-generated Excel template kept our lab user uploads 100% bug-free."</p>
                 <div class="testimonial-user">
                     <div class="testimonial-avatar purple">AS</div>
                     <div class="testimonial-details">
@@ -1464,17 +1464,17 @@
                 <a href="/login" class="btn-role-action">Access Guest Console</a>
             </div>
 
-            <!-- Intern Panel -->
+            <!-- User Panel -->
             <div class="role-card glass-panel reveal-on-scroll reveal-stagger-2">
                 <div class="role-icon-box intern"><i data-lucide="edit-3"></i></div>
-                <h4>Intern Editor</h4>
+                <h4>User Editor</h4>
                 <p class="role-desc">Data curation workspace for editors. Access templates, import raw Excel sheets, and draft motor specs.</p>
                 <div class="role-features">
                     <span><i data-lucide="check"></i> Add & Edit Motor Specs</span>
                     <span><i data-lucide="check"></i> Excel Import Template</span>
                     <span><i data-lucide="check"></i> Category Management Console</span>
                 </div>
-                <a href="/login" class="btn-role-action">Access Intern Console</a>
+                <a href="/login" class="btn-role-action">Access User Console</a>
             </div>
 
             <!-- Admin Panel -->
@@ -1506,7 +1506,7 @@
                     <i data-lucide="chevron-down" class="faq-chevron"></i>
                 </button>
                 <div class="faq-answer">
-                    <p>The console offers three active demo profiles for testing access levels: a Guest Profile (read-only), an Intern Profile (data editor), and a System Admin Profile (full privileges). You can quickly click the credentials cards on the login screen to autofill and sign in.</p>
+                    <p>The console offers three active demo profiles for testing access levels: a Guest Profile (read-only), an User Profile (data editor), and a System Admin Profile (full privileges). You can quickly click the credentials cards on the login screen to autofill and sign in.</p>
                 </div>
             </div>
 
@@ -1539,7 +1539,7 @@
                     <i data-lucide="chevron-down" class="faq-chevron"></i>
                 </button>
                 <div class="faq-answer">
-                    <p>Security is enforced at the database layer using PostgreSQL Row-Level Security (RLS) policies. While all users can read verified catalogs, write access to add, edit, or delete categories and motor specifications is strictly restricted to logged-in Interns and Admins.</p>
+                    <p>Security is enforced at the database layer using PostgreSQL Row-Level Security (RLS) policies. While all users can read verified catalogs, write access to add, edit, or delete categories and motor specifications is strictly restricted to logged-in Users and Admins.</p>
                 </div>
             </div>
         </div>
@@ -1563,8 +1563,8 @@
             <div class="footer-brand">
                 <div class="logo-container">
                     <a href="/" class="logo-link">
-                        <img src="thrustvault_logo_bgremoved_light.png" alt="ThrustVault Logo" class="logo-image logo-light">
-                        <img src="thrustvault_logo_bgremoved_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark">
+                        <img src="logo_light.png" alt="ThrustVault Logo" class="logo-image logo-light">
+                        <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark">
                     </a>
                 </div>
                 <p class="brand-subtext">Verified database repository for drone motor telemetry and specification analytics.</p>

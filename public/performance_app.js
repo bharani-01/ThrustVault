@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Show creator tab for all; disable/lock it for guests
-    const isWriter = session.role === 'admin' || session.role === 'intern';
+    const isWriter = session.role === 'admin' || session.role === 'user';
     const tabBtnCreator = document.getElementById('tab-btn-creator');
     if (tabBtnCreator) {
         tabBtnCreator.style.display = 'flex';
@@ -139,6 +139,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Creator Form
         creatorForm: document.getElementById('dataset-creator-form'),
+        statTotalSteps: document.getElementById('stat-total-steps'),
+        statMaxThrust: document.getElementById('stat-max-thrust'),
+        statPeakEfficiency: document.getElementById('stat-peak-efficiency'),
         formCategorySelect: document.getElementById('form-category-select'),
         formCatInfoBadge: document.getElementById('form-cat-info-badge'),
         formCatInfoText: document.getElementById('form-cat-info-text'),
@@ -149,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formTestEsc: document.getElementById('form-test-esc'),
         formTestBattery: document.getElementById('form-test-battery'),
         formTestTester: document.getElementById('form-test-tester'),
+        btnDownloadRunsTemplate: document.getElementById('btn-download-runs-template'),
         btnImportFile: document.getElementById('btn-import-file'),
         btnAddStepRow: document.getElementById('btn-add-step-row'),
         creatorTableRows: document.getElementById('creator-table-rows'),
@@ -206,20 +210,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Tab Switching
-    elements.tabBtnVisualizer.onclick = () => {
-        elements.tabBtnVisualizer.classList.add('active');
-        elements.tabBtnCreator.classList.remove('active');
-        elements.sectionVisualizer.style.display = 'block';
-        elements.sectionCreator.style.display = 'none';
-        refreshVisualizerData();
-    };
+    if (elements.tabBtnVisualizer) {
+        elements.tabBtnVisualizer.onclick = () => {
+            // Disabled: Visualizer is removed
+        };
+    }
 
     elements.tabBtnCreator.onclick = () => {
-        if (!isWriter) return; // guests: locked
-        elements.tabBtnCreator.classList.add('active');
-        elements.tabBtnVisualizer.classList.remove('active');
-        elements.sectionCreator.style.display = 'block';
-        elements.sectionVisualizer.style.display = 'none';
+        // Disabled: Creator is always active
     };
 
     // Logout
@@ -338,6 +336,48 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Function to calculate and update visual stat cards above the table in real-time
+    function updateLiveStats() {
+        const rows = Array.from(elements.creatorTableRows.querySelectorAll('tr'));
+        const totalSteps = rows.length;
+        
+        let maxThrust = 0;
+        let peakEfficiency = 0;
+        
+        rows.forEach(row => {
+            const thrustInp = row.querySelector('.inp-thrust');
+            const voltageInp = row.querySelector('.inp-voltage');
+            const currentInp = row.querySelector('.inp-current');
+            
+            if (thrustInp) {
+                const thrustVal = parseFloat(thrustInp.value) || 0;
+                if (thrustVal > maxThrust) {
+                    maxThrust = thrustVal;
+                }
+                
+                const v = parseFloat(voltageInp ? voltageInp.value : 0) || 0;
+                const a = parseFloat(currentInp ? currentInp.value : 0) || 0;
+                const power = v * a;
+                if (power > 0 && thrustVal > 0) {
+                    const eff = thrustVal / power;
+                    if (eff > peakEfficiency) {
+                        peakEfficiency = eff;
+                    }
+                }
+            }
+        });
+        
+        if (elements.statTotalSteps) {
+            elements.statTotalSteps.textContent = totalSteps;
+        }
+        if (elements.statMaxThrust) {
+            elements.statMaxThrust.textContent = maxThrust > 0 ? `${maxThrust} g` : '0 g';
+        }
+        if (elements.statPeakEfficiency) {
+            elements.statPeakEfficiency.textContent = peakEfficiency > 0 ? `${peakEfficiency.toFixed(2)} g/W` : '0.00 g/W';
+        }
+    }
+
     // Dynamic row addition for dataset creator supporting extra columns
     function addCreatorRow(throttleVal = '', rowData = {}) {
         const tr = document.createElement('tr');
@@ -390,6 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 efficiencyInp.value = '';
             }
+            updateLiveStats();
         }
 
         voltageInp.addEventListener('input', calculateFields);
@@ -402,6 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Bind delete row
         tr.querySelector('.btn-row-delete').onclick = () => {
             tr.remove();
+            updateLiveStats();
         };
 
         elements.creatorTableRows.appendChild(tr);
@@ -410,9 +452,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    elements.btnAddStepRow.onclick = () => {
-        addCreatorRow();
-    };
+    if (elements.btnAddStepRow) {
+        elements.btnAddStepRow.onclick = () => {
+            addCreatorRow();
+        };
+    }
+
+    if (elements.btnDownloadRunsTemplate) {
+        elements.btnDownloadRunsTemplate.onclick = () => {
+            const headers = [
+                'Item No.',
+                'Voltage (V)',
+                'Prop',
+                'Throttle',
+                'Current (A)',
+                'Power (W)',
+                'Thrust (G)',
+                'RPM',
+                'Efficiency (G/W)',
+                'Operating Temperature (℃)'
+            ];
+            
+            const sampleRows = [
+                ['MN3110 KV470', 14.8, 'T-MOTOR 13*4.4CF', '50%', 1.5, 22.20, 290, 3300, 13.06, 40],
+                ['MN3110 KV470', 14.8, 'T-MOTOR 13*4.4CF', '65%', 2.6, 38.48, 410, 4000, 10.65, 40],
+                ['MN3110 KV470', 14.8, 'T-MOTOR 13*4.4CF', '100%', 5.8, 85.84, 780, 5500, 9.09, 40]
+            ];
+            
+            const data = [headers, ...sampleRows];
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Template');
+            XLSX.writeFile(wb, 'thrustvault_runs_template.xlsx');
+            
+            logUserActivity(session.email, session.role, 'Template Downloaded', 'Downloaded Excel runs template.');
+        };
+    }
 
     // Initialize Creator Form defaults (50%, 65%, 75%, 85%, 100%)
     function initializeCreatorTable() {
@@ -1228,7 +1303,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 try {
                     if (!motorId) {
-                        let url = `/api/guest/draft-test-runs?motor_model=eq.${encodeURIComponent(run.motorModel)}&propeller_model=eq.${encodeURIComponent(propellerModel)}`;
+                        let url = `/api/draft-test-runs?motor_model=eq.${encodeURIComponent(run.motorModel)}&propeller_model=eq.${encodeURIComponent(propellerModel)}`;
                         url += run.metadata.esc_model ? `&esc_model=eq.${encodeURIComponent(run.metadata.esc_model)}` : '&esc_model=is.null';
                         url += run.metadata.battery_info ? `&battery_info=eq.${encodeURIComponent(run.metadata.battery_info)}` : '&battery_info=is.null';
                         const draftRes = await fetch(url);
@@ -1241,7 +1316,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             });
                         }
                     } else {
-                        let url = `/api/guest/motor-test-runs?motor_id=eq.${motorId}&propeller_model=eq.${encodeURIComponent(propellerModel)}`;
+                        let url = `/api/motor-test-runs?motor_id=eq.${motorId}&propeller_model=eq.${encodeURIComponent(propellerModel)}`;
                         url += run.metadata.esc_model ? `&esc_model=eq.${encodeURIComponent(run.metadata.esc_model)}` : '&esc_model=is.null';
                         url += run.metadata.battery_info ? `&battery_info=eq.${encodeURIComponent(run.metadata.battery_info)}` : '&battery_info=is.null';
                         const runsRes = await fetch(url);
@@ -1250,7 +1325,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (existingRuns && existingRuns.length > 0 && testVoltageVal !== null) {
                             const runIds = existingRuns.map(r => r.id);
                             const runIdsParam = runIds.join(',');
-                            const ptsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=in.(${runIdsParam})&voltage=eq.${testVoltageVal}&limit=1`);
+                            const ptsRes = await fetch(`/api/motor-test-data-points?test_run_id=in.(${runIdsParam})&voltage=eq.${testVoltageVal}&limit=1`);
                             if (!ptsRes.ok) throw new Error("Failed to query data points");
                             const existingPoints = await ptsRes.json();
                             if (existingPoints && existingPoints.length > 0) {
@@ -1269,7 +1344,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (!motorId) {
                     try {
-                        const draftRes = await fetch('/api/intern/draft-test-runs', {
+                        const draftRes = await fetch('/api/draft-test-runs', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1301,7 +1376,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     try {
                         // 1. Insert into motor_test_runs
-                        const runRes = await fetch('/api/intern/motor-test-runs', {
+                        const runRes = await fetch('/api/motor-test-runs', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1330,7 +1405,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             extra_data: pt.extra_data
                         }));
 
-                        const ptsRes = await fetch('/api/intern/motor-test-data-points', {
+                        const ptsRes = await fetch('/api/motor-test-data-points', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(pointsPayload)
@@ -1414,7 +1489,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const cleanPropeller = run.propeller_model.replace(/^\[DRAFT:.*?\]\s*/, '');
-                const res = await fetch(`/api/intern/motor-test-runs?id=eq.${run.id}`, {
+                const res = await fetch(`/api/motor-test-runs?id=eq.${run.id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1672,7 +1747,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             if (isDraft) {
-                let url = `/api/guest/draft-test-runs?motor_model=eq.${encodeURIComponent(draftMotorName)}&propeller_model=eq.${encodeURIComponent(propeller)}`;
+                let url = `/api/draft-test-runs?motor_model=eq.${encodeURIComponent(draftMotorName)}&propeller_model=eq.${encodeURIComponent(propeller)}`;
                 url += esc ? `&esc_model=eq.${encodeURIComponent(esc)}` : '&esc_model=is.null';
                 url += battery ? `&battery_info=eq.${encodeURIComponent(battery)}` : '&battery_info=is.null';
                 if (runIdForCheck) {
@@ -1688,11 +1763,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
             } else {
-                let url = `/api/guest/motor-test-runs?motor_id=eq.${motorId}&propeller_model=eq.${encodeURIComponent(propeller)}`;
+                let url = `/api/motor-test-runs?motor_id=eq.${motorId}&propeller_model=eq.${encodeURIComponent(propeller)}`;
                 url += esc ? `&esc_model=eq.${encodeURIComponent(esc)}` : '&esc_model=is.null';
                 url += battery ? `&battery_info=eq.${encodeURIComponent(battery)}` : '&battery_info=is.null';
                 if (runIdForCheck) {
-                    const draftCheckRes = await fetch(`/api/guest/draft-test-runs?id=eq.${runIdForCheck}`);
+                    const draftCheckRes = await fetch(`/api/draft-test-runs?id=eq.${runIdForCheck}`);
                     const draftCheck = draftCheckRes.ok ? await draftCheckRes.json() : [];
                     if (draftCheck.length === 0) {
                         url += `&id=ne.${runIdForCheck}`;
@@ -1704,7 +1779,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (existingRuns && existingRuns.length > 0 && testVoltage !== null) {
                     const runIds = existingRuns.map(r => r.id);
                     const runIdsParam = runIds.join(',');
-                    const ptsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=in.(${runIdsParam})&voltage=eq.${testVoltage}&limit=1`);
+                    const ptsRes = await fetch(`/api/motor-test-data-points?test_run_id=in.(${runIdsParam})&voltage=eq.${testVoltage}&limit=1`);
                     if (!ptsRes.ok) throw new Error("Failed to query data points");
                     const existingPoints = await ptsRes.json();
                     if (existingPoints && existingPoints.length > 0) {
@@ -1733,7 +1808,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isDraft) {
                 if (runId) {
                     // Update existing draft in draft_test_runs
-                    const res = await fetch(`/api/intern/draft-test-runs?id=eq.${runId}`, {
+                    const res = await fetch(`/api/draft-test-runs?id=eq.${runId}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1748,7 +1823,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!res.ok) throw new Error("Failed to update draft");
                 } else {
                     // Insert new draft in draft_test_runs
-                    const res = await fetch('/api/intern/draft-test-runs', {
+                    const res = await fetch('/api/draft-test-runs', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1766,7 +1841,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let wasEditingDraft = false;
 
                 if (runId) {
-                    const draftCheckRes = await fetch(`/api/guest/draft-test-runs?id=eq.${runId}`);
+                    const draftCheckRes = await fetch(`/api/draft-test-runs?id=eq.${runId}`);
                     const draftCheck = draftCheckRes.ok ? await draftCheckRes.json() : [];
                     if (draftCheck && draftCheck.length > 0) {
                         wasEditingDraft = true;
@@ -1775,7 +1850,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (runId && !wasEditingDraft) {
                     // Update existing finalized run in motor_test_runs
-                    const runRes = await fetch(`/api/intern/motor-test-runs?id=eq.${runId}`, {
+                    const runRes = await fetch(`/api/motor-test-runs?id=eq.${runId}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1789,7 +1864,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!runRes.ok) throw new Error("Failed to update test run");
 
                     // Delete existing points
-                    const delRes = await fetch(`/api/intern/motor-test-data-points?test_run_id=eq.${runId}`, {
+                    const delRes = await fetch(`/api/motor-test-data-points?test_run_id=eq.${runId}`, {
                         method: 'DELETE'
                     });
                     if (!delRes.ok) throw new Error("Failed to clear old data points");
@@ -1800,7 +1875,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ...pt
                     }));
 
-                    const ptsRes = await fetch('/api/intern/motor-test-data-points', {
+                    const ptsRes = await fetch('/api/motor-test-data-points', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(pointsPayload)
@@ -1809,7 +1884,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     finalizedRunId = runId;
                 } else {
                     // Insert brand new finalized run in motor_test_runs
-                    const runRes = await fetch('/api/intern/motor-test-runs', {
+                    const runRes = await fetch('/api/motor-test-runs', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1830,7 +1905,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ...pt
                     }));
 
-                    const ptsRes = await fetch('/api/intern/motor-test-data-points', {
+                    const ptsRes = await fetch('/api/motor-test-data-points', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(pointsPayload)
@@ -1839,7 +1914,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Clean up and delete draft row if finalizing
                     if (wasEditingDraft) {
-                        const delDraftRes = await fetch(`/api/intern/draft-test-runs/${runId}`, {
+                        const delDraftRes = await fetch(`/api/draft-test-runs/${runId}`, {
                             method: 'DELETE'
                         });
                         if (!delDraftRes.ok) console.error("Failed to delete finalized draft");
@@ -1908,12 +1983,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch quick counts
     async function fetchStats() {
         try {
-            const runsRes = await fetch('/api/guest/motor-test-runs');
+            const runsRes = await fetch('/api/motor-test-runs');
             if (!runsRes.ok) throw new Error("Failed to fetch runs");
             const runs = await runsRes.json();
             const runsCount = runs ? runs.length : 0;
 
-            const ptsRes = await fetch('/api/guest/motor-test-data-points');
+            const ptsRes = await fetch('/api/motor-test-data-points');
             if (!ptsRes.ok) throw new Error("Failed to fetch points");
             const pts = await ptsRes.json();
             const ptsCount = pts ? pts.length : 0;
@@ -2113,7 +2188,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadSavedDraftsList() {
         try {
-            const res = await fetch('/api/guest/draft-test-runs?order=created_at.desc');
+            const res = await fetch('/api/draft-test-runs?order=created_at.desc');
             if (!res.ok) throw new Error("Failed to load drafts");
             const drafts = await res.json();
 
@@ -2167,7 +2242,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const runId = btn.dataset.runId;
                     if (!confirm("Are you sure you want to delete this draft?")) return;
                     try {
-                        const res = await fetch(`/api/intern/draft-test-runs/${runId}`, {
+                        const res = await fetch(`/api/draft-test-runs/${runId}`, {
                             method: 'DELETE'
                         });
                         if (!res.ok) throw new Error("Failed to delete draft");
@@ -2313,16 +2388,21 @@ document.addEventListener('DOMContentLoaded', () => {
     async function refreshVisualizerData() {
         try {
             // Fetch categories (with description)
-            const catRes = await fetch('/api/guest/categories?order=name');
+            const catRes = await fetch('/api/categories');
             if (!catRes.ok) throw new Error("Failed to fetch categories");
             const categories = await catRes.json();
 
             // Fetch all motors
-            const motorRes = await fetch('/api/guest/motors?order=company,motor_name');
+            const motorRes = await fetch('/api/motors?order=company,motor_name');
             if (!motorRes.ok) throw new Error("Failed to fetch motors");
             const motors = await motorRes.json();
 
-            state.categories = categories || [];
+            const parseMinWeight = (name) => {
+                const match = name.match(/(\d+)/);
+                return match ? parseInt(match[1], 10) : 9999;
+            };
+
+            state.categories = (categories || []).sort((a, b) => parseMinWeight(a.name) - parseMinWeight(b.name));
             state.allMotors  = motors || [];
 
             // Update sidebar stats
@@ -2405,17 +2485,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    elements.plotMetricSelect.onchange = () => {
-        state.activeMetric = elements.plotMetricSelect.value;
-        if (state.activeMotorId) {
-            drawPerformanceCurve();
-        }
-    };
+    if (elements.plotMetricSelect) {
+        elements.plotMetricSelect.onchange = () => {
+            state.activeMetric = elements.plotMetricSelect.value;
+            if (state.activeMotorId) {
+                drawPerformanceCurve();
+            }
+        };
+    }
 
     // Load available runs for a specific motor
     async function loadMotorRuns(motorId) {
         try {
-            const runsRes = await fetch(`/api/guest/motor-test-runs?motor_id=eq.${motorId}&order=created_at.desc`);
+            const runsRes = await fetch(`/api/motor-test-runs?motor_id=eq.${motorId}&order=created_at.desc`);
             if (!runsRes.ok) throw new Error("Failed to load test runs");
             const runs = await runsRes.json();
             state.testRuns = runs || [];
@@ -2516,7 +2598,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const confirmDelete = await customConfirm("Delete Test Run?", "Are you sure you want to delete this test run and all its recorded calibration data points?");
                         if (confirmDelete) {
                             try {
-                                const res = await fetch(`/api/intern/motor-test-runs?id=eq.${runId}`, {
+                                const res = await fetch(`/api/motor-test-runs?id=eq.${runId}`, {
                                     method: 'DELETE'
                                 });
                                 if (!res.ok) throw new Error("Failed to delete test run");
@@ -2554,7 +2636,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load data points table for selected run
     async function loadGridPoints(runId) {
         try {
-            const ptsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=eq.${runId}&order=throttle.asc`);
+            const ptsRes = await fetch(`/api/motor-test-data-points?test_run_id=eq.${runId}&order=throttle.asc`);
             if (!ptsRes.ok) throw new Error("Failed to load data points");
             const pts = await ptsRes.json();
             
@@ -2595,6 +2677,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function drawPerformanceCurve() {
         const emptyState = document.getElementById('chart-empty-state');
         const chartCanvas = document.getElementById('performanceCurveChart');
+        if (!chartCanvas) return;
         if (!state.activeMotorId || state.testRuns.length === 0) {
             if (state.chartInstance) {
                 state.chartInstance.destroy();
@@ -2613,7 +2696,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const runIds = state.testRuns.map(r => r.id);
             
             const runIdsParam = runIds.join(',');
-            const ptsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=in.(${runIdsParam})&order=throttle.asc`);
+            const ptsRes = await fetch(`/api/motor-test-data-points?test_run_id=in.(${runIdsParam})&order=throttle.asc`);
             if (!ptsRes.ok) throw new Error("Failed to load data points");
             const pts = await ptsRes.json();
 
@@ -2775,15 +2858,21 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchSidebarCounts() {
         try {
             const [motorsRes, catsRes] = await Promise.all([
-                fetch('/api/guest/motors'),
-                fetch('/api/guest/categories?order=name')
+                fetch('/api/motors'),
+                fetch('/api/categories')
             ]);
 
             if (!motorsRes.ok) throw new Error("Failed to load motors");
             if (!catsRes.ok) throw new Error("Failed to load categories");
 
+            const rawCats = await catsRes.json();
+            const parseMinWeight = (name) => {
+                const match = name.match(/(\d+)/);
+                return match ? parseInt(match[1], 10) : 9999;
+            };
+
             state.allMotors = await motorsRes.json();
-            state.categories = await catsRes.json();
+            state.categories = (rawCats || []).sort((a, b) => parseMinWeight(a.name) - parseMinWeight(b.name));
             state.accessRequests = [];
 
             if (session && session.role === 'admin') {
@@ -2836,7 +2925,7 @@ document.addEventListener('DOMContentLoaded', () => {
             div.onclick = (e) => {
                 if (e.target.closest('.btn-delete-cat')) return;
                 sessionStorage.setItem('activeCategory', cat.id);
-                const targetDash = (session && session.role === 'intern') ? '/intern/dashboard' : ((session && session.role === 'guest') ? '/guest/dashboard' : '/admin/dashboard');
+                const targetDash = (session && session.role === 'user') ? '/dashboard' : ((session && session.role === 'guest') ? '/dashboard' : '/admin/dashboard');
                 window.location.href = targetDash;
             };
             
@@ -2849,7 +2938,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const res = await fetch(`/api/intern/categories/${cat.id}`, {
+                        const res = await fetch(`/api/categories/${cat.id}`, {
                             method: 'DELETE'
                         });
                         if (!res.ok) {
@@ -3009,7 +3098,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (elements.btnAddCat) {
             elements.btnAddCat.onclick = () => {
                 sessionStorage.setItem('triggerAddCategory', 'true');
-                const targetDash = (session && session.role === 'intern') ? '/intern/dashboard' : '/admin/dashboard';
+                const targetDash = (session && session.role === 'user') ? '/dashboard' : '/admin/dashboard';
                 window.location.href = targetDash;
             };
         }

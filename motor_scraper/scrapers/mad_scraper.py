@@ -18,25 +18,23 @@ log = get_logger(__name__)
 
 class MADScraper(BaseScraper):
     name = "mad"
-    base_url = "https://www.mad-motor.com"
+    base_url = "https://mad-motor.com"
 
     CATALOG_URLS = [
-        "https://www.mad-motor.com/category-motors.html",
-        "https://www.mad-motor.com/category-escs.html",
+        "https://mad-motor.com/collections/uav-motors",
+        "https://mad-motor.com/collections/esc",
     ]
 
     def scrape(self, query: str = "") -> list[dict]:
         results = []
         if query.strip():
             # MAD uses a search endpoint
-            search_url = f"{self.base_url}/search.html?search_query={query.replace(' ', '+')}"
+            search_url = f"{self.base_url}/search?type=product&q={query.replace(' ', '+')}"
             log.info(f"[mad] Searching: {search_url}")
             results.extend(self._scrape_page(search_url, query))
 
-            # Also try browsing the motors category and filtering
-            for cat_url in self.CATALOG_URLS:
-                results.extend(self._scrape_page(cat_url, query))
-        else:
+        # Only browse catalog categories if query is empty or search returned nothing
+        if not results:
             for cat_url in self.CATALOG_URLS:
                 results.extend(self._scrape_page(cat_url, query))
 
@@ -71,7 +69,7 @@ class MADScraper(BaseScraper):
 
             # MAD uses various product card layouts
             products = soup.select(
-                ".product-item, .product_item, .item, "
+                ".product-item, .product_item, .list_products_item, .themes_prod, "
                 "article.product, .product-card, "
                 ".product-list-item, li.product"
             )

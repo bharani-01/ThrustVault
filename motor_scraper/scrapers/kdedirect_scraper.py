@@ -33,10 +33,11 @@ class KDEDirectScraper(BaseScraper):
             log.info(f"[kdedirect] Searching: {search_url}")
             results.extend(self._scrape_collection(search_url, query, category="motor"))
 
-        # Always also browse the catalog for broader coverage
-        for cat_url in self.CATALOG_URLS:
-            category = "esc" if "esc" in cat_url else "motor"
-            results.extend(self._scrape_collection(cat_url, query, category=category))
+        # Only browse the catalog for broader coverage if query is empty or search returned nothing
+        if not results:
+            for cat_url in self.CATALOG_URLS:
+                category = "esc" if "esc" in cat_url else "motor"
+                results.extend(self._scrape_collection(cat_url, query, category=category))
 
         # Deduplicate by link
         seen = set()
@@ -67,7 +68,7 @@ class KDEDirectScraper(BaseScraper):
 
             # Shopify product grid selectors
             products = soup.select(
-                ".product-item, .grid__item, .grid-product, "
+                ".product-item, .grid-item, .grid-product, "
                 ".collection-product-card, article.product-card, "
                 ".product, li.product-item"
             )

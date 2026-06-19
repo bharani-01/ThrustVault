@@ -236,8 +236,11 @@
                         sidebarRole = 'guest';
                     }
                 }
+                if (sidebarRole === 'intern') {
+                    sidebarRole = 'user';
+                }
                 
-                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}`;
+                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}_v1.6`;
                 const cachedHTML = sessionStorage.getItem(cacheKey);
                 if (cachedHTML) {
                     const existingScript = sidebarEl.querySelector('script');
@@ -318,6 +321,9 @@
                     sidebarRole = 'guest';
                 }
             }
+            if (sidebarRole === 'intern') {
+                sidebarRole = 'user';
+            }
 
             // Centralized Sidebar Event Initializer (reusable for cached and fetched versions)
             function initializeSidebarEvents(sidebarEl, role) {
@@ -335,12 +341,12 @@
                         const iconName = currentTheme === 'dark' ? 'sun' : 'moon';
                         const textLabel = currentTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
                         
-                        toggleBtn.style.cssText = 'width:100%; padding:8px 16px; background:transparent; border:1px solid var(--border-color); border-radius:var(--radius-md); font-size:0.85rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; color:var(--text-primary); transition:all 0.2s; margin-bottom: 8px; box-sizing: border-box;';
+                        toggleBtn.style.cssText = 'width:auto; padding:8px 16px; background:transparent; border:1px solid var(--border-color); border-radius:var(--radius-md); font-size:0.85rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; color:var(--text-primary); transition:all 0.2s; white-space:nowrap; box-sizing: border-box;';
                         toggleBtn.innerHTML = `<i data-lucide="${iconName}" style="width:16px; height:16px;"></i> <span>${textLabel}</span>`;
                         
                         const logoutBtn = sidebarFooter.querySelector('#btn-logout') || sidebarFooter.querySelector('.btn-logout-premium');
                         if (logoutBtn) {
-                            sidebarFooter.insertBefore(toggleBtn, logoutBtn);
+                            logoutBtn.parentNode.insertBefore(toggleBtn, logoutBtn);
                         } else {
                             sidebarFooter.appendChild(toggleBtn);
                         }
@@ -419,7 +425,7 @@
                 initializeSidebarEvents(sidebarEl, sidebarRole);
             } else {
                 // First load: fetch, cache, and then render
-                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}`;
+                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}_v1.6`;
                 fetch(`sidebar_${sidebarRole}.html`)
                     .then(res => {
                         if (!res.ok) throw new Error("Failed to load sidebar template");

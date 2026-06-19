@@ -1,79 +1,60 @@
-<div class="sidebar-header">
-    <div class="logo-container">
-        <a href="/guest/dashboard" class="logo-link">
-            <img src="thrustvault_logo_bgremoved_light.png" alt="ThrustVault Logo" class="logo-image logo-light">
-            <img src="thrustvault_logo_bgremoved_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark">
-        </a>
-        <button class="btn-toggle-sidebar" id="btn-toggle-sidebar" title="Toggle Sidebar">
-            <i data-lucide="menu"></i>
-        </button>
-    </div>
+<!-- Logo Container (Left) -->
+<div class="logo-container" style="display: flex; align-items: center; width: auto;">
+    <a href="/dashboard" class="logo-link">
+        <img src="logo_light.png" alt="ThrustVault Logo" class="logo-image logo-light" style="height: 32px; width: auto;">
+        <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark" style="height: 32px; width: auto;">
+    </a>
 </div>
 
-<!-- Stats Widgets in Sidebar -->
-<div class="sidebar-stats">
-    <div class="stat-card-mini">
-        <div class="stat-icon"><i data-lucide="database"></i></div>
-        <div class="stat-info">
-            <span class="stat-val" id="total-motors-count">0</span>
-            <span class="stat-label">Total Motors</span>
-        </div>
-    </div>
-    <div class="stat-card-mini">
-        <div class="stat-icon"><i data-lucide="layers"></i></div>
-        <div class="stat-info">
-            <span class="stat-val" id="total-categories-count">0</span>
-            <span class="stat-label">Thrust Levels</span>
-        </div>
-    </div>
-</div>
-
-<!-- Navigation Categories (Thrust Levels) -->
-<nav class="sidebar-nav">
-    <div class="sidebar-menu-links" style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
-        <a href="/guest/dashboard" class="btn-sidebar-link" title="Catalog View" style="text-decoration: none; box-sizing: border-box;">
-            <i data-lucide="database"></i> Catalog Dashboard
+<!-- Navigation Links (Center) -->
+<nav class="sidebar-nav" style="display: flex !important; align-items: center; gap: 15px; padding: 0; margin: 0 auto !important; flex: none !important; overflow: visible;">
+    <div class="sidebar-menu-links" style="margin: 0; display: flex; flex-direction: row; gap: 10px; align-items: center;">
+        <a href="/dashboard" class="btn-sidebar-link" title="Catalog View" style="text-decoration: none;">
+            Catalog
         </a>
-        <a href="/guest/analytics" class="btn-sidebar-link" title="Performance Analytics" style="text-decoration: none; box-sizing: border-box;">
-            <i data-lucide="trending-up"></i> Performance Analytics
+        <a href="/analytics" class="btn-sidebar-link" title="Test Runs" style="text-decoration: none;">
+            Test Runs
         </a>
     </div>
 
-    <div class="sidebar-dropdown-wrapper expanded">
-        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-            <a href="#" class="btn-sidebar-link" id="catalog-dropdown-toggle" style="flex: 1; border-top-right-radius: 0; border-bottom-right-radius: 0; margin-bottom: 0;">
-                <i data-lucide="boxes"></i> Catalog
-                <i data-lucide="chevron-down" class="dropdown-chevron" style="margin-left: auto; width: 16px; height: 16px;"></i>
-            </a>
+    <!-- Catalog Dropdown (Thrust Levels) -->
+    <div class="sidebar-dropdown-wrapper" style="position: relative; display: flex; align-items: center;">
+        <a href="#" class="btn-sidebar-link" id="catalog-dropdown-toggle" style="margin: 0;">
+            Thrust Levels
+            <i data-lucide="chevron-down" class="dropdown-chevron" style="width: 14px; height: 14px;"></i>
+        </a>
+        <div class="category-list" id="category-list-container">
+            <!-- Dynamic Categories will be injected here -->
         </div>
-        <div class="category-list" id="category-list-container" style="padding-left: 15px; margin-top: 5px; display: flex; flex-direction: column; gap: 4px;">
-        <!-- Dynamic Category Tabs Skeletons -->
-        <div class="category-tab" style="pointer-events: none; justify-content: space-between; align-items: center; display: flex;">
-            <span class="shimmer skeleton-text" style="width: 75px; height: 12px; border-radius: 4px; display: block;"></span>
-            <span class="shimmer" style="width: 22px; height: 16px; border-radius: 10px; background: var(--border-color); display: block; margin-left: auto;"></span>
-        </div>
-        <div class="category-tab" style="pointer-events: none; justify-content: space-between; align-items: center; display: flex;">
-            <span class="shimmer skeleton-text" style="width: 90px; height: 12px; border-radius: 4px; display: block;"></span>
-            <span class="shimmer" style="width: 22px; height: 16px; border-radius: 10px; background: var(--border-color); display: block; margin-left: auto;"></span>
-        </div>
-        <div class="category-tab" style="pointer-events: none; justify-content: space-between; align-items: center; display: flex;">
-            <span class="shimmer skeleton-text" style="width: 60px; height: 12px; border-radius: 4px; display: block;"></span>
-            <span class="shimmer" style="width: 22px; height: 16px; border-radius: 10px; background: var(--border-color); display: block; margin-left: auto;"></span>
-        </div>
-    </div>
     </div>
 </nav>
 
-<!-- Sidebar Footer -->
-<div class="sidebar-footer">
-    <div class="sidebar-user-profile">
-        <div class="user-avatar" id="user-avatar-initials">G</div>
-        <div class="user-info">
-            <span class="user-email" id="session-email">guest@thrustvault.com</span>
-            <span class="badge-role role-guest">Guest</span>
+<!-- Right Side Actions (Right) -->
+<div class="navbar-right" style="display: flex; align-items: center; gap: 20px;">
+    <!-- Stats Widgets (kept hidden via display:none in CSS to satisfy JS selectors without cluttering navbar) -->
+    <div class="sidebar-stats" style="display: none;">
+        <span id="total-motors-count">0</span>
+        <span id="total-categories-count">0</span>
+    </div>
+
+    <!-- User Profile Dropdown Card -->
+    <div class="sidebar-footer" style="display: flex; align-items: center; margin: 0; padding: 0; border: none; background: transparent;">
+        <div class="user-profile-menu-wrapper">
+            <div class="user-avatar-trigger">
+                <div class="user-avatar" id="user-avatar-initials">G</div>
+                <i data-lucide="chevron-down" class="avatar-chevron"></i>
+            </div>
+            <div class="user-dropdown-card">
+                <div class="dropdown-user-details">
+                    <span class="user-email" id="session-email">guest@thrustvault.com</span>
+                    <span class="badge-role role-guest">Guest</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <!-- Logout Button (Theme Toggle will be dynamically prepended here by JS) -->
+                <button class="btn-logout-premium" id="btn-logout" title="Log Out">
+                    Log Out
+                </button>
+            </div>
         </div>
     </div>
-    <button class="btn-logout-premium" id="btn-logout" title="Log Out">
-        <i data-lucide="log-out"></i> Log Out
-    </button>
 </div>

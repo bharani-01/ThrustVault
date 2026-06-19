@@ -60,7 +60,10 @@ document.addEventListener('DOMContentLoaded', () => {
         filterCompany: 'all',
         sortBy: 'motor-asc',
         compareItems: [],
-        chartInstances: {}
+        chartInstances: {},
+        currentPage: 1,
+        pageSize: 15,
+        categoryCounts: {}
     };
 
     let supabase = null;
@@ -161,22 +164,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return 0;
     }
 
-    // Data Fetching from Proxy
-    async function fetchData() {
+    async function fetchMotorsForActiveCategory() {
+        if (!state.activeCategory) {
+            state.motors = [];
+            return;
+        }
         try {
-            // Fetch categories ordered by name
-            const catRes = await fetch('/api/guest/categories');
-            if (!catRes.ok) throw new Error(`Categories fetch failed: HTTP ${catRes.status}`);
-            const categories = await catRes.json();
-            
-            state.categories = (categories || []).map(c => ({
-                id: c.id,
-                name: c.name,
-                desc: c.description
-            }));
-            
-            // Fetch motors
-            const motorRes = await fetch('/api/guest/motors');
+            const motorRes = await fetch(`/api/motors?category_id=eq.${state.activeCategory}`);
             if (!motorRes.ok) throw new Error(`Motors fetch failed: HTTP ${motorRes.status}`);
             const motors = await motorRes.json();
             
@@ -193,11 +187,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 linkProp: m.link_propeller,
                 custom_parameters: m.custom_parameters || {}
             }));
+        } catch (e) {
+            console.error("Error loading motors:", e);
+            state.motors = [];
+        }
+    }
 
+    // Data Fetching from Proxy
+    async function fetchData() {
+        try {
+            // Fetch categories ordered by name
+            const catRes = await fetch('/api/categories');
+            if (!catRes.ok) throw new Error(`Categories fetch failed: HTTP ${catRes.status}`);
+            const categories = await catRes.json();
+            
+            const parseMinWeight = (name) => {
+                const match = name.match(/(\d+)/);
+                return match ? parseInt(match[1], 10) : 9999;
+            };
+
+            state.categories = (categories || []).map(c => ({
+                id: c.id,
+                name: c.name,
+                desc: c.description
+            })).sort((a, b) => parseMinWeight(a.name) - parseMinWeight(b.name));
+            
+            // Fetch category IDs only to compute counts
+            const countRes = await fetch('/api/motors?select=category_id');
+            if (countRes.ok) {
+                const categoryIds = await countRes.json();
+                state.categoryCounts = {};
+                (categoryIds || []).forEach(m => {
+                    if (m.category_id) {
+                        state.categoryCounts[m.category_id] = (state.categoryCounts[m.category_id] || 0) + 1;
+                    }
+                });
+            } else {
+                state.categoryCounts = {};
+            }
+            
             // Fetch dynamic schema custom definitions
             let customSchema = [];
             try {
-                const schemaRes = await fetch('/api/guest/custom-specs');
+                const schemaRes = await fetch('/api/custom-specs');
                 if (schemaRes.ok) {
                     customSchema = await schemaRes.json();
                 } else {
@@ -217,6 +249,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.activeCategory = null;
             }
             
+            await fetchMotorsForActiveCategory();
+            
             renderApp();
         } catch (e) {
             console.error("Error fetching data:", e);
@@ -234,7 +268,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateStats() {
         if (elements.totalMotors) {
-            elements.totalMotors.textContent = state.motors.length;
+            const total = Object.values(state.categoryCounts || {}).reduce((a, b) => a + b, 0);
+            elements.totalMotors.textContent = total;
         }
         if (elements.totalCats) {
             elements.totalCats.textContent = state.categories.length;
@@ -246,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!elements.catList) return;
         elements.catList.innerHTML = '';
         state.categories.forEach(cat => {
-            const count = state.motors.filter(m => m.categoryId === cat.id).length;
+            const count = state.categoryCounts[cat.id] || 0;
             const div = document.createElement('div');
             div.className = `category-tab ${state.activeCategory === cat.id ? 'active' : ''}`;
             div.innerHTML = `
@@ -254,12 +289,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="cat-count">${count}</span>
             `;
             
-            div.onclick = () => {
+            div.onclick = async () => {
                 state.activeCategory = cat.id;
                 state.filterCompany = 'all';
                 state.searchQuery = '';
+                state.currentPage = 1;
                 elements.searchInput.value = '';
                 elements.searchClear.style.display = 'none';
+                
+                const tbody = elements.motorsTableBody;
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr class="skeleton-row">
+                            <td colspan="11"><div class="shimmer" style="height:32px; border-radius:4px; margin:8px 0;"></div></td>
+                        </tr>
+                    `;
+                }
+                
+                await fetchMotorsForActiveCategory();
                 renderApp();
             };
             
@@ -271,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
         allTab.className = 'category-tab';
         allTab.innerHTML = '<span>All Motors</span>';
         allTab.onclick = () => {
-            window.location.href = '/guest/explorer';
+            window.location.href = '/explorer';
         };
         elements.catList.appendChild(allTab);
     }
@@ -338,8 +385,17 @@ document.addEventListener('DOMContentLoaded', () => {
         
         elements.filteredCountBadge.textContent = `${filteredMotors.length} displayed`;
         
+        const totalItems = filteredMotors.length;
+        const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
+        if (state.currentPage > totalPages) {
+            state.currentPage = totalPages;
+        }
+        const startIdx = (state.currentPage - 1) * state.pageSize;
+        const endIdx = Math.min(startIdx + state.pageSize, totalItems);
+        const paginatedMotors = filteredMotors.slice(startIdx, endIdx);
+        
         // Show/Hide Empty State
-        if (filteredMotors.length === 0) {
+        if (totalItems === 0) {
             elements.tableEmptyState.style.display = 'block';
             document.getElementById('motors-data-table').style.display = 'none';
         } else {
@@ -349,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Render rows without editing/deleting controls (11 columns matching layout)
         elements.motorsTableBody.innerHTML = '';
-        filteredMotors.forEach((m) => {
+        paginatedMotors.forEach((m) => {
             const tr = document.createElement('tr');
             const isChecked = state.compareItems.includes(m.id);
             
@@ -403,6 +459,70 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Notes Panel
         renderVerificationNotes(cat.name);
+        renderPagination(totalItems, totalPages, startIdx, endIdx);
+    }
+
+    function renderPagination(totalItems, totalPages, startIdx, endIdx) {
+        const pagControls = document.getElementById('pagination-controls');
+        if (!pagControls) return;
+
+        if (totalItems === 0) {
+            pagControls.style.display = 'none';
+            return;
+        }
+        pagControls.style.display = 'flex';
+
+        const infoText = document.getElementById('pagination-info-text');
+        if (infoText) {
+            infoText.textContent = `Showing ${startIdx + 1}-${endIdx} of ${totalItems} motors`;
+        }
+
+        const limitSelect = document.getElementById('pagination-limit');
+        if (limitSelect) {
+            limitSelect.value = state.pageSize;
+            limitSelect.onchange = (e) => {
+                state.pageSize = parseInt(e.target.value);
+                state.currentPage = 1;
+                renderMainContent();
+            };
+        }
+
+        const btnPrev = document.getElementById('btn-prev-page');
+        if (btnPrev) {
+            btnPrev.classList.toggle('disabled', state.currentPage === 1);
+            btnPrev.onclick = () => {
+                if (state.currentPage > 1) {
+                    state.currentPage--;
+                    renderMainContent();
+                }
+            };
+        }
+
+        const btnNext = document.getElementById('btn-next-page');
+        if (btnNext) {
+            btnNext.classList.toggle('disabled', state.currentPage === totalPages);
+            btnNext.onclick = () => {
+                if (state.currentPage < totalPages) {
+                    state.currentPage++;
+                    renderMainContent();
+                }
+            };
+        }
+
+        const pagesContainer = document.getElementById('pagination-pages');
+        if (pagesContainer) {
+            pagesContainer.innerHTML = '';
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.className = `pagination-page-btn ${i === state.currentPage ? 'active' : ''}`;
+                btn.textContent = i;
+                btn.onclick = () => {
+                    state.currentPage = i;
+                    renderMainContent();
+                };
+                pagesContainer.appendChild(btn);
+            }
+        }
     }
 
     function bindRowActions() {
@@ -1121,17 +1241,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elements.filterCompanySelect.addEventListener('change', (e) => {
         state.filterCompany = e.target.value;
+        state.currentPage = 1;
         renderMainContent();
     });
 
     elements.sortSelect.addEventListener('change', (e) => {
         state.sortBy = e.target.value;
+        state.currentPage = 1;
         renderMainContent();
     });
 
     elements.btnClearFilters.addEventListener('click', () => {
         state.searchQuery = '';
         state.filterCompany = 'all';
+        state.currentPage = 1;
         elements.searchInput.value = '';
         elements.searchClear.style.display = 'none';
         elements.filterCompanySelect.value = 'all';
@@ -1302,7 +1425,7 @@ document.addEventListener('DOMContentLoaded', () => {
         destroyProfileCharts();
 
         try {
-            const runsRes = await fetch(`/api/guest/motor-test-runs?motor_id=eq.${motorId}&order=tested_at.desc`);
+            const runsRes = await fetch(`/api/motor-test-runs?motor_id=eq.${motorId}&order=tested_at.desc`);
             if (!runsRes.ok) throw new Error(`Runs fetch failed: HTTP ${runsRes.status}`);
             const runs = await runsRes.json();
 
@@ -1313,7 +1436,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const runIds = runs.map(r => r.id);
-            const pointsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=in.(${runIds.join(',')})&order=throttle.asc`);
+            const pointsRes = await fetch(`/api/motor-test-data-points?test_run_id=in.(${runIds.join(',')})&order=throttle.asc`);
             if (!pointsRes.ok) throw new Error(`Data points fetch failed: HTTP ${pointsRes.status}`);
             const dataPoints = await pointsRes.json();
 

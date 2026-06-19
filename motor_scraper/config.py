@@ -19,6 +19,8 @@ GROQ_MODEL   = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 BASE_DIR   = Path(__file__).parent
 OUTPUT_DIR = BASE_DIR / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
+CACHE_DIR  = BASE_DIR / os.getenv("CACHE_DIR", "storage")
+CACHE_DIR.mkdir(exist_ok=True)
 
 # ─── HTTP settings ────────────────────────────────────────────────────────
 CURL_IMPERSONATE            = "chrome120"   # Browser fingerprint to impersonate
