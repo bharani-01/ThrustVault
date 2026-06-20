@@ -16,156 +16,190 @@
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="style.css?v=1.6">
     <!-- Page Loader Transition Script -->
-    <script src="page-loader.js"></script>
+    <script src="page-loader.js?v=2.1"></script>
 </head>
 <body class="login-body">
-    <!-- Ambient Blur Background Blobs -->
-    <div class="login-bg-blob blob-1"></div>
-    <div class="login-bg-blob blob-2"></div>
-
-    <div class="login-container">
-        <!-- Brand Logo/Header on top (outside the card or inside) -->
-        <div class="login-card">
-            <div class="login-header">
-                <div class="login-logo">
-                    <div class="login-logo-circle">
-                        <i data-lucide="aperture" class="spin-slow" style="width:30px; height:30px; color:#2563eb;"></i>
-                    </div>
-                </div>
-                <h2 id="login-card-title">Welcome to <span>ThrustVault</span></h2>
-                <p id="login-card-subtitle">Sign in to access the UAV motor database console.</p>
+    <div class="login-split-container">
+        <!-- Left Side: Brand Panel -->
+        <div class="login-brand-panel">
+            <div class="login-brand-panel-header">
+                <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image" style="height: 32px; width: auto;">
+                <div class="login-brand-logo-text">Thrust<span>Vault</span></div>
             </div>
             
-            <!-- View 1: Sign In -->
-            <div id="view-signin" class="login-view active">
-                <form id="login-form">
-                    <div class="form-group">
-                        <label for="login-email">Email Address</label>
-                        <div class="input-with-icon">
-                            <input type="email" id="login-email" required placeholder="e.g. name@thrustvault.com">
-                            <i data-lucide="mail"></i>
-                        </div>
+            <div class="login-brand-panel-content">
+                <!-- Rotating Motor Visual Schematic -->
+                <div class="login-brand-visual">
+                    <div class="login-visual-ring-outer"></div>
+                    <div class="login-visual-ring-inner"></div>
+                    <div class="login-visual-motor">
+                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="32" cy="32" r="6" fill="#10b981"/>
+                            <path d="M32 32C32 20 28 8 32 4C36 8 32 20 32 32Z" fill="rgba(255,255,255,0.75)"/>
+                            <path d="M32 32C21.6 38 9.6 44 6.1 40.5C9.6 37 21.6 38 32 32Z" fill="rgba(255,255,255,0.55)"/>
+                            <path d="M32 32C42.4 38 54.4 44 57.9 40.5C54.4 37 42.4 38 32 32Z" fill="rgba(255,255,255,0.55)"/>
+                        </svg>
                     </div>
-                    
-                    <div class="form-group" style="margin-top: 18px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <label for="login-password">Password</label>
-                            <a href="#" id="link-goto-forgot" style="font-size:0.75rem; color:#2563eb; text-decoration:none; font-weight:500;">Forgot Password?</a>
-                        </div>
-                        <div class="input-with-icon" style="margin-top: 6px;">
-                            <input type="password" id="login-password" class="with-toggle" required placeholder="••••••••">
-                            <i data-lucide="lock"></i>
-                            <button type="button" class="btn-password-toggle" data-target="login-password" title="Toggle Password Visibility">
-                                <i data-lucide="eye" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>
-                            </button>
-                        </div>
-                        <div class="caps-lock-warning" id="caps-warning-login-password">
-                            <i data-lucide="alert-triangle" style="width:14px; height:14px; color:#e11d48; position:static; pointer-events:none;"></i> Caps Lock is ON
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="login-btn" style="margin-top: 28px; width: 100%;">
-                        Sign In <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>
-                    </button>
-                </form>
-                <div style="text-align: center; margin-top: 24px; font-size: 0.85rem; color: #64748b; border-top: 1px solid #f1f5f9; padding-top: 18px;">
-                    Need database access? <a href="/request_access" style="color: #2563eb; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">Request Access <i data-lucide="arrow-right" style="width: 12px; height: 12px;"></i></a>
+                    <div class="login-visual-data-badge badge-rpm">RPM: 7,420</div>
+                    <div class="login-visual-data-badge badge-thrust">THRUST: 8.64 kg</div>
                 </div>
-            </div>
 
-
-            <!-- View 2: Forgot Password - Request OTP -->
-            <div id="view-forgot-email" class="login-view" style="display: none;">
-                <form id="forgot-email-form">
-                    <div class="form-group">
-                        <label for="forgot-email">Email Address</label>
-                        <div class="input-with-icon">
-                            <input type="email" id="forgot-email" required placeholder="e.g. name@thrustvault.com">
-                            <i data-lucide="mail"></i>
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="login-btn" style="margin-top: 24px; width: 100%;">
-                        Send Verification Code <i data-lucide="send" style="width: 16px; height: 16px;"></i>
-                    </button>
-                    
-                    <div style="text-align: center; margin-top: 18px;">
-                        <a href="#" class="link-back-to-login" style="font-size:0.8rem; color:#64748b; text-decoration:none; font-weight:500; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="arrow-left" style="width:14px; height:14px;"></i> Back to Sign In</a>
-                    </div>
-                </form>
-            </div>
-
-            <!-- View 3: Forgot Password - Verify OTP -->
-            <div id="view-forgot-otp" class="login-view" style="display: none;">
-                <form id="forgot-otp-form">
-                    <div class="form-group">
-                        <label for="forgot-otp">Verification Code (OTP)</label>
-                        <div class="input-with-icon">
-                            <input type="text" id="forgot-otp" required maxlength="6" placeholder="Enter 6-digit code" style="text-align: center; letter-spacing: 4px; font-weight: 700; font-size: 1.1rem;">
-                            <i data-lucide="shield-check"></i>
-                        </div>
-                        <p style="font-size:0.75rem; color:#64748b; margin-top:6px; text-align:center;">Enter the 6-digit verification code sent to your email.</p>
-                    </div>
-                    
-                    <button type="submit" class="login-btn" style="margin-top: 24px; width: 100%;">
-                        Verify Code <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
-                    </button>
-                    
-                    <div style="display:flex; justify-content:space-between; margin-top:18px;">
-                        <a href="#" id="link-resend-otp" style="font-size:0.8rem; color:#2563eb; text-decoration:none; font-weight:500;">Resend Code</a>
-                        <a href="#" class="link-back-to-login" style="font-size:0.8rem; color:#64748b; text-decoration:none; font-weight:500; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="arrow-left" style="width:14px; height:14px;"></i> Cancel</a>
-                    </div>
-                </form>
-            </div>
-
-            <!-- View 4: Reset Password - Update Password -->
-            <div id="view-forgot-reset" class="login-view" style="display: none;">
-                <form id="forgot-reset-form">
-                    <div class="form-group">
-                        <label for="reset-password">New Password</label>
-                        <div class="input-with-icon">
-                            <input type="password" id="reset-password" class="with-toggle" required placeholder="Min 6 characters">
-                            <i data-lucide="lock"></i>
-                            <button type="button" class="btn-password-toggle" data-target="reset-password" title="Toggle Password Visibility">
-                                <i data-lucide="eye" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>
-                            </button>
-                        </div>
-                        <div class="caps-lock-warning" id="caps-warning-reset-password">
-                            <i data-lucide="alert-triangle" style="width:14px; height:14px; color:#e11d48; position:static; pointer-events:none;"></i> Caps Lock is ON
-                        </div>
-                        <div class="strength-meter-container" id="strength-reset-password" style="display: none;">
-                            <div class="strength-text-label">
-                                <span>Password Strength</span>
-                                <span class="strength-label-text">Weak</span>
-                            </div>
-                            <div class="strength-bar-track">
-                                <div class="strength-bar-fill"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 18px;">
-                        <label for="reset-password-confirm">Confirm New Password</label>
-                        <div class="input-with-icon">
-                            <input type="password" id="reset-password-confirm" class="with-toggle" required placeholder="Repeat new password">
-                            <i data-lucide="lock"></i>
-                            <button type="button" class="btn-password-toggle" data-target="reset-password-confirm" title="Toggle Password Visibility">
-                                <i data-lucide="eye" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>
-                            </button>
-                        </div>
-                        <div class="caps-lock-warning" id="caps-warning-reset-password-confirm">
-                            <i data-lucide="alert-triangle" style="width:14px; height:14px; color:#e11d48; position:static; pointer-events:none;"></i> Caps Lock is ON
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="login-btn" style="margin-top: 28px; width: 100%;">
-                        Update Password & Log In <i data-lucide="save" style="width: 16px; height: 16px;"></i>
-                    </button>
-                </form>
+                <h1 class="login-brand-title">High-Fidelity <span>UAV Propulsion</span> Database</h1>
+                
             </div>
             
-            <div class="login-footer">
-                <a href="/" class="btn-text-sm" style="display: inline-flex; align-items: center; gap: 6px; color:#64748b; font-weight:500; text-decoration:none;"><i data-lucide="arrow-left" style="width:16px;"></i> Return to Landing</a>
+            <div class="login-brand-panel-footer">
+                &copy; 2026 ThrustVault Propulsion Console v2.0. All rights reserved.
+            </div>
+        </div>
+        
+        <!-- Right Side: Form Panel -->
+        <div class="login-form-panel">
+            <div class="login-bg-blob blob-1"></div>
+            <div class="login-bg-blob blob-2"></div>
+            
+            <div class="login-container">
+                <div class="login-card">
+                    <div class="login-header">
+                        <div class="login-logo">
+                            <img src="logo_light.png" alt="ThrustVault Logo" class="logo-image logo-light" style="height: 48px; width: auto; filter: drop-shadow(0 4px 10px rgba(37,99,235,0.1));">
+                            <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark" style="height: 48px; width: auto; filter: drop-shadow(0 4px 10px rgba(37,99,235,0.15));">
+                        </div>
+                        <h2 id="login-card-title">Welcome to <span>ThrustVault</span></h2>
+                        <p id="login-card-subtitle">Sign in to access the UAV motor database console.</p>
+                    </div>
+                    
+                    <!-- View 1: Sign In -->
+                    <div id="view-signin" class="login-view active">
+                        <form id="login-form">
+                            <div class="form-group">
+                                <label for="login-email">Email Address</label>
+                                <div class="input-with-icon">
+                                    <input type="email" id="login-email" required placeholder="e.g. name@thrustvault.com">
+                                    <i data-lucide="mail"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group" style="margin-top: 18px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <label for="login-password">Password</label>
+                                    <a href="#" id="link-goto-forgot" style="font-size:0.75rem; color:#2563eb; text-decoration:none; font-weight:500;">Forgot Password?</a>
+                                </div>
+                                <div class="input-with-icon" style="margin-top: 6px;">
+                                    <input type="password" id="login-password" class="with-toggle" required placeholder="••••••••">
+                                    <i data-lucide="lock"></i>
+                                    <button type="button" class="btn-password-toggle" data-target="login-password" title="Toggle Password Visibility">
+                                        <i data-lucide="eye" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>
+                                    </button>
+                                </div>
+                                <div class="caps-lock-warning" id="caps-warning-login-password">
+                                    <i data-lucide="alert-triangle" style="width:14px; height:14px; color:#e11d48; position:static; pointer-events:none;"></i> Caps Lock is ON
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="login-btn" style="margin-top: 28px; width: 100%;">
+                                Sign In <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>
+                            </button>
+                        </form>
+                        <div style="text-align: center; margin-top: 24px; font-size: 0.85rem; color: #64748b; border-top: 1px solid var(--border-color); padding-top: 18px;">
+                            Need database access? <a href="/request_access" style="color: #2563eb; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">Request Access <i data-lucide="arrow-right" style="width: 12px; height: 12px;"></i></a>
+                        </div>
+                    </div>
+
+                    <!-- View 2: Forgot Password - Request OTP -->
+                    <div id="view-forgot-email" class="login-view" style="display: none;">
+                        <form id="forgot-email-form">
+                            <div class="form-group">
+                                <label for="forgot-email">Email Address</label>
+                                <div class="input-with-icon">
+                                    <input type="email" id="forgot-email" required placeholder="e.g. name@thrustvault.com">
+                                    <i data-lucide="mail"></i>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="login-btn" style="margin-top: 24px; width: 100%;">
+                                Send Verification Code <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+                            </button>
+                            
+                            <div style="text-align: center; margin-top: 18px;">
+                                <a href="#" class="link-back-to-login" style="font-size:0.8rem; color:#64748b; text-decoration:none; font-weight:500; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="arrow-left" style="width:14px; height:14px;"></i> Back to Sign In</a>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- View 3: Forgot Password - Verify OTP -->
+                    <div id="view-forgot-otp" class="login-view" style="display: none;">
+                        <form id="forgot-otp-form">
+                            <div class="form-group">
+                                <label for="forgot-otp">Verification Code (OTP)</label>
+                                <div class="input-with-icon">
+                                    <input type="text" id="forgot-otp" required maxlength="6" placeholder="Enter 6-digit code" style="text-align: center; letter-spacing: 4px; font-weight: 700; font-size: 1.1rem;">
+                                    <i data-lucide="shield-check"></i>
+                                </div>
+                                <p style="font-size:0.75rem; color:#64748b; margin-top:6px; text-align:center;">Enter the 6-digit verification code sent to your email.</p>
+                            </div>
+                            
+                            <button type="submit" class="login-btn" style="margin-top: 24px; width: 100%;">
+                                Verify Code <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+                            </button>
+                            
+                            <div style="display:flex; justify-content:space-between; margin-top:18px;">
+                                <a href="#" id="link-resend-otp" style="font-size:0.8rem; color:#2563eb; text-decoration:none; font-weight:500;">Resend Code</a>
+                                <a href="#" class="link-back-to-login" style="font-size:0.8rem; color:#64748b; text-decoration:none; font-weight:500; display:inline-flex; align-items:center; gap:4px;"><i data-lucide="arrow-left" style="width:14px; height:14px;"></i> Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- View 4: Reset Password - Update Password -->
+                    <div id="view-forgot-reset" class="login-view" style="display: none;">
+                        <form id="forgot-reset-form">
+                            <div class="form-group">
+                                <label for="reset-password">New Password</label>
+                                <div class="input-with-icon">
+                                    <input type="password" id="reset-password" class="with-toggle" required placeholder="Min 6 characters">
+                                    <i data-lucide="lock"></i>
+                                    <button type="button" class="btn-password-toggle" data-target="reset-password" title="Toggle Password Visibility">
+                                        <i data-lucide="eye" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>
+                                    </button>
+                                </div>
+                                <div class="caps-lock-warning" id="caps-warning-reset-password">
+                                    <i data-lucide="alert-triangle" style="width:14px; height:14px; color:#e11d48; position:static; pointer-events:none;"></i> Caps Lock is ON
+                                </div>
+                                <div class="strength-meter-container" id="strength-reset-password" style="display: none;">
+                                    <div class="strength-text-label">
+                                        <span>Password Strength</span>
+                                        <span class="strength-label-text">Weak</span>
+                                    </div>
+                                    <div class="strength-bar-track">
+                                        <div class="strength-bar-fill"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 18px;">
+                                <label for="reset-password-confirm">Confirm New Password</label>
+                                <div class="input-with-icon">
+                                    <input type="password" id="reset-password-confirm" class="with-toggle" required placeholder="Repeat new password">
+                                    <i data-lucide="lock"></i>
+                                    <button type="button" class="btn-password-toggle" data-target="reset-password-confirm" title="Toggle Password Visibility">
+                                        <i data-lucide="eye" style="position:static; color:inherit; pointer-events:none; width:16px; height:16px;"></i>
+                                    </button>
+                                </div>
+                                <div class="caps-lock-warning" id="caps-warning-reset-password-confirm">
+                                    <i data-lucide="alert-triangle" style="width:14px; height:14px; color:#e11d48; position:static; pointer-events:none;"></i> Caps Lock is ON
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="login-btn" style="margin-top: 28px; width: 100%;">
+                                Update Password & Log In <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="login-footer">
+                        <a href="/" class="btn-text-sm" style="display: inline-flex; align-items: center; gap: 6px; color:#64748b; font-weight:500; text-decoration:none;"><i data-lucide="arrow-left" style="width:16px;"></i> Return to Landing</a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

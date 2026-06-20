@@ -78,86 +78,109 @@
         }
     </style>
     <!-- Page Loader Transition Script -->
-    <script src="page-loader.js"></script>
+    <script src="page-loader.js?v=2.1"></script>
 </head>
 <body class="login-body">
-    <!-- Ambient Blur Background Blobs -->
-    <div class="login-bg-blob blob-1"></div>
-    <div class="login-bg-blob blob-2"></div>
-
-    <div class="login-container" style="max-width: 450px;">
-        <div class="login-card">
-            <!-- Header -->
-            <div class="login-header">
-                <div class="login-logo">
-                    <div class="login-logo-circle">
-                        <i data-lucide="shield-alert" class="spin-slow" style="width:30px; height:30px; color:#2563eb;"></i>
-                    </div>
-                </div>
-                <h2 id="page-title">Request <span>Access</span></h2>
-                <p id="page-subtitle">Submit details to request a database user account.</p>
+    <div class="login-split-container">
+        <!-- Left Side: Brand Panel -->
+        <div class="login-brand-panel">
+            <div class="login-brand-panel-header">
+                <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image" style="height: 32px; width: auto;">
+                <div class="login-brand-logo-text">Thrust<span>Vault</span></div>
             </div>
             
-            <!-- Request Form View -->
-            <div id="view-form">
-                <form id="request-access-form">
-                    <div class="form-group">
-                        <label for="request-fullname">Full Name</label>
-                        <div class="input-with-icon">
-                            <input type="text" id="request-fullname" required placeholder="e.g. John Doe">
-                            <i data-lucide="user"></i>
-                        </div>
+            <div class="login-brand-panel-content">
+                <!-- Rotating Motor Visual Schematic -->
+                <div class="login-brand-visual">
+                    <div class="login-visual-ring-outer"></div>
+                    <div class="login-visual-ring-inner"></div>
+                    <div class="login-visual-motor">
+                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="32" cy="32" r="6" fill="#10b981"/>
+                            <path d="M32 32C32 20 28 8 32 4C36 8 32 20 32 32Z" fill="rgba(255,255,255,0.75)"/>
+                            <path d="M32 32C21.6 38 9.6 44 6.1 40.5C9.6 37 21.6 38 32 32Z" fill="rgba(255,255,255,0.55)"/>
+                            <path d="M32 32C42.4 38 54.4 44 57.9 40.5C54.4 37 42.4 38 32 32Z" fill="rgba(255,255,255,0.55)"/>
+                        </svg>
                     </div>
-                    
-                    <div class="form-group" style="margin-top: 14px;">
-                        <label for="request-email">Email Address</label>
-                        <div class="input-with-icon">
-                            <input type="email" id="request-email" required placeholder="e.g. john@company.com">
-                            <i data-lucide="mail"></i>
-                        </div>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 14px;">
-                        <label for="request-role">Requested Role</label>
-                        <div class="select-wrapper">
-                            <select id="request-role" class="role-select" required>
-                                <option value="guest">Guest (Read-Only Specs & Charts)</option>
-                                <option value="intern">Intern (Read/Write Catalog Entries)</option>
-                                <option value="admin">Administrator (Full Control)</option>
-                            </select>
-                            <i data-lucide="shield" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #64748b; width: 18px; height: 18px;"></i>
-                            <i data-lucide="chevron-down" class="select-chevron" style="width: 16px; height: 16px;"></i>
-                        </div>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 14px;">
-                        <label for="request-justification">Justification / Reason</label>
-                        <textarea id="request-justification" class="justification-textarea" required placeholder="Why do you require access to ThrustVault? Specify team or project."></textarea>
-                    </div>
-                    
-                    <button type="submit" class="login-btn" style="margin-top: 24px; width: 100%;">
-                        Submit Request <i data-lucide="send" style="width: 16px; height: 16px;"></i>
-                    </button>
-                </form>
-                
-                <div style="text-align: center; margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
-                    <a href="/login" style="font-size:0.85rem; color:#64748b; text-decoration:none; font-weight:500; display:inline-flex; align-items:center; gap:6px;"><i data-lucide="arrow-left" style="width:15px; height:15px;"></i> Back to Sign In</a>
+                    <div class="login-visual-data-badge badge-rpm">RPM: 7,420</div>
+                    <div class="login-visual-data-badge badge-thrust">THRUST: 8.64 kg</div>
                 </div>
-            </div>
 
-            <!-- Request Success View -->
-            <div id="view-success" style="display: none;">
-                <div class="success-card">
-                    <div class="success-icon-wrapper">
-                        <i data-lucide="check" style="width: 32px; height: 32px;"></i>
+                <h1 class="login-brand-title">Submit Access <span>Application</span></h1>
+                
+            </div>
+            
+            <div class="login-brand-panel-footer">
+                &copy; 2026 ThrustVault Propulsion Console v2.0. All rights reserved.
+            </div>
+        </div>
+        
+        <!-- Right Side: Form Panel -->
+        <div class="login-form-panel">
+            <div class="login-bg-blob blob-1"></div>
+            <div class="login-bg-blob blob-2"></div>
+            
+            <div class="login-container" style="max-width: 450px;">
+                <div class="login-card">
+                    <!-- Header -->
+                    <div class="login-header">
+                        <div class="login-logo">
+                            <img src="logo_light.png" alt="ThrustVault Logo" class="logo-image logo-light" style="height: 48px; width: auto; filter: drop-shadow(0 4px 10px rgba(37,99,235,0.1));">
+                            <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark" style="height: 48px; width: auto; filter: drop-shadow(0 4px 10px rgba(37,99,235,0.15));">
+                        </div>
+                        <h2 id="page-title">Request <span>Access</span></h2>
+                        <p id="page-subtitle">Submit details to request a database user account.</p>
                     </div>
-                    <h3 style="font-family: 'Outfit'; font-size: 1.3rem; font-weight: 700; color: #0f172a; margin-bottom: 10px;">Request Submitted</h3>
-                    <p style="font-size: 0.9rem; color: #64748b; line-height: 1.5; margin-bottom: 25px;">
-                        Your access request has been recorded. An email confirmation has been sent to you. Our administrators will review your application shortly.
-                    </p>
-                    <a href="/login" class="login-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; text-decoration: none; box-sizing: border-box;">
-                        Return to Sign In <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
-                    </a>
+                    
+                    <!-- Request Form View -->
+                    <div id="view-form">
+                        <form id="request-access-form">
+                            <div class="form-group">
+                                <label for="request-fullname">Full Name</label>
+                                <div class="input-with-icon">
+                                    <input type="text" id="request-fullname" required placeholder="e.g. John Doe">
+                                    <i data-lucide="user"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group" style="margin-top: 14px;">
+                                <label for="request-email">Email Address</label>
+                                <div class="input-with-icon">
+                                    <input type="email" id="request-email" required placeholder="e.g. john@company.com">
+                                    <i data-lucide="mail"></i>
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 14px;">
+                                <label for="request-justification">Justification / Reason</label>
+                                <textarea id="request-justification" class="justification-textarea" required placeholder="Why do you require access to ThrustVault? Specify team or project."></textarea>
+                            </div>
+                            
+                            <button type="submit" class="login-btn" style="margin-top: 24px; width: 100%;">
+                                Submit Request <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </form>
+                        
+                        <div style="text-align: center; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                            <a href="/login" style="font-size:0.85rem; color:#64748b; text-decoration:none; font-weight:500; display:inline-flex; align-items:center; gap:6px;"><i data-lucide="arrow-left" style="width:15px; height:15px;"></i> Back to Sign In</a>
+                        </div>
+                    </div>
+
+                    <!-- Request Success View -->
+                    <div id="view-success" style="display: none;">
+                        <div class="success-card">
+                            <div class="success-icon-wrapper">
+                                <i data-lucide="check" style="width: 32px; height: 32px;"></i>
+                            </div>
+                            <h3 style="font-family: 'Outfit'; font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 10px;">Request Submitted</h3>
+                            <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 25px;">
+                                Your access request has been recorded. An email confirmation has been sent to you. Our administrators will review your application shortly.
+                            </p>
+                            <a href="/login" class="login-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; text-decoration: none; box-sizing: border-box;">
+                                Return to Sign In <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -175,7 +198,6 @@
                     
                     const fullName = document.getElementById('request-fullname').value.trim();
                     const email = document.getElementById('request-email').value.trim();
-                    const requestedRole = document.getElementById('request-role').value;
                     const justification = document.getElementById('request-justification').value.trim();
 
                     const submitBtn = requestForm.querySelector('button[type="submit"]');
@@ -190,7 +212,6 @@
                             body: JSON.stringify({
                                 fullName,
                                 email,
-                                requestedRole,
                                 justification
                             })
                         });
@@ -198,22 +219,6 @@
                         if (!res.ok) {
                             const data = await res.json();
                             throw new Error(data.error || `HTTP ${res.status}`);
-                        }
-
-                        // 4. Send email notification via backend Resend endpoint
-                        try {
-                            await fetch('/api/send-email', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    type: 'received',
-                                    to: email,
-                                    full_name: fullName,
-                                    requested_role: requestedRole
-                                })
-                            });
-                        } catch (err) {
-                            console.error("Failed to trigger email confirmation:", err);
                         }
 
                         // Show success view

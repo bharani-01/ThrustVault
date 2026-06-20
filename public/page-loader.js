@@ -1,6 +1,32 @@
 // page-loader.js
 // Handles premium, lightweight page loading, transition animations, and persistent sidebar UX
 (function() {
+    // Intercept fetch calls for guest users globally to call /api/guest/... SQLite endpoints
+    const originalFetch = window.fetch;
+    window.fetch = function(input, init) {
+        let url = typeof input === 'string' ? input : (input && input.url);
+        const sessionStr = localStorage.getItem('thrustvault_session');
+        let isGuest = false;
+        if (sessionStr) {
+            try {
+                const s = JSON.parse(sessionStr);
+                isGuest = s.role === 'guest';
+            } catch(e) {}
+        } else {
+            isGuest = true;
+        }
+
+        if (isGuest && typeof url === 'string' && url.startsWith('/api/') && !url.startsWith('/api/auth/') && !url.startsWith('/api/guest/')) {
+            const newUrl = url.replace('/api/', '/api/guest/');
+            if (typeof input === 'string') {
+                input = newUrl;
+            } else {
+                input = new Request(newUrl, input);
+            }
+        }
+        return originalFetch(input, init);
+    };
+
     // Immediately set data-theme to prevent flash
     const isLandingPage = window.location.pathname === '/' || 
                           window.location.pathname.endsWith('/index.html') || 
@@ -9,9 +35,20 @@
     const currentTheme = isLandingPage ? 'light' : (localStorage.getItem('thrustvault_theme') || 'light');
     document.documentElement.setAttribute('data-theme', currentTheme);
 
-    // Detect if page has a sidebar (all routes except landing, login, and access request)
     const path = window.location.pathname;
-    const hasSidebar = path.includes('/admin/') || path.includes('/intern/') || path.includes('/guest/') ||
+    
+    // Set page context classes to documentElement
+    const isDashboard = path.includes('dashboard');
+    if (isDashboard) {
+        document.documentElement.classList.add('page-dashboard');
+        document.documentElement.classList.remove('page-other');
+    } else {
+        document.documentElement.classList.add('page-other');
+        document.documentElement.classList.remove('page-dashboard');
+    }
+
+    // Detect if page has a sidebar (all routes except landing, login, and access request)
+    const hasSidebar = path.includes('/admin/') || path.includes('/user/') || path.includes('/guest/') ||
                        path.includes('dashboard') || path.includes('analytics') || path.includes('explorer') ||
                        path.includes('users') || path.includes('requests') || path.includes('schema') ||
                        path.includes('exports') || path.includes('imports') || path.includes('audit');
@@ -211,6 +248,11 @@
                     sessionInitialsEl.textContent = session.email.charAt(0).toUpperCase();
                 }
             } catch(e) {}
+        } else if (sessionEmailEl) {
+            sessionEmailEl.textContent = 'Anonymous Guest';
+            if (sessionInitialsEl) {
+                sessionInitialsEl.textContent = 'G';
+            }
         }
     }
 
@@ -236,11 +278,11 @@
                         sidebarRole = 'guest';
                     }
                 }
-                if (sidebarRole === 'intern') {
+                if (sidebarRole === 'user') {
                     sidebarRole = 'user';
                 }
                 
-                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}_v1.6`;
+                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}_v2.0`;
                 const cachedHTML = sessionStorage.getItem(cacheKey);
                 if (cachedHTML) {
                     const existingScript = sidebarEl.querySelector('script');
@@ -321,7 +363,7 @@
                     sidebarRole = 'guest';
                 }
             }
-            if (sidebarRole === 'intern') {
+            if (sidebarRole === 'user') {
                 sidebarRole = 'user';
             }
 
@@ -354,33 +396,52 @@
                     
                     const logoutBtn = sidebarFooter.querySelector('#btn-logout') || sidebarFooter.querySelector('.btn-logout-premium');
                     if (logoutBtn) {
-                        logoutBtn.onclick = (e) => {
-                            e.preventDefault();
-                            if (confirm("Are you sure you want to log out of ThrustVault?")) {
-                                const sessionStr = localStorage.getItem('thrustvault_session');
-                                if (sessionStr) {
-                                    try {
-                                        const session = JSON.parse(sessionStr);
-                                        fetch('/api/log-activity', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({
-                                                email: session.email,
-                                                role: session.role,
-                                                action: 'Logout',
-                                                details: 'Logged out successfully.'
-                                            })
-                                        }).catch(err => console.error(err));
-                                    } catch(err) {}
+                        const sessionStr = localStorage.getItem('thrustvault_session');
+                        let showSignIn = !sessionStr;
+                        if (sessionStr) {
+                            try {
+                                const session = JSON.parse(sessionStr);
+                                if (session.role === 'guest') {
+                                    showSignIn = true;
                                 }
-                                localStorage.removeItem('thrustvault_session');
-                                
-                                fetch('/api/auth/logout', { method: 'POST' })
-                                    .finally(() => {
-                                        window.location.href = '/login';
-                                    });
-                            }
-                        };
+                            } catch(e) {}
+                        }
+                        if (showSignIn) {
+                            logoutBtn.innerHTML = '<i data-lucide="log-in" style="width:16px; height:16px; vertical-align:middle; margin-right:8px;"></i>Sign In';
+                            logoutBtn.title = 'Sign In';
+                            logoutBtn.onclick = (e) => {
+                                e.preventDefault();
+                                window.location.href = '/login';
+                            };
+                        } else {
+                            logoutBtn.onclick = (e) => {
+                                e.preventDefault();
+                                if (confirm("Are you sure you want to log out of ThrustVault?")) {
+                                    const sessionStr = localStorage.getItem('thrustvault_session');
+                                    if (sessionStr) {
+                                        try {
+                                            const session = JSON.parse(sessionStr);
+                                            fetch('/api/log-activity', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    email: session.email,
+                                                    role: session.role,
+                                                    action: 'Logout',
+                                                    details: 'Logged out successfully.'
+                                                })
+                                            }).catch(err => console.error(err));
+                                        } catch(err) {}
+                                    }
+                                    localStorage.removeItem('thrustvault_session');
+                                    
+                                    fetch('/api/auth/logout', { method: 'POST' })
+                                        .finally(() => {
+                                            window.location.href = '/login';
+                                        });
+                                }
+                            };
+                        }
                     }
                     
                     toggleBtn.onclick = () => {
@@ -415,6 +476,21 @@
                     };
                 }
                 
+                // Bind global search input handling (redirect to dashboard on Enter if on another page)
+                const searchInput = sidebarEl.querySelector('#search-input');
+                const isDashboard = window.location.pathname.includes('dashboard');
+                const isExplorer = window.location.pathname.includes('explorer');
+                if (searchInput && !isDashboard && !isExplorer) {
+                    searchInput.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            const query = searchInput.value.trim();
+                            if (query) {
+                                window.location.href = '/dashboard?search=' + encodeURIComponent(query);
+                            }
+                        }
+                    });
+                }
+
                 syncSidebarUserProfiles(sidebarEl);
                 if (window.lucide) window.lucide.createIcons();
                 window.dispatchEvent(new CustomEvent('sidebarLoaded', { detail: { role: role } }));
@@ -425,7 +501,7 @@
                 initializeSidebarEvents(sidebarEl, sidebarRole);
             } else {
                 // First load: fetch, cache, and then render
-                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}_v1.6`;
+                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}_v2.0`;
                 fetch(`sidebar_${sidebarRole}.html`)
                     .then(res => {
                         if (!res.ok) throw new Error("Failed to load sidebar template");
@@ -463,7 +539,7 @@
         }
 
         // 3b. Background session validation check
-        const isProtectedRoute = path.includes('/admin/') || path.includes('/intern/') || path.includes('/guest/') ||
+        const isProtectedRoute = path.includes('/admin/') || path.includes('/user/') || path.includes('/guest/') ||
                                  path.includes('dashboard') || path.includes('analytics') || path.includes('explorer') ||
                                  path.includes('users') || path.includes('requests') || path.includes('schema') ||
                                  path.includes('exports') || path.includes('imports') || path.includes('audit');
@@ -474,7 +550,12 @@
                 .then(sessionRes => {
                     if (!sessionRes.logged_in) {
                         localStorage.removeItem('thrustvault_session');
-                        window.location.href = '/login';
+                        const isGuestAllowedPage = path.endsWith('/dashboard') || path.includes('dashboard') ||
+                                                   path.endsWith('/analytics') || path.includes('analytics') ||
+                                                   path.endsWith('/explorer') || path.includes('explorer');
+                        if (!isGuestAllowedPage) {
+                            window.location.href = '/login';
+                        }
                     } else {
                         const sessionData = {
                             email: sessionRes.email,
@@ -492,7 +573,9 @@
     });
 
     // 4. Page load completed event
-    window.addEventListener('load', () => {
+    function revealPage() {
+        if (document.documentElement.classList.contains('tv-loaded')) return;
+        
         const pb = document.getElementById('tv-progress-bar');
         const overlay = document.getElementById('tv-page-loader-overlay');
         
@@ -505,10 +588,15 @@
             }, 300);
         }
         
-        // Reveal page contents
+        // Remove loading state AND add loaded — must remove tv-loading-state so its
+        // opacity:0 rule no longer applies.
+        document.documentElement.classList.remove('tv-loading-state');
         document.documentElement.classList.add('tv-loaded');
         if (window.lucide) window.lucide.createIcons();
-    });
+    }
+
+    window.addEventListener('load', revealPage);
+    setTimeout(revealPage, 800);
 
     // 5. Intercept link navigation to trigger slide-out animations
     document.addEventListener('click', (e) => {
@@ -595,4 +683,71 @@
             if (pb) pb.style.opacity = '0';
         }
     });
+
+    // 7. Global Custom Authentication / Sign-In Dialog helper
+    window.showCustomAuthModal = function(message, targetUrl = '/login') {
+        const existing = document.getElementById('custom-auth-modal');
+        if (existing) {
+            existing.remove();
+        }
+
+        const backdrop = document.createElement('div');
+        backdrop.className = 'custom-auth-modal-backdrop';
+        backdrop.id = 'custom-auth-modal';
+
+        const lockIconHtml = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+        `;
+
+        backdrop.innerHTML = `
+            <div class="custom-auth-modal-container">
+                <div class="custom-auth-modal-icon">
+                    ${lockIconHtml}
+                </div>
+                <h3 class="custom-auth-modal-title">Sign In Required</h3>
+                <p class="custom-auth-modal-message">${message || 'Sign In is required to access detailed pages and data.'}</p>
+                <div class="custom-auth-modal-actions">
+                    <button class="btn-custom-auth-cancel">Cancel</button>
+                    <button class="btn-custom-auth-confirm">Sign In Now</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(backdrop);
+
+        // Force a style recalculation to trigger transition animation
+        backdrop.offsetHeight;
+        backdrop.classList.add('show');
+
+        const destroyModal = () => {
+            backdrop.classList.remove('show');
+            setTimeout(() => {
+                backdrop.remove();
+            }, 250);
+        };
+
+        const btnCancel = backdrop.querySelector('.btn-custom-auth-cancel');
+        const btnConfirm = backdrop.querySelector('.btn-custom-auth-confirm');
+
+        btnCancel.onclick = () => {
+            destroyModal();
+        };
+
+        btnConfirm.onclick = () => {
+            destroyModal();
+            if (targetUrl) {
+                window.location.href = targetUrl;
+            }
+        };
+
+        backdrop.onclick = (e) => {
+            if (e.target === backdrop) {
+                destroyModal();
+            }
+        };
+    };
 })();
+

@@ -1,15 +1,16 @@
 // guest_app.js
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Security Check: Validate user is guest
+    // 1. Security Check: Validate user is guest or anonymous
     const session = JSON.parse(localStorage.getItem('thrustvault_session'));
-    if (!session || session.role !== 'guest') {
+    const isAnonymous = !session;
+    if (session && session.role !== 'guest' && session.role !== 'user' && session.role !== 'admin') {
         localStorage.removeItem('thrustvault_session');
         window.location.href = '/';
         return;
     }
 
     // Set email display in footer
-    const email = session.email || '';
+    const email = session ? (session.email || '') : 'Anonymous Guest';
     const emailEl = document.getElementById('session-email');
     if (emailEl) emailEl.textContent = email;
 
@@ -36,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function logUserActivity(email, role, action, details) {
         try {
-            fetch('/api/log-activity', {
+            fetch('/api/guest/log-activity', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, role, action, details })
@@ -46,8 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     const avatarInitials = document.getElementById('user-avatar-initials');
-    if (avatarInitials && email) {
-        avatarInitials.textContent = email.charAt(0).toUpperCase();
+    if (avatarInitials) {
+        avatarInitials.textContent = isAnonymous ? 'G' : (email.charAt(0).toUpperCase() || 'G');
     }
 
     lucide.createIcons();
@@ -63,7 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
         chartInstances: {},
         currentPage: 1,
         pageSize: 15,
-        categoryCounts: {}
+        categoryCounts: {},
+        displayLimit: 8,
+        totalFiltered: 0
     };
 
     let supabase = null;
@@ -170,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         try {
-            const motorRes = await fetch(`/api/motors?category_id=eq.${state.activeCategory}`);
+            const motorRes = await fetch(`/api/guest/motors?category_id=eq.${state.activeCategory}`);
             if (!motorRes.ok) throw new Error(`Motors fetch failed: HTTP ${motorRes.status}`);
             const motors = await motorRes.json();
             
@@ -185,7 +188,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 linkMotor: m.link_motor,
                 linkEsc: m.link_esc,
                 linkProp: m.link_propeller,
-                custom_parameters: m.custom_parameters || {}
+                custom_parameters: m.custom_parameters || {},
+                uploaded_by: m.uploaded_by
             }));
         } catch (e) {
             console.error("Error loading motors:", e);
@@ -197,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchData() {
         try {
             // Fetch categories ordered by name
-            const catRes = await fetch('/api/categories');
+            const catRes = await fetch('/api/guest/categories');
             if (!catRes.ok) throw new Error(`Categories fetch failed: HTTP ${catRes.status}`);
             const categories = await catRes.json();
             
@@ -213,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })).sort((a, b) => parseMinWeight(a.name) - parseMinWeight(b.name));
             
             // Fetch category IDs only to compute counts
-            const countRes = await fetch('/api/motors?select=category_id');
+            const countRes = await fetch('/api/guest/motors?select=category_id');
             if (countRes.ok) {
                 const categoryIds = await countRes.json();
                 state.categoryCounts = {};
@@ -229,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Fetch dynamic schema custom definitions
             let customSchema = [];
             try {
-                const schemaRes = await fetch('/api/custom-specs');
+                const schemaRes = await fetch('/api/guest/custom-specs');
                 if (schemaRes.ok) {
                     customSchema = await schemaRes.json();
                 } else {
@@ -293,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.activeCategory = cat.id;
                 state.filterCompany = 'all';
                 state.searchQuery = '';
-                state.currentPage = 1;
+                state.displayLimit = 8;
                 elements.searchInput.value = '';
                 elements.searchClear.style.display = 'none';
                 
@@ -309,18 +313,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 await fetchMotorsForActiveCategory();
                 renderApp();
             };
-            
             elements.catList.appendChild(div);
         });
-
-        // Add static All Motors tab
-        const allTab = document.createElement('div');
-        allTab.className = 'category-tab';
-        allTab.innerHTML = '<span>All Motors</span>';
-        allTab.onclick = () => {
-            window.location.href = '/explorer';
-        };
-        elements.catList.appendChild(allTab);
     }
 
     // Main Content Rendering
@@ -385,14 +379,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         elements.filteredCountBadge.textContent = `${filteredMotors.length} displayed`;
         
+        state.totalFiltered = filteredMotors.length;
         const totalItems = filteredMotors.length;
-        const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
-        if (state.currentPage > totalPages) {
-            state.currentPage = totalPages;
-        }
-        const startIdx = (state.currentPage - 1) * state.pageSize;
-        const endIdx = Math.min(startIdx + state.pageSize, totalItems);
-        const paginatedMotors = filteredMotors.slice(startIdx, endIdx);
+        const paginatedMotors = filteredMotors.slice(0, state.displayLimit);
         
         // Show/Hide Empty State
         if (totalItems === 0) {
@@ -454,15 +443,14 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.motorsTableBody.appendChild(tr);
         });
         
-        // Checkbox binding
         bindRowActions();
         
         // Notes Panel
         renderVerificationNotes(cat.name);
-        renderPagination(totalItems, totalPages, startIdx, endIdx);
+        renderPagination(totalItems, paginatedMotors.length);
     }
 
-    function renderPagination(totalItems, totalPages, startIdx, endIdx) {
+    function renderPagination(totalItems, displayedCount) {
         const pagControls = document.getElementById('pagination-controls');
         if (!pagControls) return;
 
@@ -472,55 +460,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         pagControls.style.display = 'flex';
 
+        // Hide pagination pages, buttons, and limits dropdown
+        const pagesContainer = document.getElementById('pagination-pages');
+        if (pagesContainer) pagesContainer.style.display = 'none';
+        
+        const btnPrev = document.getElementById('btn-prev-page');
+        if (btnPrev) btnPrev.style.display = 'none';
+        
+        const btnNext = document.getElementById('btn-next-page');
+        if (btnNext) btnNext.style.display = 'none';
+        
+        const limitLabel = document.querySelector('label[for="pagination-limit"]');
+        if (limitLabel) limitLabel.style.display = 'none';
+        
+        const limitSelect = document.getElementById('pagination-limit');
+        if (limitSelect) limitSelect.style.display = 'none';
+
         const infoText = document.getElementById('pagination-info-text');
         if (infoText) {
-            infoText.textContent = `Showing ${startIdx + 1}-${endIdx} of ${totalItems} motors`;
-        }
-
-        const limitSelect = document.getElementById('pagination-limit');
-        if (limitSelect) {
-            limitSelect.value = state.pageSize;
-            limitSelect.onchange = (e) => {
-                state.pageSize = parseInt(e.target.value);
-                state.currentPage = 1;
-                renderMainContent();
-            };
-        }
-
-        const btnPrev = document.getElementById('btn-prev-page');
-        if (btnPrev) {
-            btnPrev.classList.toggle('disabled', state.currentPage === 1);
-            btnPrev.onclick = () => {
-                if (state.currentPage > 1) {
-                    state.currentPage--;
-                    renderMainContent();
-                }
-            };
-        }
-
-        const btnNext = document.getElementById('btn-next-page');
-        if (btnNext) {
-            btnNext.classList.toggle('disabled', state.currentPage === totalPages);
-            btnNext.onclick = () => {
-                if (state.currentPage < totalPages) {
-                    state.currentPage++;
-                    renderMainContent();
-                }
-            };
-        }
-
-        const pagesContainer = document.getElementById('pagination-pages');
-        if (pagesContainer) {
-            pagesContainer.innerHTML = '';
-            for (let i = 1; i <= totalPages; i++) {
-                const btn = document.createElement('button');
-                btn.className = `pagination-page-btn ${i === state.currentPage ? 'active' : ''}`;
-                btn.textContent = i;
-                btn.onclick = () => {
-                    state.currentPage = i;
-                    renderMainContent();
-                };
-                pagesContainer.appendChild(btn);
+            infoText.textContent = `Showing ${displayedCount} of ${totalItems} motors`;
+            if (displayedCount < totalItems) {
+                infoText.textContent += ` (scroll down to load more)`;
+            } else {
+                infoText.textContent += ` (all loaded)`;
             }
         }
     }
@@ -543,11 +505,18 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         });
 
-        // Motor profile click handlers
+        // Motor profile click handlers (require Sign In)
         elements.motorsTableBody.querySelectorAll('.motor-profile-link').forEach(link => {
             link.onclick = (e) => {
                 e.preventDefault();
-                showMotorProfile(link.dataset.id);
+                e.stopPropagation();
+                if (window.showCustomAuthModal) {
+                    window.showCustomAuthModal("Sign In is required to view detailed motor profiles and testing telemetry charts. Sign in now?", '/login');
+                } else {
+                    if (confirm("Sign In is required to view detailed motor profiles and testing telemetry charts. Sign in now?")) {
+                        window.location.href = '/login';
+                    }
+                }
             };
         });
     }
@@ -1093,6 +1062,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.searchInput.addEventListener('input', (e) => {
         state.searchQuery = e.target.value;
         elements.searchClear.style.display = state.searchQuery ? 'block' : 'none';
+        state.displayLimit = 8;
         renderMainContent();
         showSearchSuggestions(state.searchQuery);
     });
@@ -1202,6 +1172,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.searchQuery = motorName;
                 elements.searchClear.style.display = 'block';
                 suggestionsEl.style.display = 'none';
+                state.displayLimit = 8;
                 renderMainContent();
             });
         });
@@ -1234,6 +1205,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.searchClear.style.display = 'none';
         suggestionsEl.style.display = 'none';
         activeSuggestionIndex = -1;
+        state.displayLimit = 8;
         renderMainContent();
     });
 
@@ -1241,20 +1213,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elements.filterCompanySelect.addEventListener('change', (e) => {
         state.filterCompany = e.target.value;
-        state.currentPage = 1;
+        state.displayLimit = 8;
         renderMainContent();
     });
 
     elements.sortSelect.addEventListener('change', (e) => {
         state.sortBy = e.target.value;
-        state.currentPage = 1;
+        state.displayLimit = 8;
         renderMainContent();
     });
 
     elements.btnClearFilters.addEventListener('click', () => {
         state.searchQuery = '';
         state.filterCompany = 'all';
-        state.currentPage = 1;
+        state.displayLimit = 8;
         elements.searchInput.value = '';
         elements.searchClear.style.display = 'none';
         elements.filterCompanySelect.value = 'all';
@@ -1352,6 +1324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('profile-spec-thrust').textContent = m.thrust;
         document.getElementById('profile-spec-esc').textContent = m.esc || '-';
         document.getElementById('profile-spec-prop').textContent = m.prop || '-';
+        document.getElementById('profile-spec-uploader').textContent = m.uploaded_by || 'System Default';
 
         // Custom parameters
         const customTableBody = document.getElementById('profile-custom-specs-table');
@@ -1425,7 +1398,7 @@ document.addEventListener('DOMContentLoaded', () => {
         destroyProfileCharts();
 
         try {
-            const runsRes = await fetch(`/api/motor-test-runs?motor_id=eq.${motorId}&order=tested_at.desc`);
+            const runsRes = await fetch(`/api/guest/motor-test-runs?motor_id=eq.${motorId}&order=tested_at.desc`);
             if (!runsRes.ok) throw new Error(`Runs fetch failed: HTTP ${runsRes.status}`);
             const runs = await runsRes.json();
 
@@ -1436,7 +1409,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const runIds = runs.map(r => r.id);
-            const pointsRes = await fetch(`/api/motor-test-data-points?test_run_id=in.(${runIds.join(',')})&order=throttle.asc`);
+            const pointsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=in.(${runIds.join(',')})&order=throttle.asc`);
             if (!pointsRes.ok) throw new Error(`Data points fetch failed: HTTP ${pointsRes.status}`);
             const dataPoints = await pointsRes.json();
 
@@ -1732,15 +1705,28 @@ document.addEventListener('DOMContentLoaded', () => {
     async function init() {
         try {
             const currentSessionObj = JSON.parse(localStorage.getItem('thrustvault_session') || '{}');
-            const userEmail = currentSessionObj.email;
+            const userEmail = currentSessionObj.email || 'Anonymous Guest';
             const emailEl = document.getElementById('session-email');
-            if (emailEl && userEmail) emailEl.textContent = userEmail;
+            if (emailEl) emailEl.textContent = userEmail;
             const avatarInit = document.getElementById('user-avatar-initials');
-            if (avatarInit && userEmail) {
-                avatarInit.textContent = userEmail.charAt(0).toUpperCase();
+            if (avatarInit) {
+                avatarInit.textContent = !currentSessionObj.email ? 'G' : userEmail.charAt(0).toUpperCase();
             }
 
             await fetchData();
+
+            // Scroll-based loading listener on .content-body
+            const contentBody = document.querySelector('.content-body');
+            if (contentBody) {
+                contentBody.addEventListener('scroll', () => {
+                    const threshold = 100; // px from bottom
+                    const isNearBottom = contentBody.scrollHeight - contentBody.scrollTop - contentBody.clientHeight < threshold;
+                    if (isNearBottom && state.displayLimit < state.totalFiltered) {
+                        state.displayLimit += 8; // load next 8 motors
+                        renderMainContent();
+                    }
+                }, { passive: true });
+            }
         } catch (e) {
             console.error("Initialization failed", e);
             await logoutAndRedirect();

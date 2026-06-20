@@ -1,6 +1,6 @@
 // user_app.js
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Security Check: Validate user is intern
+    // 1. Security Check: Validate user is user
     const session = JSON.parse(localStorage.getItem('thrustvault_session'));
     if (!session || session.role !== 'user') {
         localStorage.removeItem('thrustvault_session');
@@ -190,7 +190,9 @@ document.addEventListener('DOMContentLoaded', () => {
         chartInstances: {},
         currentPage: 1,
         pageSize: 15,
-        categoryCounts: {}
+        categoryCounts: {},
+        displayLimit: 8,
+        totalFiltered: 0
     };
 
     // DOM Elements
@@ -350,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Multi-View Dashboard Toggles
-    // Multi-View Dashboard Toggles (Guarded for Intern Dashboard)
+    // Multi-View Dashboard Toggles (Guarded for User Dashboard)
     if (elements.btnShowCatalog) {
         elements.btnShowCatalog.onclick = () => {
             elements.btnShowCatalog.classList.add('active');
@@ -401,7 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>
                     <select class="user-role-select form-group" style="padding:4px 8px; font-size:0.85rem;" data-id="${u.id}" ${isSelf ? 'disabled' : ''}>
                         <option value="guest" ${u.role === 'guest' ? 'selected' : ''}>Guest (Read-only)</option>
-                        <option value="intern" ${u.role === 'user' ? 'selected' : ''}>Intern (Read/Write Catalog)</option>
+                        <option value="user" ${u.role === 'user' ? 'selected' : ''}>User (Read/Write Catalog)</option>
                         <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin (Full Control)</option>
                     </select>
                 </td>
@@ -462,7 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Add New User profile
-    // Add New User profile (Guarded for Intern Dashboard)
+    // Add New User profile (Guarded for User Dashboard)
     if (elements.userForm) {
         elements.userForm.onsubmit = async (e) => {
             e.preventDefault();
@@ -501,7 +503,8 @@ document.addEventListener('DOMContentLoaded', () => {
             linkMotor: m.link_motor,
             linkEsc: m.link_esc,
             linkProp: m.link_propeller,
-            custom_parameters: m.custom_parameters || {}
+            custom_parameters: m.custom_parameters || {},
+            uploaded_by: m.uploaded_by
         };
     }
 
@@ -688,7 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.filterByCategory = (state.filterByCategory === cat.id) ? null : cat.id;
                 state.filterCompany = 'all';
                 state.searchQuery = '';
-                state.currentPage = 1;
+                state.displayLimit = 8;
                 elements.searchInput.value = '';
                 elements.searchClear.style.display = 'none';
                 renderApp();
@@ -791,14 +794,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         elements.filteredCountBadge.textContent = `${filteredMotors.length} displayed`;
 
+        state.totalFiltered = filteredMotors.length;
         const totalItems = filteredMotors.length;
-        const totalPages = Math.ceil(totalItems / state.pageSize) || 1;
-        if (state.currentPage > totalPages) {
-            state.currentPage = totalPages;
-        }
-        const startIdx = (state.currentPage - 1) * state.pageSize;
-        const endIdx = Math.min(startIdx + state.pageSize, totalItems);
-        const paginatedMotors = filteredMotors.slice(startIdx, endIdx);
+        const paginatedMotors = filteredMotors.slice(0, state.displayLimit);
 
         if (totalItems === 0) {
             elements.tableEmptyState.style.display = 'block';
@@ -871,10 +869,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         bindRowActions();
         if (elements.verificationNotesSection) elements.verificationNotesSection.style.display = 'none';
-        renderPagination(totalItems, totalPages, startIdx, endIdx);
+        renderPagination(totalItems, paginatedMotors.length);
     }
 
-    function renderPagination(totalItems, totalPages, startIdx, endIdx) {
+    function renderPagination(totalItems, displayedCount) {
         const pagControls = document.getElementById('pagination-controls');
         if (!pagControls) return;
 
@@ -884,55 +882,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         pagControls.style.display = 'flex';
 
+        // Hide pagination pages, buttons, and limits dropdown
+        const pagesContainer = document.getElementById('pagination-pages');
+        if (pagesContainer) pagesContainer.style.display = 'none';
+        
+        const btnPrev = document.getElementById('btn-prev-page');
+        if (btnPrev) btnPrev.style.display = 'none';
+        
+        const btnNext = document.getElementById('btn-next-page');
+        if (btnNext) btnNext.style.display = 'none';
+        
+        const limitLabel = document.querySelector('label[for="pagination-limit"]');
+        if (limitLabel) limitLabel.style.display = 'none';
+        
+        const limitSelect = document.getElementById('pagination-limit');
+        if (limitSelect) limitSelect.style.display = 'none';
+
         const infoText = document.getElementById('pagination-info-text');
         if (infoText) {
-            infoText.textContent = `Showing ${startIdx + 1}-${endIdx} of ${totalItems} motors`;
-        }
-
-        const limitSelect = document.getElementById('pagination-limit');
-        if (limitSelect) {
-            limitSelect.value = state.pageSize;
-            limitSelect.onchange = (e) => {
-                state.pageSize = parseInt(e.target.value);
-                state.currentPage = 1;
-                renderMainContent();
-            };
-        }
-
-        const btnPrev = document.getElementById('btn-prev-page');
-        if (btnPrev) {
-            btnPrev.classList.toggle('disabled', state.currentPage === 1);
-            btnPrev.onclick = () => {
-                if (state.currentPage > 1) {
-                    state.currentPage--;
-                    renderMainContent();
-                }
-            };
-        }
-
-        const btnNext = document.getElementById('btn-next-page');
-        if (btnNext) {
-            btnNext.classList.toggle('disabled', state.currentPage === totalPages);
-            btnNext.onclick = () => {
-                if (state.currentPage < totalPages) {
-                    state.currentPage++;
-                    renderMainContent();
-                }
-            };
-        }
-
-        const pagesContainer = document.getElementById('pagination-pages');
-        if (pagesContainer) {
-            pagesContainer.innerHTML = '';
-            for (let i = 1; i <= totalPages; i++) {
-                const btn = document.createElement('button');
-                btn.className = `pagination-page-btn ${i === state.currentPage ? 'active' : ''}`;
-                btn.textContent = i;
-                btn.onclick = () => {
-                    state.currentPage = i;
-                    renderMainContent();
-                };
-                pagesContainer.appendChild(btn);
+            infoText.textContent = `Showing ${displayedCount} of ${totalItems} motors`;
+            if (displayedCount < totalItems) {
+                infoText.textContent += ` (scroll down to load more)`;
+            } else {
+                infoText.textContent += ` (all loaded)`;
             }
         }
     }
@@ -1547,6 +1519,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.searchInput.addEventListener('input', (e) => {
         state.searchQuery = e.target.value;
         elements.searchClear.style.display = state.searchQuery ? 'block' : 'none';
+        state.displayLimit = 8;
         renderMainContent();
         showSearchSuggestions(state.searchQuery);
     });
@@ -1656,6 +1629,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.searchQuery = motorName;
                 elements.searchClear.style.display = 'block';
                 suggestionsEl.style.display = 'none';
+                state.displayLimit = 8;
                 renderMainContent();
             });
         });
@@ -1688,6 +1662,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.searchClear.style.display = 'none';
         suggestionsEl.style.display = 'none';
         activeSuggestionIndex = -1;
+        state.displayLimit = 8;
         renderMainContent();
     });
 
@@ -1695,20 +1670,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elements.filterCompanySelect.addEventListener('change', (e) => {
         state.filterCompany = e.target.value;
-        state.currentPage = 1;
+        state.displayLimit = 8;
         renderMainContent();
     });
 
     elements.sortSelect.addEventListener('change', (e) => {
         state.sortBy = e.target.value;
-        state.currentPage = 1;
+        state.displayLimit = 8;
         renderMainContent();
     });
 
     elements.btnClearFilters.addEventListener('click', () => {
         state.searchQuery = '';
         state.filterCompany = 'all';
-        state.currentPage = 1;
+        state.displayLimit = 8;
         elements.searchInput.value = '';
         elements.searchClear.style.display = 'none';
         elements.filterCompanySelect.value = 'all';
@@ -2670,6 +2645,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('profile-spec-thrust').textContent = m.thrust;
         document.getElementById('profile-spec-esc').textContent = m.esc || '-';
         document.getElementById('profile-spec-prop').textContent = m.prop || '-';
+        document.getElementById('profile-spec-uploader').textContent = m.uploaded_by || 'System Default';
 
         // Custom parameters
         const customTableBody = document.getElementById('profile-custom-specs-table');
@@ -3058,7 +3034,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 avatarInit.textContent = userEmail.charAt(0).toUpperCase();
             }
 
+            // Parse initial search query from URL parameter if present
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialSearch = urlParams.get('search');
+            if (initialSearch) {
+                state.searchQuery = initialSearch;
+                if (elements.searchInput) {
+                    elements.searchInput.value = initialSearch;
+                    if (elements.searchClear) {
+                        elements.searchClear.style.display = 'block';
+                    }
+                }
+            }
+
             await fetchData();
+
+            // Scroll-based loading listener on .content-body
+            const contentBody = document.querySelector('.content-body');
+            if (contentBody) {
+                contentBody.addEventListener('scroll', () => {
+                    const threshold = 100; // px from bottom
+                    const isNearBottom = contentBody.scrollHeight - contentBody.scrollTop - contentBody.clientHeight < threshold;
+                    if (isNearBottom && state.displayLimit < state.totalFiltered) {
+                        state.displayLimit += 8; // load next 8 motors
+                        renderMainContent();
+                    }
+                }, { passive: true });
+            }
         } catch (e) {
             console.error("Initialization failed", e);
             await logoutAndRedirect();

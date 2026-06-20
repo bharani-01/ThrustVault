@@ -39,16 +39,14 @@
 </nav>
 
 <!-- Search Bar (Navbar Center) -->
-<div style="position:relative; flex:1; max-width:420px; margin:0 20px;">
+<div class="navbar-search-container" style="position:relative; flex:1; margin:0 20px;">
     <i data-lucide="search" style="position:absolute; left:11px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:var(--text-muted); pointer-events:none;"></i>
     <input
         type="text"
         id="search-input"
+        class="navbar-search-input"
         placeholder="Search motors, brands, ESC..."
-        autocomplete="off"
-        style="width:100%; padding:7px 34px 7px 32px; border-radius:20px; border:1.5px solid var(--border-color); background:var(--bg-card); color:var(--text-main); font-size:0.82rem; outline:none; font-family:inherit; transition:border-color 0.2s, box-shadow 0.2s;"
-        onfocus="this.style.borderColor='var(--primary-color)';this.style.boxShadow='0 0 0 3px hsla(217,91%,60%,0.15)'"
-        onblur="this.style.borderColor='var(--border-color)';this.style.boxShadow='none'">
+        autocomplete="off">
     <button id="search-clear" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; display:none; padding:2px; color:var(--text-muted); line-height:1;">
         <i data-lucide="x" style="width:13px;height:13px;"></i>
     </button>

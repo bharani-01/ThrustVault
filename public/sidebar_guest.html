@@ -1,6 +1,6 @@
 <!-- Logo Container (Left) -->
 <div class="logo-container" style="display: flex; align-items: center; width: auto;">
-    <a href="/dashboard" class="logo-link">
+    <a href="/demo/dashboard" class="logo-link">
         <img src="logo_light.png" alt="ThrustVault Logo" class="logo-image logo-light" style="height: 32px; width: auto;">
         <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark" style="height: 32px; width: auto;">
     </a>
@@ -9,10 +9,10 @@
 <!-- Navigation Links (Center) -->
 <nav class="sidebar-nav" style="display: flex !important; align-items: center; gap: 15px; padding: 0; margin: 0 auto !important; flex: none !important; overflow: visible;">
     <div class="sidebar-menu-links" style="margin: 0; display: flex; flex-direction: row; gap: 10px; align-items: center;">
-        <a href="/dashboard" class="btn-sidebar-link" title="Catalog View" style="text-decoration: none;">
+        <a href="/demo/dashboard" class="btn-sidebar-link" title="Catalog View" style="text-decoration: none;">
             Catalog
         </a>
-        <a href="/analytics" class="btn-sidebar-link" title="Test Runs" style="text-decoration: none;">
+        <a href="/login" class="btn-sidebar-link" title="Test Runs" style="text-decoration: none;" onclick="event.preventDefault(); event.stopPropagation(); if (window.showCustomAuthModal) { window.showCustomAuthModal('Sign In is required to access detailed test runs and calibration tools. Sign in now?', '/login'); } else { if (confirm('Sign In is required to access detailed test runs and calibration tools. Sign in now?')) { window.location.href = '/login'; } }">
             Test Runs
         </a>
     </div>
@@ -37,24 +37,11 @@
         <span id="total-categories-count">0</span>
     </div>
 
-    <!-- User Profile Dropdown Card -->
-    <div class="sidebar-footer" style="display: flex; align-items: center; margin: 0; padding: 0; border: none; background: transparent;">
-        <div class="user-profile-menu-wrapper">
-            <div class="user-avatar-trigger">
-                <div class="user-avatar" id="user-avatar-initials">G</div>
-                <i data-lucide="chevron-down" class="avatar-chevron"></i>
-            </div>
-            <div class="user-dropdown-card">
-                <div class="dropdown-user-details">
-                    <span class="user-email" id="session-email">guest@thrustvault.com</span>
-                    <span class="badge-role role-guest">Guest</span>
-                </div>
-                <div class="dropdown-divider"></div>
-                <!-- Logout Button (Theme Toggle will be dynamically prepended here by JS) -->
-                <button class="btn-logout-premium" id="btn-logout" title="Log Out">
-                    Log Out
-                </button>
-            </div>
-        </div>
+    <!-- Direct Login / Sign In Button -->
+    <div class="sidebar-footer" style="display: flex; align-items: center; gap: 12px; margin: 0; padding: 0; border: none; background: transparent;">
+        <button class="btn-login-direct" id="btn-logout" title="Log Out">
+            <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
+            <span>Log Out</span>
+        </button>
     </div>
 </div>

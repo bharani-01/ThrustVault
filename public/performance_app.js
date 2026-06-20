@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tabBtnCreator.style.display = 'flex';
         if (!isWriter) {
             tabBtnCreator.disabled = true;
-            tabBtnCreator.title = 'Create Dataset is only available to Admins and Interns';
+            tabBtnCreator.title = 'Create Dataset is only available to Admins and Users';
             tabBtnCreator.style.opacity = '0.45';
             tabBtnCreator.style.cursor = 'not-allowed';
             tabBtnCreator.style.filter = 'grayscale(0.5)';
@@ -2547,7 +2547,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span><strong>Battery:</strong> ${escapeHTML(run.battery_info || '—')}</span>
                         </div>
                         <div class="run-card-footer">
-                            <span>Tester: ${escapeHTML(run.test_conducted_by || '—')}</span>
+                            <span>Tester: ${escapeHTML(run.test_conducted_by || '—')} (Uploader: ${escapeHTML(run.uploaded_by || 'System')})</span>
                             <span class="run-card-action-text">Click to inspect ›</span>
                         </div>
                     </div>
@@ -2918,44 +2918,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span>${cat.name}</span>
                 <div style="display:flex; align-items:center; gap:5px;">
                     <span class="cat-count">${count}</span>
-                    <button class="btn-delete-cat" data-id="${cat.id}" title="Delete Category"><i data-lucide="trash-2" style="width:14px;"></i></button>
+                    ${isWriter ? `<button class="btn-delete-cat" data-id="${cat.id}" title="Delete Category"><i data-lucide="trash-2" style="width:14px;"></i></button>` : ''}
                 </div>
             `;
             
             div.onclick = (e) => {
                 if (e.target.closest('.btn-delete-cat')) return;
                 sessionStorage.setItem('activeCategory', cat.id);
-                const targetDash = (session && session.role === 'user') ? '/dashboard' : ((session && session.role === 'guest') ? '/dashboard' : '/admin/dashboard');
+                const targetDash = (session && session.role === 'user') ? '/dashboard' : ((session && session.role === 'guest') ? '/demo/dashboard' : '/admin/dashboard');
                 window.location.href = targetDash;
             };
             
-            const delBtn = div.querySelector('.btn-delete-cat');
-            delBtn.onclick = async (e) => {
-                e.stopPropagation();
-                const confirmDelete = await customConfirm(
-                    "Delete Category?",
-                    `Are you sure you want to delete the category "${cat.name}"? All specifications inside it will be permanently deleted.`
-                );
-                if (confirmDelete) {
-                    try {
-                        const res = await fetch(`/api/categories/${cat.id}`, {
-                            method: 'DELETE'
-                        });
-                        if (!res.ok) {
-                            const errData = await res.json();
-                            throw new Error(errData.error || `HTTP ${res.status}`);
+            if (isWriter) {
+                const delBtn = div.querySelector('.btn-delete-cat');
+                if (delBtn) {
+                    delBtn.onclick = async (e) => {
+                        e.stopPropagation();
+                        const confirmDelete = await customConfirm(
+                            "Delete Category?",
+                            `Are you sure you want to delete the category "${cat.name}"? All specifications inside it will be permanently deleted.`
+                        );
+                        if (confirmDelete) {
+                            try {
+                                const res = await fetch(`/api/categories/${cat.id}`, {
+                                    method: 'DELETE'
+                                });
+                                if (!res.ok) {
+                                    const errData = await res.json();
+                                    throw new Error(errData.error || `HTTP ${res.status}`);
+                                }
+                                logUserActivity(session.email, session.role, 'Category Deleted', `Deleted category: ${cat.name}`);
+                                await fetchSidebarCounts();
+                                // also refresh local UI selects
+                                if (typeof refreshVisualizerData === 'function') {
+                                    await refreshVisualizerData();
+                                }
+                            } catch (err) {
+                                alert("Failed to delete category: " + err.message);
+                            }
                         }
-                        logUserActivity(session.email, session.role, 'Category Deleted', `Deleted category: ${cat.name}`);
-                        await fetchSidebarCounts();
-                        // also refresh local UI selects
-                        if (typeof refreshVisualizerData === 'function') {
-                            await refreshVisualizerData();
-                        }
-                    } catch (err) {
-                        alert("Failed to delete category: " + err.message);
-                    }
+                    };
                 }
-            };
+            }
             elements.catList.appendChild(div);
         });
 
@@ -2964,7 +2968,12 @@ document.addEventListener('DOMContentLoaded', () => {
         allTab.className = 'category-tab';
         allTab.innerHTML = '<span>All Motors</span>';
         allTab.onclick = () => {
-            window.location.href = `/${session.role}/explorer`;
+            const role = (session && session.role) ? session.role : 'guest';
+            if (role === 'guest') {
+                window.location.href = '/demo/dashboard';
+            } else {
+                window.location.href = `/${role}/explorer`;
+            }
         };
         elements.catList.appendChild(allTab);
         if (window.lucide) window.lucide.createIcons();

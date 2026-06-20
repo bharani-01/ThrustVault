@@ -479,7 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         elements.detailsPreviewModal.classList.add('show');
 
                         try {
-                            const ptsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=eq.${run.id}&order=throttle.asc`);
+                            const ptsRes = await fetch(`/api/admin/motor-test-data-points?test_run_id=eq.${run.id}&order=throttle.asc`);
                             if (!ptsRes.ok) throw new Error("Failed to load data points");
                             const data = await ptsRes.json();
                             
@@ -804,7 +804,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (elements.previewGridBox) elements.previewGridBox.innerHTML = loadingMsg;
                 elements.previewContentBox.innerHTML = '<span style="color:#64748b;">Loading preview data points...</span>';
                 try {
-                    const res = await fetch(`/api/guest/motor-test-data-points?test_run_id=eq.${targetRunId}&select=*,motor_test_runs(*)`);
+                    const res = await fetch(`/api/admin/motor-test-data-points?test_run_id=eq.${targetRunId}&select=*,motor_test_runs(*)`);
                     if (!res.ok) throw new Error("Failed to load run points");
                     const data = await res.json();
                     previewDataPoints = data || [];
@@ -866,7 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     header: 'Efficiency (g/W)', 
                     getVal: (dp) => {
                         let p = (dp.voltage !== null && dp.current !== null && dp.voltage !== undefined && dp.current !== undefined) ? Number((dp.voltage * dp.current).toFixed(2)) : (dp.power || 0);
-                        let eff = (dp.thrust_g !== null && dp.thrust_g !== undefined && power > 0) ? Number((dp.thrust_g / p).toFixed(2)) : (dp.efficiency || 0);
+                        let eff = (dp.thrust_g !== null && dp.thrust_g !== undefined && p > 0) ? Number((dp.thrust_g / p).toFixed(2)) : (dp.efficiency || 0);
                         return `${eff} g/W`;
                     } 
                 },
@@ -1063,7 +1063,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadMetadata() {
         try {
             // Categories
-            const catRes = await fetch('/api/guest/categories?order=name');
+            const catRes = await fetch('/api/admin/categories?order=name');
             if (!catRes.ok) throw new Error("Failed to fetch categories");
             const categories = await catRes.json();
             state.categories = categories || [];
@@ -1072,7 +1072,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
             // Motors
-            const motorRes = await fetch('/api/guest/motors?order=motor_name');
+            const motorRes = await fetch('/api/admin/motors?order=motor_name');
             if (!motorRes.ok) throw new Error("Failed to fetch motors");
             const motors = await motorRes.json();
             state.motors = motors || [];
@@ -1090,7 +1090,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Custom Parameters Schema
             let customSchema = [];
             try {
-                const schemaRes = await fetch('/api/guest/custom-specs?order=created_at');
+                const schemaRes = await fetch('/api/admin/custom-specs?order=created_at');
                 if (schemaRes.ok) {
                     customSchema = await schemaRes.json();
                 } else {
@@ -1116,7 +1116,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             // Test Runs
-            const runsRes = await fetch('/api/guest/motor-test-runs?order=tested_at.desc');
+            const runsRes = await fetch('/api/admin/motor-test-runs?order=tested_at.desc');
             if (!runsRes.ok) throw new Error("Failed to fetch test runs");
             const testRuns = await runsRes.json();
             state.testRuns = testRuns || [];
@@ -1541,7 +1541,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 let dataPoints = [];
                 const runIdsParam = checkedRuns.join(',');
-                const ptsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=in.(${runIdsParam})&select=*,motor_test_runs(*)`);
+                const ptsRes = await fetch(`/api/admin/motor-test-data-points?test_run_id=in.(${runIdsParam})&select=*,motor_test_runs(*)`);
                 if (!ptsRes.ok) throw new Error("Failed to load telemetry points");
                 const data = await ptsRes.json();
                 dataPoints = data || [];
@@ -2036,8 +2036,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchSidebarCounts() {
         try {
             const [motorsRes, catsRes] = await Promise.all([
-                fetch('/api/guest/motors'),
-                fetch('/api/guest/categories?order=name')
+                fetch('/api/admin/motors'),
+                fetch('/api/admin/categories?order=name')
             ]);
 
             if (!motorsRes.ok) throw new Error("Failed to load motors");
@@ -2108,7 +2108,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const res = await fetch(`/api/intern/categories/${cat.id}`, {
+                        const res = await fetch(`/api/admin/categories/${cat.id}`, {
                             method: 'DELETE'
                         });
                         if (!res.ok) {

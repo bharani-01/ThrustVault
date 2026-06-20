@@ -458,7 +458,7 @@
                         <li>Motors are structured under thrust class categories (e.g. 5kg Class).</li>
                         <li>Tracks precise motor specs: KV rating, Max Current, Max Thrust, Weight.</li>
                         <li>Features real-time search, sorting, and dynamic category listing.</li>
-                        <li><strong>Action Protection:</strong> CRUD forms are restricted to Admin/Intern profiles; Guests are locked into read-only.</li>
+                        <li><strong>Action Protection:</strong> CRUD forms are restricted to Admin/User profiles; Guests are locked into read-only.</li>
                     </ul>
                 </div>
                 <div class="content-column right">
@@ -551,7 +551,7 @@
                         <li>Secured by Supabase native authentication with JSON Web Tokens (JWT).</li>
                         <li>User profile roles dictate dashboard access:
                             <br>• <strong>Admin:</strong> Full CRUD catalog & database management.
-                            <br>• <strong>Intern:</strong> Ingestion of test run datasets.
+                            <br>• <strong>User:</strong> Ingestion of test run datasets.
                             <br>• <strong>Guest:</strong> Read-only curve plots & visualizer.
                         </li>
                         <li>Stores global user activity logs in localStorage.</li>

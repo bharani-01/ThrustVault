@@ -120,7 +120,7 @@
         /* Role badge */
         .ob-role { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:0.72rem; font-weight:700; }
         .ob-role.admin  { background:linear-gradient(135deg,#dbeafe,#eff6ff); color:#1d4ed8; border:1px solid #bfdbfe; }
-        .ob-role.intern { background:linear-gradient(135deg,#d1fae5,#ecfdf5); color:#065f46; border:1px solid #a7f3d0; }
+        .ob-role.user { background:linear-gradient(135deg,#d1fae5,#ecfdf5); color:#065f46; border:1px solid #a7f3d0; }
         .ob-role.guest  { background:linear-gradient(135deg,#fef3c7,#fffbeb); color:#92400e; border:1px solid #fde68a; }
 
         /* Step fade-in */
@@ -156,7 +156,7 @@
         if (path.includes('admin_audit_logs') || path.includes('audit-logs'))       return 'audit_logs';
         if (path.includes('performance') || path.includes('analytics'))            return 'performance';
         if (path.includes('admin_exports') || path.includes('exports'))          return 'exports';
-        if (path.includes('user_dashboard') || path.includes('intern/dashboard'))       return 'intern_catalog';
+        if (path.includes('user_dashboard') || path.includes('user/dashboard'))       return 'user_catalog';
         if (path.includes('guest_dashboard') || path.includes('guest/dashboard'))        return 'guest_catalog';
         if (path.includes('admin_users') || path.includes('admin/users'))            return 'admin_users';
         if (path.includes('admin_access_requests') || path.includes('access-requests'))  return 'admin_access_requests';
@@ -166,16 +166,16 @@
 
     function getPageRole() {
         const slug = getPageSlug();
-        if (slug === 'intern_catalog') return 'intern';
+        if (slug === 'user_catalog') return 'user';
         if (slug === 'guest_catalog')  return 'guest';
         const badge = document.getElementById('session-role-badge');
         if (badge) {
             const t = badge.textContent.toLowerCase();
-            if (t.includes('intern')) return 'intern';
+            if (t.includes('user')) return 'user';
             if (t.includes('guest'))  return 'guest';
         }
         const email = (document.getElementById('session-email') || {}).textContent || '';
-        if (email.includes('intern')) return 'intern';
+        if (email.includes('user')) return 'user';
         if (email.includes('guest'))  return 'guest';
         return 'admin';
     }
@@ -357,7 +357,7 @@
                 </div>
                 <div class="ob-audit-row">
                     <div class="ob-audit-icon edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
-                    <span style="color:#374151;">intern@... edited <strong>T-Motor U12 II</strong></span>
+                    <span style="color:#374151;">user@... edited <strong>T-Motor U12 II</strong></span>
                     <span style="color:#94a3b8;font-size:0.68rem;margin-left:auto;">2 min ago</span>
                 </div>
                 <div class="ob-audit-row">
@@ -399,7 +399,7 @@
     function demoRoleCard(role) {
         const config = {
             admin:  { label:'Administrator', cls:'admin',  icon:'🔑', perms:'Full read+write+manage access', color:'#1d4ed8' },
-            intern: { label:'Intern',        cls:'intern', icon:'✏️', perms:'Read+write; no system settings', color:'#065f46' },
+            user: { label:'User',        cls:'user', icon:'✏️', perms:'Read+write; no system settings', color:'#065f46' },
             guest:  { label:'Guest',         cls:'guest',  icon:'👁️', perms:'Read-only catalog & analytics',  color:'#92400e' },
         }[role] || { label:'User', cls:'admin', icon:'👤', perms:'Standard access', color:'#374151' };
         return `
@@ -544,14 +544,14 @@
         }
     ];
 
-    // ── INTERN CATALOG ───────────────────────────────────────────────────────
-    const STEPS_INTERN_CATALOG = [
+    // ── USER CATALOG ───────────────────────────────────────────────────────
+    const STEPS_USER_CATALOG = [
         {
             target: null,
-            title: 'Welcome, Intern ✏️',
+            title: 'Welcome, User ✏️',
             icon: 'aperture',
-            content: `<p>ThrustVault is your motor specification workspace. As an <strong>Intern</strong>, you can add and edit motors, import data, and export the catalog — but you cannot manage users, approve access, or view audit logs.</p>
-                      ${demoRoleCard('intern')}`,
+            content: `<p>ThrustVault is your motor specification workspace. As an <strong>User</strong>, you can add and edit motors, import data, and export the catalog — but you cannot manage users, approve access, or view audit logs.</p>
+                      ${demoRoleCard('user')}`,
             position: 'center'
         },
         {
@@ -630,7 +630,7 @@
             title: 'Guest Read-Only Mode',
             icon: 'info',
             content: `<p>The yellow banner at the top confirms you're in <strong>read-only mode</strong>. All catalog data is visible, but buttons to add or edit motors are hidden.</p>
-                      ${tip('To get write access, contact an administrator to upgrade your role to Intern or Admin.')}`,
+                      ${tip('To get write access, contact an administrator to upgrade your role to User or Admin.')}`,
             position: 'bottom'
         },
         {
@@ -677,13 +677,13 @@
     function buildPerformanceSteps() {
         const role = getPageRole();
         const isAdmin = role === 'admin';
-        const isIntern = role === 'user';
-        const canWrite = isAdmin || isIntern;
+        const isUser = role === 'user';
+        const canWrite = isAdmin || isUser;
 
         const roleNote = isAdmin
             ? `<p style="margin-top:10px;font-size:0.82rem;color:#64748b;">As an <strong>Admin</strong>, you can create new test runs, import sheets, and delete runs.</p>`
-            : isIntern
-            ? `<p style="margin-top:10px;font-size:0.82rem;color:#64748b;">As an <strong>Intern</strong>, you can create new test runs and import spreadsheet data.</p>`
+            : isUser
+            ? `<p style="margin-top:10px;font-size:0.82rem;color:#64748b;">As an <strong>User</strong>, you can create new test runs and import spreadsheet data.</p>`
             : `<p style="margin-top:10px;font-size:0.82rem;color:#64748b;">As a <strong>Guest</strong>, you have read-only access to this page (data entry is restricted).</p>`;
 
         const steps = [
@@ -859,7 +859,7 @@
                         <div class="ob-demo-label">👤 User Roles</div>
                         <div style="display:flex;flex-direction:column;gap:6px;">
                             <div style="display:flex;align-items:center;gap:8px;"><span class="ob-role admin">Admin</span><span style="font-size:0.8rem;color:#64748b;">Full access to all features</span></div>
-                            <div style="display:flex;align-items:center;gap:8px;"><span class="ob-role intern">Intern</span><span style="font-size:0.8rem;color:#64748b;">Add/edit motors, import data</span></div>
+                            <div style="display:flex;align-items:center;gap:8px;"><span class="ob-role user">User</span><span style="font-size:0.8rem;color:#64748b;">Add/edit motors, import data</span></div>
                             <div style="display:flex;align-items:center;gap:8px;"><span class="ob-role guest">Guest</span><span style="font-size:0.8rem;color:#64748b;">Read-only catalog and analytics</span></div>
                         </div>
                       </div>`,
@@ -897,7 +897,7 @@
                         <div class="ob-demo-label">📋 Pending Request Example</div>
                         <div style="padding:10px 12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;">
                             <div style="font-size:0.85rem;font-weight:600;color:#0f172a;">newuser@example.com</div>
-                            <div style="font-size:0.75rem;color:#64748b;margin-top:3px;">Requested: Intern access</div>
+                            <div style="font-size:0.75rem;color:#64748b;margin-top:3px;">Requested: User access</div>
                             <div style="display:flex;gap:8px;margin-top:8px;">
                                 <span style="padding:4px 10px;border-radius:6px;background:#d1fae5;color:#065f46;font-size:0.75rem;font-weight:600;">✅ Approve</span>
                                 <span style="padding:4px 10px;border-radius:6px;background:#fee2e2;color:#991b1b;font-size:0.75rem;font-weight:600;">❌ Reject</span>
@@ -971,7 +971,7 @@
         if (slug === 'audit_logs')            return STEPS_AUDIT;
         if (slug === 'performance')           return buildPerformanceSteps();
         if (slug === 'exports')               return STEPS_EXPORTS;
-        if (slug === 'intern_catalog')        return STEPS_INTERN_CATALOG;
+        if (slug === 'user_catalog')        return STEPS_USER_CATALOG;
         if (slug === 'guest_catalog')         return STEPS_GUEST_CATALOG;
         if (slug === 'admin_users')           return STEPS_ADMIN_USERS;
         if (slug === 'admin_access_requests') return STEPS_ACCESS_REQUESTS;
@@ -994,8 +994,8 @@
             { slug: 'exports',              label: 'Data Exporter',         icon: '📤' },
             { slug: 'audit_logs',           label: 'Audit Logs',            icon: '🛡️' },
         ],
-        intern: [
-            { slug: 'intern_catalog', label: 'Catalog Dashboard',     icon: '🗄️' },
+        user: [
+            { slug: 'user_catalog', label: 'Catalog Dashboard',     icon: '🗄️' },
             { slug: 'performance',    label: 'Test Runs',             icon: '📋' },
         ],
         guest: [

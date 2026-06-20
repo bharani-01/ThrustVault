@@ -359,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Data Fetching from Database
     async function fetchData() {
         try {
-            const catRes = await fetch('/api/guest/categories?order=name');
+            const catRes = await fetch('/api/admin/categories?order=name');
             if (!catRes.ok) throw new Error("Failed to load categories");
             const categories = await catRes.json();
             
@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 desc: c.description
             }));
             
-            const motorRes = await fetch('/api/guest/motors');
+            const motorRes = await fetch('/api/admin/motors');
             if (!motorRes.ok) throw new Error("Failed to load motors");
             const motors = await motorRes.json();
             
@@ -390,7 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Fetch dynamic schema custom definitions
             let customSchema = [];
             try {
-                const schemaRes = await fetch('/api/guest/custom-specs?order=created_at');
+                const schemaRes = await fetch('/api/admin/custom-specs?order=created_at');
                 if (schemaRes.ok) {
                     customSchema = await schemaRes.json();
                 } else {
@@ -782,7 +782,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const res = await fetch(`/api/intern/categories/${cat.id}`, {
+                        const res = await fetch(`/api/admin/categories/${cat.id}`, {
                             method: 'DELETE'
                         });
                         if (!res.ok) {
@@ -1717,7 +1717,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let categoryId = categoryMap[catName.toLowerCase()];
             if (!categoryId) {
                 const catDesc = catDescIdx !== -1 ? row[catDescIdx].trim() : '';
-                const res = await fetch('/api/intern/categories', {
+                const res = await fetch('/api/admin/categories', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: catName, description: catDesc })
@@ -1755,7 +1755,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 link_propeller: linkPropIdx !== -1 && row[linkPropIdx] ? row[linkPropIdx].trim() : null,
                 custom_parameters: customParams
             };
-            const motorRes = await fetch('/api/intern/motors', {
+            const motorRes = await fetch('/api/admin/motors', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(motorData)
@@ -1777,7 +1777,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const cat of imported.categories) {
             let newId = categoryMap[cat.name.toLowerCase()];
             if (!newId) {
-                const res = await fetch('/api/intern/categories', {
+                const res = await fetch('/api/admin/categories', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: cat.name, description: cat.desc || cat.description || '' })
@@ -1808,7 +1808,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 link_propeller: m.linkProp || m.link_propeller || null,
                 custom_parameters: m.custom_parameters || {}
             };
-            const motorRes = await fetch('/api/intern/motors', {
+            const motorRes = await fetch('/api/admin/motors', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(motorData)
@@ -1827,7 +1827,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const name = document.getElementById('form-cat-name').value.trim();
         const desc = document.getElementById('form-cat-desc').value.trim();
         try {
-            const res = await fetch('/api/intern/categories', {
+            const res = await fetch('/api/admin/categories', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, description: desc })
@@ -1890,7 +1890,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             if (id) {
-                const res = await fetch(`/api/intern/motors/${id}`, {
+                const res = await fetch(`/api/admin/motors/${id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(motorData)
@@ -1898,7 +1898,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!res.ok) throw new Error("Failed to update motor");
                 logUserActivity(session.email, session.role, 'Motor Entry Updated', `Updated motor: ${motorData.motor_name} (Brand: ${motorData.company})`);
             } else {
-                const res = await fetch('/api/intern/motors', {
+                const res = await fetch('/api/admin/motors', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(motorData)
@@ -2028,7 +2028,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let categoryId = categoryMap[catName.toLowerCase()];
             if (!categoryId) {
                 const catDesc = catDescIdx !== -1 && row[catDescIdx] ? row[catDescIdx].toString().trim() : '';
-                const res = await fetch('/api/intern/categories', {
+                const res = await fetch('/api/admin/categories', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: catName, description: catDesc })
@@ -2068,7 +2068,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 custom_parameters: customParams
             };
             
-            const motorRes = await fetch('/api/intern/motors', {
+            const motorRes = await fetch('/api/admin/motors', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(motorData)
@@ -2445,7 +2445,7 @@ document.addEventListener('DOMContentLoaded', () => {
         destroyProfileCharts();
 
         try {
-            const runsRes = await fetch(`/api/guest/motor-test-runs?motor_id=eq.${motorId}&order=tested_at.desc`);
+            const runsRes = await fetch(`/api/admin/motor-test-runs?motor_id=eq.${motorId}&order=tested_at.desc`);
             if (!runsRes.ok) throw new Error("Failed to load test runs");
             const runs = await runsRes.json();
 
@@ -2457,7 +2457,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const runIds = runs.map(r => r.id);
             const runIdsParam = runIds.join(',');
-            const ptsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=in.(${runIdsParam})&order=throttle.asc`);
+            const ptsRes = await fetch(`/api/admin/motor-test-data-points?test_run_id=in.(${runIdsParam})&order=throttle.asc`);
             if (!ptsRes.ok) throw new Error("Failed to load test run data points");
             const dataPoints = await ptsRes.json();
 
@@ -2748,6 +2748,35 @@ document.addEventListener('DOMContentLoaded', () => {
             processedPoints, 'rpm', 'systemEff', 0, undefined
         );
     }
+    
+    // Fetch and render hardware system statistics (CPU, RAM) dynamically
+    async function fetchSystemStats() {
+        try {
+            const res = await fetch('/api/admin/statistics');
+            if (!res.ok) throw new Error("Failed to fetch system statistics");
+            const data = await res.json();
+            
+            const cpuValEl = document.getElementById('kpi-cpu-usage-val');
+            const cpuFooterEl = document.getElementById('kpi-cpu-usage-footer');
+            if (cpuValEl) {
+                cpuValEl.textContent = `${data.cpu_load_percent.toFixed(1)}%`;
+            }
+            if (cpuFooterEl) {
+                cpuFooterEl.textContent = `Load avg: ${data.cpu_load.map(l => l.toFixed(2)).join(', ')}`;
+            }
+            
+            const ramValEl = document.getElementById('kpi-ram-usage-val');
+            const ramFooterEl = document.getElementById('kpi-ram-usage-footer');
+            if (ramValEl) {
+                ramValEl.textContent = `${data.ram_percent.toFixed(1)}%`;
+            }
+            if (ramFooterEl) {
+                ramFooterEl.textContent = `${data.ram_used_gb.toFixed(1)} / ${data.ram_total_gb.toFixed(1)} GB`;
+            }
+        } catch (err) {
+            console.error("Error fetching system stats:", err);
+        }
+    }
 
     // Init App
     async function init() {
@@ -2762,6 +2791,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await fetchData();
             await fetchAccessRequestsCount();
+            
+            // Initial call and periodic interval for system resource metrics
+            await fetchSystemStats();
+            setInterval(fetchSystemStats, 5000);
 
             // Check if we need to trigger the add category modal
             const triggerAddCat = sessionStorage.getItem('triggerAddCategory');

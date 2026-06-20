@@ -1,123 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <link rel="icon" type="image/png" href="favicon_light.png" media="(prefers-color-scheme: light)">
     <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ThrustVault | Professional UAV Motor Database Console</title>
-    <meta name="description" content="Secure, verified UAV motor spec database and analytics engine. Designed for drone builders, UAV engineers, and fleet administrators.">
+    <meta name="description"
+        content="Secure, verified UAV motor spec database and analytics engine. Designed for drone builders, UAV engineers, and fleet administrators.">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
     <!-- Supabase JS Client -->
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="style.css?v=1.6">
     <!-- Page Loader Transition Script -->
-    <script src="page-loader.js"></script>
+    <script src="page-loader.js?v=2.1"></script>
     <style>
         /* Modern Startup Design Additions & Overrides */
         :root {
             --font-display: 'Outfit', sans-serif;
             --font-sans: 'Inter', sans-serif;
         }
-        
+
         /* Hero & Section Sizing Upgrades */
         .landing-header {
             padding: 0 50px !important;
         }
+
         .landing-header .logo-container {
             width: auto !important;
         }
+
         .landing-header .logo-image {
             height: 48px !important;
         }
+
         .landing-nav .nav-link {
             font-size: 0.95rem !important;
         }
+
         .landing-hero {
             max-width: 1320px !important;
             gap: 80px !important;
             padding-top: 160px !important;
             padding-bottom: 110px !important;
         }
+
         .hero-content h2 {
             font-size: 3.85rem !important;
             line-height: 1.12 !important;
         }
+
         .hero-content p {
             font-size: 1.25rem !important;
             line-height: 1.65 !important;
         }
+
         .hero-ctas .btn-hero-primary {
             padding: 16px 32px !important;
             font-size: 1rem !important;
         }
+
         .hero-ctas .btn-hero-secondary {
             padding: 16px 32px !important;
             font-size: 1rem !important;
         }
+
         .visual-card-wrapper {
             width: 530px !important;
             height: 380px !important;
         }
+
         .ambient-glow {
             width: 460px !important;
             height: 320px !important;
         }
+
         .window-sidebar {
             width: 140px !important;
             padding: 24px 14px !important;
             gap: 10px !important;
         }
+
         .sidebar-item {
             font-size: 0.82rem !important;
             padding: 8px 10px !important;
             gap: 8px !important;
         }
+
         .window-content {
             padding: 28px !important;
             gap: 20px !important;
         }
+
         .content-category {
             font-size: 1.1rem !important;
         }
+
         .badge-status-green {
             font-size: 0.72rem !important;
             padding: 3px 8px !important;
         }
+
         .mock-chart-container {
             height: 150px !important;
             padding: 10px !important;
         }
+
         .chart-tooltip {
             font-size: 0.72rem !important;
             padding: 4px 8px !important;
             top: 10px !important;
             right: 10px !important;
         }
+
         .content-stats {
             gap: 16px !important;
         }
+
         .mini-stat {
             padding: 10px 14px !important;
         }
+
         .mini-stat .label {
             font-size: 0.75rem !important;
         }
+
         .mini-stat .val {
             font-size: 0.95rem !important;
         }
-        
+
         /* Ambient Background Glows */
         .landing-body {
             position: relative;
             overflow-x: hidden;
             background-color: var(--bg-base);
         }
+
         .ambient-glow-bg {
             position: absolute;
             border-radius: 50%;
@@ -127,33 +153,37 @@
             opacity: 0.4;
             transition: opacity 0.5s ease;
         }
+
         .glow-1 {
             top: -120px;
             left: -100px;
             width: 500px;
             height: 500px;
-            background: radial-gradient(circle, rgba(37,99,235,0.18) 0%, rgba(37,99,235,0) 70%);
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.18) 0%, rgba(37, 99, 235, 0) 70%);
         }
+
         .glow-2 {
             top: 850px;
             right: -100px;
             width: 600px;
             height: 600px;
-            background: radial-gradient(circle, rgba(139,92,246,0.14) 0%, rgba(139,92,246,0) 70%);
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.14) 0%, rgba(139, 92, 246, 0) 70%);
         }
+
         .glow-3 {
             top: 2100px;
             left: -150px;
             width: 550px;
             height: 550px;
-            background: radial-gradient(circle, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0) 70%);
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 70%);
         }
+
         .glow-4 {
             bottom: 400px;
             right: -80px;
             width: 500px;
             height: 500px;
-            background: radial-gradient(circle, rgba(37,99,235,0.15) 0%, rgba(37,99,235,0) 70%);
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, rgba(37, 99, 235, 0) 70%);
         }
 
         /* Scroll Reveal Animations */
@@ -163,15 +193,31 @@
             transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
             will-change: transform, opacity;
         }
+
         .reveal-on-scroll.revealed {
             opacity: 1;
             transform: translateY(0);
         }
-        .reveal-stagger-1 { transition-delay: 0.08s; }
-        .reveal-stagger-2 { transition-delay: 0.16s; }
-        .reveal-stagger-3 { transition-delay: 0.24s; }
-        .reveal-stagger-4 { transition-delay: 0.32s; }
-        .reveal-stagger-5 { transition-delay: 0.4s; }
+
+        .reveal-stagger-1 {
+            transition-delay: 0.08s;
+        }
+
+        .reveal-stagger-2 {
+            transition-delay: 0.16s;
+        }
+
+        .reveal-stagger-3 {
+            transition-delay: 0.24s;
+        }
+
+        .reveal-stagger-4 {
+            transition-delay: 0.32s;
+        }
+
+        .reveal-stagger-5 {
+            transition-delay: 0.4s;
+        }
 
         /* Demo Request Modal styling */
         .modal-backdrop.demo-modal-backdrop {
@@ -191,10 +237,12 @@
             pointer-events: none;
             transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         .modal-backdrop.demo-modal-backdrop.show {
             opacity: 1;
             pointer-events: auto;
         }
+
         .demo-modal-container {
             width: 490px;
             max-width: 92%;
@@ -202,8 +250,8 @@
             backdrop-filter: blur(30px) saturate(190%);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.25), 
-                        inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.25),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
             transform: scale(0.92) translateY(20px);
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
             overflow: hidden;
@@ -211,16 +259,19 @@
             flex-direction: column;
             opacity: 0;
         }
+
         [data-theme="dark"] .demo-modal-container {
             background: rgba(30, 41, 59, 0.75);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.5), 
-                        inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
         }
+
         .modal-backdrop.demo-modal-backdrop.show .demo-modal-container {
             transform: scale(1) translateY(0);
             opacity: 1;
         }
+
         .demo-modal-header {
             padding: 24px 28px;
             border-bottom: 1px solid var(--border-color);
@@ -228,6 +279,7 @@
             align-items: center;
             justify-content: space-between;
         }
+
         .demo-modal-header h3 {
             font-size: 1.35rem;
             font-weight: 700;
@@ -236,23 +288,27 @@
             align-items: center;
             gap: 10px;
         }
+
         .demo-modal-body {
             padding: 28px;
             display: flex;
             flex-direction: column;
             gap: 18px;
         }
+
         .demo-form-group {
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
+
         .demo-form-group label {
             font-size: 0.82rem;
             font-weight: 600;
             color: var(--text-secondary);
             letter-spacing: 0.02em;
         }
+
         .demo-form-input {
             padding: 12px 16px;
             border-radius: var(--radius-md);
@@ -264,11 +320,13 @@
             outline: none;
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         .demo-form-input:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
             background: var(--bg-panel-solid);
         }
+
         .demo-modal-footer {
             padding: 20px 28px;
             border-top: 1px solid var(--border-color);
@@ -277,7 +335,7 @@
             gap: 14px;
             background: var(--bg-panel-solid);
         }
-        
+
         /* Partner Logo Wall styling */
         .partner-logo-wall {
             padding: 60px 0;
@@ -288,6 +346,7 @@
             overflow: hidden;
             position: relative;
         }
+
         .partner-logo-wall h5 {
             font-size: 0.78rem;
             text-transform: uppercase;
@@ -296,6 +355,7 @@
             margin-bottom: 30px;
             font-weight: 700;
         }
+
         .partner-logos-marquee {
             overflow: hidden;
             width: 100%;
@@ -304,6 +364,7 @@
             user-select: none;
             gap: 60px;
         }
+
         .partner-logos-marquee::before,
         .partner-logos-marquee::after {
             content: '';
@@ -314,20 +375,25 @@
             z-index: 2;
             pointer-events: none;
         }
+
         .partner-logos-marquee::before {
             left: 0;
             background: linear-gradient(to right, var(--bg-panel-solid) 0%, rgba(255, 255, 255, 0) 100%);
         }
+
         .partner-logos-marquee::after {
             right: 0;
             background: linear-gradient(to left, var(--bg-panel-solid) 0%, rgba(255, 255, 255, 0) 100%);
         }
+
         [data-theme="dark"] .partner-logos-marquee::before {
             background: linear-gradient(to right, var(--bg-panel-solid) 0%, rgba(15, 23, 42, 0) 100%);
         }
+
         [data-theme="dark"] .partner-logos-marquee::after {
             background: linear-gradient(to left, var(--bg-panel-solid) 0%, rgba(15, 23, 42, 0) 100%);
         }
+
         .partner-logos-track {
             flex-shrink: 0;
             display: flex;
@@ -336,13 +402,21 @@
             gap: 60px;
             animation: scroll 32s linear infinite;
         }
+
         .partner-logos-track:hover {
             animation-play-state: paused;
         }
+
         @keyframes scroll {
-            from { transform: translateX(0); }
-            to { transform: translateX(calc(-100% - 60px)); }
+            from {
+                transform: translateX(0);
+            }
+
+            to {
+                transform: translateX(calc(-100% - 60px));
+            }
         }
+
         .partner-logo-item {
             font-family: var(--font-display);
             font-weight: 800;
@@ -358,17 +432,22 @@
             user-select: none;
             white-space: nowrap;
         }
-        .partner-logo-item i, .partner-logo-item svg {
+
+        .partner-logo-item i,
+        .partner-logo-item svg {
             color: var(--text-muted);
             opacity: 0.8;
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         .partner-logo-item:hover {
             color: var(--primary-color);
             opacity: 0.95;
             transform: scale(1.06);
         }
-        .partner-logo-item:hover i, .partner-logo-item:hover svg {
+
+        .partner-logo-item:hover i,
+        .partner-logo-item:hover svg {
             color: var(--primary-color);
             transform: rotate(5deg);
         }
@@ -392,50 +471,59 @@
             text-align: left;
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         .propulsion-calculator-section:hover {
             border-color: rgba(37, 99, 235, 0.25);
             box-shadow: 0 24px 48px -10px rgba(15, 23, 42, 0.06);
         }
+
         .calc-header {
             text-align: center;
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
+
         .calc-header h4 {
             font-size: 1.75rem;
             font-weight: 800;
             color: var(--text-primary);
             letter-spacing: -0.02em;
         }
+
         .calc-header p {
             font-size: 0.95rem;
             color: var(--text-secondary);
             max-width: 580px;
             margin: 0 auto;
         }
+
         .calc-body-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 40px;
             align-items: center;
         }
+
         @media (max-width: 820px) {
             .calc-body-grid {
                 grid-template-columns: 1fr;
                 gap: 30px;
             }
         }
+
         .calc-inputs {
             display: flex;
             flex-direction: column;
             gap: 28px;
         }
+
         .calc-selector-group {
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
+
         .calc-selector-group label {
             font-size: 0.8rem;
             font-weight: 700;
@@ -443,6 +531,7 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
+
         .calc-tab-row {
             display: flex;
             background: var(--bg-base);
@@ -451,6 +540,7 @@
             padding: 5px;
             width: 100%;
         }
+
         .calc-tab-btn {
             flex: 1;
             background: transparent;
@@ -465,19 +555,22 @@
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             text-align: center;
         }
+
         .calc-tab-btn:hover {
             color: var(--text-primary);
             background: rgba(255, 255, 255, 0.4);
         }
+
         [data-theme="dark"] .calc-tab-btn:hover {
             background: rgba(255, 255, 255, 0.04);
         }
+
         .calc-tab-btn.active {
             background: var(--bg-panel-solid);
             color: var(--primary-color);
             box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.08), var(--shadow-sm);
         }
-        
+
         .calc-result-panel {
             background: var(--bg-panel-solid);
             border: 1px solid var(--border-color);
@@ -492,11 +585,13 @@
             text-align: left;
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         .calc-result-panel:hover {
             transform: translateY(-4px);
             border-color: var(--primary-color);
             box-shadow: 0 20px 40px -15px rgba(37, 99, 235, 0.12), var(--shadow-md);
         }
+
         .calc-result-panel::before {
             content: '';
             position: absolute;
@@ -506,6 +601,7 @@
             height: 5px;
             background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
         }
+
         .result-class-badge {
             align-self: flex-start;
             padding: 5px 12px;
@@ -518,6 +614,7 @@
             color: var(--primary-color);
             border: 1px solid rgba(37, 99, 235, 0.15);
         }
+
         .result-title-row h5 {
             font-size: 1.45rem;
             font-weight: 800;
@@ -525,11 +622,13 @@
             margin-bottom: 4px;
             letter-spacing: -0.01em;
         }
+
         .result-title-row p {
             font-size: 0.88rem;
             color: var(--text-muted);
             font-weight: 500;
         }
+
         .result-specs-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -538,11 +637,13 @@
             border-top: 1px dashed var(--border-color);
             border-bottom: 1px dashed var(--border-color);
         }
+
         .result-spec-item {
             display: flex;
             flex-direction: column;
             gap: 6px;
         }
+
         .result-spec-item span.lbl {
             font-size: 0.78rem;
             color: var(--text-muted);
@@ -550,17 +651,19 @@
             text-transform: uppercase;
             letter-spacing: 0.03em;
         }
+
         .result-spec-item span.val {
             font-size: 1.05rem;
             color: var(--text-primary);
             font-weight: 700;
         }
+
         .calc-action-row {
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
-        
+
         /* Testimonials Section styling */
         .landing-testimonials {
             padding: 100px 24px;
@@ -569,6 +672,7 @@
             border-top: 1px solid var(--border-color);
             border-bottom: 1px solid var(--border-color);
         }
+
         .testimonials-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -577,6 +681,7 @@
             margin: 48px auto 0;
             padding: 0 10px;
         }
+
         .testimonial-card {
             background: var(--bg-panel);
             backdrop-filter: blur(20px) saturate(180%);
@@ -591,22 +696,26 @@
             transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
             box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.02);
         }
+
         .testimonial-card:hover {
             transform: translateY(-6px);
             box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05), rgba(37, 99, 235, 0.1) 0 0 20px 0;
             border-color: var(--primary-color);
         }
+
         .testimonial-stars {
             color: #f59e0b;
             display: flex;
             gap: 4px;
         }
+
         .testimonial-text {
             font-size: 0.95rem;
             color: var(--text-secondary);
             line-height: 1.65;
             font-style: italic;
         }
+
         .testimonial-user {
             display: flex;
             align-items: center;
@@ -615,6 +724,7 @@
             border-top: 1px solid var(--border-color);
             padding-top: 20px;
         }
+
         .testimonial-avatar {
             width: 44px;
             height: 44px;
@@ -629,19 +739,29 @@
             font-size: 1rem;
             box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
         }
-        .testimonial-avatar.purple { background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%); box-shadow: 0 4px 10px rgba(139, 92, 246, 0.2); }
-        .testimonial-avatar.emerald { background: linear-gradient(135deg, #34d399 0%, #10b981 100%); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); }
-        
+
+        .testimonial-avatar.purple {
+            background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+            box-shadow: 0 4px 10px rgba(139, 92, 246, 0.2);
+        }
+
+        .testimonial-avatar.emerald {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+        }
+
         .testimonial-details {
             display: flex;
             flex-direction: column;
             gap: 3px;
         }
+
         .testimonial-details h6 {
             font-size: 0.92rem;
             font-weight: 700;
             color: var(--text-primary);
         }
+
         .testimonial-details span {
             font-size: 0.78rem;
             color: var(--text-muted);
@@ -657,16 +777,19 @@
             margin: 80px auto 40px;
             padding: 0 24px;
         }
+
         @media (max-width: 820px) {
             .landing-stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+
         @media (max-width: 480px) {
             .landing-stats-grid {
                 grid-template-columns: 1fr;
             }
         }
+
         .landing-stat-card {
             background: var(--bg-panel);
             backdrop-filter: blur(20px) saturate(180%);
@@ -681,11 +804,13 @@
             box-shadow: var(--shadow-sm);
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         .landing-stat-card:hover {
             transform: translateY(-4px);
             border-color: var(--primary-color);
             box-shadow: 0 12px 24px -8px rgba(37, 99, 235, 0.15), var(--shadow-sm);
         }
+
         .landing-stat-num {
             font-size: 2.5rem;
             font-weight: 800;
@@ -695,6 +820,7 @@
             font-family: var(--font-display);
             line-height: 1;
         }
+
         .landing-stat-lbl {
             font-size: 0.85rem;
             color: var(--text-muted);
@@ -702,7 +828,7 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
-        
+
         /* Success message state in Demo request modal */
         .demo-success-content {
             display: none;
@@ -714,10 +840,19 @@
             gap: 20px;
             animation: demoSuccessScale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+
         @keyframes demoSuccessScale {
-            from { transform: scale(0.9); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
+
         .demo-success-icon {
             width: 72px;
             height: 72px;
@@ -730,16 +865,29 @@
             font-size: 2.2rem;
             animation: demoSuccessPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.5);
         }
+
         @keyframes demoSuccessPop {
-            0% { transform: scale(0.4); opacity: 0; }
-            70% { transform: scale(1.15); }
-            100% { transform: scale(1); opacity: 1; }
+            0% {
+                transform: scale(0.4);
+                opacity: 0;
+            }
+
+            70% {
+                transform: scale(1.15);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
+
         .demo-success-title {
             font-size: 1.4rem;
             font-weight: 700;
             color: var(--text-primary);
         }
+
         .demo-success-desc {
             font-size: 0.92rem;
             color: var(--text-secondary);
@@ -761,10 +909,11 @@
             box-shadow: 0 4px 20px -10px rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
         }
+
         [data-theme="dark"] .landing-header {
             background: rgba(15, 23, 42, 0.75) !important;
         }
-        
+
         .landing-header .btn-primary,
         .landing-header .btn-outline {
             position: relative;
@@ -812,12 +961,10 @@
             left: -100%;
             width: 200%;
             height: 100%;
-            background: linear-gradient(
-                to right,
-                rgba(255, 255, 255, 0) 0%,
-                rgba(255, 255, 255, 0.25) 50%,
-                rgba(255, 255, 255, 0) 100%
-            );
+            background: linear-gradient(to right,
+                    rgba(255, 255, 255, 0) 0%,
+                    rgba(255, 255, 255, 0.25) 50%,
+                    rgba(255, 255, 255, 0) 100%);
             transform: skewX(-25deg);
             transition: none;
             opacity: 0;
@@ -841,27 +988,38 @@
         .landing-header .btn-primary:hover svg {
             transform: translateX(4px);
         }
-        
+
         /* Floating animation for mock window */
         @keyframes float {
-            0% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-10px) rotate(0.5deg); }
-            100% { transform: translateY(0px) rotate(0deg); }
+            0% {
+                transform: translateY(0px) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-10px) rotate(0.5deg);
+            }
+
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
         }
+
         .mock-window {
             animation: float 6s cubic-bezier(0.445, 0.05, 0.55, 0.95) infinite !important;
         }
-        
+
         /* Feature Card design overrides */
         .feature-card {
             transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
             padding: 36px !important;
         }
+
         .feature-card:hover {
             transform: translateY(-6px) scale(1.01) !important;
             border-color: var(--primary-color) !important;
             box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(37, 99, 235, 0.1) !important;
         }
+
         .feature-icon {
             width: 48px;
             height: 48px;
@@ -875,29 +1033,33 @@
             margin-bottom: 20px;
             transition: all 0.3s ease;
         }
+
         .feature-card:hover .feature-icon {
             background: var(--primary-color);
             color: white;
             transform: scale(1.1) rotate(3deg);
         }
-        
+
         /* Showcase tab transitions */
         .showcase-tab {
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
             border-left: 3px solid transparent !important;
         }
+
         .showcase-tab.active {
             border-left-color: var(--primary-color) !important;
             background: rgba(37, 99, 235, 0.03) !important;
         }
+
         .showcase-tab:hover:not(.active) {
             background: rgba(0, 0, 0, 0.02) !important;
             transform: translateX(3px);
         }
+
         [data-theme="dark"] .showcase-tab:hover:not(.active) {
             background: rgba(255, 255, 255, 0.02) !important;
         }
-        
+
         /* View Panel transition */
         .view-panel {
             opacity: 0;
@@ -905,31 +1067,36 @@
             transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             display: none;
         }
+
         .view-panel.active {
             display: flex !important;
             opacity: 1;
             transform: scale(1) translateY(0);
         }
-        
+
         /* Role card styling */
         .role-card {
             transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
         }
+
         .role-card:hover {
             transform: translateY(-8px) !important;
             box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.08) !important;
         }
+
         .role-card:hover .role-icon-box {
             transform: scale(1.15) rotate(-3deg);
         }
+
         .role-icon-box {
             transition: all 0.3s ease;
         }
-        
+
         /* Accordion chevron animation */
         .faq-chevron {
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
         }
+
         .faq-answer {
             max-height: 0;
             opacity: 0;
@@ -938,12 +1105,13 @@
             padding: 0 25px;
             text-align: left;
         }
+
         .faq-item.active .faq-answer {
             max-height: 500px;
             opacity: 1;
             padding: 0 25px 20px;
         }
-        
+
         /* Glow CTA section */
         .cta-glow-box {
             background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(139, 92, 246, 0.04) 100%) !important;
@@ -951,23 +1119,28 @@
             box-shadow: 0 30px 60px -20px rgba(37, 99, 235, 0.1) !important;
             transition: all 0.4s ease;
         }
+
         .cta-glow-box:hover {
             border-color: rgba(37, 99, 235, 0.3) !important;
             box-shadow: 0 40px 80px -20px rgba(37, 99, 235, 0.18) !important;
         }
+
         .btn-cta-primary {
             transition: all 0.3s ease !important;
             box-shadow: 0 4px 14px rgba(37, 99, 235, 0.2) !important;
         }
+
         .btn-cta-primary:hover {
             transform: translateY(-2px) !important;
             box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35) !important;
         }
+
         .btn-cta-secondary {
             transition: all 0.3s ease !important;
         }
+
         .btn-cta-secondary:hover {
-            background: rgba(255,255,255,0.15) !important;
+            background: rgba(255, 255, 255, 0.15) !important;
             transform: translateY(-2px) !important;
         }
 
@@ -978,32 +1151,44 @@
             -webkit-backdrop-filter: blur(20px) saturate(180%);
             border: 1px solid var(--border-color);
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04),
-                        inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
         }
+
         [data-theme="dark"] .glass-panel {
             background: rgba(15, 23, 42, 0.65);
             border: 1px solid rgba(255, 255, 255, 0.05);
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3),
-                        inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
         }
 
         /* Hero loading transitions */
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
+
         .hero-content {
             animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
+
         .hero-visual {
             animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
+
         .animate-spin {
             animation: spin 1s linear infinite;
             display: inline-block;
         }
     </style>
 </head>
+
 <body class="landing-body">
     <!-- Ambient Background Glows -->
     <div class="ambient-glow-bg glow-1"></div>
@@ -1026,24 +1211,26 @@
             <a href="#faqs" class="nav-link">FAQs</a>
         </nav>
         <div class="nav-actions" style="display:flex; gap:12px; align-items:center;">
-            <a href="#" class="btn-outline" onclick="openDemoModal(event)" style="padding:10px 18px; font-size:0.88rem; font-weight:600; text-decoration:none; border-radius:var(--radius-md); transition:all 0.2s;">Request Demo</a>
-            <a href="/login" class="btn-primary" style="text-decoration:none;">Sign In <i data-lucide="log-in" style="width:16px; height:16px;"></i></a>
+            <a href="/login" class="btn-primary" style="text-decoration:none;">Sign In <i data-lucide="log-in"
+                    style="width:16px; height:16px;"></i></a>
         </div>
     </header>
 
     <!-- Hero Section -->
     <section class="landing-hero">
         <div class="hero-content">
-            <span class="badge-hero"><i data-lucide="database" style="width:14px; height:14px;"></i> Interactive Spec Catalog</span>
+            <span class="badge-hero"><i data-lucide="database" style="width:14px; height:14px;"></i> Interactive Spec
+                Catalog</span>
             <h2>The Secure Console for <span>Drone Motor Analytics</span></h2>
-            <p>Search, filter, and compare brushless motor specifications side-by-side. Manage categories and data imports securely with role-based access control, integrated with Supabase.</p>
-            
+            <p>Search, filter, and compare brushless motor specifications side-by-side. Manage categories and data
+                imports securely with role-based access control, integrated with Supabase.</p>
+
             <div class="hero-ctas" style="display:flex; gap:14px; flex-wrap:wrap;">
-                <a href="/login" class="btn-hero-primary" style="text-decoration:none;">Launch Console <i data-lucide="arrow-right" style="width:18px; height:18px;"></i></a>
-                <a href="#" class="btn-hero-secondary" onclick="openDemoModal(event)" style="text-decoration:none; background:rgba(37,99,235,0.06); border:1px solid rgba(37,99,235,0.2); color:var(--primary-color);">Request Custom Demo <i data-lucide="monitor" style="width:18px; height:18px;"></i></a>
+                <a href="/demo/dashboard" class="btn-hero-primary" style="text-decoration:none; background: linear-gradient(135deg, var(--primary-color), #3b82f6); color: white; display:flex; align-items:center; gap:8px;">Try Now <i data-lucide="sparkles" style="width:18px; height:18px;"></i></a>
+                <a href="/login" class="btn-hero-secondary" style="text-decoration:none; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#f8fafc; display:flex; align-items:center; gap:8px;">Launch Console <i data-lucide="arrow-right" style="width:18px; height:18px;"></i></a>
             </div>
         </div>
-        
+
         <div class="hero-visual">
             <div class="visual-card-wrapper">
                 <div class="ambient-glow"></div>
@@ -1059,9 +1246,12 @@
                     </div>
                     <div class="window-body">
                         <div class="window-sidebar">
-                            <div class="sidebar-item active"><i data-lucide="database" style="width:12px;"></i> Motors</div>
-                            <div class="sidebar-item"><i data-lucide="git-compare" style="width:12px;"></i> Compare</div>
-                            <div class="sidebar-item"><i data-lucide="trending-up" style="width:12px;"></i> Analytics</div>
+                            <div class="sidebar-item active"><i data-lucide="database" style="width:12px;"></i> Motors
+                            </div>
+                            <div class="sidebar-item"><i data-lucide="git-compare" style="width:12px;"></i> Compare
+                            </div>
+                            <div class="sidebar-item"><i data-lucide="trending-up" style="width:12px;"></i> Analytics
+                            </div>
                         </div>
                         <div class="window-content">
                             <div class="content-header">
@@ -1071,10 +1261,14 @@
                             <!-- Mock Mini Graph SVG -->
                             <div class="mock-chart-container">
                                 <svg viewBox="0 0 200 80" class="mock-chart-svg">
-                                    <path d="M 0,70 Q 50,60 100,30 T 200,10" fill="none" stroke="#2563eb" stroke-width="2.5"></path>
-                                    <path d="M 0,70 Q 50,60 100,30 T 200,10 L 200,80 L 0,80 Z" fill="url(#chart-gradient)" opacity="0.12"></path>
-                                    <line x1="0" y1="70" x2="200" y2="70" stroke="#cbd5e1" stroke-dasharray="3,3"></line>
-                                    <line x1="0" y1="40" x2="200" y2="40" stroke="#cbd5e1" stroke-dasharray="3,3"></line>
+                                    <path d="M 0,70 Q 50,60 100,30 T 200,10" fill="none" stroke="#2563eb"
+                                        stroke-width="2.5"></path>
+                                    <path d="M 0,70 Q 50,60 100,30 T 200,10 L 200,80 L 0,80 Z"
+                                        fill="url(#chart-gradient)" opacity="0.12"></path>
+                                    <line x1="0" y1="70" x2="200" y2="70" stroke="#cbd5e1" stroke-dasharray="3,3">
+                                    </line>
+                                    <line x1="0" y1="40" x2="200" y2="40" stroke="#cbd5e1" stroke-dasharray="3,3">
+                                    </line>
                                     <circle cx="100" cy="30" r="3.5" fill="#2563eb"></circle>
                                     <defs>
                                         <linearGradient id="chart-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -1127,33 +1321,39 @@
 
     <!-- Capabilities Section -->
     <section class="landing-features" id="features">
-        <span class="badge-hero reveal-on-scroll"><i data-lucide="sliders" style="width:14px; height:14px;"></i> Core Capabilities</span>
+        <span class="badge-hero reveal-on-scroll"><i data-lucide="sliders" style="width:14px; height:14px;"></i> Core
+            Capabilities</span>
         <h3 class="section-title reveal-on-scroll">Engineered Telemetry Management</h3>
-        <p class="section-subtitle reveal-on-scroll">A highly optimized spec catalog and diagnostic matrix to simplify drone propulsion curation.</p>
-        
+        <p class="section-subtitle reveal-on-scroll">A highly optimized spec catalog and diagnostic matrix to simplify
+            drone propulsion curation.</p>
+
         <div class="features-grid">
             <div class="feature-card glass-panel reveal-on-scroll reveal-stagger-1">
                 <div class="feature-icon"><i data-lucide="shield-check"></i></div>
                 <h4>Role Security (RBAC)</h4>
-                <p>Secure login with separate authorization levels for Guest readers, User editors, and System Admins, powered by Supabase RLS.</p>
+                <p>Secure login with separate authorization levels for Guest readers, User editors, and System Admins,
+                    powered by Supabase RLS.</p>
             </div>
 
             <div class="feature-card glass-panel reveal-on-scroll reveal-stagger-2">
                 <div class="feature-icon"><i data-lucide="git-compare"></i></div>
                 <h4>Interactive Comparison</h4>
-                <p>Select and compare up to 3 motors side-by-side in real-time, reviewing recommended ESCs, propeller fits, and buy links.</p>
+                <p>Select and compare up to 3 motors side-by-side in real-time, reviewing recommended ESCs, propeller
+                    fits, and buy links.</p>
             </div>
-            
+
             <div class="feature-card glass-panel reveal-on-scroll reveal-stagger-3">
                 <div class="feature-icon"><i data-lucide="settings"></i></div>
                 <h4>Excel Spec Customizer</h4>
-                <p>Admin Schema Builder lets you dynamically extend database parameter columns. Automatically generates matching Excel templates for User batch uploads.</p>
+                <p>Admin Schema Builder lets you dynamically extend database parameter columns. Automatically generates
+                    matching Excel templates for User batch uploads.</p>
             </div>
-            
+
             <div class="feature-card glass-panel reveal-on-scroll reveal-stagger-4">
                 <div class="feature-icon"><i data-lucide="download"></i></div>
                 <h4>Dedicated Data Exporter</h4>
-                <p>Admin console to compile and export motor lists and telemetry curves into XLSX, CSV, JSON, XML, or HTML Table layouts with custom column selectors.</p>
+                <p>Admin console to compile and export motor lists and telemetry curves into XLSX, CSV, JSON, XML, or
+                    HTML Table layouts with custom column selectors.</p>
             </div>
         </div>
     </section>
@@ -1161,38 +1361,43 @@
     <!-- Interactive Propulsion Selector Widget -->
     <div class="propulsion-calculator-section reveal-on-scroll" style="margin-bottom: 60px;">
         <div class="calc-header">
-            <span class="badge-hero reveal-on-scroll" style="align-self: center;"><i data-lucide="calculator" style="width:14px; height:14px;"></i> Propulsion Simulator</span>
+            <span class="badge-hero reveal-on-scroll" style="align-self: center;"><i data-lucide="calculator"
+                    style="width:14px; height:14px;"></i> Propulsion Simulator</span>
             <h4 class="reveal-on-scroll">Interactive Propulsion Selector</h4>
-            <p class="reveal-on-scroll">Simulate UAV configurations to calculate thrust recommendations and identify ideal database matches.</p>
+            <p class="reveal-on-scroll">Simulate UAV configurations to calculate thrust recommendations and identify
+                ideal database matches.</p>
         </div>
         <div class="calc-body-grid">
             <div class="calc-inputs">
                 <div class="calc-selector-group">
                     <label>Target Payload per Rotor</label>
                     <div class="calc-tab-row" id="calc-payload-tabs">
-                        <button type="button" class="calc-tab-btn active" onclick="setCalcPayload(1000, this)">1 kg</button>
+                        <button type="button" class="calc-tab-btn active" onclick="setCalcPayload(1000, this)">1
+                            kg</button>
                         <button type="button" class="calc-tab-btn" onclick="setCalcPayload(3000, this)">3 kg</button>
                         <button type="button" class="calc-tab-btn" onclick="setCalcPayload(6000, this)">6 kg</button>
                         <button type="button" class="calc-tab-btn" onclick="setCalcPayload(10000, this)">10 kg</button>
                     </div>
                 </div>
-                
+
                 <div class="calc-selector-group">
                     <label>Battery System Voltage</label>
                     <div class="calc-tab-row" id="calc-battery-tabs">
-                        <button type="button" class="calc-tab-btn active" onclick="setCalcBattery('6S', this)">6S LiPo (22.2V)</button>
-                        <button type="button" class="calc-tab-btn" onclick="setCalcBattery('12S', this)">12S LiPo (44.4V)</button>
+                        <button type="button" class="calc-tab-btn active" onclick="setCalcBattery('6S', this)">6S LiPo
+                            (22.2V)</button>
+                        <button type="button" class="calc-tab-btn" onclick="setCalcBattery('12S', this)">12S LiPo
+                            (44.4V)</button>
                     </div>
                 </div>
             </div>
-            
+
             <div class="calc-result-panel" id="calc-result-panel">
                 <span class="result-class-badge" id="res-class">Heavy Duty Lift</span>
                 <div class="result-title-row">
                     <h5 id="res-motor-name">U8 Lite KV150</h5>
                     <p id="res-motor-company">by T-Motor</p>
                 </div>
-                
+
                 <div class="result-specs-grid">
                     <div class="result-spec-item">
                         <span class="lbl">Required Thrust (2:1 Ratio)</span>
@@ -1211,9 +1416,10 @@
                         <span class="val" id="res-kv">150 KV</span>
                     </div>
                 </div>
-                
+
                 <div class="calc-action-row">
-                    <a href="/login" class="btn-primary" style="text-align: center; text-decoration: none;">Launch Console to View Spec <i data-lucide="arrow-right" style="width:16px;"></i></a>
+                    <a href="/login" class="btn-primary" style="text-align: center; text-decoration: none;">Launch
+                        Console to View Spec <i data-lucide="arrow-right" style="width:16px;"></i></a>
                 </div>
             </div>
         </div>
@@ -1222,7 +1428,8 @@
     <!-- Interactive Console Showcase Section -->
     <section class="landing-showcase" id="showcase">
         <div class="showcase-header reveal-on-scroll">
-            <span class="badge-hero"><i data-lucide="monitor" style="width:14px; height:14px;"></i> Interactive Walkthrough</span>
+            <span class="badge-hero"><i data-lucide="monitor" style="width:14px; height:14px;"></i> Interactive
+                Walkthrough</span>
             <h3>Explore the Console Engine</h3>
             <p>Select a view tab below to interact with simulated dashboards of our database modules.</p>
         </div>
@@ -1257,7 +1464,7 @@
             <div class="showcase-viewport glass-panel">
                 <!-- Inner Screen -->
                 <div class="viewport-screen">
-                    
+
                     <!-- View 1: Database Catalog -->
                     <div id="showcase-view-db" class="view-panel active">
                         <div class="viewport-header">
@@ -1278,19 +1485,22 @@
                                 <div>ESC Rating</div>
                             </div>
                             <div class="table-mock-row">
-                                <div class="motor-name-mock"><i data-lucide="cpu" style="width:12px; color:#2563eb;"></i> KDE8205 KV110</div>
+                                <div class="motor-name-mock"><i data-lucide="cpu"
+                                        style="width:12px; color:#2563eb;"></i> KDE8205 KV110</div>
                                 <div>KDE Direct</div>
                                 <div><span class="thrust-badge-mock">12,500g</span></div>
                                 <div>120A</div>
                             </div>
                             <div class="table-mock-row">
-                                <div class="motor-name-mock"><i data-lucide="cpu" style="width:12px; color:#2563eb;"></i> U8 Lite KV150</div>
+                                <div class="motor-name-mock"><i data-lucide="cpu"
+                                        style="width:12px; color:#2563eb;"></i> U8 Lite KV150</div>
                                 <div>T-Motor</div>
                                 <div><span class="thrust-badge-mock">8,400g</span></div>
                                 <div>80A</div>
                             </div>
                             <div class="table-mock-row">
-                                <div class="motor-name-mock"><i data-lucide="cpu" style="width:12px; color:#2563eb;"></i> BH2806.5 KV1300</div>
+                                <div class="motor-name-mock"><i data-lucide="cpu"
+                                        style="width:12px; color:#2563eb;"></i> BH2806.5 KV1300</div>
                                 <div>BrotherHobby</div>
                                 <div><span class="thrust-badge-mock">2,100g</span></div>
                                 <div>45A</div>
@@ -1363,10 +1573,12 @@
 
     <!-- Testimonials Section -->
     <section class="landing-testimonials">
-        <span class="badge-hero reveal-on-scroll"><i data-lucide="message-square" style="width:14px; height:14px;"></i> Customer Stories</span>
+        <span class="badge-hero reveal-on-scroll"><i data-lucide="message-square" style="width:14px; height:14px;"></i>
+            Customer Stories</span>
         <h3 class="section-title reveal-on-scroll" style="margin-top: 10px;">Endorsed by UAV Engineers</h3>
-        <p class="section-subtitle reveal-on-scroll">Read how propulsion researchers and UAV developers streamline hardware validation with ThrustVault.</p>
-        
+        <p class="section-subtitle reveal-on-scroll">Read how propulsion researchers and UAV developers streamline
+            hardware validation with ThrustVault.</p>
+
         <div class="testimonials-grid">
             <div class="testimonial-card reveal-on-scroll reveal-stagger-1">
                 <div class="testimonial-stars">
@@ -1376,7 +1588,9 @@
                     <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
                     <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
                 </div>
-                <p class="testimonial-text">"ThrustVault completely transformed our motor matching workflow. We reduced propeller-ESC selection validation times from days to minutes using the side-by-side spec comparison."</p>
+                <p class="testimonial-text">"ThrustVault completely transformed our motor matching workflow. We reduced
+                    propeller-ESC selection validation times from days to minutes using the side-by-side spec
+                    comparison."</p>
                 <div class="testimonial-user">
                     <div class="testimonial-avatar">JD</div>
                     <div class="testimonial-details">
@@ -1385,7 +1599,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="testimonial-card reveal-on-scroll reveal-stagger-2">
                 <div class="testimonial-stars">
                     <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
@@ -1394,7 +1608,8 @@
                     <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
                     <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
                 </div>
-                <p class="testimonial-text">"The schema customizer let us extend columns to track custom thermal ratings, and the auto-generated Excel template kept our lab user uploads 100% bug-free."</p>
+                <p class="testimonial-text">"The schema customizer let us extend columns to track custom thermal
+                    ratings, and the auto-generated Excel template kept our lab user uploads 100% bug-free."</p>
                 <div class="testimonial-user">
                     <div class="testimonial-avatar purple">AS</div>
                     <div class="testimonial-details">
@@ -1403,7 +1618,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="testimonial-card reveal-on-scroll reveal-stagger-3">
                 <div class="testimonial-stars">
                     <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
@@ -1412,7 +1627,9 @@
                     <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
                     <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
                 </div>
-                <p class="testimonial-text">"Having a central, verified catalog of motors with strict RLS permissions means our contractors can browse specs safely without risking unauthorized database alterations."</p>
+                <p class="testimonial-text">"Having a central, verified catalog of motors with strict RLS permissions
+                    means our contractors can browse specs safely without risking unauthorized database alterations."
+                </p>
                 <div class="testimonial-user">
                     <div class="testimonial-avatar emerald">MB</div>
                     <div class="testimonial-details">
@@ -1446,29 +1663,33 @@
 
     <!-- Collaborative Role Workspace Section (RBAC) -->
     <section class="landing-roles" id="roles">
-        <span class="badge-hero reveal-on-scroll"><i data-lucide="users" style="width:14px; height:14px;"></i> Role Matrix</span>
+        <span class="badge-hero reveal-on-scroll"><i data-lucide="users" style="width:14px; height:14px;"></i> Role
+            Matrix</span>
         <h3 class="section-title reveal-on-scroll">Designed for Collaborate Workflows</h3>
-        <p class="section-subtitle reveal-on-scroll">Secure role-based permissions allow drone hardware teams to maintain data integrity across functions.</p>
+        <p class="section-subtitle reveal-on-scroll">Secure role-based permissions allow drone hardware teams to
+            maintain data integrity across functions.</p>
 
         <div class="roles-grid">
             <!-- Guest Panel -->
             <div class="role-card glass-panel reveal-on-scroll reveal-stagger-1">
                 <div class="role-icon-box guest"><i data-lucide="eye"></i></div>
                 <h4>Guest Profile</h4>
-                <p class="role-desc">Read-only workspace for builders and engineers to browse cataloged specs, utilize filters, and compare motors.</p>
+                <p class="role-desc">Read-only workspace for builders and engineers to browse cataloged specs, utilize
+                    filters, and compare motors.</p>
                 <div class="role-features">
                     <span><i data-lucide="check"></i> Multi-Spec Comparison Matrix</span>
                     <span><i data-lucide="check"></i> CSV & JSON Telemetry Exports</span>
                     <span><i data-lucide="check"></i> Interactive Brand Analytics</span>
                 </div>
-                <a href="/login" class="btn-role-action">Access Guest Console</a>
+                <a href="/demo/dashboard" class="btn-role-action">Browse as Guest</a>
             </div>
 
             <!-- User Panel -->
             <div class="role-card glass-panel reveal-on-scroll reveal-stagger-2">
-                <div class="role-icon-box intern"><i data-lucide="edit-3"></i></div>
+                <div class="role-icon-box user"><i data-lucide="edit-3"></i></div>
                 <h4>User Editor</h4>
-                <p class="role-desc">Data curation workspace for editors. Access templates, import raw Excel sheets, and draft motor specs.</p>
+                <p class="role-desc">Data curation workspace for editors. Access templates, import raw Excel sheets, and
+                    draft motor specs.</p>
                 <div class="role-features">
                     <span><i data-lucide="check"></i> Add & Edit Motor Specs</span>
                     <span><i data-lucide="check"></i> Excel Import Template</span>
@@ -1481,7 +1702,8 @@
             <div class="role-card glass-panel reveal-on-scroll reveal-stagger-3">
                 <div class="role-icon-box admin"><i data-lucide="shield-alert"></i></div>
                 <h4>System Admin</h4>
-                <p class="role-desc">Full administration privileges. Update user roles, add categories, and run SQL database performance logs.</p>
+                <p class="role-desc">Full administration privileges. Update user roles, add categories, and run SQL
+                    database performance logs.</p>
                 <div class="role-features">
                     <span><i data-lucide="check"></i> Edit User Roles & Profiles</span>
                     <span><i data-lucide="check"></i> Category & Motor CRUD Operations</span>
@@ -1494,9 +1716,11 @@
 
     <!-- FAQ Section (Accordion) -->
     <section class="landing-faqs" id="faqs">
-        <span class="badge-hero reveal-on-scroll"><i data-lucide="help-circle" style="width:14px; height:14px;"></i> FAQs</span>
+        <span class="badge-hero reveal-on-scroll"><i data-lucide="help-circle" style="width:14px; height:14px;"></i>
+            FAQs</span>
         <h3 class="section-title reveal-on-scroll">Frequently Asked Questions</h3>
-        <p class="section-subtitle reveal-on-scroll">Common questions regarding the ThrustVault database console and security rules.</p>
+        <p class="section-subtitle reveal-on-scroll">Common questions regarding the ThrustVault database console and
+            security rules.</p>
 
         <div class="faq-accordion reveal-on-scroll">
             <!-- FAQ 1 -->
@@ -1506,7 +1730,9 @@
                     <i data-lucide="chevron-down" class="faq-chevron"></i>
                 </button>
                 <div class="faq-answer">
-                    <p>The console offers three active demo profiles for testing access levels: a Guest Profile (read-only), an User Profile (data editor), and a System Admin Profile (full privileges). You can quickly click the credentials cards on the login screen to autofill and sign in.</p>
+                    <p>The console offers three active demo profiles for testing access levels: a Guest Profile
+                        (read-only), an User Profile (data editor), and a System Admin Profile (full privileges). You
+                        can quickly click the credentials cards on the login screen to autofill and sign in.</p>
                 </div>
             </div>
 
@@ -1517,7 +1743,9 @@
                     <i data-lucide="chevron-down" class="faq-chevron"></i>
                 </button>
                 <div class="faq-answer">
-                    <p>ThrustVault supports exporting motor lists in both CSV and JSON formats directly. For data imports, editors and admins can download a standardized Excel spreadsheet template, populate it, and upload it to add motors in bulk.</p>
+                    <p>ThrustVault supports exporting motor lists in both CSV and JSON formats directly. For data
+                        imports, editors and admins can download a standardized Excel spreadsheet template, populate it,
+                        and upload it to add motors in bulk.</p>
                 </div>
             </div>
 
@@ -1528,7 +1756,9 @@
                     <i data-lucide="chevron-down" class="faq-chevron"></i>
                 </button>
                 <div class="faq-answer">
-                    <p>From the main specs grid, users can check boxes to select up to 3 motors. The system opens a bottom comparison drawer that displays a detailed side-by-side matrix comparing recommended ESCs, voltage configurations, propeller fits, and buy links.</p>
+                    <p>From the main specs grid, users can check boxes to select up to 3 motors. The system opens a
+                        bottom comparison drawer that displays a detailed side-by-side matrix comparing recommended
+                        ESCs, voltage configurations, propeller fits, and buy links.</p>
                 </div>
             </div>
 
@@ -1539,7 +1769,9 @@
                     <i data-lucide="chevron-down" class="faq-chevron"></i>
                 </button>
                 <div class="faq-answer">
-                    <p>Security is enforced at the database layer using PostgreSQL Row-Level Security (RLS) policies. While all users can read verified catalogs, write access to add, edit, or delete categories and motor specifications is strictly restricted to logged-in Users and Admins.</p>
+                    <p>Security is enforced at the database layer using PostgreSQL Row-Level Security (RLS) policies.
+                        While all users can read verified catalogs, write access to add, edit, or delete categories and
+                        motor specifications is strictly restricted to logged-in Users and Admins.</p>
                 </div>
             </div>
         </div>
@@ -1549,10 +1781,11 @@
     <section class="landing-cta">
         <div class="cta-glow-box reveal-on-scroll">
             <h3>Ready to Manage Your UAV Propulsions Database?</h3>
-            <p>Access the ThrustVault console now to view certified specifications, run analytics charts, and manage categories.</p>
+            <p>Access the ThrustVault console now to view certified specifications, run analytics charts, and manage
+                categories.</p>
             <div class="cta-actions" style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
-                <a href="/login" class="btn-cta-primary" style="text-decoration:none;">Access Database Console <i data-lucide="arrow-right" style="width:16px;"></i></a>
-                <a href="#" class="btn-cta-secondary" onclick="openDemoModal(event)" style="display:inline-flex; align-items:center; gap:8px; border:1px solid rgba(255,255,255,0.25); background:rgba(255,255,255,0.08); color:#ffffff; padding:12px 24px; border-radius:8px; font-weight:600; font-size:0.9rem; text-decoration:none; transition:all 0.2s;">Request Demo <i data-lucide="monitor" style="width:16px;"></i></a>
+                <a href="/login" class="btn-cta-primary" style="text-decoration:none;">Access Database Console <i
+                        data-lucide="arrow-right" style="width:16px;"></i></a>
             </div>
         </div>
     </section>
@@ -1567,7 +1800,8 @@
                         <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark">
                     </a>
                 </div>
-                <p class="brand-subtext">Verified database repository for drone motor telemetry and specification analytics.</p>
+                <p class="brand-subtext">Verified database repository for drone motor telemetry and specification
+                    analytics.</p>
                 <div class="system-status">
                     <span class="status-dot pulsing"></span>
                     <span>Console Connection: Online</span>
@@ -1588,9 +1822,10 @@
                 <a href="#features">JSON Catalogs</a>
             </div>
         </div>
-        
+
         <div class="footer-bottom">
-            <p>&copy; 2026 ThrustVault Systems. Developed for professional UAV development teams. All rights reserved.</p>
+            <p>&copy; 2026 ThrustVault Systems. Developed for professional UAV development teams. All rights reserved.
+            </p>
             <div class="footer-legal-links">
                 <a href="#">Security RLS Policies</a>
                 <a href="#">Terms of Service</a>
@@ -1598,57 +1833,7 @@
         </div>
     </footer>
 
-    <!-- Request Demo Modal -->
-    <div class="modal-backdrop demo-modal-backdrop" id="demo-request-modal">
-        <div class="demo-modal-container">
-            <div class="demo-modal-header">
-                <h3><i data-lucide="monitor"></i> Request Custom Demo</h3>
-                <button class="btn-icon-close" onclick="closeDemoModal()" style="background:none; border:none; cursor:pointer; color:var(--text-secondary);"><i data-lucide="x"></i></button>
-            </div>
-            
-            <!-- Form View -->
-            <form id="demo-request-form" onsubmit="submitDemoRequest(event)">
-                <div class="demo-modal-body">
-                    <div class="demo-form-group">
-                        <label for="demo-name">Full Name *</label>
-                        <input type="text" id="demo-name" class="demo-form-input" required placeholder="e.g. John Doe">
-                    </div>
-                    <div class="demo-form-group">
-                        <label for="demo-company">Company / Organization *</label>
-                        <input type="text" id="demo-company" class="demo-form-input" required placeholder="e.g. UAV Tech Inc">
-                    </div>
-                    <div class="demo-form-group">
-                        <label for="demo-email">Business Email *</label>
-                        <input type="email" id="demo-email" class="demo-form-input" required placeholder="e.g. john@company.com">
-                    </div>
-                    <div class="demo-form-group">
-                        <label for="demo-usecase">Primary UAV Use Case</label>
-                        <select id="demo-usecase" class="demo-form-input">
-                            <option value="delivery">Autonomous Cargo/Delivery</option>
-                            <option value="inspection">Industrial Inspection & Mapping</option>
-                            <option value="defense">Defense & Public Safety</option>
-                            <option value="agriculture">Precision Agriculture</option>
-                            <option value="research">Academic / R&D Curation</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="demo-modal-footer">
-                    <button type="button" class="btn-secondary" onclick="closeDemoModal()">Cancel</button>
-                    <button type="submit" class="btn-primary" id="btn-submit-demo">Submit Request <i data-lucide="arrow-right" style="width:16px;"></i></button>
-                </div>
-            </form>
-            
-            <!-- Success View -->
-            <div class="demo-success-content" id="demo-success-view">
-                <div class="demo-success-icon">
-                    <i data-lucide="check-circle" style="width:48px;height:48px;"></i>
-                </div>
-                <div class="demo-success-title">Request Submitted!</div>
-                <p class="demo-success-desc">Thank you for requesting a demo of ThrustVault. Our UAV systems validation team will contact you within 24 hours.</p>
-                <button type="button" class="btn-primary" onclick="closeDemoModal()" style="margin-top: 10px;">Close Window</button>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Scripts -->
     <script>
@@ -1704,7 +1889,7 @@
         function toggleFaq(buttonElement) {
             const faqItem = buttonElement.parentElement;
             const isOpen = faqItem.classList.contains('active');
-            
+
             // Close all items
             document.querySelectorAll('.faq-item').forEach(item => {
                 item.classList.remove('active');
@@ -1716,65 +1901,7 @@
             }
         }
 
-        // Demo Request Modal Control Handlers
-        const demoModal = document.getElementById('demo-request-modal');
-        const demoForm = document.getElementById('demo-request-form');
-        const successView = document.getElementById('demo-success-view');
 
-        function openDemoModal(event) {
-            if (event) event.preventDefault();
-            demoForm.style.display = 'block';
-            successView.style.display = 'none';
-            demoForm.reset();
-            demoModal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeDemoModal() {
-            demoModal.classList.remove('show');
-            document.body.style.overflow = '';
-        }
-
-        async function submitDemoRequest(event) {
-            event.preventDefault();
-            const submitBtn = document.getElementById('btn-submit-demo');
-            const originalHtml = submitBtn.innerHTML;
-            
-            const name = document.getElementById('demo-name').value.trim();
-            const company = document.getElementById('demo-company').value.trim();
-            const email = document.getElementById('demo-email').value.trim();
-            const usecase = document.getElementById('demo-usecase').value;
-
-            // Show Loading State
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i data-lucide="loader" class="animate-spin" style="width:16px;"></i> Submitting...';
-            lucide.createIcons();
-            
-            try {
-                const response = await fetch('/api/request-demo', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, company, email, usecase })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    // Switch to Success View
-                    demoForm.style.display = 'none';
-                    successView.style.display = 'flex';
-                } else {
-                    alert("Submission error: " + (result.db_message || result.email_message || "Unknown error"));
-                }
-            } catch (err) {
-                console.error("Demo submission failed:", err);
-                alert("Failed to submit demo request. Please try again.");
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalHtml;
-                lucide.createIcons();
-            }
-        }
 
         // Interactive Propulsion Simulator Calculator State & Recommendation Logic
         let calcState = {
@@ -1862,7 +1989,7 @@
             const buttons = document.querySelectorAll('#calc-payload-tabs .calc-tab-btn');
             buttons.forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
-            
+
             calcState.payload = payloadVal;
             recalculatePropulsion();
         }
@@ -1872,7 +1999,7 @@
             const buttons = document.querySelectorAll('#calc-battery-tabs .calc-tab-btn');
             buttons.forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
-            
+
             calcState.battery = batteryVal;
             recalculatePropulsion();
         }
@@ -1880,14 +2007,14 @@
         function recalculatePropulsion() {
             const key = `${calcState.payload}_${calcState.battery}`;
             const match = motorRecommendations[key];
-            
+
             if (match) {
                 // Apply a subtle scale-out/scale-in transition
                 const panel = document.getElementById('calc-result-panel');
                 panel.style.transform = 'scale(0.98)';
                 panel.style.opacity = '0.7';
                 panel.style.transition = 'all 0.15s ease-out';
-                
+
                 setTimeout(() => {
                     document.getElementById('res-class').textContent = match.class;
                     document.getElementById('res-motor-name').textContent = match.name;
@@ -1896,7 +2023,7 @@
                     document.getElementById('res-prop').textContent = match.prop;
                     document.getElementById('res-esc').textContent = match.esc;
                     document.getElementById('res-kv').textContent = match.kv;
-                    
+
                     panel.style.transform = 'scale(1)';
                     panel.style.opacity = '1';
                 }, 150);
@@ -1904,4 +2031,5 @@
         }
     </script>
 </body>
+
 </html>

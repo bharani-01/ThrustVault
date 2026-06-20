@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/png" href="favicon_light.png" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Exporter | ThrustVault</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    <!-- Supabase JS Client -->
+    <!-- SheetJS Library -->
+    <script src="libs/xlsx.full.min.js"></script>
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css?v=1.6">
+    <style>
+        .export-layout-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+        @media(min-width: 1150px) {
+            .export-layout-grid {
+                grid-template-columns: 480px 1fr;
+            }
+        }
+        .export-card {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 24px;
+        }
+        .export-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 5px;
+        }
+        .export-card-header i {
+            color: var(--primary-color);
+            width: 24px;
+            height: 24px;
+        }
+        .export-card-header h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .form-section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .checkbox-container-scroll {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            background: var(--bg-base);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .checkbox-container-scroll label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            user-select: none;
+        }
+        .checkbox-container-scroll label input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        /* Studio card layout selector grid */
+        .selector-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 10px;
+            max-height: 220px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            background: var(--bg-base);
+        }
+        .selector-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+            user-select: none;
+            box-shadow: var(--shadow-sm);
+        }
+        .selector-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        .selector-card.selected {
+            border-color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.03);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+        .selector-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .selector-card-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 125px;
+        }
+        .selector-card-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+        .selector-card.selected .selector-card-indicator {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: #ffffff;
+        }
+        .selector-card.selected .selector-card-indicator::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: block;
+        }
+        .selector-card-meta {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .selector-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #f1f5f9;
+            color: #475569;
+            width: max-content;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .selector-badge.primary {
+            background: #dbeafe;
+            color: var(--primary-color);
+        }
+
+        .selector-card-info-btn {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: #ffffff;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 0;
+            flex-shrink: 0;
+        }
+        .selector-card-info-btn:hover {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.05);
+        }
+        .selector-card-info-btn.active {
+            color: #ffffff;
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+        }
+        .selector-card-preview-drawer {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed var(--border-color);
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            text-align: left;
+            animation: slideDown 0.2s ease-out;
+            width: 100%;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Premium Download Modal Styles */
+        .download-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .download-modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .download-modal-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 16px;
+            padding: 35px;
+            width: 380px;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15), 
+                        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            color: var(--text-primary);
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .download-modal-overlay.show .download-modal-card {
+            transform: scale(1);
+        }
+        .download-modal-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: var(--radius-full);
+            background: rgba(37, 99, 235, 0.08);
+            border: 1px solid rgba(37, 99, 235, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+        .download-modal-icon i {
+            width: 32px;
+            height: 32px;
+        }
+        .spin-animation {
+            animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .download-modal-card h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .download-modal-card p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            height: 20px;
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(226, 232, 240, 0.8);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border-radius: var(--radius-full);
+            transition: width 0.25s ease-out;
+        }
+        .progress-percent {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        /* Segmented tab controller styles */
+        .export-type-tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            border-radius: 6px;
+            padding: 10px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+        }
+        .export-type-tab-btn:hover {
+            color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.04);
+        }
+        .export-type-tab-btn.active {
+            background: var(--bg-panel-solid);
+            color: var(--primary-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Config Panels Toggling */
+        #catalog-config-panel, #telemetry-config-panel {
+            display: none;
+        }
+        #catalog-config-panel.active, #telemetry-config-panel.active {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Format selector cards styling */
+        .format-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(75px, 1fr));
+            gap: 8px;
+            margin-top: 5px;
+        }
+        .format-card {
+            background: var(--bg-panel-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 6px;
+            text-align: center;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-sm);
+            user-select: none;
+        }
+        .format-card i, .format-card svg {
+            width: 20px;
+            height: 20px;
+            color: var(--text-secondary);
+            transition: color 0.2s ease;
+        }
+        .format-card span {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            transition: color 0.2s ease;
+        }
+        .format-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+            background: rgba(37, 99, 235, 0.02);
+        }
+        .format-card.selected {
+            border-color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.05);
+            box-shadow: var(--shadow-md), 0 0 0 1px var(--primary-color);
+        }
+        .format-card.selected i, .format-card.selected svg {
+            color: var(--primary-color);
+        }
+        .format-card.selected span {
+            color: var(--primary-color);
+        }
+
+        /* Dark mode compatibility overrides */
+        [data-theme="dark"] .format-card {
+            background: rgba(20, 24, 33, 0.65);
+        }
+        [data-theme="dark"] .format-card.selected {
+            background: rgba(59, 130, 246, 0.08);
+            border-color: var(--primary-color);
+        }
+        [data-theme="dark"] .selector-card {
+            background: rgba(20, 24, 33, 0.65);
+        }
+        [data-theme="dark"] .selector-card.selected {
+            background: rgba(59, 130, 246, 0.08);
+            border-color: var(--primary-color);
+        }
+        [data-theme="dark"] .selector-card-info-btn {
+            background: rgba(20, 24, 33, 0.8);
+            border-color: var(--border-color);
+        }
+        [data-theme="dark"] .selector-card-info-btn:hover {
+            background: rgba(59, 130, 246, 0.15);
+        }
+        [data-theme="dark"] .download-modal-card {
+            background: rgba(15, 23, 42, 0.85);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        [data-theme="dark"] .download-modal-icon {
+            background: rgba(59, 130, 246, 0.15);
+        }
+
+        /* Fixed viewport height layout overrides to eliminate page scrollbars */
+        html, body {
+            height: 100vh !important;
+            margin: 0;
+            overflow: hidden !important;
+        }
+        .app-container {
+            height: 100vh !important;
+            overflow: hidden !important;
+        }
+        .main-content-wrapper {
+            height: 100vh !important;
+            overflow: hidden !important;
+        }
+        .export-layout-grid {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            overflow: hidden;
+        }
+        @media(min-width: 1150px) {
+            .export-layout-grid {
+                grid-template-columns: 480px 1fr;
+            }
+        }
+        #export-config-sidebar {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+            box-sizing: border-box;
+            padding: 24px;
+        }
+        #export-config-sidebar .export-card-header {
+            flex-shrink: 0;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+        }
+        #catalog-config-panel, #telemetry-config-panel {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+        #catalog-config-panel::-webkit-scrollbar,
+        #telemetry-config-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+        #catalog-config-panel::-webkit-scrollbar-track,
+        #telemetry-config-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #catalog-config-panel::-webkit-scrollbar-thumb,
+        #telemetry-config-panel::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: var(--radius-full);
+        }
+        #preview-panel {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+            box-sizing: border-box;
+        }
+        #preview-panel > div:first-child {
+            flex-shrink: 0;
+        }
+        #preview-panel > div:nth-child(2) {
+            flex-shrink: 0;
+        }
+        #preview-grid-box, #preview-content-box {
+            flex: 1;
+            min-height: 0;
+            max-height: none !important;
+            overflow: auto;
+        }
+        /* Custom scrollbar for preview */
+        #preview-grid-box::-webkit-scrollbar,
+        #preview-content-box::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        #preview-grid-box::-webkit-scrollbar-track,
+        #preview-content-box::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #preview-grid-box::-webkit-scrollbar-thumb,
+        #preview-content-box::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: var(--radius-full);
+        }
+    </style>
+    <!-- Page Loader Transition Script -->
+    <script src="page-loader.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+                <aside class="sidebar" data-sidebar="admin">
+            <script>
+                if (localStorage.getItem('thrustvault_sidebar_collapsed') === 'true') {
+                    document.currentScript.parentElement.classList.add('collapsed');
+                }
+            </script>
+            <!-- Sidebar Placeholder Skeletons -->
+            <div class="sidebar-skeleton-wrapper" style="padding: 20px; display: flex; flex-direction: column; gap: 30px; height: 100%; box-sizing: border-box;">
+                <div class="shimmer" style="height: 44px; width: 140px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                <div style="display:flex; flex-direction:column; gap:15px; flex:1;">
+                    <div class="shimmer" style="height: 16px; width: 80px; border-radius: 4px; background: var(--border-color);"></div>
+                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                    <div class="shimmer" style="height: 36px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; border-top: 1px solid var(--border-color); padding-top:20px;">
+                    <div class="shimmer" style="height: 40px; width: 40px; border-radius: var(--radius-full); background: var(--border-color);"></div>
+                    <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
+                        <div class="shimmer" style="height: 12px; width: 100px; border-radius: 4px; background: var(--border-color);"></div>
+                        <div class="shimmer" style="height: 10px; width: 50px; border-radius: 4px; background: var(--border-color);"></div>
+                    </div>
+                </div>
+            </div>
+</aside>
+
+        <!-- Main Content Area Wrapper -->
+        <div class="main-content-wrapper" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+            <!-- Main Content Area -->
+            <main class="main-content" style="flex:1; overflow:hidden; padding:24px; display:flex; flex-direction:column; box-sizing:border-box;">
+            <!-- Topbar Header -->
+            <header class="topbar">
+                <h2 style="font-family:'Outfit'; font-size:1.5rem; font-weight:700;">
+                    <i data-lucide="download" style="vertical-align:middle; margin-right:8px; color:var(--primary-color);"></i>
+                    Dedicated Admin Exporter Console
+                </h2>
+            </header>
+
+            <div class="content-body" style="display:flex; flex-direction:column; gap:16px; flex:1; min-height:0; overflow:hidden;">
+                <!-- Info Banner -->
+                <div class="banner-alert info" style="border-radius:var(--radius-lg); border:1px solid #bfdbfe; border-bottom:none; margin:0;">
+                    <i data-lucide="info" style="width:20px; height:20px; flex-shrink:0;"></i>
+                    <div>
+                        <strong>Administrative Exporter Console</strong>: Compile, customize, and export propulsion telemetry curves and catalog listings. Export motor listings containing custom schema fields, or compile throttle-step telemetry points for modeling.
+                    </div>
+                </div>
+
+                <div class="export-layout-grid">
+                    <!-- LEFT COLUMN: EXPORT CONFIGURATION SIDEBAR -->
+                    <div class="glass-panel export-card" id="export-config-sidebar">
+                        <div class="export-card-header">
+                            <i data-lucide="settings"></i>
+                            <h3>Export Configurator</h3>
+                        </div>
+
+                        <!-- Segmented Tab Controls -->
+                        <div style="display:flex; background:var(--bg-base); padding:4px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:10px;">
+                            <button type="button" class="export-type-tab-btn active" id="tab-export-catalog">
+                                <i data-lucide="database" style="width:16px; height:16px;"></i> Motor Specs
+                            </button>
+                            <button type="button" class="export-type-tab-btn" id="tab-export-telemetry">
+                                <i data-lucide="trending-up" style="width:16px; height:16px;"></i> Test Telemetry
+                            </button>
+                        </div>
+
+                        <!-- Catalog Spec Panel -->
+                        <div id="catalog-config-panel" class="active">
+                            <form id="catalog-export-form" style="display:flex; flex-direction:column; gap:16px;">
+                                <div class="form-group">
+                                    <label for="cat-filter-select">Thrust Category Filter</label>
+                                    <select id="cat-filter-select" style="width:100%;">
+                                        <option value="all">All Categories</option>
+                                        <!-- Dynamic categories -->
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="cat-search-input">Search Motor Name</label>
+                                    <input type="text" id="cat-search-input" placeholder="e.g. U15, KDE, MN..." style="width:100%; box-sizing:border-box;">
+                                </div>
+
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                                    <div class="form-group">
+                                        <label for="cat-brand-select">Manufacturer Brand</label>
+                                        <select id="cat-brand-select" style="width:100%;">
+                                            <option value="all">All Brands</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Max Thrust Range (kg)</label>
+                                        <div style="display:flex; gap:6px;">
+                                            <input type="number" id="cat-thrust-min" placeholder="Min" step="0.1" min="0" style="width:50%; box-sizing:border-box;">
+                                            <input type="number" id="cat-thrust-max" placeholder="Max" step="0.1" min="0" style="width:50%; box-sizing:border-box;">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                        <span class="form-section-title" style="margin-bottom:0;"><i data-lucide="check-square" style="width:14px; height:14px; vertical-align:middle; margin-right:4px;"></i> Motors to Export</span>
+                                        <div style="display:flex; gap:6px; align-items:center;">
+                                            <button type="button" id="btn-cat-select-all" style="font-size:0.75rem; color:var(--primary-color); border:none; background:none; cursor:pointer; font-weight:600; padding:0;">All</button>
+                                            <span style="font-size:0.7rem; color:var(--text-muted);">|</span>
+                                            <button type="button" id="btn-cat-clear-all" style="font-size:0.75rem; color:var(--text-muted); border:none; background:none; cursor:pointer; font-weight:600; padding:0;">None</button>
+                                        </div>
+                                    </div>
+                                    <div class="selector-card-grid" id="cat-motors-list-selector">
+                                        <!-- Dynamic list of motors with checkboxes -->
+                                        <span style="font-size:0.8rem; color:var(--text-muted); text-align:center; padding:10px; grid-column: 1 / -1;">Loading motors list...</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <span class="form-section-title"><i data-lucide="sliders"></i> Columns to Include</span>
+                                    <div class="checkbox-container-scroll" id="cat-columns-selector" style="max-height:150px;">
+                                        <label><input type="checkbox" value="category" checked> Category Name</label>
+                                        <label><input type="checkbox" value="motor" checked> Motor Model Name</label>
+                                        <label><input type="checkbox" value="company" checked> Manufacturer / Company</label>
+                                        <label><input type="checkbox" value="thrust" checked> Max Thrust Value</label>
+                                        <label><input type="checkbox" value="esc" checked> Recommended ESC</label>
+                                        <label><input type="checkbox" value="prop" checked> Recommended Propeller</label>
+                                        <label><input type="checkbox" value="links" checked> Product Reference Links</label>
+                                        <!-- Dynamic custom spec parameters loaded from schema -->
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Export Format</label>
+                                    <div class="format-cards-grid">
+                                        <div class="format-card selected" data-format="xlsx">
+                                            <i data-lucide="file-spreadsheet"></i>
+                                            <span>Excel</span>
+                                        </div>
+                                        <div class="format-card" data-format="csv">
+                                            <i data-lucide="file-text"></i>
+                                            <span>CSV</span>
+                                        </div>
+                                        <div class="format-card" data-format="json">
+                                            <i data-lucide="braces"></i>
+                                            <span>JSON</span>
+                                        </div>
+                                        <div class="format-card" data-format="xml">
+                                            <i data-lucide="file-code-2"></i>
+                                            <span>XML</span>
+                                        </div>
+                                        <div class="format-card" data-format="html">
+                                            <i data-lucide="code"></i>
+                                            <span>HTML</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn-primary" style="width:100%; justify-content:center; gap:8px; margin-top:10px;">
+                                    <i data-lucide="download"></i> Export Motor Catalog
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Telemetry Panel -->
+                        <div id="telemetry-config-panel">
+                            <form id="telemetry-export-form" style="display:flex; flex-direction:column; gap:16px;">
+                                <div class="form-group">
+                                    <label for="telemetry-search-input">Search Runs</label>
+                                    <input type="text" id="telemetry-search-input" placeholder="e.g. Bala, KV380, Prop..." style="width:100%; box-sizing:border-box;">
+                                </div>
+
+                                <div class="form-group">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                        <span class="form-section-title" style="margin-bottom:0;"><i data-lucide="check-square" style="width:14px; height:14px; vertical-align:middle; margin-right:4px;"></i> Select Test Runs</span>
+                                        <div style="display:flex; gap:6px; align-items:center;">
+                                            <button type="button" id="btn-telemetry-select-all" style="font-size:0.75rem; color:#10b981; border:none; background:none; cursor:pointer; font-weight:600; padding:0;">All</button>
+                                            <span style="font-size:0.7rem; color:var(--text-muted);">|</span>
+                                            <button type="button" id="btn-telemetry-clear-all" style="font-size:0.75rem; color:var(--text-muted); border:none; background:none; cursor:pointer; font-weight:600; padding:0;">None</button>
+                                        </div>
+                                    </div>
+                                    <div class="selector-card-grid" id="telemetry-runs-list-selector">
+                                        <!-- Dynamic list of test runs with checkboxes -->
+                                        <span style="font-size:0.8rem; color:var(--text-muted); text-align:center; padding:10px; grid-column: 1 / -1;">Loading test runs...</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <span class="form-section-title"><i data-lucide="sliders"></i> Columns to Include</span>
+                                    <div class="checkbox-container-scroll" id="telemetry-columns-selector" style="max-height:150px;">
+                                        <label><input type="checkbox" value="motor_name" checked> Associated Motor Model</label>
+                                        <label><input type="checkbox" value="propeller" checked> Propeller Model Used</label>
+                                        <label><input type="checkbox" value="esc" checked> ESC Model Used</label>
+                                        <label><input type="checkbox" value="battery" checked> Battery Info</label>
+                                        <label><input type="checkbox" value="throttle" checked> Throttle (%)</label>
+                                        <label><input type="checkbox" value="voltage" checked> Voltage (V)</label>
+                                        <label><input type="checkbox" value="current" checked> Current (A)</label>
+                                        <label><input type="checkbox" value="power" checked> Power (W)</label>
+                                        <label><input type="checkbox" value="thrust_g" checked> Thrust (g)</label>
+                                        <label><input type="checkbox" value="rpm" checked> RPM</label>
+                                        <label><input type="checkbox" value="efficiency" checked> Efficiency (g/W)</label>
+                                        <label><input type="checkbox" value="temperature" checked> Temperature (℃)</label>
+                                        <label><input type="checkbox" value="tester" checked> Tester</label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Export Format</label>
+                                    <div class="format-cards-grid">
+                                        <div class="format-card selected" data-format="xlsx">
+                                            <i data-lucide="file-spreadsheet"></i>
+                                            <span>Excel</span>
+                                        </div>
+                                        <div class="format-card" data-format="csv">
+                                            <i data-lucide="file-text"></i>
+                                            <span>CSV</span>
+                                        </div>
+                                        <div class="format-card" data-format="json">
+                                            <i data-lucide="braces"></i>
+                                            <span>JSON</span>
+                                        </div>
+                                        <div class="format-card" data-format="xml">
+                                            <i data-lucide="file-code-2"></i>
+                                            <span>XML</span>
+                                        </div>
+                                        <div class="format-card" data-format="html">
+                                            <i data-lucide="code"></i>
+                                            <span>HTML</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn-primary" style="width:100%; justify-content:center; gap:8px; margin-top:10px; background-color:#10b981; border-color:#10b981;">
+                                    <i data-lucide="download"></i> Export Telemetry Data
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: LIVE FILE PREVIEW PANEL -->
+                    <div class="glass-panel" id="preview-panel" style="padding:24px; display:flex; flex-direction:column; gap:16px; min-width: 0;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:12px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <i data-lucide="eye" style="color:var(--primary-color); width:24px; height:24px;"></i>
+                                <h3 style="font-family:'Outfit', sans-serif; font-size:1.2rem; font-weight:700; margin:0;">Live Download Preview</h3>
+                            </div>
+                            <span class="badge-role" id="preview-record-count" style="background-color:rgba(37,99,235,0.1); color:var(--primary-color); font-weight:600; border-radius:12px; padding:4px 12px; font-size:0.75rem;">0 Items Selected</span>
+                        </div>
+                        <!-- Tabs for format preview -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:8px; flex-wrap:wrap; gap:10px;">
+                            <div style="display:flex; gap:10px;">
+                                <button type="button" class="btn-sidebar-link active" id="tab-preview-catalog" style="padding:6px 12px; font-size:0.8rem; border-radius:var(--radius-sm); cursor:pointer; text-decoration:none; display:inline-block;">Catalog Preview</button>
+                                <button type="button" class="btn-sidebar-link" id="tab-preview-telemetry" style="padding:6px 12px; font-size:0.8rem; border-radius:var(--radius-sm); cursor:pointer; text-decoration:none; display:inline-block; background:none;">Telemetry Preview</button>
+                            </div>
+                        </div>
+
+                        <!-- Tab details: Visual Table Box -->
+                        <div id="preview-grid-box" style="border:1px solid var(--border-color); border-radius:var(--radius-md); padding:12px; background:var(--bg-panel-solid); overflow:auto;">
+                            <span style="color:var(--text-secondary); font-size:0.85rem;">Select some records/test runs above to view the preview grid...</span>
+                        </div>
+
+                        <!-- Tab details: Raw Monospace Code Box -->
+                        <div style="background:#0f172a; color:#94a3b8; border-radius:var(--radius-md); padding:16px; font-family:'Courier New', Courier, monospace; font-size:0.85rem; overflow:auto; white-space:pre; display:none;" id="preview-content-box">
+                            <!-- Simulated preview snippet -->
+                            <span style="color:#64748b;">Select some records/test runs above to view the preview snippet...</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+        </div> <!-- Close main-content-wrapper -->
+    </div> <!-- Close app-container -->
+
+    <!-- Beautiful Glassmorphic Download Progress Modal -->
+    <div id="download-progress-modal" class="download-modal-overlay">
+        <div class="download-modal-card">
+            <div class="download-modal-icon">
+                <i data-lucide="loader-2" class="spin-animation"></i>
+            </div>
+            <h3 id="download-modal-title">Preparing Export</h3>
+            <p id="download-modal-status">Fetching data points from ThrustVault...</p>
+            
+            <div class="progress-bar-container">
+                <div id="download-progress-bar" class="progress-bar-fill"></div>
+            </div>
+            <span id="download-progress-percent" class="progress-percent">0%</span>
+        </div>
+    </div>
+
+    <!-- Card Details Preview Dialog -->
+    <div class="modal-backdrop" id="details-preview-modal">
+        <div class="modal-container modal-md" style="max-width: 480px;">
+            <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 15px;">
+                <h3 id="details-modal-title" style="font-family:'Outfit'; font-weight:700; font-size:1.2rem; display:flex; align-items:center; gap:8px; margin:0; color:var(--text-primary);">
+                    <i data-lucide="eye" style="color:var(--primary-color); width:20px; height:20px;"></i> Detail Inspector
+                </h3>
+                <button type="button" class="btn-icon-close" id="btn-close-details-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" id="details-modal-body" style="font-size:0.85rem; line-height:1.6; color:var(--text-primary); display:flex; flex-direction:column; gap:8px; text-align:left; background:var(--bg-base); padding:15px; border-radius:var(--radius-md); border:1px solid var(--border-color); max-height:300px; overflow-y:auto;">
+                <!-- Details dynamically loaded -->
+            </div>
+            <div class="modal-footer" style="margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+                <button type="button" class="btn-secondary" id="btn-close-details-modal-footer" style="padding: 8px 16px; font-weight: 600;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Dialog -->
+    <div class="modal-backdrop" id="confirm-modal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <h3 id="confirm-title">Are you sure?</h3>
+                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary modal-close-trigger">Cancel</button>
+                <button class="btn-danger" id="btn-confirm-action">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controller JS -->
+    <script src="admin_exports_app.js"></script>
+    <script src="onboarding.js"></script>
+</body>
+</html>

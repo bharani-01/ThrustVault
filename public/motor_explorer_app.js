@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("Session parse failed");
             }
         }
-        if (!session || !['admin', 'intern', 'guest'].includes(session.role)) {
+        if (!session || !['admin', 'user', 'guest'].includes(session.role)) {
             window.location.href = '/login';
             return;
         }
@@ -99,10 +99,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Fetch categories, motors, and custom schema from database
+    function getApiUrl(path) {
+        const isGuest = session && session.role === 'guest';
+        if (isGuest && path.startsWith('/api/') && !path.startsWith('/api/auth/')) {
+            return path.replace('/api/', '/api/guest/');
+        }
+        return path;
+    }
+
     async function fetchData() {
         try {
             // Fetch categories
-            const catRes = await fetch('/api/categories');
+            const catRes = await fetch(getApiUrl('/api/categories'));
             if (!catRes.ok) throw new Error(`Categories fetch failed: HTTP ${catRes.status}`);
             const categories = await catRes.json();
             
@@ -118,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })).sort((a, b) => parseMinWeight(a.name) - parseMinWeight(b.name));
 
             // Fetch motors
-            const motorRes = await fetch('/api/motors');
+            const motorRes = await fetch(getApiUrl('/api/motors'));
             if (!motorRes.ok) throw new Error(`Motors fetch failed: HTTP ${motorRes.status}`);
             const motors = await motorRes.json();
             state.motors = (motors || []).map(m => ({
@@ -132,13 +140,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 linkMotor: m.link_motor,
                 linkEsc: m.link_esc,
                 linkProp: m.link_propeller,
-                custom_parameters: m.custom_parameters || {}
+                custom_parameters: m.custom_parameters || {},
+                uploaded_by: m.uploaded_by
             }));
 
             // Fetch custom specifications schema
             let schema = [];
             try {
-                const schemaRes = await fetch('/api/custom-specs');
+                const schemaRes = await fetch(getApiUrl('/api/custom-specs'));
                 if (schemaRes.ok) {
                     schema = await schemaRes.json();
                 } else {
@@ -196,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Log user actions to audit backend
     function logUserActivity(email, role, action, details) {
         try {
-            fetch('/api/log-activity', {
+            fetch(getApiUrl('/api/log-activity'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, role, action, details })
@@ -792,6 +801,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="display:flex; align-items:flex-start; justify-content:space-between; font-size:0.8rem; padding: 4px 0; border-bottom:1px solid var(--border-color); gap:10px;">
                         <span style="color:var(--text-secondary); font-weight:500; white-space:nowrap; flex-shrink:0;">Propeller Tested</span>
                         <span style="font-weight:600; text-align:right; word-break:break-word;">${escapeHTML(motor.prop || '-')}</span>
+                    </div>
+                    <div style="display:flex; align-items:flex-start; justify-content:space-between; font-size:0.8rem; padding: 4px 0; border-bottom:1px solid var(--border-color); gap:10px;">
+                        <span style="color:var(--text-secondary); font-weight:500; white-space:nowrap; flex-shrink:0;">Uploaded By</span>
+                        <span style="font-weight:600; text-align:right; word-break:break-word;">${escapeHTML(motor.uploaded_by || 'System Default')}</span>
                     </div>
 
                     ${customRows ? `<div style="font-size:0.9rem; font-weight:700; margin-top:15px; margin-bottom:8px;">Custom Schema Parameters</div>${customRows}` : ''}

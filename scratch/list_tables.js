@@ -1,23 +1,20 @@
 'use strict';
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const pool = require('../src/config/db');
 
-async function main() {
-  console.log('DB Host:', process.env.DB_HOST);
-  console.log('DB Name:', process.env.DB_NAME);
+async function inspect() {
   try {
     const res = await pool.query(`
-      SELECT table_name 
+      SELECT table_schema, table_name 
       FROM information_schema.tables 
-      WHERE table_schema = 'public' 
-      ORDER BY table_name
+      WHERE table_schema IN ('public', 'auth')
+      ORDER BY table_schema, table_name
     `);
-    console.log('Tables in database:', res.rows.map(r => r.table_name));
+    console.log('TABLES:', res.rows);
+    process.exit(0);
   } catch (err) {
-    console.error('Error listing tables:', err);
-  } finally {
-    await pool.end();
+    console.error('ERROR:', err.message);
+    process.exit(1);
   }
 }
-
-main();
+inspect();
