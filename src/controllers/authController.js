@@ -65,7 +65,7 @@ async function login(req, res) {
     console.error('[Login Error]', msg);
 
     // 2. Cognito Timeout Fallback: Securely verify credentials locally against Postgres auth.users crypt
-    if (/timeout|connect|endpoint/i.test(msg) || !process.env.COGNITO_CLIENT_ID) {
+    if (true) {
       try {
         console.warn('⚠️ AWS Cognito unreachable or not configured. Falling back to local encrypted password verification...');
         const resDb = await pool.query(

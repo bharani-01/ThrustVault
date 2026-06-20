@@ -15,68 +15,6 @@
 
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="style.css?v=1.6">
-    <style>
-        .success-card {
-            text-align: center;
-            padding: 20px 10px;
-        }
-        .success-icon-wrapper {
-            width: 64px;
-            height: 64px;
-            background-color: #f0fdf4;
-            color: #10b981;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-        }
-        select.role-select {
-            width: 100%;
-            padding: 10px 12px 10px 40px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 0.9rem;
-            background-color: #fff;
-            appearance: none;
-            outline: none;
-            cursor: pointer;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        select.role-select:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 237, 0.15);
-        }
-        .select-wrapper {
-            position: relative;
-        }
-        .select-chevron {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #64748b;
-            pointer-events: none;
-        }
-        textarea.justification-textarea {
-            width: 100%;
-            min-height: 90px;
-            padding: 10px 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 0.9rem;
-            resize: vertical;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        textarea.justification-textarea:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 97, 237, 0.15);
-        }
-    </style>
     <!-- Page Loader Transition Script -->
     <script src="page-loader.js?v=2.1"></script>
 </head>
@@ -86,28 +24,42 @@
         <div class="login-brand-panel">
             <div class="login-brand-panel-header">
                 <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image" style="height: 32px; width: auto;">
-                <div class="login-brand-logo-text">Thrust<span>Vault</span></div>
             </div>
             
             <div class="login-brand-panel-content">
-                <!-- Rotating Motor Visual Schematic -->
-                <div class="login-brand-visual">
-                    <div class="login-visual-ring-outer"></div>
-                    <div class="login-visual-ring-inner"></div>
-                    <div class="login-visual-motor">
-                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="32" cy="32" r="6" fill="#10b981"/>
-                            <path d="M32 32C32 20 28 8 32 4C36 8 32 20 32 32Z" fill="rgba(255,255,255,0.75)"/>
-                            <path d="M32 32C21.6 38 9.6 44 6.1 40.5C9.6 37 21.6 38 32 32Z" fill="rgba(255,255,255,0.55)"/>
-                            <path d="M32 32C42.4 38 54.4 44 57.9 40.5C54.4 37 42.4 38 32 32Z" fill="rgba(255,255,255,0.55)"/>
-                        </svg>
+                <div class="brand-slideshow-container">
+                    <!-- Slide 1: v1.5.0 -->
+                    <div class="brand-slide active">
+                        <div class="slide-version-info">
+                            <span class="slide-tag">v1.5.0</span>
+                            <span class="slide-date">June 11, 2026</span>
+                        </div>
+                        <h2 class="slide-title">Curves Analytics</h2>
+                        <p class="slide-text">Upload Rotrix spreadsheets with column mappers and compare multi-propeller calibration curves interactively.</p>
+                        <div class="slide-image-wrapper">
+                            <img src="feature_analytics.webp" alt="Propulsion Analytics Curves Visual" class="slide-image">
+                        </div>
                     </div>
-                    <div class="login-visual-data-badge badge-rpm">RPM: 7,420</div>
-                    <div class="login-visual-data-badge badge-thrust">THRUST: 8.64 kg</div>
+
+                    <!-- Slide 2: v1.0.0 -->
+                    <div class="brand-slide">
+                        <div class="slide-version-info">
+                            <span class="slide-tag">v1.0.0</span>
+                            <span class="slide-date">June 8, 2026</span>
+                        </div>
+                        <h2 class="slide-title">Motors Catalog</h2>
+                        <p class="slide-text">Central database specs tracking motors KV, weight, current, and thrust with cascading database deletions.</p>
+                        <div class="slide-image-wrapper">
+                            <img src="feature_catalog.webp" alt="Relational Database Catalog Visual" class="slide-image">
+                        </div>
+                    </div>
                 </div>
 
-                <h1 class="login-brand-title">Submit Access <span>Application</span></h1>
-                
+                <!-- Slide Navigation Dots -->
+                <div class="slideshow-dots">
+                    <span class="slideshow-dot active" onclick="currentSlide(0)"></span>
+                    <span class="slideshow-dot" onclick="currentSlide(1)"></span>
+                </div>
             </div>
             
             <div class="login-brand-panel-footer">
@@ -120,7 +72,7 @@
             <div class="login-bg-blob blob-1"></div>
             <div class="login-bg-blob blob-2"></div>
             
-            <div class="login-container" style="max-width: 450px;">
+            <div class="login-container">
                 <div class="login-card">
                     <!-- Header -->
                     <div class="login-header">
@@ -238,6 +190,49 @@
                     }
                 };
             }
+        });
+    </script>
+    <script>
+        let slideIndex = 0;
+        let slideTimeout;
+        
+        function showSlides() {
+            let i;
+            let slides = document.getElementsByClassName("brand-slide");
+            let dots = document.getElementsByClassName("slideshow-dot");
+            if (!slides.length) return;
+            for (i = 0; i < slides.length; i++) {
+                slides[i].classList.remove("active");
+            }
+            slideIndex++;
+            if (slideIndex > slides.length) {slideIndex = 1}
+            for (i = 0; i < dots.length; i++) {
+                dots[i].classList.remove("active");
+            }
+            slides[slideIndex-1].classList.add("active");
+            dots[slideIndex-1].classList.add("active");
+            slideTimeout = setTimeout(showSlides, 5000);
+        }
+        
+        function currentSlide(n) {
+            clearTimeout(slideTimeout);
+            let slides = document.getElementsByClassName("brand-slide");
+            let dots = document.getElementsByClassName("slideshow-dot");
+            if (!slides.length) return;
+            for (let i = 0; i < slides.length; i++) {
+                slides[i].classList.remove("active");
+            }
+            for (let i = 0; i < dots.length; i++) {
+                dots[i].classList.remove("active");
+            }
+            slideIndex = n;
+            slides[slideIndex].classList.add("active");
+            dots[slideIndex].classList.add("active");
+            slideTimeout = setTimeout(showSlides, 6000);
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            showSlides();
         });
     </script>
 </body>

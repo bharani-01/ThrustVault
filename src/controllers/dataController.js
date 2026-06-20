@@ -320,6 +320,12 @@ async function requestAccess(req, res) {
       try {
         await client.query('BEGIN');
 
+        // 0. Clean up any orphaned profile record with the same email if it exists
+        await client.query(`
+          DELETE FROM public.user_profiles 
+          WHERE email = $1 AND id NOT IN (SELECT id FROM auth.users)
+        `, [email]);
+
         // 1. Insert into auth.users
         await client.query(`
           INSERT INTO auth.users (

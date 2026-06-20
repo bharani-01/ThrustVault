@@ -1905,70 +1905,156 @@ button:active { transform: scale(0.98); }
     margin-top: 3px;
     flex-shrink: 0;
 }
-/* Rotating Motor Schematic Layout */
-.login-brand-visual {
-    position: relative;
-    width: 260px;
-    height: 260px;
-    margin: 0 auto;
+/* Justification Textarea & Request Success Elements */
+.justification-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    font-size: 0.925rem;
+    color: #0f172a;
+    transition: all 0.2s ease;
+    outline: none;
+    resize: vertical;
+    font-family: inherit;
+}
+.justification-textarea:focus {
+    background: #ffffff;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+    transform: scale(1.008);
+}
+.success-card {
+    text-align: center;
+    padding: 20px 10px;
+}
+.success-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    background-color: rgba(16, 185, 129, 0.08);
+    color: #10b981;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+}/* Brand Slideshow Carousel styles */
+.brand-slideshow-container {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    overflow: hidden;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
 }
-.login-visual-ring-outer {
-    position: absolute;
+
+.brand-slide {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    flex-direction: column;
+}
+
+.brand-slide.active {
+    display: flex;
+    opacity: 1;
+}
+
+.slide-version-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.slide-tag {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #60a5fa;
+    background: rgba(96, 165, 250, 0.15);
+    border: 1px solid rgba(96, 165, 250, 0.25);
+    padding: 4px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.slide-date {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.slide-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.25;
+    color: #ffffff;
+    margin-bottom: 10px;
+    letter-spacing: -0.02em;
+}
+
+.slide-text {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    line-height: 1.5;
+    margin-bottom: 24px;
+}
+
+.slide-image-wrapper {
+    position: relative;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+    background: #ffffff;
+    aspect-ratio: 16/10;
+}
+
+.slide-image {
     width: 100%;
     height: 100%;
-    border: 1px dashed rgba(96, 165, 250, 0.25);
-    border-radius: 50%;
-    animation: spin-propeller 40s linear infinite;
+    object-fit: cover;
+    transition: transform 0.5s ease;
 }
-.login-visual-ring-inner {
-    position: absolute;
-    width: 70%;
-    height: 70%;
-    border: 1px solid rgba(52, 211, 153, 0.15);
-    border-radius: 50%;
-    animation: spin-propeller 20s linear infinite reverse;
-}
-.login-visual-motor {
-    position: relative;
-    width: 110px;
-    height: 110px;
-    border-radius: 50%;
-    background: radial-gradient(circle, #0f172a 40%, #1e293b 100%);
-    border: 2px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 0 30px rgba(37, 99, 235, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-}
-.login-visual-motor svg {
-    width: 60px;
-    height: 60px;
-    color: #60a5fa;
-    animation: spin-propeller 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-.login-visual-data-badge {
-    position: absolute;
-    background: rgba(15, 23, 42, 0.75);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 0.75rem;
-    font-family: monospace;
-    color: #34d399;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 3;
-}
-.badge-rpm { top: 10%; right: -5%; }
-.badge-thrust { bottom: 10%; left: -5%; }
 
-@keyframes spin-propeller {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+.brand-slide:hover .slide-image {
+    transform: scale(1.03);
+}
+
+.slideshow-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 24px;
+}
+
+.slideshow-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.slideshow-dot:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.slideshow-dot.active {
+    background: #3b82f6;
+    width: 24px;
+    border-radius: 4px;
 }
 
 .login-brand-panel-footer {

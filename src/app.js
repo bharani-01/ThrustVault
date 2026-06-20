@@ -49,6 +49,7 @@ const redir = (to) => (_req, res) => res.redirect(to);
 app.get('/',      send('index.html'));
 app.get('/login', send('login.html'));
 app.get('/request_access', send('request_access.html'));
+app.get('/versions', send('version_catalog.html'));
 
 app.get('/dashboard', (req, res) => {
   const role = req.session.role;

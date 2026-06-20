@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/png" href="favicon_light.png" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Version Catalog | ThrustVault</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css?v=1.6">
+    <!-- Page Loader Transition Script -->
+    <script src="page-loader.js?v=2.1"></script>
+    
+    <style>
+        .version-body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .version-header-nav {
+            height: var(--topbar-height, 70px);
+            background-color: var(--bg-panel-solid);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .version-container {
+            max-width: 900px;
+            margin: 48px auto;
+            padding: 0 24px;
+            width: 100%;
+            flex: 1;
+        }
+        
+        .version-hero {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        
+        .version-hero h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+        
+        .version-hero h1 span {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #60a5fa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .version-hero p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Timeline Layout */
+        .timeline {
+            position: relative;
+            margin: 0 auto;
+            padding-left: 32px;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 7px;
+            width: 2px;
+            height: calc(100% - 20px);
+            background: var(--border-color);
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 40px;
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            left: -32px;
+            top: 6px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: var(--bg-base);
+            border: 3px solid var(--primary-color);
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+        
+        .timeline-item.current .timeline-marker {
+            background-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+        }
+        
+        .timeline-card {
+            background-color: var(--bg-panel);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            box-shadow: var(--shadow-md);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
+        }
+        
+        .timeline-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(37, 99, 235, 0.25);
+        }
+        
+        .timeline-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .version-badge-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .version-tag {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .version-badge {
+            font-size: 0.725rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .badge-active {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .badge-legacy {
+            background-color: rgba(100, 116, 139, 0.1);
+            color: #64748b;
+            border: 1px solid rgba(100, 116, 139, 0.2);
+        }
+        
+        .release-date {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .release-date i {
+            width: 14px;
+            height: 14px;
+        }
+        
+        .version-desc {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .features-list {
+            list-style: none;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        @media (min-width: 640px) {
+            .features-list {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .features-list li {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            line-height: 1.4;
+        }
+        
+        .features-list li i {
+            color: var(--primary-color);
+            margin-top: 2px;
+            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+        }
+        
+        .version-footer-nav {
+            border-top: 1px solid var(--border-color);
+            padding: 32px 0;
+            text-align: center;
+            margin-top: 24px;
+        }
+        
+        .theme-toggle-floating {
+            background: var(--bg-panel-solid);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .theme-toggle-floating:hover {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+            transform: scale(1.05);
+        }
+        
+        /* Dark Theme Overrides */
+        [data-theme="dark"] .timeline-marker {
+            background-color: #0b0f19;
+        }
+        
+        [data-theme="dark"] .badge-legacy {
+            background-color: rgba(148, 163, 184, 0.08);
+            color: #94a3b8;
+            border-color: rgba(148, 163, 184, 0.15);
+        }
+    </style>
+</head>
+<body class="version-body">
+    <!-- Header Navbar -->
+    <header class="version-header-nav">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <a href="/" style="display:flex; align-items:center; gap:10px; text-decoration:none;" class="logo-link">
+                <img src="logo_light.png" alt="ThrustVault Logo" class="logo-image logo-light" style="height: 32px; width: auto;">
+                <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark" style="height: 32px; width: auto;">
+            </a>
+        </div>
+        
+        <div style="display:flex; align-items:center; gap:16px;">
+            <!-- Theme Toggle Button -->
+            <button id="theme-toggle-btn" class="theme-toggle-floating" title="Toggle Theme">
+                <i data-lucide="moon" style="width:18px; height:18px;"></i>
+            </button>
+            <a href="/login" class="btn-sidebar-link active" style="padding: 8px 16px; border-radius: 20px;">Sign In <i data-lucide="arrow-right" style="width:14px; height:14px; display:inline-block; margin-left:4px; vertical-align:middle;"></i></a>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="version-container">
+        <div class="version-hero">
+            <h1>Website <span>Version Catalog</span></h1>
+            <p>Chronological registry of design iterations, analytical tools, database releases, and performance logs for the ThrustVault UAV propulsion console.</p>
+        </div>
+        
+        <div class="timeline">
+            <!-- Version 2.0.0 (Current) -->
+            <div class="timeline-item current">
+                <div class="timeline-marker"></div>
+                <div class="timeline-card">
+                    <div class="timeline-header">
+                        <div class="version-badge-wrapper">
+                            <span class="version-tag">v2.0.0 (Beta) / v1.8.9</span>
+                            <span class="version-badge badge-active">Current Release</span>
+                        </div>
+                        <span class="release-date"><i data-lucide="calendar"></i> June 21, 2026</span>
+                    </div>
+                    <p class="version-desc">
+                        Full-scale portal modernization featuring standalone administrative capabilities, security session sync with SQLite fallbacks, smooth page loader transition streams, and a completely redesigned highlights landing portal.
+                    </p>
+                    <ul class="features-list">
+                        <li><i data-lucide="check-circle-2"></i> Standalone Admin Portal suite (v8001)</li>
+                        <li><i data-lucide="check-circle-2"></i> SQLite database syncer fallbacks</li>
+                        <li><i data-lucide="check-circle-2"></i> Unified page loaders & progress bars</li>
+                        <li><i data-lucide="check-circle-2"></i> Glassmorphic landing & highlights design</li>
+                        <li><i data-lucide="check-circle-2"></i> Cognito auth integration and user bans</li>
+                        <li><i data-lucide="check-circle-2"></i> Audit logs & hardware metrics monitor</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Version 1.5.0 -->
+            <div class="timeline-item">
+                <div class="timeline-marker"></div>
+                <div class="timeline-card">
+                    <div class="timeline-header">
+                        <div class="version-badge-wrapper">
+                            <span class="version-tag">v1.5.0</span>
+                            <span class="version-badge badge-legacy">Legacy</span>
+                        </div>
+                        <span class="release-date"><i data-lucide="calendar"></i> June 11, 2026</span>
+                    </div>
+                    <p class="version-desc">
+                        Enhanced telemetry charting overlays, SheetJS dataset log mappers, smart search autocomplete suggestions, and external powertrain scraper integrations.
+                    </p>
+                    <ul class="features-list">
+                        <li><i data-lucide="check-circle-2"></i> Interactive motor profile overlays</li>
+                        <li><i data-lucide="check-circle-2"></i> SheetJS Excel file log ingestion</li>
+                        <li><i data-lucide="check-circle-2"></i> Live search suggestions dropdown</li>
+                        <li><i data-lucide="check-circle-2"></i> Custom extra_data JSONB mapping</li>
+                        <li><i data-lucide="check-circle-2"></i> Dual-source motor scraper utilities</li>
+                        <li><i data-lucide="check-circle-2"></i> XSS sanitization & constraint checks</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Version 1.0.0 -->
+            <div class="timeline-item">
+                <div class="timeline-marker"></div>
+                <div class="timeline-card">
+                    <div class="timeline-header">
+                        <div class="version-badge-wrapper">
+                            <span class="version-tag">v1.0.0</span>
+                            <span class="version-badge badge-legacy">Legacy</span>
+                        </div>
+                        <span class="release-date"><i data-lucide="calendar"></i> June 8, 2026</span>
+                    </div>
+                    <p class="version-desc">
+                        Initial MVP release of the ThrustVault UAV powertrains database, establishing core relational schemas, Excel template formats, and basic performance analytics curves.
+                    </p>
+                    <ul class="features-list">
+                        <li><i data-lucide="check-circle-2"></i> Relational PostgreSQL catalog tables</li>
+                        <li><i data-lucide="check-circle-2"></i> Cascading motor deletion constraints</li>
+                        <li><i data-lucide="check-circle-2"></i> Performance analytics curve module</li>
+                        <li><i data-lucide="check-circle-2"></i> CSV templates & dataset points downloads</li>
+                        <li><i data-lucide="check-circle-2"></i> Read-only anonymous guest search</li>
+                        <li><i data-lucide="check-circle-2"></i> Initial Render.com Flask deployment</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bottom Return Navigation -->
+        <div class="version-footer-nav">
+            <a href="/" class="btn-sidebar-link" style="display:inline-flex; align-items:center; gap:8px; text-decoration:none; padding:10px 24px; border-radius:20px;">
+                <i data-lucide="arrow-left" style="width:16px; height:16px;"></i> Return to Main Page
+            </a>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Lucide Icons
+            if (window.lucide) window.lucide.createIcons();
+            
+            // Theme toggle control logic
+            const themeBtn = document.getElementById('theme-toggle-btn');
+            
+            function updateToggleIcon(theme) {
+                const icon = themeBtn.querySelector('i');
+                if (theme === 'dark') {
+                    icon.setAttribute('data-lucide', 'sun');
+                    themeBtn.title = "Switch to Light Mode";
+                } else {
+                    icon.setAttribute('data-lucide', 'moon');
+                    themeBtn.title = "Switch to Dark Mode";
+                }
+                if (window.lucide) window.lucide.createIcons();
+            }
+            
+            // Read initial theme set by page-loader
+            const initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            updateToggleIcon(initialTheme);
+            
+            themeBtn.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+                const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                document.documentElement.setAttribute('data-theme', nextTheme);
+                localStorage.setItem('thrustvault_theme', nextTheme);
+                updateToggleIcon(nextTheme);
+            });
+        });
+    </script>
+</body>
+</html>
