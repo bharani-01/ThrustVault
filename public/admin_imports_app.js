@@ -171,9 +171,9 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // Fetch dynamic categories, custom schema fields, and all current motor models
             const [catsRes, schemaRes, motorsRes] = await Promise.all([
-                fetch('/api/guest/categories?order=name'),
-                fetch('/api/guest/custom-specs?order=field_name'),
-                fetch('/api/guest/motors')
+                fetch('/api/admin/categories?order=name'),
+                fetch('/api/admin/custom-specs?order=field_name'),
+                fetch('/api/admin/motors')
             ]);
 
             if (!catsRes.ok) throw new Error(`Categories load failed: ${catsRes.statusText}`);
@@ -888,7 +888,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 for (const catName of newCatNames) {
                     progressModal.update(25, `Creating category: ${catName}...`, 1);
                     
-                    const res = await fetch('/api/intern/categories', {
+                    const res = await fetch('/api/admin/categories', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify([{ name: catName, description: 'Created dynamically during bulk import.' }])
@@ -964,7 +964,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 progressModal.update(progressPercent, `Saving new motors (${completed + 1} of ${totalOperations})...`, 2);
 
-                const res = await fetch('/api/intern/motors', {
+                const res = await fetch('/api/admin/motors', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(chunk)
@@ -981,7 +981,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 progressModal.update(progressPercent, `Updating duplicates (${completed + 1} of ${totalOperations}): ${item.data.motor_name}...`, 2);
 
-                const res = await fetch(`/api/intern/motors/${item.id}`, {
+                const res = await fetch(`/api/admin/motors/${item.id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(item.data)
@@ -1018,8 +1018,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchSidebarCounts() {
         try {
             const [motorsRes, catsRes] = await Promise.all([
-                fetch('/api/guest/motors'),
-                fetch('/api/guest/categories?order=name')
+                fetch('/api/admin/motors'),
+                fetch('/api/admin/categories?order=name')
             ]);
 
             if (!motorsRes.ok) throw new Error("Failed to load motors");
@@ -1089,7 +1089,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const res = await fetch(`/api/intern/categories/${cat.id}`, {
+                        const res = await fetch(`/api/admin/categories/${cat.id}`, {
                             method: 'DELETE'
                         });
                         if (!res.ok) {

@@ -519,7 +519,158 @@
         }
     </style>
     <!-- Page Loader Transition Script -->
-    <script src="page-loader.js"></script>
+    <script src="page-loader.js?v=2.2"></script>
+
+<style id="admin-layout-override">
+    /* ================================================================
+       ADMIN PORTAL LAYOUT OVERRIDE — Horizontal Topbar Navigation
+       The sidebar renders as a full-width horizontal topbar, not a
+       280px left panel. app-container stacks vertically.
+    ================================================================ */
+    .app-container {
+        flex-direction: column !important;
+        height: 100vh !important;
+        overflow: hidden !important;
+    }
+    .sidebar {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 60px !important;
+        border-right: none !important;
+        border-bottom: 1px solid var(--border-color) !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        padding: 0 24px !important;
+        background-color: rgba(255,255,255,0.95) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        box-shadow: 0 1px 4px rgba(15,23,42,0.06) !important;
+        gap: 0 !important;
+        flex-shrink: 0 !important;
+        z-index: 100 !important;
+        position: relative !important;
+        box-sizing: border-box !important;
+    }
+    [data-theme=dark] .sidebar {
+        background-color: rgba(15,23,42,0.95) !important;
+        border-bottom-color: rgba(255,255,255,0.07) !important;
+    }
+    .sidebar .sidebar-skeleton-wrapper {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 16px !important;
+        width: 100% !important;
+        padding: 0 !important;
+        height: 60px !important;
+    }
+    .main-content-wrapper {
+        flex: 1 !important;
+        min-height: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    .main-content {
+        flex: 1 !important;
+        min-height: 0 !important;
+    }
+    /* Nav link styles for horizontal bar */
+    .sidebar .btn-sidebar-link {
+        padding: 8px 14px !important;
+        border-radius: var(--radius-md) !important;
+        font-size: 0.875rem !important;
+        font-weight: 500 !important;
+        color: var(--text-secondary) !important;
+        white-space: nowrap !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        transition: all 0.18s ease !important;
+        text-decoration: none !important;
+        background: transparent !important;
+        border: none !important;
+        cursor: pointer !important;
+    }
+    .sidebar .btn-sidebar-link:hover,
+    .sidebar .btn-sidebar-link.active {
+        background: rgba(37,99,235,0.08) !important;
+        color: var(--primary-color) !important;
+    }
+    /* Dropdown items in horizontal nav */
+    .sidebar .sidebar-dropdown-wrapper .category-list {
+        display: none !important;
+        position: absolute !important;
+        top: calc(100% + 4px) !important;
+        left: 0 !important;
+        min-width: 200px !important;
+        background: var(--bg-panel-solid) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: var(--radius-md) !important;
+        box-shadow: 0 8px 24px -4px rgba(15,23,42,0.12) !important;
+        z-index: 9999 !important;
+        padding: 6px !important;
+        flex-direction: column !important;
+        gap: 2px !important;
+    }
+    .sidebar .sidebar-dropdown-wrapper.expanded .category-list {
+        display: flex !important;
+    }
+    .sidebar .sidebar-dropdown-wrapper .category-list .btn-sidebar-link {
+        width: 100% !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        padding: 9px 14px !important;
+    }
+    /* User profile dropdown */
+    .user-profile-menu-wrapper {
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+        margin-left: auto !important;
+    }
+    .user-avatar-trigger {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        cursor: pointer !important;
+        padding: 4px 8px !important;
+        border-radius: var(--radius-md) !important;
+        transition: background 0.15s ease !important;
+    }
+    .user-avatar-trigger:hover { background: rgba(37,99,235,0.06) !important; }
+    .user-dropdown-card {
+        display: none !important;
+        position: absolute !important;
+        top: calc(100% + 8px) !important;
+        right: 0 !important;
+        min-width: 220px !important;
+        background: var(--bg-panel-solid) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: var(--radius-md) !important;
+        box-shadow: 0 8px 24px -4px rgba(15,23,42,0.12) !important;
+        z-index: 9999 !important;
+        padding: 12px !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+    .user-profile-menu-wrapper.open .user-dropdown-card { display: flex !important; }
+    .dropdown-user-details { display: flex !important; flex-direction: column !important; gap: 4px !important; }
+    .badge-role { font-size: 0.72rem !important; font-weight: 700 !important; padding: 2px 8px !important; border-radius: var(--radius-full) !important; display: inline-block !important; width: fit-content !important; }
+    .role-admin { background: #dbeafe; color: #1d4ed8 !important; }
+    .dropdown-divider { height: 1px; background: var(--border-color); margin: 4px 0; }
+    .sidebar .sidebar-footer {
+        border-top: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        gap: 0 !important;
+    }
+    .avatar-chevron { width: 14px !important; height: 14px !important; color: var(--text-secondary) !important; transition: transform 0.2s ease !important; }
+    .user-profile-menu-wrapper.open .avatar-chevron { transform: rotate(180deg) !important; }
+    .sidebar .btn-logout-premium { width: 100% !important; padding: 8px 14px !important; font-size: 0.82rem !important; margin-top: 8px !important; }
+    /* Sidebar nav dropdown wrappers need relative position for dropdown to work */
+    .sidebar .sidebar-nav { overflow: visible !important; flex: none !important; }
+
+</style>
 </head>
 <body>
     <div class="app-container">

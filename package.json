@@ -1,0 +1,17 @@
+{
+  "name": "thrustvault-admin-portal",
+  "version": "2.0.0",
+  "description": "ThrustVault Administrator Console and Portal Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.600.0",
+    "connect-pg-simple": "^9.0.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "pg": "^8.12.0"
+  }
+}

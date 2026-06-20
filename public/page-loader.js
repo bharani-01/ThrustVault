@@ -11,27 +11,22 @@
 
     // Detect if page has a sidebar (all routes except landing, login, and access request)
     const path = window.location.pathname;
-    const hasSidebar = path.includes('/admin/') || path.includes('/intern/') || path.includes('/guest/') ||
+    const hasSidebar = path.includes('/admin/') || path.includes('/user/') || path.includes('/guest/') ||
                        path.includes('dashboard') || path.includes('analytics') || path.includes('explorer') ||
                        path.includes('users') || path.includes('requests') || path.includes('schema') ||
                        path.includes('exports') || path.includes('imports') || path.includes('audit');
     const transitionSelector = hasSidebar ? '.main-content-wrapper' : 'body';
 
-    // 1. Immediately inject preload styling to prevent Content Flash (FOUC)
+    // 1. Immediately inject preload styling
+    // NOTE: We intentionally do NOT hide .main-content-wrapper with opacity:0.
+    // The loading overlay (blur card) already provides visual feedback and is injected
+    // inside .main-content-wrapper, so hiding the wrapper itself is redundant and
+    // causes the blank-page bug if revealPage() is delayed or skipped.
     const style = document.createElement('style');
     style.id = 'tv-loader-preload-style';
     style.innerHTML = `
         .main-content-wrapper {
             position: relative;
-        }
-        html.tv-loading-state ${transitionSelector} {
-            opacity: 0 !important;
-            pointer-events: none !important;
-        }
-        html.tv-loading-state.tv-loaded ${transitionSelector} {
-            opacity: 1 !important;
-            pointer-events: auto !important;
-            transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
         }
         html.tv-sidebar-loaded .sidebar-skeleton-wrapper {
             display: none !important;
@@ -149,7 +144,7 @@
         }
     `;
     document.documentElement.appendChild(style);
-    document.documentElement.classList.add('tv-loading-state');
+    // Do NOT add tv-loading-state — we removed the opacity hiding rules above.
 
     // State trackers
     let progressInterval = null;
@@ -340,7 +335,7 @@
                         
                         const logoutBtn = sidebarFooter.querySelector('#btn-logout') || sidebarFooter.querySelector('.btn-logout-premium');
                         if (logoutBtn) {
-                            sidebarFooter.insertBefore(toggleBtn, logoutBtn);
+                            logoutBtn.parentNode.insertBefore(toggleBtn, logoutBtn);
                         } else {
                             sidebarFooter.appendChild(toggleBtn);
                         }
@@ -398,17 +393,36 @@
                     };
                 }
                 
-                const catalogDropdownToggle = sidebarEl.querySelector('#catalog-dropdown-toggle');
-                if (catalogDropdownToggle) {
-                    catalogDropdownToggle.onclick = (e) => {
+                // Wire up ALL .sidebar-dropdown-wrapper toggles (Thrust Levels, Data Management, Admin Tools)
+                sidebarEl.querySelectorAll('.sidebar-dropdown-wrapper > a, .sidebar-dropdown-wrapper > button').forEach(toggleLink => {
+                    toggleLink.onclick = (e) => {
                         e.preventDefault();
-                        const dropdownWrapper = catalogDropdownToggle.closest('.sidebar-dropdown-wrapper');
-                        if (dropdownWrapper) {
-                            dropdownWrapper.classList.toggle('expanded');
-                        }
+                        e.stopPropagation();
+                        const wrapper = toggleLink.closest('.sidebar-dropdown-wrapper');
+                        if (!wrapper) return;
+                        const wasExpanded = wrapper.classList.contains('expanded');
+                        // Close all other dropdowns
+                        sidebarEl.querySelectorAll('.sidebar-dropdown-wrapper.expanded').forEach(w => w.classList.remove('expanded'));
+                        if (!wasExpanded) wrapper.classList.add('expanded');
+                    };
+                });
+
+                // Wire up user avatar dropdown
+                const avatarTrigger = sidebarEl.querySelector('.user-avatar-trigger');
+                const profileWrapper = sidebarEl.querySelector('.user-profile-menu-wrapper');
+                if (avatarTrigger && profileWrapper) {
+                    avatarTrigger.onclick = (e) => {
+                        e.stopPropagation();
+                        profileWrapper.classList.toggle('open');
                     };
                 }
-                
+
+                // Close all dropdowns when clicking outside
+                document.addEventListener('click', () => {
+                    sidebarEl.querySelectorAll('.sidebar-dropdown-wrapper.expanded').forEach(w => w.classList.remove('expanded'));
+                    if (profileWrapper) profileWrapper.classList.remove('open');
+                }, { capture: false });
+
                 syncSidebarUserProfiles(sidebarEl);
                 if (window.lucide) window.lucide.createIcons();
                 window.dispatchEvent(new CustomEvent('sidebarLoaded', { detail: { role: role } }));
@@ -457,7 +471,7 @@
         }
 
         // 3b. Background session validation check
-        const isProtectedRoute = path.includes('/admin/') || path.includes('/intern/') || path.includes('/guest/') ||
+        const isProtectedRoute = path.includes('/admin/') || path.includes('/user/') || path.includes('/guest/') ||
                                  path.includes('dashboard') || path.includes('analytics') || path.includes('explorer') ||
                                  path.includes('users') || path.includes('requests') || path.includes('schema') ||
                                  path.includes('exports') || path.includes('imports') || path.includes('audit');
@@ -486,7 +500,9 @@
     });
 
     // 4. Page load completed event
-    window.addEventListener('load', () => {
+    function revealPage() {
+        if (document.documentElement.classList.contains('tv-loaded')) return;
+        
         const pb = document.getElementById('tv-progress-bar');
         const overlay = document.getElementById('tv-page-loader-overlay');
         
@@ -499,10 +515,16 @@
             }, 300);
         }
         
-        // Reveal page contents
+        // Remove loading state AND add loaded — must remove tv-loading-state so its
+        // opacity:0 rule no longer applies (both classes having equal specificity meant
+        // the hidden rule kept winning even after tv-loaded was added).
+        document.documentElement.classList.remove('tv-loading-state');
         document.documentElement.classList.add('tv-loaded');
         if (window.lucide) window.lucide.createIcons();
-    });
+    }
+
+    window.addEventListener('load', revealPage);
+    setTimeout(revealPage, 800);
 
     // 5. Intercept link navigation to trigger slide-out animations
     document.addEventListener('click', (e) => {

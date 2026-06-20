@@ -34,7 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
         requestsEmptyState: document.getElementById('requests-empty-state'),
         requestsSearch: document.getElementById('requests-search-input'),
         requestsFilterStatus: document.getElementById('requests-filter-status'),
-        confirmModal: document.getElementById('confirm-modal')
+        confirmModal: document.getElementById('confirm-modal'),
+        toggleAutoApprove: document.getElementById('toggle-auto-approve')
     };
 
     // Helper functions for modal operations
@@ -146,8 +147,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchSidebarCounts() {
         try {
             const [motorsData, catsData] = await Promise.all([
-                fetch('/api/guest/motors').then(r => r.json()),
-                fetch('/api/guest/categories').then(r => r.json())
+                fetch('/api/admin/motors').then(r => r.json()),
+                fetch('/api/admin/categories').then(r => r.json())
             ]);
 
             state.motors = motorsData || [];
@@ -192,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const res = await fetch(`/api/intern/categories?id=eq.${cat.id}`, {
+                        const res = await fetch(`/api/admin/categories?id=eq.${cat.id}`, {
                             method: 'DELETE'
                         });
                         if (!res.ok) {
@@ -295,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Format status badge
             let statusBadge = `<span class="badge-role role-guest">Pending</span>`;
             if (r.status === 'approved') {
-                statusBadge = `<span class="badge-role role-intern" style="background:#ecfdf5; color:#059669; border-color:#a7f3d0;">Approved</span>`;
+                statusBadge = `<span class="badge-role role-user" style="background:#ecfdf5; color:#059669; border-color:#a7f3d0;">Approved</span>`;
             } else if (r.status === 'rejected') {
                 statusBadge = `<span class="badge-role role-admin" style="background:#fff1f2; color:#e11d48; border-color:#fecdd3;">Rejected</span>`;
             }
@@ -589,6 +590,26 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.requestsSearch.oninput = () => renderAccessRequestsList();
     elements.requestsFilterStatus.onchange = () => renderAccessRequestsList();
 
+    if (elements.toggleAutoApprove) {
+        elements.toggleAutoApprove.onchange = async () => {
+            const isChecked = elements.toggleAutoApprove.checked;
+            try {
+                const res = await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: 'auto_approve', value: isChecked })
+                });
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+            } catch (err) {
+                console.error("Failed to save auto_approve setting:", err);
+                alert("Failed to save setting. Please try again.");
+                elements.toggleAutoApprove.checked = !isChecked; // revert
+            }
+        };
+    }
+
     // Sidebar Profile Click Trigger is setup dynamically in setupSidebar()
 
     // =========================================================================
@@ -604,6 +625,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await fetchSidebarCounts();
             await fetchAccessRequests();
+
+            // Load settings
+            try {
+                const settingsRes = await fetch('/api/admin/settings');
+                if (settingsRes.ok) {
+                    const settings = await settingsRes.json();
+                    if (elements.toggleAutoApprove) {
+                        const autoApproveVal = settings['auto_approve'];
+                        elements.toggleAutoApprove.checked = (autoApproveVal === true || autoApproveVal === 'true');
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load settings:", err);
+            }
         } catch (e) {
             console.error("Initialization failed", e);
             await logoutAndRedirect();

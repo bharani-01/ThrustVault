@@ -245,8 +245,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchSidebarCounts() {
         try {
             const [motorsData, catsData, requestsData] = await Promise.all([
-                fetch('/api/guest/motors').then(r => r.json()),
-                fetch('/api/guest/categories').then(r => r.json()),
+                fetch('/api/admin/motors').then(r => r.json()),
+                fetch('/api/admin/categories').then(r => r.json()),
                 fetch('/api/admin/access-requests').then(r => r.json())
             ]);
 
@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const res = await fetch(`/api/intern/categories/${cat.id}`, {
+                        const res = await fetch(`/api/admin/categories/${cat.id}`, {
                             method: 'DELETE'
                         });
                         if (!res.ok) {
@@ -459,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>
                     <select class="user-role-select form-group" style="padding:4px 8px; font-size:0.85rem;" data-id="${u.id}" ${isSelf ? 'disabled' : ''}>
                         <option value="guest" ${u.role === 'guest' ? 'selected' : ''}>Guest (Read-only)</option>
-                        <option value="intern" ${u.role === 'intern' ? 'selected' : ''}>Intern (Read/Write Catalog)</option>
+                        <option value="user" ${u.role === 'user' ? 'selected' : ''}>User (Read/Write Catalog)</option>
                         <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin (Full Control)</option>
                     </select>
                 </td>
@@ -756,7 +756,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">${checkIcon} Add, edit, or delete categories</div>
                 <div style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">${checkIcon} Administer user roles & registrations</div>
             `;
-        } else if (targetUser.role === 'intern') {
+        } else if (targetUser.role === 'user') {
             permsHtml = `
                 <div style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">${checkIcon} Access motor catalog</div>
                 <div style="display: flex; align-items: center; font-size: 0.85rem; color: var(--text-secondary);">${checkIcon} Add, edit, or delete motors</div>

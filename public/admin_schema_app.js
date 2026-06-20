@@ -148,8 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchSidebarCounts() {
         try {
             const [motorsData, catsData, requestsData] = await Promise.all([
-                fetch('/api/guest/motors').then(r => r.json()),
-                fetch('/api/guest/categories').then(r => r.json()),
+                fetch('/api/admin/motors').then(r => r.json()),
+                fetch('/api/admin/categories').then(r => r.json()),
                 fetch('/api/admin/access-requests').then(r => r.json())
             ]);
 
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const res = await fetch(`/api/intern/categories/${cat.id}`, {
+                        const res = await fetch(`/api/admin/categories/${cat.id}`, {
                             method: 'DELETE'
                         });
                         if (!res.ok) {
@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
     async function fetchCustomSchema() {
         try {
-            const res = await fetch('/api/guest/custom-specs');
+            const res = await fetch('/api/admin/custom-specs');
             if (!res.ok) {
                 const errData = await res.json();
                 throw new Error(errData.error || `HTTP ${res.status}`);

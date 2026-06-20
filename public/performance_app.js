@@ -77,13 +77,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Show creator tab for all; disable/lock it for guests
-    const isWriter = session.role === 'admin' || session.role === 'intern';
+    const isWriter = session.role === 'admin' || session.role === 'user';
     const tabBtnCreator = document.getElementById('tab-btn-creator');
     if (tabBtnCreator) {
         tabBtnCreator.style.display = 'flex';
         if (!isWriter) {
             tabBtnCreator.disabled = true;
-            tabBtnCreator.title = 'Create Dataset is only available to Admins and Interns';
+            tabBtnCreator.title = 'Create Dataset is only available to Admins and Users';
             tabBtnCreator.style.opacity = '0.45';
             tabBtnCreator.style.cursor = 'not-allowed';
             tabBtnCreator.style.filter = 'grayscale(0.5)';
@@ -1303,7 +1303,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 try {
                     if (!motorId) {
-                        let url = `/api/guest/draft-test-runs?motor_model=eq.${encodeURIComponent(run.motorModel)}&propeller_model=eq.${encodeURIComponent(propellerModel)}`;
+                        let url = `/api/admin/draft-test-runs?motor_model=eq.${encodeURIComponent(run.motorModel)}&propeller_model=eq.${encodeURIComponent(propellerModel)}`;
                         url += run.metadata.esc_model ? `&esc_model=eq.${encodeURIComponent(run.metadata.esc_model)}` : '&esc_model=is.null';
                         url += run.metadata.battery_info ? `&battery_info=eq.${encodeURIComponent(run.metadata.battery_info)}` : '&battery_info=is.null';
                         const draftRes = await fetch(url);
@@ -1316,7 +1316,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             });
                         }
                     } else {
-                        let url = `/api/guest/motor-test-runs?motor_id=eq.${motorId}&propeller_model=eq.${encodeURIComponent(propellerModel)}`;
+                        let url = `/api/admin/motor-test-runs?motor_id=eq.${motorId}&propeller_model=eq.${encodeURIComponent(propellerModel)}`;
                         url += run.metadata.esc_model ? `&esc_model=eq.${encodeURIComponent(run.metadata.esc_model)}` : '&esc_model=is.null';
                         url += run.metadata.battery_info ? `&battery_info=eq.${encodeURIComponent(run.metadata.battery_info)}` : '&battery_info=is.null';
                         const runsRes = await fetch(url);
@@ -1325,7 +1325,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (existingRuns && existingRuns.length > 0 && testVoltageVal !== null) {
                             const runIds = existingRuns.map(r => r.id);
                             const runIdsParam = runIds.join(',');
-                            const ptsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=in.(${runIdsParam})&voltage=eq.${testVoltageVal}&limit=1`);
+                            const ptsRes = await fetch(`/api/admin/motor-test-data-points?test_run_id=in.(${runIdsParam})&voltage=eq.${testVoltageVal}&limit=1`);
                             if (!ptsRes.ok) throw new Error("Failed to query data points");
                             const existingPoints = await ptsRes.json();
                             if (existingPoints && existingPoints.length > 0) {
@@ -1344,7 +1344,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (!motorId) {
                     try {
-                        const draftRes = await fetch('/api/intern/draft-test-runs', {
+                        const draftRes = await fetch('/api/admin/draft-test-runs', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1376,7 +1376,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     try {
                         // 1. Insert into motor_test_runs
-                        const runRes = await fetch('/api/intern/motor-test-runs', {
+                        const runRes = await fetch('/api/admin/motor-test-runs', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1405,7 +1405,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             extra_data: pt.extra_data
                         }));
 
-                        const ptsRes = await fetch('/api/intern/motor-test-data-points', {
+                        const ptsRes = await fetch('/api/admin/motor-test-data-points', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(pointsPayload)
@@ -1489,7 +1489,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const cleanPropeller = run.propeller_model.replace(/^\[DRAFT:.*?\]\s*/, '');
-                const res = await fetch(`/api/intern/motor-test-runs?id=eq.${run.id}`, {
+                const res = await fetch(`/api/admin/motor-test-runs?id=eq.${run.id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1747,7 +1747,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             if (isDraft) {
-                let url = `/api/guest/draft-test-runs?motor_model=eq.${encodeURIComponent(draftMotorName)}&propeller_model=eq.${encodeURIComponent(propeller)}`;
+                let url = `/api/admin/draft-test-runs?motor_model=eq.${encodeURIComponent(draftMotorName)}&propeller_model=eq.${encodeURIComponent(propeller)}`;
                 url += esc ? `&esc_model=eq.${encodeURIComponent(esc)}` : '&esc_model=is.null';
                 url += battery ? `&battery_info=eq.${encodeURIComponent(battery)}` : '&battery_info=is.null';
                 if (runIdForCheck) {
@@ -1763,11 +1763,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
             } else {
-                let url = `/api/guest/motor-test-runs?motor_id=eq.${motorId}&propeller_model=eq.${encodeURIComponent(propeller)}`;
+                let url = `/api/admin/motor-test-runs?motor_id=eq.${motorId}&propeller_model=eq.${encodeURIComponent(propeller)}`;
                 url += esc ? `&esc_model=eq.${encodeURIComponent(esc)}` : '&esc_model=is.null';
                 url += battery ? `&battery_info=eq.${encodeURIComponent(battery)}` : '&battery_info=is.null';
                 if (runIdForCheck) {
-                    const draftCheckRes = await fetch(`/api/guest/draft-test-runs?id=eq.${runIdForCheck}`);
+                    const draftCheckRes = await fetch(`/api/admin/draft-test-runs?id=eq.${runIdForCheck}`);
                     const draftCheck = draftCheckRes.ok ? await draftCheckRes.json() : [];
                     if (draftCheck.length === 0) {
                         url += `&id=ne.${runIdForCheck}`;
@@ -1779,7 +1779,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (existingRuns && existingRuns.length > 0 && testVoltage !== null) {
                     const runIds = existingRuns.map(r => r.id);
                     const runIdsParam = runIds.join(',');
-                    const ptsRes = await fetch(`/api/guest/motor-test-data-points?test_run_id=in.(${runIdsParam})&voltage=eq.${testVoltage}&limit=1`);
+                    const ptsRes = await fetch(`/api/admin/motor-test-data-points?test_run_id=in.(${runIdsParam})&voltage=eq.${testVoltage}&limit=1`);
                     if (!ptsRes.ok) throw new Error("Failed to query data points");
                     const existingPoints = await ptsRes.json();
                     if (existingPoints && existingPoints.length > 0) {
@@ -1808,7 +1808,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isDraft) {
                 if (runId) {
                     // Update existing draft in draft_test_runs
-                    const res = await fetch(`/api/intern/draft-test-runs?id=eq.${runId}`, {
+                    const res = await fetch(`/api/admin/draft-test-runs?id=eq.${runId}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1823,7 +1823,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!res.ok) throw new Error("Failed to update draft");
                 } else {
                     // Insert new draft in draft_test_runs
-                    const res = await fetch('/api/intern/draft-test-runs', {
+                    const res = await fetch('/api/admin/draft-test-runs', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1841,7 +1841,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let wasEditingDraft = false;
 
                 if (runId) {
-                    const draftCheckRes = await fetch(`/api/guest/draft-test-runs?id=eq.${runId}`);
+                    const draftCheckRes = await fetch(`/api/admin/draft-test-runs?id=eq.${runId}`);
                     const draftCheck = draftCheckRes.ok ? await draftCheckRes.json() : [];
                     if (draftCheck && draftCheck.length > 0) {
                         wasEditingDraft = true;
@@ -1850,7 +1850,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (runId && !wasEditingDraft) {
                     // Update existing finalized run in motor_test_runs
-                    const runRes = await fetch(`/api/intern/motor-test-runs?id=eq.${runId}`, {
+                    const runRes = await fetch(`/api/admin/motor-test-runs?id=eq.${runId}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1864,7 +1864,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!runRes.ok) throw new Error("Failed to update test run");
 
                     // Delete existing points
-                    const delRes = await fetch(`/api/intern/motor-test-data-points?test_run_id=eq.${runId}`, {
+                    const delRes = await fetch(`/api/admin/motor-test-data-points?test_run_id=eq.${runId}`, {
                         method: 'DELETE'
                     });
                     if (!delRes.ok) throw new Error("Failed to clear old data points");
@@ -1875,7 +1875,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ...pt
                     }));
 
-                    const ptsRes = await fetch('/api/intern/motor-test-data-points', {
+                    const ptsRes = await fetch('/api/admin/motor-test-data-points', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(pointsPayload)
@@ -1884,7 +1884,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     finalizedRunId = runId;
                 } else {
                     // Insert brand new finalized run in motor_test_runs
-                    const runRes = await fetch('/api/intern/motor-test-runs', {
+                    const runRes = await fetch('/api/admin/motor-test-runs', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1905,7 +1905,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ...pt
                     }));
 
-                    const ptsRes = await fetch('/api/intern/motor-test-data-points', {
+                    const ptsRes = await fetch('/api/admin/motor-test-data-points', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(pointsPayload)
@@ -1914,7 +1914,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Clean up and delete draft row if finalizing
                     if (wasEditingDraft) {
-                        const delDraftRes = await fetch(`/api/intern/draft-test-runs/${runId}`, {
+                        const delDraftRes = await fetch(`/api/admin/draft-test-runs/${runId}`, {
                             method: 'DELETE'
                         });
                         if (!delDraftRes.ok) console.error("Failed to delete finalized draft");
@@ -1983,12 +1983,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch quick counts
     async function fetchStats() {
         try {
-            const runsRes = await fetch('/api/guest/motor-test-runs');
+            const runsRes = await fetch('/api/admin/motor-test-runs');
             if (!runsRes.ok) throw new Error("Failed to fetch runs");
             const runs = await runsRes.json();
             const runsCount = runs ? runs.length : 0;
 
-            const ptsRes = await fetch('/api/guest/motor-test-data-points');
+            const ptsRes = await fetch('/api/admin/motor-test-data-points');
             if (!ptsRes.ok) throw new Error("Failed to fetch points");
             const pts = await ptsRes.json();
             const ptsCount = pts ? pts.length : 0;
@@ -2136,7 +2136,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadSavedDraftsList() {
         try {
-            const res = await fetch('/api/guest/draft-test-runs?order=created_at.desc');
+            const res = await fetch('/api/admin/draft-test-runs?order=created_at.desc');
             if (!res.ok) throw new Error("Failed to load drafts");
             const drafts = await res.json();
 
@@ -2190,7 +2190,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const runId = btn.dataset.runId;
                     if (!confirm("Are you sure you want to delete this draft?")) return;
                     try {
-                        const res = await fetch(`/api/intern/draft-test-runs/${runId}`, {
+                        const res = await fetch(`/api/admin/draft-test-runs/${runId}`, {
                             method: 'DELETE'
                         });
                         if (!res.ok) throw new Error("Failed to delete draft");
@@ -2336,12 +2336,12 @@ document.addEventListener('DOMContentLoaded', () => {
     async function refreshVisualizerData() {
         try {
             // Fetch categories (with description)
-            const catRes = await fetch('/api/guest/categories?order=name');
+            const catRes = await fetch('/api/admin/categories?order=name');
             if (!catRes.ok) throw new Error("Failed to fetch categories");
             const categories = await catRes.json();
 
             // Fetch all motors
-            const motorRes = await fetch('/api/guest/motors?order=company,motor_name');
+            const motorRes = await fetch('/api/admin/motors?order=company,motor_name');
             if (!motorRes.ok) throw new Error("Failed to fetch motors");
             const motors = await motorRes.json();
 
@@ -2382,8 +2382,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchSidebarCounts() {
         try {
             const [motorsRes, catsRes] = await Promise.all([
-                fetch('/api/guest/motors'),
-                fetch('/api/guest/categories?order=name')
+                fetch('/api/admin/motors'),
+                fetch('/api/admin/categories?order=name')
             ]);
 
             if (!motorsRes.ok) throw new Error("Failed to load motors");
@@ -2443,7 +2443,7 @@ document.addEventListener('DOMContentLoaded', () => {
             div.onclick = (e) => {
                 if (e.target.closest('.btn-delete-cat')) return;
                 sessionStorage.setItem('activeCategory', cat.id);
-                const targetDash = (session && session.role === 'intern') ? '/intern/dashboard' : ((session && session.role === 'guest') ? '/guest/dashboard' : '/admin/dashboard');
+                const targetDash = (session && session.role === 'user') ? '/user/dashboard' : ((session && session.role === 'guest') ? '/guest/dashboard' : '/admin/dashboard');
                 window.location.href = targetDash;
             };
             
@@ -2456,7 +2456,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
                 if (confirmDelete) {
                     try {
-                        const res = await fetch(`/api/intern/categories/${cat.id}`, {
+                        const res = await fetch(`/api/admin/categories/${cat.id}`, {
                             method: 'DELETE'
                         });
                         if (!res.ok) {
@@ -2591,7 +2591,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (elements.btnAddCat) {
             elements.btnAddCat.onclick = () => {
                 sessionStorage.setItem('triggerAddCategory', 'true');
-                const targetDash = (session && session.role === 'intern') ? '/intern/dashboard' : '/admin/dashboard';
+                const targetDash = (session && session.role === 'user') ? '/user/dashboard' : '/admin/dashboard';
                 window.location.href = targetDash;
             };
         }

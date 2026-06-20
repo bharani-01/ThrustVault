@@ -200,8 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data.role === 'admin') {
                 window.location.href = '/admin/dashboard';
-            } else if (data.role === 'intern') {
-                window.location.href = '/intern/dashboard';
+            } else if (data.role === 'user') {
+                window.location.href = '/user/dashboard';
             } else if (data.role === 'guest') {
                 window.location.href = '/guest/dashboard';
             } else {

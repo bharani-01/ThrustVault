@@ -1371,7 +1371,7 @@ button:active { transform: scale(0.98); }
     font-size: 1.25rem;
 }
 .role-icon-box.guest { background: rgba(37, 99, 235, 0.06); color: #2563eb; }
-.role-icon-box.intern { background: rgba(217, 119, 6, 0.06); color: #d97706; }
+.role-icon-box.user { background: rgba(217, 119, 6, 0.06); color: #d97706; }
 .role-icon-box.admin { background: rgba(225, 29, 72, 0.06); color: #e11d48; }
 
 .role-card h4 {
@@ -2052,7 +2052,7 @@ button:active { transform: scale(0.98); }
     background: rgba(225, 29, 72, 0.06);
     color: #e11d48;
 }
-.quick-credentials li.intern-item .role-icon-wrapper {
+.quick-credentials li.user-item .role-icon-wrapper {
     background: rgba(217, 119, 6, 0.06);
     color: #d97706;
 }
@@ -2065,7 +2065,7 @@ button:active { transform: scale(0.98); }
     font-size: 0.85rem;
 }
 .quick-credentials li.admin-item .role-label { color: #be123c; }
-.quick-credentials li.intern-item .role-label { color: #b45309; }
+.quick-credentials li.user-item .role-label { color: #b45309; }
 .quick-credentials li.guest-item .role-label { color: #1e40af; }
 .quick-credentials li .user-email-text {
     font-size: 0.775rem;
@@ -2096,7 +2096,7 @@ button:active { transform: scale(0.98); }
     letter-spacing: 0.05em;
 }
 .role-admin { background: rgba(225, 29, 72, 0.08); color: #be123c; border: 1px solid rgba(225, 29, 72, 0.15); }
-.role-intern { background: rgba(217, 119, 6, 0.08); color: #b45309; border: 1px solid rgba(217, 119, 6, 0.15); }
+.role-user { background: rgba(217, 119, 6, 0.08); color: #b45309; border: 1px solid rgba(217, 119, 6, 0.15); }
 .role-guest { background: rgba(71, 85, 105, 0.08); color: #334155; border: 1px solid rgba(71, 85, 105, 0.15); }
 
 /* Dashboard Guest Alerts */
