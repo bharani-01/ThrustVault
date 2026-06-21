@@ -1824,8 +1824,11 @@ button:active { transform: scale(0.98); }
     flex: 1.1;
     background-color: #030712;
     background-image: 
-        radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.15) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.25) 0px, transparent 60%),
+        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.12) 0px, transparent 60%),
+        radial-gradient(at 50% 50%, rgba(59, 130, 246, 0.08) 0px, transparent 70%);
+    background-size: 200% 200%;
+    animation: gradientMove 16s infinite ease-in-out;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -1922,8 +1925,8 @@ button:active { transform: scale(0.98); }
 }
 .justification-textarea:focus {
     background: #ffffff;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px var(--primary-light);
     transform: scale(1.008);
 }
 .success-card {
@@ -2080,22 +2083,25 @@ button:active { transform: scale(0.98); }
     border-radius: var(--radius-full);
     filter: blur(120px);
     z-index: 0;
-    opacity: 0.45;
+    opacity: 0.55;
     pointer-events: none;
+    transition: all 0.5s ease;
 }
 .blob-1 {
     top: 10%;
     left: 10%;
     width: 320px;
     height: 320px;
-    background: rgba(37, 99, 235, 0.08);
+    background: rgba(37, 99, 235, 0.12);
+    animation: floatBlob1 20s infinite ease-in-out;
 }
 .blob-2 {
     bottom: 10%;
     right: 10%;
     width: 380px;
     height: 380px;
-    background: rgba(5, 150, 105, 0.05);
+    background: rgba(16, 185, 129, 0.08);
+    animation: floatBlob2 25s infinite ease-in-out;
 }
 .login-container {
     width: 100%;
@@ -2104,20 +2110,21 @@ button:active { transform: scale(0.98); }
 }
 .login-card {
     padding: 44px 40px;
-    background: var(--bg-panel);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    border-radius: 20px;
     box-shadow: 
-        0 4px 6px -1px rgba(0, 0, 0, 0.01),
-        0 20px 40px -4px rgba(15, 23, 42, 0.04);
-    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s, border-color 0.3s;
+        0 8px 32px 0 rgba(31, 38, 135, 0.04),
+        0 20px 40px -4px rgba(15, 23, 42, 0.05);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, background 0.3s, border-color 0.3s;
 }
 .login-card:hover {
+    transform: translateY(-4px);
     box-shadow: 
-        0 4px 6px -1px rgba(0, 0, 0, 0.01),
-        0 24px 48px -4px rgba(15, 23, 42, 0.06);
+        0 8px 40px rgba(0, 0, 0, 0.05),
+        0 24px 48px -4px rgba(15, 23, 42, 0.08);
 }
 
 @media (max-width: 900px) {
@@ -2194,8 +2201,8 @@ button:active { transform: scale(0.98); }
 }
 .input-with-icon input:focus {
     background: #ffffff;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px var(--primary-light);
     transform: scale(1.008);
 }
 .input-with-icon input:focus ~ i,
@@ -5169,17 +5176,18 @@ button:active { transform: scale(0.98); }
 }
 
 [data-theme="dark"] .login-card {
-    background: rgba(15, 23, 42, 0.75) !important;
+    background: rgba(8, 12, 24, 0.45) !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
     box-shadow: 
-        0 4px 6px -1px rgba(0, 0, 0, 0.3),
+        0 8px 32px 0 rgba(0, 0, 0, 0.4),
         0 20px 50px -10px rgba(0, 0, 0, 0.5) !important;
     color: #f8fafc !important;
 }
 
 [data-theme="dark"] .login-card:hover {
+    transform: translateY(-4px);
     box-shadow: 
-        0 4px 6px -1px rgba(0, 0, 0, 0.3),
+        0 8px 40px rgba(0, 0, 0, 0.5),
         0 24px 60px -10px rgba(0, 0, 0, 0.6) !important;
 }
 
@@ -5204,7 +5212,7 @@ button:active { transform: scale(0.98); }
 [data-theme="dark"] .input-with-icon input:focus {
     background: rgba(15, 23, 42, 0.8) !important;
     border-color: var(--primary-color) !important;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25) !important;
+    box-shadow: 0 0 0 4px var(--primary-light) !important;
 }
 
 [data-theme="dark"] .login-footer {
@@ -5348,6 +5356,9 @@ button:active { transform: scale(0.98); }
 }
 .logo-image.logo-dark {
     display: none;
+}
+[data-theme="dark"] .logo-image.logo-light {
+    display: none !important;
 }
 [data-theme="dark"] .logo-image.logo-dark {
     display: block !important;

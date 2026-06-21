@@ -1,141 +1,182 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="scroll-smooth" lang="en">
+
 <head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Request Access | ThrustVault</title>
+    
     <link rel="icon" type="image/png" href="favicon_light.png" media="(prefers-color-scheme: light)">
     <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Request Access | ThrustVault</title>
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS with Forms and Container Queries -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    
     <!-- Lucide Icons -->
     <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#003366",
+                        "surface-container-high": "#e7e8e9",
+                        "surface-bright": "#f8f9fa",
+                        "on-surface": "#191c1d",
+                        "background": "#f8f9fa",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#c3c6d1",
+                        "outline": "#737780",
+                        "secondary": "#505f76",
+                        "primary": "#001e40",
+                        "surface": "#f8f9fa"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Inter", "sans-serif"],
+                        "label-mono": ["JetBrains Mono", "monospace"],
+                        "body-sm": ["Inter", "sans-serif"],
+                        "body-base": ["Inter", "sans-serif"],
+                        "button": ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #191c1d;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .blueprint-grid {
+            background-image: linear-gradient(#003366 1px, transparent 1px), linear-gradient(90deg, #003366 1px, transparent 1px);
+            background-size: 48px 48px;
+        }
+        
+        .spinner-dual {
+            display: inline-block;
+            position: relative;
+            width: 18px;
+            height: 18px;
+            border: 2px solid transparent;
+            border-top-color: #ffffff;
+            border-bottom-color: #ffffff;
+            border-radius: 50%;
+            animation: tv-spin-dual 0.8s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        }
 
-    <!-- Main Stylesheet -->
-    <link rel="stylesheet" href="style.css?v=1.6">
+        @keyframes tv-spin-dual {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .login-btn.loading {
+            background: linear-gradient(90deg, #002244, #003366, #002244) !important;
+            background-size: 200% 100% !important;
+            animation: tv-shimmer-btn 1.5s infinite linear !important;
+            pointer-events: none !important;
+            opacity: 0.9;
+        }
+
+        @keyframes tv-shimmer-btn {
+            0% { background-position: -100% 0; }
+            100% { background-position: 100% 0; }
+        }
+    </style>
     <!-- Page Loader Transition Script -->
     <script src="page-loader.js?v=2.1"></script>
 </head>
-<body class="login-body">
-    <div class="login-split-container">
-        <!-- Left Side: Brand Panel -->
-        <div class="login-brand-panel">
-            <div class="login-brand-panel-header">
-                <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image" style="height: 32px; width: auto;">
-            </div>
-            
-            <div class="login-brand-panel-content">
-                <div class="brand-slideshow-container">
-                    <!-- Slide 1: v1.5.0 -->
-                    <div class="brand-slide active">
-                        <div class="slide-version-info">
-                            <span class="slide-tag">v1.5.0</span>
-                            <span class="slide-date">June 11, 2026</span>
-                        </div>
-                        <h2 class="slide-title">Curves Analytics</h2>
-                        <p class="slide-text">Upload Rotrix spreadsheets with column mappers and compare multi-propeller calibration curves interactively.</p>
-                        <div class="slide-image-wrapper">
-                            <img src="feature_analytics.webp" alt="Propulsion Analytics Curves Visual" class="slide-image">
-                        </div>
-                    </div>
 
-                    <!-- Slide 2: v1.0.0 -->
-                    <div class="brand-slide">
-                        <div class="slide-version-info">
-                            <span class="slide-tag">v1.0.0</span>
-                            <span class="slide-date">June 8, 2026</span>
-                        </div>
-                        <h2 class="slide-title">Motors Catalog</h2>
-                        <p class="slide-text">Central database specs tracking motors KV, weight, current, and thrust with cascading database deletions.</p>
-                        <div class="slide-image-wrapper">
-                            <img src="feature_catalog.webp" alt="Relational Database Catalog Visual" class="slide-image">
-                        </div>
-                    </div>
-                </div>
+<body class="min-h-screen w-screen m-0 p-0 flex items-center justify-center bg-[#f8f9fa] relative overflow-hidden select-none px-4 py-12">
+    
+    <!-- Blueprint lines backdrop (Matching landing page) -->
+    <div class="absolute inset-0 pointer-events-none z-0 opacity-[0.05] blueprint-grid"></div>
 
-                <!-- Slide Navigation Dots -->
-                <div class="slideshow-dots">
-                    <span class="slideshow-dot active" onclick="currentSlide(0)"></span>
-                    <span class="slideshow-dot" onclick="currentSlide(1)"></span>
-                </div>
-            </div>
-            
-            <div class="login-brand-panel-footer">
-                &copy; 2026 ThrustVault Propulsion Console v2.0. All rights reserved.
-            </div>
-        </div>
+    <!-- Ambient Glow Blobs -->
+    <div class="absolute top-1/4 left-1/4 w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-blue-100/30 rounded-full filter blur-[100px] md:blur-[130px] pointer-events-none z-0"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-[450px] md:w-[650px] h-[450px] md:h-[650px] bg-emerald-50/20 rounded-full filter blur-[100px] md:blur-[130px] pointer-events-none z-0"></div>
+
+    <!-- Centered Glassmorphic Card Container -->
+    <div class="login-container w-full max-w-[460px] bg-white/75 backdrop-blur-lg border border-slate-200/60 shadow-xl rounded-2xl p-8 md:p-10 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 relative z-10">
         
-        <!-- Right Side: Form Panel -->
-        <div class="login-form-panel">
-            <div class="login-bg-blob blob-1"></div>
-            <div class="login-bg-blob blob-2"></div>
-            
-            <div class="login-container">
-                <div class="login-card">
-                    <!-- Header -->
-                    <div class="login-header">
-                        <div class="login-logo">
-                            <img src="logo_light.png" alt="ThrustVault Logo" class="logo-image logo-light" style="height: 48px; width: auto; filter: drop-shadow(0 4px 10px rgba(37,99,235,0.1));">
-                            <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark" style="height: 48px; width: auto; filter: drop-shadow(0 4px 10px rgba(37,99,235,0.15));">
-                        </div>
-                        <h2 id="page-title">Request <span>Access</span></h2>
-                        <p id="page-subtitle">Submit details to request a database user account.</p>
-                    </div>
-                    
-                    <!-- Request Form View -->
-                    <div id="view-form">
-                        <form id="request-access-form">
-                            <div class="form-group">
-                                <label for="request-fullname">Full Name</label>
-                                <div class="input-with-icon">
-                                    <input type="text" id="request-fullname" required placeholder="e.g. John Doe">
-                                    <i data-lucide="user"></i>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group" style="margin-top: 14px;">
-                                <label for="request-email">Email Address</label>
-                                <div class="input-with-icon">
-                                    <input type="email" id="request-email" required placeholder="e.g. john@company.com">
-                                    <i data-lucide="mail"></i>
-                                </div>
-                            </div>
+        <!-- Logo & Header -->
+        <div class="login-header text-center mb-8">
+            <div class="login-logo flex justify-center mb-4">
+                <img src="logo_light.png" alt="ThrustVault Logo" class="h-10 w-auto">
+            </div>
+            <h2 id="page-title" class="font-display-lg text-lg md:text-xl font-bold text-[#001e40] leading-tight tracking-tight">
+                Request <span class="bg-gradient-to-r from-[#003366] to-blue-600 bg-clip-text text-transparent">Access</span>
+            </h2>
+            <p id="page-subtitle" class="text-xs text-slate-500 font-medium mt-2">Submit details to request a database user account.</p>
+        </div>
 
-                            <div class="form-group" style="margin-top: 14px;">
-                                <label for="request-justification">Justification / Reason</label>
-                                <textarea id="request-justification" class="justification-textarea" required placeholder="Why do you require access to ThrustVault? Specify team or project."></textarea>
-                            </div>
-                            
-                            <button type="submit" class="login-btn" style="margin-top: 24px; width: 100%;">
-                                Submit Request <i data-lucide="send" style="width: 16px; height: 16px;"></i>
-                            </button>
-                        </form>
-                        
-                        <div style="text-align: center; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-                            <a href="/login" style="font-size:0.85rem; color:#64748b; text-decoration:none; font-weight:500; display:inline-flex; align-items:center; gap:6px;"><i data-lucide="arrow-left" style="width:15px; height:15px;"></i> Back to Sign In</a>
-                        </div>
-                    </div>
-
-                    <!-- Request Success View -->
-                    <div id="view-success" style="display: none;">
-                        <div class="success-card">
-                            <div class="success-icon-wrapper">
-                                <i data-lucide="check" style="width: 32px; height: 32px;"></i>
-                            </div>
-                            <h3 style="font-family: 'Outfit'; font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 10px;">Request Submitted</h3>
-                            <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 25px;">
-                                Your access request has been recorded. An email confirmation has been sent to you. Our administrators will review your application shortly.
-                            </p>
-                            <a href="/login" class="login-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; text-decoration: none; box-sizing: border-box;">
-                                Return to Sign In <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
-                            </a>
-                        </div>
+        <!-- Request Form View -->
+        <div id="view-form" class="space-y-5">
+            <form id="request-access-form" class="space-y-5">
+                <div class="form-group flex flex-col gap-2">
+                    <label for="request-fullname" class="text-xs font-semibold text-slate-500 font-label-mono uppercase tracking-wider">Full Name</label>
+                    <div class="input-with-icon relative flex items-center">
+                        <input type="text" id="request-fullname" required placeholder="e.g. John Doe" class="w-full bg-slate-50/50 border border-slate-200 rounded-lg py-3 px-4 pl-11 text-sm outline-none transition-all focus:border-[#003366] focus:bg-white focus:ring-4 focus:ring-[#003366]/10">
+                        <i data-lucide="user" class="absolute left-4 text-slate-400 w-4 h-4"></i>
                     </div>
                 </div>
+
+                <div class="form-group flex flex-col gap-2">
+                    <label for="request-email" class="text-xs font-semibold text-slate-500 font-label-mono uppercase tracking-wider">Email Address</label>
+                    <div class="input-with-icon relative flex items-center">
+                        <input type="email" id="request-email" required placeholder="e.g. john@company.com" class="w-full bg-slate-50/50 border border-slate-200 rounded-lg py-3 px-4 pl-11 text-sm outline-none transition-all focus:border-[#003366] focus:bg-white focus:ring-4 focus:ring-[#003366]/10">
+                        <i data-lucide="mail" class="absolute left-4 text-slate-400 w-4 h-4"></i>
+                    </div>
+                </div>
+
+                <div class="form-group flex flex-col gap-2">
+                    <label for="request-justification" class="text-xs font-semibold text-slate-500 font-label-mono uppercase tracking-wider">Justification / Reason</label>
+                    <textarea id="request-justification" class="justification-textarea w-full bg-slate-50/50 border border-slate-200 rounded-lg py-3 px-4 text-sm outline-none transition-all focus:border-[#003366] focus:bg-white focus:ring-4 focus:ring-[#003366]/10 min-h-[100px] resize-y" required placeholder="Why do you require access to ThrustVault? Specify team or project."></textarea>
+                </div>
+
+                <button type="submit" class="login-btn w-full bg-[#003366] hover:bg-[#001e40] text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 focus:ring-4 focus:ring-[#003366]/20">
+                    Submit Request <i data-lucide="send" class="w-4 h-4"></i>
+                </button>
+            </form>
+
+            <div class="text-center mt-6 text-sm text-slate-500 border-t border-slate-100 pt-5">
+                <a href="/login" class="text-xs font-semibold text-slate-500 hover:text-[#003366] transition-colors inline-flex items-center gap-1.5">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Sign In
+                </a>
             </div>
         </div>
+
+        <!-- Request Success View -->
+        <div id="view-success" style="display: none;">
+            <div class="success-card text-center py-6 flex flex-col items-center">
+                <div class="success-icon-wrapper w-16 h-16 rounded-full bg-emerald-50 text-emerald-500 border border-emerald-200 flex items-center justify-center mb-6 shadow-md shadow-emerald-100/50">
+                    <i data-lucide="check" class="w-8 h-8"></i>
+                </div>
+                <h3 class="font-display-lg text-lg font-bold text-[#001e40] mb-2 uppercase">Request Submitted</h3>
+                <p class="text-sm text-slate-500 leading-relaxed mb-8">
+                    Your access request has been recorded. An email confirmation has been sent to you. Our administrators will review your application shortly.
+                </p>
+                <a href="/login" class="login-btn w-full bg-[#003366] hover:bg-[#001e40] text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 focus:ring-4 focus:ring-[#003366]/20 no-underline">
+                    Return to Sign In <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </a>
+            </div>
+        </div>
+
     </div>
 
     <!-- Script Logic -->
@@ -176,7 +217,7 @@
                         // Show success view
                         document.getElementById('view-form').style.display = 'none';
                         document.getElementById('view-success').style.display = 'block';
-                        document.getElementById('page-title').innerHTML = 'Request <span>Submitted</span>';
+                        document.getElementById('page-title').innerHTML = 'Request <span class="bg-gradient-to-r from-[#003366] to-blue-600 bg-clip-text text-transparent">Submitted</span>';
                         document.getElementById('page-subtitle').textContent = 'Your application has been received successfully.';
                         if (window.lucide) window.lucide.createIcons();
 
@@ -190,49 +231,6 @@
                     }
                 };
             }
-        });
-    </script>
-    <script>
-        let slideIndex = 0;
-        let slideTimeout;
-        
-        function showSlides() {
-            let i;
-            let slides = document.getElementsByClassName("brand-slide");
-            let dots = document.getElementsByClassName("slideshow-dot");
-            if (!slides.length) return;
-            for (i = 0; i < slides.length; i++) {
-                slides[i].classList.remove("active");
-            }
-            slideIndex++;
-            if (slideIndex > slides.length) {slideIndex = 1}
-            for (i = 0; i < dots.length; i++) {
-                dots[i].classList.remove("active");
-            }
-            slides[slideIndex-1].classList.add("active");
-            dots[slideIndex-1].classList.add("active");
-            slideTimeout = setTimeout(showSlides, 5000);
-        }
-        
-        function currentSlide(n) {
-            clearTimeout(slideTimeout);
-            let slides = document.getElementsByClassName("brand-slide");
-            let dots = document.getElementsByClassName("slideshow-dot");
-            if (!slides.length) return;
-            for (let i = 0; i < slides.length; i++) {
-                slides[i].classList.remove("active");
-            }
-            for (let i = 0; i < dots.length; i++) {
-                dots[i].classList.remove("active");
-            }
-            slideIndex = n;
-            slides[slideIndex].classList.add("active");
-            dots[slideIndex].classList.add("active");
-            slideTimeout = setTimeout(showSlides, 6000);
-        }
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            showSlides();
         });
     </script>
 </body>

@@ -1,2037 +1,912 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html class="scroll-smooth" lang="en">
 <head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>ThrustVault | Aerospace Propulsion Intelligence</title>
+    
     <link rel="icon" type="image/png" href="favicon_light.png" media="(prefers-color-scheme: light)">
     <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ThrustVault | Professional UAV Motor Database Console</title>
-    <meta name="description"
-        content="Secure, verified UAV motor spec database and analytics engine. Designed for drone builders, UAV engineers, and fleet administrators.">
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
-    <!-- Lucide Icons -->
-    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
-    <!-- Supabase JS Client -->
-    <!-- Main Stylesheet -->
-    <link rel="stylesheet" href="style.css?v=1.6">
-    <!-- Page Loader Transition Script -->
-    <script src="page-loader.js?v=2.1"></script>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#003366",
+                        "surface-container-high": "#e7e8e9",
+                        "tertiary": "#381300",
+                        "surface-bright": "#f8f9fa",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "inverse-surface": "#2e3132",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#001b3c",
+                        "on-surface": "#191c1d",
+                        "surface-container-low": "#f3f4f5",
+                        "tertiary-fixed": "#ffdbca",
+                        "background": "#f8f9fa",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb690",
+                        "surface-container-highest": "#e1e3e4",
+                        "surface-tint": "#3a5f94",
+                        "inverse-primary": "#a7c8ff",
+                        "on-tertiary-fixed-variant": "#723610",
+                        "outline-variant": "#c3c6d1",
+                        "on-surface-variant": "#43474f",
+                        "outline": "#737780",
+                        "secondary": "#505f76",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "on-tertiary-container": "#d8885c",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#a7c8ff",
+                        "secondary-container": "#d0e1fb",
+                        "primary-fixed": "#d5e3ff",
+                        "secondary-fixed": "#d3e4fe",
+                        "surface-container": "#edeeef",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "on-secondary-fixed": "#0b1c30",
+                        "inverse-on-surface": "#f0f1f2",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#54647a",
+                        "on-background": "#191c1d",
+                        "on-primary-container": "#799dd6",
+                        "on-error-container": "#93000a",
+                        "primary": "#001e40",
+                        "surface-dim": "#d9dadb",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#592300",
+                        "on-tertiary-fixed": "#341100",
+                        "surface": "#f8f9fa",
+                        "surface-variant": "#e1e3e4"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "stack-md": "16px",
+                        "gutter": "24px",
+                        "stack-lg": "32px",
+                        "unit": "4px",
+                        "margin-page": "48px",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Inter", "sans-serif"],
+                        "label-mono": ["JetBrains Mono", "monospace"],
+                        "body-sm": ["Inter", "sans-serif"],
+                        "body-base": ["Inter", "sans-serif"],
+                        "button": ["Inter", "sans-serif"],
+                        "display-lg-mobile": ["Inter", "sans-serif"],
+                        "headline-md": ["Inter", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-mono": ["12px", { "lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400" }],
+                        "body-base": ["16px", { "lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400" }],
+                        "button": ["14px", { "lineHeight": "1", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "display-lg-mobile": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        /* Modern Startup Design Additions & Overrides */
-        :root {
-            --font-display: 'Outfit', sans-serif;
-            --font-sans: 'Inter', sans-serif;
+        body { background-color: #ffffff; color: #191c1d; -webkit-font-smoothing: antialiased; }
+        .tech-border { border: 1px solid #E2E8F0; }
+        .tech-border-b { border-bottom: 1px solid #E2E8F0; }
+        .tech-border-t { border-top: 1px solid #E2E8F0; }
+        .tech-border-l { border-left: 1px solid #E2E8F0; }
+        .tech-border-r { border-right: 1px solid #E2E8F0; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
-        /* Hero & Section Sizing Upgrades */
-        .landing-header {
-            padding: 0 50px !important;
-        }
-
-        .landing-header .logo-container {
-            width: auto !important;
-        }
-
-        .landing-header .logo-image {
-            height: 48px !important;
-        }
-
-        .landing-nav .nav-link {
-            font-size: 0.95rem !important;
-        }
-
-        .landing-hero {
-            max-width: 1320px !important;
-            gap: 80px !important;
-            padding-top: 160px !important;
-            padding-bottom: 110px !important;
-        }
-
-        .hero-content h2 {
-            font-size: 3.85rem !important;
-            line-height: 1.12 !important;
-        }
-
-        .hero-content p {
-            font-size: 1.25rem !important;
-            line-height: 1.65 !important;
-        }
-
-        .hero-ctas .btn-hero-primary {
-            padding: 16px 32px !important;
-            font-size: 1rem !important;
-        }
-
-        .hero-ctas .btn-hero-secondary {
-            padding: 16px 32px !important;
-            font-size: 1rem !important;
-        }
-
-        .visual-card-wrapper {
-            width: 530px !important;
-            height: 380px !important;
-        }
-
-        .ambient-glow {
-            width: 460px !important;
-            height: 320px !important;
-        }
-
-        .window-sidebar {
-            width: 140px !important;
-            padding: 24px 14px !important;
-            gap: 10px !important;
-        }
-
-        .sidebar-item {
-            font-size: 0.82rem !important;
-            padding: 8px 10px !important;
-            gap: 8px !important;
-        }
-
-        .window-content {
-            padding: 28px !important;
-            gap: 20px !important;
-        }
-
-        .content-category {
-            font-size: 1.1rem !important;
-        }
-
-        .badge-status-green {
-            font-size: 0.72rem !important;
-            padding: 3px 8px !important;
-        }
-
-        .mock-chart-container {
-            height: 150px !important;
-            padding: 10px !important;
-        }
-
-        .chart-tooltip {
-            font-size: 0.72rem !important;
-            padding: 4px 8px !important;
-            top: 10px !important;
-            right: 10px !important;
-        }
-
-        .content-stats {
-            gap: 16px !important;
-        }
-
-        .mini-stat {
-            padding: 10px 14px !important;
-        }
-
-        .mini-stat .label {
-            font-size: 0.75rem !important;
-        }
-
-        .mini-stat .val {
-            font-size: 0.95rem !important;
-        }
-
-        /* Ambient Background Glows */
-        .landing-body {
-            position: relative;
-            overflow-x: hidden;
-            background-color: var(--bg-base);
-        }
-
-        .ambient-glow-bg {
+        .data-line {
+            height: 1px;
+            background: #E2E8F0;
+            width: 100%;
             position: absolute;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 0;
-            filter: blur(130px);
-            opacity: 0.4;
-            transition: opacity 0.5s ease;
         }
 
-        .glow-1 {
-            top: -120px;
-            left: -100px;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(37, 99, 235, 0.18) 0%, rgba(37, 99, 235, 0) 70%);
+        .data-line-v {
+            width: 1px;
+            background: #E2E8F0;
+            height: 100%;
+            position: absolute;
         }
-
-        .glow-2 {
-            top: 850px;
-            right: -100px;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(139, 92, 246, 0.14) 0%, rgba(139, 92, 246, 0) 70%);
-        }
-
-        .glow-3 {
-            top: 2100px;
-            left: -150px;
-            width: 550px;
-            height: 550px;
-            background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 70%);
-        }
-
-        .glow-4 {
-            bottom: 400px;
-            right: -80px;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, rgba(37, 99, 235, 0) 70%);
-        }
-
-        /* Scroll Reveal Animations */
-        .reveal-on-scroll {
+        
+        .fade-in-up {
             opacity: 0;
-            transform: translateY(28px);
-            transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
-            will-change: transform, opacity;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease-out, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
-        .reveal-on-scroll.revealed {
+        
+        .fade-in-up.visible {
             opacity: 1;
             transform: translateY(0);
         }
 
-        .reveal-stagger-1 {
-            transition-delay: 0.08s;
-        }
-
-        .reveal-stagger-2 {
-            transition-delay: 0.16s;
-        }
-
-        .reveal-stagger-3 {
-            transition-delay: 0.24s;
-        }
-
-        .reveal-stagger-4 {
-            transition-delay: 0.32s;
-        }
-
-        .reveal-stagger-5 {
-            transition-delay: 0.4s;
-        }
-
-        /* Demo Request Modal styling */
-        .modal-backdrop.demo-modal-backdrop {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(15, 23, 42, 0.55);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            z-index: 100000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .modal-backdrop.demo-modal-backdrop.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .demo-modal-container {
-            width: 490px;
-            max-width: 92%;
-            background: var(--bg-panel);
-            backdrop-filter: blur(30px) saturate(190%);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.25),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
-            transform: scale(0.92) translateY(20px);
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            opacity: 0;
-        }
-
-        [data-theme="dark"] .demo-modal-container {
-            background: rgba(30, 41, 59, 0.75);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.5),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-        }
-
-        .modal-backdrop.demo-modal-backdrop.show .demo-modal-container {
-            transform: scale(1) translateY(0);
-            opacity: 1;
-        }
-
-        .demo-modal-header {
-            padding: 24px 28px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .demo-modal-header h3 {
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .demo-modal-body {
-            padding: 28px;
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-        }
-
-        .demo-form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .demo-form-group label {
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            letter-spacing: 0.02em;
-        }
-
-        .demo-form-input {
-            padding: 12px 16px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border-color);
-            background: var(--bg-base);
-            color: var(--text-primary);
-            font-family: var(--font-sans);
-            font-size: 0.9rem;
-            outline: none;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .demo-form-input:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
-            background: var(--bg-panel-solid);
-        }
-
-        .demo-modal-footer {
-            padding: 20px 28px;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: flex-end;
-            gap: 14px;
-            background: var(--bg-panel-solid);
-        }
-
-        /* Partner Logo Wall styling */
-        .partner-logo-wall {
-            padding: 60px 0;
-            border-top: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
-            background: var(--bg-panel-solid);
-            text-align: center;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .partner-logo-wall h5 {
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-muted);
-            margin-bottom: 30px;
-            font-weight: 700;
-        }
-
-        .partner-logos-marquee {
-            overflow: hidden;
-            width: 100%;
-            display: flex;
-            position: relative;
-            user-select: none;
-            gap: 60px;
-        }
-
-        .partner-logos-marquee::before,
-        .partner-logos-marquee::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            width: 160px;
-            height: 100%;
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        .partner-logos-marquee::before {
-            left: 0;
-            background: linear-gradient(to right, var(--bg-panel-solid) 0%, rgba(255, 255, 255, 0) 100%);
-        }
-
-        .partner-logos-marquee::after {
-            right: 0;
-            background: linear-gradient(to left, var(--bg-panel-solid) 0%, rgba(255, 255, 255, 0) 100%);
-        }
-
-        [data-theme="dark"] .partner-logos-marquee::before {
-            background: linear-gradient(to right, var(--bg-panel-solid) 0%, rgba(15, 23, 42, 0) 100%);
-        }
-
-        [data-theme="dark"] .partner-logos-marquee::after {
-            background: linear-gradient(to left, var(--bg-panel-solid) 0%, rgba(15, 23, 42, 0) 100%);
-        }
-
-        .partner-logos-track {
-            flex-shrink: 0;
-            display: flex;
-            justify-content: space-around;
-            min-width: 100%;
-            gap: 60px;
-            animation: scroll 32s linear infinite;
-        }
-
-        .partner-logos-track:hover {
-            animation-play-state: paused;
-        }
-
-        @keyframes scroll {
-            from {
-                transform: translateX(0);
-            }
-
-            to {
-                transform: translateX(calc(-100% - 60px));
-            }
-        }
-
-        .partner-logo-item {
-            font-family: var(--font-display);
-            font-weight: 800;
-            font-size: 1.25rem;
-            letter-spacing: -0.01em;
-            color: var(--text-muted);
-            opacity: 0.45;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            user-select: none;
-            white-space: nowrap;
-        }
-
-        .partner-logo-item i,
-        .partner-logo-item svg {
-            color: var(--text-muted);
-            opacity: 0.8;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .partner-logo-item:hover {
-            color: var(--primary-color);
-            opacity: 0.95;
-            transform: scale(1.06);
-        }
-
-        .partner-logo-item:hover i,
-        .partner-logo-item:hover svg {
-            color: var(--primary-color);
-            transform: rotate(5deg);
-        }
-
-        /* Propulsion Calculator Widget styling */
-        .propulsion-calculator-section {
-            margin-top: 60px;
-            padding: 40px;
-            background: var(--bg-panel);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            box-shadow: 0 16px 36px -12px rgba(15, 23, 42, 0.03);
-            max-width: 1040px;
-            margin-left: auto;
-            margin-right: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 32px;
-            text-align: left;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .propulsion-calculator-section:hover {
-            border-color: rgba(37, 99, 235, 0.25);
-            box-shadow: 0 24px 48px -10px rgba(15, 23, 42, 0.06);
-        }
-
-        .calc-header {
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .calc-header h4 {
-            font-size: 1.75rem;
-            font-weight: 800;
-            color: var(--text-primary);
-            letter-spacing: -0.02em;
-        }
-
-        .calc-header p {
-            font-size: 0.95rem;
-            color: var(--text-secondary);
-            max-width: 580px;
-            margin: 0 auto;
-        }
-
-        .calc-body-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            align-items: center;
-        }
-
-        @media (max-width: 820px) {
-            .calc-body-grid {
-                grid-template-columns: 1fr;
-                gap: 30px;
-            }
-        }
-
-        .calc-inputs {
-            display: flex;
-            flex-direction: column;
-            gap: 28px;
-        }
-
-        .calc-selector-group {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .calc-selector-group label {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .calc-tab-row {
-            display: flex;
-            background: var(--bg-base);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 5px;
-            width: 100%;
-        }
-
-        .calc-tab-btn {
-            flex: 1;
-            background: transparent;
-            border: none;
-            padding: 12px 16px;
-            font-family: var(--font-sans);
-            font-size: 0.88rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            text-align: center;
-        }
-
-        .calc-tab-btn:hover {
-            color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.4);
-        }
-
-        [data-theme="dark"] .calc-tab-btn:hover {
-            background: rgba(255, 255, 255, 0.04);
-        }
-
-        .calc-tab-btn.active {
-            background: var(--bg-panel-solid);
-            color: var(--primary-color);
-            box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.08), var(--shadow-sm);
-        }
-
-        .calc-result-panel {
-            background: var(--bg-panel-solid);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 36px;
-            display: flex;
-            flex-direction: column;
-            gap: 28px;
-            box-shadow: var(--shadow-md);
-            position: relative;
-            overflow: hidden;
-            text-align: left;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .calc-result-panel:hover {
-            transform: translateY(-4px);
-            border-color: var(--primary-color);
-            box-shadow: 0 20px 40px -15px rgba(37, 99, 235, 0.12), var(--shadow-md);
-        }
-
-        .calc-result-panel::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-        }
-
-        .result-class-badge {
-            align-self: flex-start;
-            padding: 5px 12px;
-            border-radius: var(--radius-md);
-            font-size: 0.72rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            background: rgba(37, 99, 235, 0.08);
-            color: var(--primary-color);
-            border: 1px solid rgba(37, 99, 235, 0.15);
-        }
-
-        .result-title-row h5 {
-            font-size: 1.45rem;
-            font-weight: 800;
-            color: var(--text-primary);
-            margin-bottom: 4px;
-            letter-spacing: -0.01em;
-        }
-
-        .result-title-row p {
-            font-size: 0.88rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .result-specs-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            padding: 20px 0;
-            border-top: 1px dashed var(--border-color);
-            border-bottom: 1px dashed var(--border-color);
-        }
-
-        .result-spec-item {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .result-spec-item span.lbl {
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-
-        .result-spec-item span.val {
-            font-size: 1.05rem;
-            color: var(--text-primary);
-            font-weight: 700;
-        }
-
-        .calc-action-row {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        /* Testimonials Section styling */
-        .landing-testimonials {
-            padding: 100px 24px;
-            background: var(--bg-panel-solid);
-            text-align: center;
-            border-top: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .testimonials-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 32px;
-            max-width: 1120px;
-            margin: 48px auto 0;
-            padding: 0 10px;
-        }
-
-        .testimonial-card {
-            background: var(--bg-panel);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 36px;
-            text-align: left;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.02);
-        }
-
-        .testimonial-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05), rgba(37, 99, 235, 0.1) 0 0 20px 0;
-            border-color: var(--primary-color);
-        }
-
-        .testimonial-stars {
-            color: #f59e0b;
-            display: flex;
-            gap: 4px;
-        }
-
-        .testimonial-text {
-            font-size: 0.95rem;
-            color: var(--text-secondary);
-            line-height: 1.65;
-            font-style: italic;
-        }
-
-        .testimonial-user {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-top: auto;
-            border-top: 1px solid var(--border-color);
-            padding-top: 20px;
-        }
-
-        .testimonial-avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: var(--font-display);
-            font-weight: 700;
-            font-size: 1rem;
-            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
-        }
-
-        .testimonial-avatar.purple {
-            background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
-            box-shadow: 0 4px 10px rgba(139, 92, 246, 0.2);
-        }
-
-        .testimonial-avatar.emerald {
-            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
-            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
-        }
-
-        .testimonial-details {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
-
-        .testimonial-details h6 {
-            font-size: 0.92rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .testimonial-details span {
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        /* Stats Grid styling */
-        .landing-stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 24px;
-            max-width: 1120px;
-            margin: 80px auto 40px;
-            padding: 0 24px;
-        }
-
-        @media (max-width: 820px) {
-            .landing-stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .landing-stats-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .landing-stat-card {
-            background: var(--bg-panel);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 30px 24px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            box-shadow: var(--shadow-sm);
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .landing-stat-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--primary-color);
-            box-shadow: 0 12px 24px -8px rgba(37, 99, 235, 0.15), var(--shadow-sm);
-        }
-
-        .landing-stat-num {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--text-primary) 30%, var(--primary-color) 100%);
+        .hero-title-mask {
+            background: linear-gradient(to right, #001e40, #003366);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-family: var(--font-display);
-            line-height: 1;
-        }
-
-        .landing-stat-lbl {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        /* Success message state in Demo request modal */
-        .demo-success-content {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 48px 24px;
-            gap: 20px;
-            animation: demoSuccessScale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes demoSuccessScale {
-            from {
-                transform: scale(0.9);
-                opacity: 0;
-            }
-
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        .demo-success-icon {
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.2rem;
-            animation: demoSuccessPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.5);
-        }
-
-        @keyframes demoSuccessPop {
-            0% {
-                transform: scale(0.4);
-                opacity: 0;
-            }
-
-            70% {
-                transform: scale(1.15);
-            }
-
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        .demo-success-title {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .demo-success-desc {
-            font-size: 0.92rem;
-            color: var(--text-secondary);
-            max-width: 340px;
-            line-height: 1.6;
-        }
-
-        /* Navigation, CTA & Header Enhancements */
-        .landing-header {
-            background: rgba(255, 255, 255, 0.75) !important;
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border-bottom: 1px solid var(--border-color);
-            position: fixed !important;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
-            box-shadow: 0 4px 20px -10px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-        }
-
-        [data-theme="dark"] .landing-header {
-            background: rgba(15, 23, 42, 0.75) !important;
-        }
-
-        .landing-header .btn-primary,
-        .landing-header .btn-outline {
-            position: relative;
-            overflow: hidden;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px !important;
-            font-size: 0.88rem !important;
-            font-weight: 600 !important;
-            border-radius: var(--radius-md) !important;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-        }
-
-        .landing-header .btn-primary {
-            background: var(--primary-color) !important;
-            color: white !important;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2) !important;
-        }
-
-        .landing-header .btn-primary:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35) !important;
-            background: var(--primary-hover) !important;
-        }
-
-        .landing-header .btn-outline {
-            border: 1.5px solid var(--primary-color) !important;
-            color: var(--primary-color) !important;
-            background: transparent !important;
-        }
-
-        .landing-header .btn-outline:hover {
-            transform: translateY(-2px) !important;
-            background: rgba(37, 99, 235, 0.06) !important;
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.08) !important;
-        }
-
-        /* Shine sweep effect for buttons */
-        .landing-header .btn-primary::after,
-        .landing-header .btn-outline::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 200%;
-            height: 100%;
-            background: linear-gradient(to right,
-                    rgba(255, 255, 255, 0) 0%,
-                    rgba(255, 255, 255, 0.25) 50%,
-                    rgba(255, 255, 255, 0) 100%);
-            transform: skewX(-25deg);
-            transition: none;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .landing-header .btn-primary:hover::after,
-        .landing-header .btn-outline:hover::after {
-            left: 100%;
-            opacity: 1;
-            transition: all 0.75s cubic-bezier(0.16, 1, 0.3, 1) !important;
-        }
-
-        /* Icon micro-animation on hover */
-        .landing-header .btn-primary i,
-        .landing-header .btn-primary svg {
-            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-        }
-
-        .landing-header .btn-primary:hover i,
-        .landing-header .btn-primary:hover svg {
-            transform: translateX(4px);
-        }
-
-        /* Floating animation for mock window */
-        @keyframes float {
-            0% {
-                transform: translateY(0px) rotate(0deg);
-            }
-
-            50% {
-                transform: translateY(-10px) rotate(0.5deg);
-            }
-
-            100% {
-                transform: translateY(0px) rotate(0deg);
-            }
-        }
-
-        .mock-window {
-            animation: float 6s cubic-bezier(0.445, 0.05, 0.55, 0.95) infinite !important;
-        }
-
-        /* Feature Card design overrides */
-        .feature-card {
-            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
-            padding: 36px !important;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-6px) scale(1.01) !important;
-            border-color: var(--primary-color) !important;
-            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(37, 99, 235, 0.1) !important;
-        }
-
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 10px;
-            background: rgba(37, 99, 235, 0.06);
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .feature-card:hover .feature-icon {
-            background: var(--primary-color);
-            color: white;
-            transform: scale(1.1) rotate(3deg);
-        }
-
-        /* Showcase tab transitions */
-        .showcase-tab {
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-            border-left: 3px solid transparent !important;
-        }
-
-        .showcase-tab.active {
-            border-left-color: var(--primary-color) !important;
-            background: rgba(37, 99, 235, 0.03) !important;
-        }
-
-        .showcase-tab:hover:not(.active) {
-            background: rgba(0, 0, 0, 0.02) !important;
-            transform: translateX(3px);
-        }
-
-        [data-theme="dark"] .showcase-tab:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.02) !important;
-        }
-
-        /* View Panel transition */
-        .view-panel {
-            opacity: 0;
-            transform: scale(0.98) translateY(10px);
-            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            display: none;
-        }
-
-        .view-panel.active {
-            display: flex !important;
-            opacity: 1;
-            transform: scale(1) translateY(0);
-        }
-
-        /* Role card styling */
-        .role-card {
-            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
-        }
-
-        .role-card:hover {
-            transform: translateY(-8px) !important;
-            box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.08) !important;
-        }
-
-        .role-card:hover .role-icon-box {
-            transform: scale(1.15) rotate(-3deg);
-        }
-
-        .role-icon-box {
-            transition: all 0.3s ease;
-        }
-
-        /* Accordion chevron animation */
-        .faq-chevron {
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-        }
-
-        .faq-answer {
-            max-height: 0;
-            opacity: 0;
-            overflow: hidden;
-            transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, padding 0.4s ease;
-            padding: 0 25px;
-            text-align: left;
-        }
-
-        .faq-item.active .faq-answer {
-            max-height: 500px;
-            opacity: 1;
-            padding: 0 25px 20px;
-        }
-
-        /* Glow CTA section */
-        .cta-glow-box {
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(139, 92, 246, 0.04) 100%) !important;
-            border: 1px solid rgba(37, 99, 235, 0.15) !important;
-            box-shadow: 0 30px 60px -20px rgba(37, 99, 235, 0.1) !important;
-            transition: all 0.4s ease;
-        }
-
-        .cta-glow-box:hover {
-            border-color: rgba(37, 99, 235, 0.3) !important;
-            box-shadow: 0 40px 80px -20px rgba(37, 99, 235, 0.18) !important;
-        }
-
-        .btn-cta-primary {
-            transition: all 0.3s ease !important;
-            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.2) !important;
-        }
-
-        .btn-cta-primary:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35) !important;
-        }
-
-        .btn-cta-secondary {
-            transition: all 0.3s ease !important;
-        }
-
-        .btn-cta-secondary:hover {
-            background: rgba(255, 255, 255, 0.15) !important;
-            transform: translateY(-2px) !important;
-        }
-
-        /* Glassmorphism custom styling class */
-        .glass-panel {
-            background: var(--bg-panel);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
-        }
-
-        [data-theme="dark"] .glass-panel {
-            background: rgba(15, 23, 42, 0.65);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-        }
-
-        /* Hero loading transitions */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .hero-content {
-            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        .hero-visual {
-            animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        .animate-spin {
-            animation: spin 1s linear infinite;
-            display: inline-block;
         }
     </style>
 </head>
+<body class="font-body-base bg-transparent overflow-x-hidden selection:bg-primary-container selection:text-white relative">
+<!-- Full-Screen Fixed Background Shader -->
+<div class="fixed inset-0 w-full h-full z-[-1] pointer-events-none">
 
-<body class="landing-body">
-    <!-- Ambient Background Glows -->
-    <div class="ambient-glow-bg glow-1"></div>
-    <div class="ambient-glow-bg glow-2"></div>
-    <div class="ambient-glow-bg glow-3"></div>
-    <div class="ambient-glow-bg glow-4"></div>
+</div>
+<!-- TopNavBar (Fixed wrapping wrapper for correct centering alignment) -->
+<div class="fixed top-0 left-0 right-0 z-50 w-full flex justify-center px-4 py-4 pointer-events-none">
+    <nav class="w-full max-w-7xl pointer-events-auto flex justify-between items-center px-6 md:px-8 py-3 rounded-full bg-white/75 backdrop-blur-md border border-slate-200/50 shadow-sm transition-all duration-300" id="navbar">
+        <!-- Left Brand Logo -->
+        <a href="/" class="flex items-center">
+            <img src="logo_light.png" alt="ThrustVault Logo" class="h-8 w-auto">
+        </a>
+        
+        <!-- Center Navigation Links -->
+        <div class="hidden md:flex gap-10 font-label-mono text-[13px]">
+            <a class="text-secondary hover:text-primary-container transition-colors duration-200 font-medium" href="#features">Features</a>
+            <a class="text-secondary hover:text-primary-container transition-colors duration-200 font-medium" href="/versions">Version Catalog</a>
+            <a class="text-secondary hover:text-primary-container transition-colors duration-200 font-medium" href="/request_access">Request Access</a>
+            <a class="text-secondary hover:text-primary-container transition-colors duration-200 font-medium" href="/docs">Documentation</a>
+        </div>
+        
+        <!-- Right Action Button -->
+        <div class="flex items-center gap-4">
+            <a href="/login" class="bg-primary-container hover:bg-primary text-white font-button text-[13px] px-5 py-2 rounded-full transition-colors font-semibold" style="text-decoration:none;">Sign In</a>
+        </div>
+    </nav>
+</div>
 
-    <!-- Header/Navbar -->
-    <header class="landing-header">
-        <div class="logo-container">
-            <a href="/" class="logo-link">
-                <img src="logo_light.png" alt="ThrustVault Logo" class="logo-image logo-light">
-                <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark">
+<!-- Hero Section -->
+<section class="relative w-full h-screen flex items-center justify-center overflow-hidden">
+    <!-- Background Shader -->
+    <div class="absolute inset-0 w-full h-full opacity-25" style="display:block;">
+        <canvas id="shader-canvas-ANIMATION_1" style="display:block;width:100%;height:100%"></canvas>
+        <script>
+        (function() {
+          const canvas = document.getElementById('shader-canvas-ANIMATION_1');
+
+          // Sync the WebGL drawing-buffer size with the CSS-driven layout size.
+          function syncSize() {
+            const w = canvas.clientWidth  || 1280;
+            const h = canvas.clientHeight || 720;
+            if (canvas.width !== w || canvas.height !== h) {
+              canvas.width  = w;
+              canvas.height = h;
+            }
+          }
+          if (typeof ResizeObserver !== 'undefined') {
+            new ResizeObserver(syncSize).observe(canvas);
+          }
+          syncSize();
+
+          const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+          if (!gl) return;
+          const vs = `attribute vec2 a_position;
+        varying vec2 v_texCoord;
+        void main() {
+          v_texCoord = a_position * 0.5 + 0.5;
+          gl_Position = vec4(a_position, 0.0, 1.0);
+        }`;
+          const fs = `precision highp float;
+        uniform float u_time;
+        uniform vec2 u_resolution;
+        varying vec2 v_texCoord;
+
+        void main() {
+            vec2 uv = v_texCoord;
+            
+            // Subtle architectural grid
+            vec2 grid = fract(uv * 40.0);
+            float line = smoothstep(0.0, 0.02, grid.x) * smoothstep(1.0, 0.98, grid.x) +
+                         smoothstep(0.0, 0.02, grid.y) * smoothstep(1.0, 0.98, grid.y);
+            
+            // Faint blueprint lines
+            float bluePrint = step(0.998, fract(uv.x * 5.0)) + step(0.998, fract(uv.y * 5.0));
+            
+            vec3 color = vec3(1.0); // Pure white background
+            color = mix(color, vec3(0.95), line * 0.3); // Subtle grid
+            color = mix(color, vec3(0.9), bluePrint * 0.5); // Blueprint lines
+            
+            // Adding a very faint, slow-moving "data pulse"
+            float pulse = sin(uv.x * 10.0 + u_time * 0.5) * cos(uv.y * 10.0 + u_time * 0.3);
+            color = mix(color, vec3(0.97), clamp(pulse, 0.0, 1.0) * 0.2);
+
+            gl_FragColor = vec4(color, 1.0);
+        }`;
+          function cs(type, src) {
+            const s = gl.createShader(type);
+            gl.shaderSource(s, src);
+            gl.compileShader(s);
+            return s;
+          }
+          const prog = gl.createProgram();
+          gl.attachShader(prog, cs(gl.VERTEX_SHADER, vs));
+          gl.attachShader(prog, cs(gl.FRAGMENT_SHADER, fs));
+          gl.linkProgram(prog);
+          gl.useProgram(prog);
+          const buf = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+          const pos = gl.getAttribLocation(prog, 'a_position');
+          gl.enableVertexAttribArray(pos);
+          gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+          const uTime = gl.getUniformLocation(prog, 'u_time');
+          const uRes = gl.getUniformLocation(prog, 'u_resolution');
+          const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+
+          let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+          window.addEventListener('mousemove', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            if (rect.width && rect.height) {
+              const nx = (event.clientX - rect.left) / rect.width;
+              const ny = 1.0 - (event.clientY - rect.top) / rect.height;
+              mouse.x = nx * canvas.width;
+              mouse.y = ny * canvas.height;
+            }
+          });
+
+          function render(t) {
+            if (typeof ResizeObserver === 'undefined') syncSize();
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            if (uTime) gl.uniform1f(uTime, t * 0.001);
+            if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
+            if (uMouse) gl.uniform2f(uMouse, mouse.x, mouse.y);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            requestAnimationFrame(render);
+          }
+          render(0);
+        })();
+        </script>
+    </div>
+
+    <!-- ThreeJS Interactive 3D Overlay -->
+    <div class="absolute inset-0 w-full h-full z-10 mix-blend-multiply opacity-55 pointer-events-none">
+        <div class="absolute inset-0 w-full h-full bg-transparent" style="display:block;">
+            <script src="https://ajax.googleapis.com/ajax/libs/threejs/r125/three.min.js"></script>
+            <div id="threejs-container-ANIMATION_2" style="width:100%;height:100%"></div>
+            <script>
+            (function() {
+              const container = document.getElementById('threejs-container-ANIMATION_2');
+              const width = container.clientWidth || window.innerWidth;
+              const height = container.clientHeight || window.innerHeight;
+
+              const scene = new THREE.Scene();
+              const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+              camera.position.z = 5;
+
+              const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+              renderer.setSize(width, height);
+              renderer.setPixelRatio(window.devicePixelRatio);
+              container.appendChild(renderer.domElement);
+
+              // Engineering "Components" - Floating Cards/Elements
+              const group = new THREE.Group();
+              scene.add(group);
+
+              const createCard = (x, y, z, w, h, color) => {
+                  const geometry = new THREE.PlaneGeometry(w, h);
+                  const material = new THREE.MeshBasicMaterial({ 
+                      color: color, 
+                      transparent: true, 
+                      opacity: 0.05,
+                      side: THREE.DoubleSide 
+                  });
+                  const card = new THREE.Mesh(geometry, material);
+                  card.position.set(x, y, z);
+                  
+                  // Wireframe for "Technical" look
+                  const edges = new THREE.EdgesGeometry(geometry);
+                  const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x003366, transparent: true, opacity: 0.15 }));
+                  card.add(line);
+                  
+                  return card;
+              };
+
+              // Create a cluster of engineering "data" cards
+              for(let i = 0; i < 15; i++) {
+                  const card = createCard(
+                      (Math.random() - 0.5) * 8,
+                      (Math.random() - 0.5) * 4,
+                      (Math.random() - 0.5) * 2,
+                      0.8 + Math.random(),
+                      0.5 + Math.random(),
+                      0x003366
+                  );
+                  card.userData.speed = 0.002 + Math.random() * 0.005;
+                  card.userData.rotationSpeed = (Math.random() - 0.5) * 0.002;
+                  group.add(card);
+              }
+
+              // Ambient light
+              const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+              scene.add(ambientLight);
+
+              function animate() {
+                  requestAnimationFrame(animate);
+                  
+                  group.children.forEach(child => {
+                      child.position.y += Math.sin(Date.now() * child.userData.speed) * 0.0002;
+                      child.rotation.y += child.userData.rotationSpeed;
+                      child.rotation.x += child.userData.rotationSpeed * 0.5;
+                  });
+                  
+                  group.rotation.y = (window.mouseX || 0) * 0.0001;
+                  group.rotation.x = (window.mouseY || 0) * 0.0001;
+                  
+                  renderer.render(scene, camera);
+              }
+
+              window.addEventListener('mousemove', (e) => {
+                  window.mouseX = e.clientX - window.innerWidth / 2;
+                  window.mouseY = e.clientY - window.innerHeight / 2;
+              });
+
+              window.addEventListener('resize', () => {
+                  const w = container.clientWidth || window.innerWidth;
+                  const h = container.clientHeight || window.innerHeight;
+                  camera.aspect = w / h;
+                  camera.updateProjectionMatrix();
+                  renderer.setSize(w, h);
+              });
+
+              animate();
+            })();
+            </script>
+        </div>
+    </div>
+
+    <!-- Grid Lines -->
+    <div class="absolute inset-0 pointer-events-none z-0 opacity-[0.06]">
+        <div class="w-full h-full" style="background-image: linear-gradient(#003366 1px, transparent 1px), linear-gradient(90deg, #003366 1px, transparent 1px); background-size: 48px 48px;"></div>
+    </div>
+    <div class="relative z-20 max-w-container-max mx-auto px-margin-page w-full flex flex-col items-start pt-24 bg-white/40 backdrop-blur-sm p-8 rounded-2xl border border-white/50 shadow-sm mt-16 max-w-5xl">
+        <div class="font-label-mono text-label-mono text-primary-container tracking-[0.2em] uppercase mb-stack-md flex items-center gap-4 fade-in-up">
+            <span class="w-12 h-px bg-primary-container"></span>
+            The centralized intelligence platform for drone propulsion systems.
+        </div>
+        <h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-primary max-w-4xl tracking-tighter leading-tight mb-stack-lg fade-in-up uppercase" style="transition-delay: 0.1s;">
+            <span class="hero-title-mask">ENGINEERING KNOWLEDGE.<br/>CAPTURED. VALIDATED. REUSABLE.</span>
+        </h1>
+        <p class="font-body-base text-body-base text-secondary max-w-2xl mb-stack-lg fade-in-up font-medium" style="transition-delay: 0.2s;">
+            Transform scattered motor specifications, ESC selections, propeller experiments, and test bench results into a structured engineering knowledge base that scales across teams, projects, and generations of aircraft.
+        </p>
+        <div class="flex gap-stack-md fade-in-up" style="transition-delay: 0.3s;">
+            <a href="/login" class="bg-primary-container text-white font-button text-button px-8 py-4 rounded DEFAULT hover:bg-primary transition-colors flex items-center gap-2 shadow-md" style="text-decoration:none;">
+                Explore Platform
+                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+            </a>
+            <a href="/docs" class="border border-outline-variant bg-white/80 text-primary font-button text-button px-8 py-4 rounded DEFAULT hover:bg-white transition-colors shadow-sm" style="text-decoration:none;">
+                View Documentation
             </a>
         </div>
-        <nav class="landing-nav">
-            <a href="#features" class="nav-link">Capabilities</a>
-            <a href="#showcase" class="nav-link">Console Showcase</a>
-            <a href="#roles" class="nav-link">Team Workflows</a>
-            <a href="#faqs" class="nav-link">FAQs</a>
-        </nav>
-        <div class="nav-actions" style="display:flex; gap:12px; align-items:center;">
-            <a href="/login" class="btn-primary" style="text-decoration:none;">Sign In <i data-lucide="log-in"
-                    style="width:16px; height:16px;"></i></a>
+    </div>
+    <!-- Scroll Indicator -->
+    <div class="absolute bottom-margin-page left-margin-page z-20 font-label-mono text-label-mono text-outline flex items-center gap-4 animate-pulse bg-white/50 px-4 py-2 rounded-full backdrop-blur-md">
+        <span class="w-px h-6 bg-outline block"></span>
+        SCROLL TO INITIALIZE
+    </div>
+</section>
+
+<!-- Trusted By Section -->
+<section class="py-24 border-b border-outline-variant/20 bg-surface-container-lowest relative z-10">
+    <div class="max-w-container-max mx-auto px-margin-page text-center fade-in-up">
+        <h2 class="font-label-mono text-label-mono text-secondary tracking-widest uppercase mb-4">Trusted by Engineering Teams</h2>
+        <p class="font-body-base text-body-base text-secondary max-w-2xl mx-auto">Thousands of propulsion records. Thousands of validation runs. One source of engineering truth.</p>
+    </div>
+</section>
+
+<!-- Problem/Solution Section -->
+<section class="py-32 px-margin-page max-w-container-max mx-auto relative bg-surface-container-lowest z-10">
+    <div class="mb-16 fade-in-up text-center">
+        <h2 class="font-headline-md text-headline-md text-primary mb-4">Stop Repeating the Same Tests</h2>
+        <p class="font-body-base text-body-base text-secondary max-w-3xl mx-auto">Engineering teams spend countless hours searching spreadsheets, documents, and old reports to answer the same questions:</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter mb-16">
+        <div class="tech-border rounded-lg p-stack-lg bg-surface-bright fade-in-up" style="transition-delay: 0.1s;">
+            <p class="font-button text-primary">"Which motor performed best?"</p>
         </div>
-    </header>
+        <div class="tech-border rounded-lg p-stack-lg bg-surface-bright fade-in-up" style="transition-delay: 0.2s;">
+            <p class="font-button text-primary">"Which ESC configuration was validated?"</p>
+        </div>
+        <div class="tech-border rounded-lg p-stack-lg bg-surface-bright fade-in-up" style="transition-delay: 0.3s;">
+            <p class="font-button text-primary">"Which propeller delivered the highest efficiency?"</p>
+        </div>
+        <div class="tech-border rounded-lg p-stack-lg bg-surface-bright fade-in-up" style="transition-delay: 0.4s;">
+            <p class="font-button text-primary">"Where are the previous test results?"</p>
+        </div>
+    </div>
+    <div class="text-center fade-in-up" style="transition-delay: 0.5s;">
+        <p class="font-body-base text-primary-container font-semibold">ThrustVault turns disconnected engineering data into a searchable propulsion intelligence system.</p>
+    </div>
+</section>
 
-    <!-- Hero Section -->
-    <section class="landing-hero">
-        <div class="hero-content">
-            <span class="badge-hero"><i data-lucide="database" style="width:14px; height:14px;"></i> Interactive Spec
-                Catalog</span>
-            <h2>The Secure Console for <span>Drone Motor Analytics</span></h2>
-            <p>Search, filter, and compare brushless motor specifications side-by-side. Manage categories and data
-                imports securely with role-based access control, integrated with Supabase.</p>
+<!-- Propulsion Knowledge Graph Section -->
+<section class="py-32 bg-surface-bright relative border-y border-outline-variant/20 overflow-hidden z-10">
+    <div class="absolute inset-0" style="background-image: linear-gradient(to right, #E2E8F0 1px, transparent 1px); background-size: 100px 100px; opacity: 0.5;"></div>
+    <div class="max-w-container-max mx-auto px-margin-page relative z-10 text-center">
+        <div class="mb-16 fade-in-up">
+            <h2 class="font-headline-md text-headline-md text-primary mb-4">Build a Propulsion Knowledge Graph</h2>
+            <p class="font-label-mono text-label-mono text-secondary tracking-widest uppercase">Every motor becomes connected.</p>
+        </div>
+        <div class="flex flex-wrap justify-center items-center gap-4 font-label-mono text-label-mono text-primary mb-16 fade-in-up">
+            <div class="tech-border bg-white px-6 py-3 rounded-full">Motor</div>
+            <span class="material-symbols-outlined text-outline">arrow_forward</span>
+            <div class="tech-border bg-white px-6 py-3 rounded-full">ESC</div>
+            <span class="material-symbols-outlined text-outline">arrow_forward</span>
+            <div class="tech-border bg-white px-6 py-3 rounded-full">Propeller</div>
+            <span class="material-symbols-outlined text-outline">arrow_forward</span>
+            <div class="tech-border bg-white px-6 py-3 rounded-full">Battery</div>
+            <span class="material-symbols-outlined text-outline">arrow_forward</span>
+            <div class="tech-border bg-white px-6 py-3 rounded-full">Test Run</div>
+            <span class="material-symbols-outlined text-outline">arrow_forward</span>
+            <div class="tech-border bg-primary-container text-white px-6 py-3 rounded-full">Performance Outcome</div>
+        </div>
+        <p class="font-body-base text-body-base text-secondary max-w-3xl mx-auto fade-in-up">
+            Instantly understand what was tested, what worked, and what should be used next. No more isolated spreadsheets. No more lost validation data.
+        </p>
+    </div>
+</section>
 
-            <div class="hero-ctas" style="display:flex; gap:14px; flex-wrap:wrap;">
-                <a href="/demo/dashboard" class="btn-hero-primary" style="text-decoration:none; background: linear-gradient(135deg, var(--primary-color), #3b82f6); color: white; display:flex; align-items:center; gap:8px;">Try Now <i data-lucide="sparkles" style="width:18px; height:18px;"></i></a>
-                <a href="/login" class="btn-hero-secondary" style="text-decoration:none; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#f8fafc; display:flex; align-items:center; gap:8px;">Launch Console <i data-lucide="arrow-right" style="width:18px; height:18px;"></i></a>
+<!-- Engineering Intelligence at Scale (Feature Grid) -->
+<section class="py-32 px-margin-page max-w-container-max mx-auto relative bg-surface-container-lowest z-10" id="features">
+    <div class="mb-24 fade-in-up">
+        <h2 class="font-headline-md text-headline-md text-primary max-w-2xl">Engineering Intelligence at Scale</h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+        <!-- Feature 1 -->
+        <div class="tech-border rounded-lg bg-white p-stack-lg fade-in-up">
+            <h3 class="font-button text-button text-primary mb-stack-sm">Motor Intelligence</h3>
+            <p class="font-body-sm text-body-sm text-secondary">Maintain a living catalog of propulsion systems. Track specifications, dimensions, KV ratings, weight, thrust output, efficiency, power consumption, and manufacturer data.</p>
+        </div>
+        <!-- Feature 2 -->
+        <div class="tech-border rounded-lg bg-white p-stack-lg fade-in-up" style="transition-delay: 0.1s;">
+            <h3 class="font-button text-button text-primary mb-stack-sm">Validation History</h3>
+            <p class="font-body-sm text-body-sm text-secondary">Every test run becomes institutional knowledge. Store telemetry, environmental conditions, custom configurations, observations, and engineering notes.</p>
+        </div>
+        <!-- Feature 3 -->
+        <div class="tech-border rounded-lg bg-white p-stack-lg fade-in-up" style="transition-delay: 0.2s;">
+            <h3 class="font-button text-button text-primary mb-stack-sm">Compatibility Mapping</h3>
+            <p class="font-body-sm text-body-sm text-secondary">Understand relationships between motors, ESCs, propellers, batteries, and aircraft platforms. Identify validated combinations with confidence.</p>
+        </div>
+        <!-- Feature 4 -->
+        <div class="tech-border rounded-lg bg-white p-stack-lg fade-in-up" style="transition-delay: 0.3s;">
+            <h3 class="font-button text-button text-primary mb-stack-sm">Performance Analytics</h3>
+            <p class="font-body-sm text-body-sm text-secondary">Visualize thrust curves, efficiency maps, RPM behavior, power consumption, thermal performance, and system trends.</p>
+        </div>
+    </div>
+</section>
+
+</section>
+
+<!-- Module 03: Interactive Propulsion Architecture Simulator -->
+<section class="py-32 px-margin-page max-w-container-max mx-auto relative bg-surface-container-lowest z-10" id="simulator">
+    <div class="mb-16 fade-in-up text-center">
+        <div class="font-label-mono text-label-mono text-secondary tracking-widest uppercase mb-4">Module 03</div>
+        <h2 class="font-headline-md text-headline-md text-primary mb-4">Propulsion Architecture Simulator</h2>
+        <p class="font-body-base text-body-base text-secondary max-w-3xl mx-auto">Select target UAV payload parameters and battery cell counts to dynamically simulate and recommend standard motor configurations.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-stretch">
+        <!-- Interactive Selector Grid -->
+        <div class="lg:col-span-7 tech-border bg-white p-8 rounded-xl flex flex-col justify-between fade-in-up">
+            <div>
+                <!-- Payload Selector -->
+                <h4 class="font-label-mono text-xs uppercase tracking-widest text-secondary mb-4">1. Select Target UAV Payload (per rotor)</h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8" id="calc-payload-tabs">
+                    <button onclick="setCalcPayload(1000, this)" class="calc-tab-btn active tech-border px-4 py-3 rounded text-center text-xs font-semibold hover:border-primary-container transition-all">
+                        1.0 kg
+                        <span class="block text-[10px] text-outline font-normal mt-1">Racing & FPV</span>
+                    </button>
+                    <button onclick="setCalcPayload(3000, this)" class="calc-tab-btn tech-border px-4 py-3 rounded text-center text-xs font-semibold hover:border-primary-container transition-all">
+                        3.0 kg
+                        <span class="block text-[10px] text-outline font-normal mt-1">Surveying UAV</span>
+                    </button>
+                    <button onclick="setCalcPayload(6000, this)" class="calc-tab-btn tech-border px-4 py-3 rounded text-center text-xs font-semibold hover:border-primary-container transition-all">
+                        6.0 kg
+                        <span class="block text-[10px] text-outline font-normal mt-1">Logistics Hexa</span>
+                    </button>
+                    <button onclick="setCalcPayload(10000, this)" class="calc-tab-btn tech-border px-4 py-3 rounded text-center text-xs font-semibold hover:border-primary-container transition-all">
+                        10.0 kg
+                        <span class="block text-[10px] text-outline font-normal mt-1">Heavy Cargo</span>
+                    </button>
+                </div>
+
+                <!-- Battery Selector -->
+                <h4 class="font-label-mono text-xs uppercase tracking-widest text-secondary mb-4">2. Select Battery Voltage Class</h4>
+                <div class="grid grid-cols-2 gap-4" id="calc-battery-tabs">
+                    <button onclick="setCalcBattery('6S', this)" class="calc-tab-btn active tech-border px-6 py-4 rounded text-center text-xs font-semibold hover:border-primary-container transition-all">
+                        6S LiPo (22.2 V)
+                        <span class="block text-[10px] text-outline font-normal mt-1">Standard platforms</span>
+                    </button>
+                    <button onclick="setCalcBattery('12S', this)" class="calc-tab-btn tech-border px-6 py-4 rounded text-center text-xs font-semibold hover:border-primary-container transition-all">
+                        12S LiPo (44.4 V)
+                        <span class="block text-[10px] text-outline font-normal mt-1">High-voltage heavy rigs</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-slate-100 font-label-mono text-[11px] text-outline flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Dynamic prediction engine active. Recommendations mapped to physical test records.
             </div>
         </div>
 
-        <div class="hero-visual">
-            <div class="visual-card-wrapper">
-                <div class="ambient-glow"></div>
-                <!-- Mock Dashboard Window -->
-                <div class="mock-window glass-panel">
-                    <div class="window-header">
-                        <div class="window-dots">
-                            <span class="dot red"></span>
-                            <span class="dot yellow"></span>
-                            <span class="dot green"></span>
-                        </div>
-                        <span class="window-title">ThrustVault Console</span>
+        <!-- Simulation Results Visual Panel -->
+        <div class="lg:col-span-5 border-2 border-primary-container bg-slate-50/50 p-8 rounded-xl flex flex-col justify-between fade-in-up" style="transition-delay: 0.1s;" id="calc-result-panel">
+            <div>
+                <div class="flex justify-between items-center mb-6">
+                    <span class="font-label-mono text-[10px] uppercase bg-primary-container text-white px-3 py-1 rounded" id="res-class">Racing & Freestyle</span>
+                    <span class="font-label-mono text-[10px] text-outline">RECOMMENDED SYSTEM</span>
+                </div>
+
+                <h3 class="font-display-lg-mobile text-primary tracking-tight font-bold mb-1" id="res-motor-name">BH2806.5 KV1300</h3>
+                <p class="font-label-mono text-xs text-secondary mb-8" id="res-motor-company">by BrotherHobby</p>
+
+                <!-- Parameter Spec list -->
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center py-2 border-b border-slate-200/50">
+                        <span class="text-xs text-secondary">Motor KV Class</span>
+                        <span class="text-xs font-bold text-primary" id="res-kv">1300 KV</span>
                     </div>
-                    <div class="window-body">
-                        <div class="window-sidebar">
-                            <div class="sidebar-item active"><i data-lucide="database" style="width:12px;"></i> Motors
-                            </div>
-                            <div class="sidebar-item"><i data-lucide="git-compare" style="width:12px;"></i> Compare
-                            </div>
-                            <div class="sidebar-item"><i data-lucide="trending-up" style="width:12px;"></i> Analytics
-                            </div>
-                        </div>
-                        <div class="window-content">
-                            <div class="content-header">
-                                <span class="content-category">U8 Lite KV150</span>
-                                <span class="badge-status-green">Verified</span>
-                            </div>
-                            <!-- Mock Mini Graph SVG -->
-                            <div class="mock-chart-container">
-                                <svg viewBox="0 0 200 80" class="mock-chart-svg">
-                                    <path d="M 0,70 Q 50,60 100,30 T 200,10" fill="none" stroke="#2563eb"
-                                        stroke-width="2.5"></path>
-                                    <path d="M 0,70 Q 50,60 100,30 T 200,10 L 200,80 L 0,80 Z"
-                                        fill="url(#chart-gradient)" opacity="0.12"></path>
-                                    <line x1="0" y1="70" x2="200" y2="70" stroke="#cbd5e1" stroke-dasharray="3,3">
-                                    </line>
-                                    <line x1="0" y1="40" x2="200" y2="40" stroke="#cbd5e1" stroke-dasharray="3,3">
-                                    </line>
-                                    <circle cx="100" cy="30" r="3.5" fill="#2563eb"></circle>
-                                    <defs>
-                                        <linearGradient id="chart-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                            <stop offset="0%" stop-color="#2563eb" />
-                                            <stop offset="100%" stop-color="#2563eb" stop-opacity="0" />
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                                <div class="chart-tooltip">Max Thrust: 8,400g</div>
-                            </div>
-                            <div class="content-stats">
-                                <div class="mini-stat">
-                                    <span class="label">Brand</span>
-                                    <span class="val">T-Motor</span>
-                                </div>
-                                <div class="mini-stat">
-                                    <span class="label">Voltage</span>
-                                    <span class="val">12S LiPo</span>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-200/50">
+                        <span class="text-xs text-secondary">Peak Thrust Output</span>
+                        <span class="text-xs font-bold text-primary" id="res-thrust">2,100 g</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-200/50">
+                        <span class="text-xs text-secondary">Recommended Propeller</span>
+                        <span class="text-xs font-bold text-primary" id="res-prop">7x4.5 inch tri-blade</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-200/50">
+                        <span class="text-xs text-secondary">Recommended ESC</span>
+                        <span class="text-xs font-bold text-primary" id="res-esc">45A Brushless</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                        <span class="text-xs text-secondary">Hover Efficiency Ratio</span>
+                        <span class="text-xs font-bold text-primary-container" id="res-efficiency">8.2 g/W</span>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <!-- Trusted Partners Logo Wall -->
-    <div class="partner-logo-wall reveal-on-scroll">
-        <h5>TRUSTED BY LEADING UAV & AEROSPACE TEAMS</h5>
-        <div class="partner-logos-marquee">
-            <div class="partner-logos-track">
-                <div class="partner-logo-item"><i data-lucide="shield"></i> SKYDIO</div>
-                <div class="partner-logo-item"><i data-lucide="eye"></i> DJI ENTERPRISE</div>
-                <div class="partner-logo-item"><i data-lucide="send"></i> ZIPLINE</div>
-                <div class="partner-logo-item"><i data-lucide="wind"></i> FREEFLY</div>
-                <div class="partner-logo-item"><i data-lucide="cpu"></i> T-MOTOR</div>
-                <div class="partner-logo-item"><i data-lucide="feather"></i> WING</div>
+            <a href="/login" class="bg-primary-container text-white font-button text-center py-3.5 rounded mt-8 hover:bg-primary transition-colors text-xs font-semibold block" style="text-decoration:none;">
+                Explore telemetry logs & curves
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Module 05: UAV Platform Compatibility Matrix -->
+<section class="py-32 px-margin-page max-w-container-max mx-auto relative bg-surface-bright border-y border-outline-variant/20 z-10" id="platforms">
+    <div class="mb-24 text-center fade-in-up">
+        <div class="font-label-mono text-label-mono text-secondary tracking-widest uppercase mb-4">Module 05</div>
+        <h2 class="font-headline-md text-headline-md text-primary max-w-2xl mx-auto">Validated UAV Platform Configurations</h2>
+        <p class="font-body-base text-body-base text-secondary max-w-2xl mx-auto">A grid mapping standard aerospace layouts to verified powertrain configuration specifications.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+        <!-- Card 1 -->
+        <div class="tech-border rounded-lg bg-white p-6 flex flex-col justify-between fade-in-up">
+            <div>
+                <div class="font-label-mono text-[10px] text-secondary uppercase mb-4">Layout 01</div>
+                <h3 class="font-button text-button text-primary mb-2">UAV Quadcopter</h3>
+                <p class="font-body-sm text-[13px] text-secondary mb-6">Standard 4-rotor systems optimized for high agility, structure inspections, and general mapping flights.</p>
             </div>
-            <div class="partner-logos-track" aria-hidden="true">
-                <div class="partner-logo-item"><i data-lucide="shield"></i> SKYDIO</div>
-                <div class="partner-logo-item"><i data-lucide="eye"></i> DJI ENTERPRISE</div>
-                <div class="partner-logo-item"><i data-lucide="send"></i> ZIPLINE</div>
-                <div class="partner-logo-item"><i data-lucide="wind"></i> FREEFLY</div>
-                <div class="partner-logo-item"><i data-lucide="cpu"></i> T-MOTOR</div>
-                <div class="partner-logo-item"><i data-lucide="feather"></i> WING</div>
+            <div class="space-y-2 pt-4 border-t border-slate-100 font-label-mono text-[11px] text-primary">
+                <div><span class="text-outline">Stator Class:</span> 5008 - 6012</div>
+                <div><span class="text-outline">KV Class:</span> 150 - 340 KV</div>
+                <div><span class="text-outline">Prop Range:</span> CF 18" - 22"</div>
+            </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="tech-border rounded-lg bg-white p-6 flex flex-col justify-between fade-in-up" style="transition-delay: 0.1s;">
+            <div>
+                <div class="font-label-mono text-[10px] text-secondary uppercase mb-4">Layout 02</div>
+                <h3 class="font-button text-button text-primary mb-2">UAV Hexacopter</h3>
+                <p class="font-body-sm text-[13px] text-secondary mb-6">6-rotor configurations offering redundancy, payload stability, and mid-range courier operations.</p>
+            </div>
+            <div class="space-y-2 pt-4 border-t border-slate-100 font-label-mono text-[11px] text-primary">
+                <div><span class="text-outline">Stator Class:</span> 8012 - 8205</div>
+                <div><span class="text-outline">KV Class:</span> 100 - 150 KV</div>
+                <div><span class="text-outline">Prop Range:</span> CF 26" - 28"</div>
+            </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="tech-border rounded-lg bg-white p-6 flex flex-col justify-between fade-in-up" style="transition-delay: 0.2s;">
+            <div>
+                <div class="font-label-mono text-[10px] text-secondary uppercase mb-4">Layout 03</div>
+                <h3 class="font-button text-button text-primary mb-2">UAV Octacopter</h3>
+                <p class="font-body-sm text-[13px] text-secondary mb-6">Heavy-lift 8-rotor platforms built to carry sensor pods, lidars, and tactical logistic cargo.</p>
+            </div>
+            <div class="space-y-2 pt-4 border-t border-slate-100 font-label-mono text-[11px] text-primary">
+                <div><span class="text-outline">Stator Class:</span> U15 - KDE10218</div>
+                <div><span class="text-outline">KV Class:</span> 80 - 100 KV</div>
+                <div><span class="text-outline">Prop Range:</span> CF 30" - 40"</div>
+            </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="tech-border rounded-lg bg-white p-6 flex flex-col justify-between fade-in-up" style="transition-delay: 0.3s;">
+            <div>
+                <div class="font-label-mono text-[10px] text-secondary uppercase mb-4">Layout 04</div>
+                <h3 class="font-button text-button text-primary mb-2">Coaxial Co-Quad</h3>
+                <p class="font-body-sm text-[13px] text-secondary mb-6">8-motor stacked setup optimized for heavy agricultural sprayers, and extreme wind-resistance operations.</p>
+            </div>
+            <div class="space-y-2 pt-4 border-t border-slate-100 font-label-mono text-[11px] text-primary">
+                <div><span class="text-outline">Stator Class:</span> 6012 - 8012</div>
+                <div><span class="text-outline">KV Class:</span> 120 - 180 KV</div>
+                <div><span class="text-outline">Prop Range:</span> CF 22" - 26"</div>
             </div>
         </div>
     </div>
+</section>
 
-    <!-- Capabilities Section -->
-    <section class="landing-features" id="features">
-        <span class="badge-hero reveal-on-scroll"><i data-lucide="sliders" style="width:14px; height:14px;"></i> Core
-            Capabilities</span>
-        <h3 class="section-title reveal-on-scroll">Engineered Telemetry Management</h3>
-        <p class="section-subtitle reveal-on-scroll">A highly optimized spec catalog and diagnostic matrix to simplify
-            drone propulsion curation.</p>
+<!-- "From Testing to Decision Making" Section -->
+<section class="py-32 bg-primary-container text-white text-center relative z-10">
+    <div class="max-w-container-max mx-auto px-margin-page fade-in-up">
+        <p class="font-headline-md text-headline-md mb-stack-lg max-w-4xl mx-auto leading-relaxed">
+            A propulsion test is valuable. A thousand propulsion tests become intelligence. ThrustVault transforms raw engineering data into actionable decisions.
+        </p>
+        <div class="flex flex-wrap justify-center gap-gutter font-label-mono text-label-mono text-primary-fixed-dim uppercase tracking-widest mt-12">
+            <span>Reduce duplicated testing.</span>
+            <span class="hidden md:inline">•</span>
+            <span>Accelerate aircraft development.</span>
+            <span class="hidden md:inline">•</span>
+            <span>Improve propulsion efficiency.</span>
+            <span class="hidden md:inline">•</span>
+            <span>Preserve engineering knowledge.</span>
+        </div>
+    </div>
+</section>
 
-        <div class="features-grid">
-            <div class="feature-card glass-panel reveal-on-scroll reveal-stagger-1">
-                <div class="feature-icon"><i data-lucide="shield-check"></i></div>
-                <h4>Role Security (RBAC)</h4>
-                <p>Secure login with separate authorization levels for Guest readers, User editors, and System Admins,
-                    powered by Supabase RLS.</p>
-            </div>
+<!-- Target Audience -->
+<section class="py-24 bg-surface-bright border-b border-outline-variant/20 relative z-10">
+    <div class="max-w-container-max mx-auto px-margin-page text-center fade-in-up">
+        <h2 class="font-label-mono text-label-mono text-secondary tracking-widest uppercase mb-8">Designed for Modern Aerospace Teams</h2>
+        <div class="flex flex-wrap justify-center gap-4">
+            <span class="tech-border bg-white px-4 py-2 rounded font-body-sm text-primary">Drone Manufacturers</span>
+            <span class="tech-border bg-white px-4 py-2 rounded font-body-sm text-primary">Research Laboratories</span>
+            <span class="tech-border bg-white px-4 py-2 rounded font-body-sm text-primary">Defense Programs</span>
+            <span class="tech-border bg-white px-4 py-2 rounded font-body-sm text-primary">University Research Teams</span>
+            <span class="tech-border bg-white px-4 py-2 rounded font-body-sm text-primary">Flight Test Engineers</span>
+            <span class="tech-border bg-white px-4 py-2 rounded font-body-sm text-primary">Propulsion Specialists</span>
+        </div>
+    </div>
+</section>
 
-            <div class="feature-card glass-panel reveal-on-scroll reveal-stagger-2">
-                <div class="feature-icon"><i data-lucide="git-compare"></i></div>
-                <h4>Interactive Comparison</h4>
-                <p>Select and compare up to 3 motors side-by-side in real-time, reviewing recommended ESCs, propeller
-                    fits, and buy links.</p>
-            </div>
+<!-- Module 04: Technical FAQ Accordion Section -->
+<section class="py-32 px-margin-page max-w-container-max mx-auto relative bg-surface-container-lowest z-10" id="faq">
+    <div class="mb-24 text-center fade-in-up">
+        <div class="font-label-mono text-label-mono text-secondary tracking-widest uppercase mb-4">Module 04</div>
+        <h2 class="font-headline-md text-headline-md text-primary mb-4">Aerospace Platform FAQs</h2>
+        <p class="font-body-base text-body-base text-secondary max-w-2xl mx-auto">Common questions regarding security authorization, synchronizations, data compliance, and file formats.</p>
+    </div>
 
-            <div class="feature-card glass-panel reveal-on-scroll reveal-stagger-3">
-                <div class="feature-icon"><i data-lucide="settings"></i></div>
-                <h4>Excel Spec Customizer</h4>
-                <p>Admin Schema Builder lets you dynamically extend database parameter columns. Automatically generates
-                    matching Excel templates for User batch uploads.</p>
-            </div>
-
-            <div class="feature-card glass-panel reveal-on-scroll reveal-stagger-4">
-                <div class="feature-icon"><i data-lucide="download"></i></div>
-                <h4>Dedicated Data Exporter</h4>
-                <p>Admin console to compile and export motor lists and telemetry curves into XLSX, CSV, JSON, XML, or
-                    HTML Table layouts with custom column selectors.</p>
+    <div class="max-w-3xl mx-auto space-y-4 fade-in-up">
+        <!-- FAQ 1 -->
+        <div class="tech-border bg-white rounded-lg overflow-hidden transition-all duration-300">
+            <button onclick="toggleFaq(this)" class="w-full text-left px-6 py-5 flex justify-between items-center hover:bg-slate-50/50 transition-colors">
+                <span class="font-button text-[15px] text-primary font-semibold">How do I obtain full access to ThrustVault?</span>
+                <span class="material-symbols-outlined text-outline transition-transform duration-300 faq-icon">expand_more</span>
+            </button>
+            <div class="faq-content overflow-hidden max-h-0 opacity-0 transition-all duration-300 bg-slate-50/20">
+                <div class="px-6 pb-6 text-sm text-secondary leading-relaxed border-t border-slate-100 pt-4">
+                    Access request forms can be submitted via the <a href="/request_access" class="text-primary-container font-semibold hover:underline">Request Access</a> page. Access profiles undergo admin review, verifying email corporate credentials and requested role permissions. All active registrations are handled securely on our centralized database.
+                </div>
             </div>
         </div>
-    </section>
 
-    <!-- Interactive Propulsion Selector Widget -->
-    <div class="propulsion-calculator-section reveal-on-scroll" style="margin-bottom: 60px;">
-        <div class="calc-header">
-            <span class="badge-hero reveal-on-scroll" style="align-self: center;"><i data-lucide="calculator"
-                    style="width:14px; height:14px;"></i> Propulsion Simulator</span>
-            <h4 class="reveal-on-scroll">Interactive Propulsion Selector</h4>
-            <p class="reveal-on-scroll">Simulate UAV configurations to calculate thrust recommendations and identify
-                ideal database matches.</p>
-        </div>
-        <div class="calc-body-grid">
-            <div class="calc-inputs">
-                <div class="calc-selector-group">
-                    <label>Target Payload per Rotor</label>
-                    <div class="calc-tab-row" id="calc-payload-tabs">
-                        <button type="button" class="calc-tab-btn active" onclick="setCalcPayload(1000, this)">1
-                            kg</button>
-                        <button type="button" class="calc-tab-btn" onclick="setCalcPayload(3000, this)">3 kg</button>
-                        <button type="button" class="calc-tab-btn" onclick="setCalcPayload(6000, this)">6 kg</button>
-                        <button type="button" class="calc-tab-btn" onclick="setCalcPayload(10000, this)">10 kg</button>
-                    </div>
-                </div>
-
-                <div class="calc-selector-group">
-                    <label>Battery System Voltage</label>
-                    <div class="calc-tab-row" id="calc-battery-tabs">
-                        <button type="button" class="calc-tab-btn active" onclick="setCalcBattery('6S', this)">6S LiPo
-                            (22.2V)</button>
-                        <button type="button" class="calc-tab-btn" onclick="setCalcBattery('12S', this)">12S LiPo
-                            (44.4V)</button>
-                    </div>
+        <!-- FAQ 2 -->
+        <div class="tech-border bg-white rounded-lg overflow-hidden transition-all duration-300">
+            <button onclick="toggleFaq(this)" class="w-full text-left px-6 py-5 flex justify-between items-center hover:bg-slate-50/50 transition-colors">
+                <span class="font-button text-[15px] text-primary font-semibold">What database synchronization protocol is active?</span>
+                <span class="material-symbols-outlined text-outline transition-transform duration-300 faq-icon">expand_more</span>
+            </button>
+            <div class="faq-content overflow-hidden max-h-0 opacity-0 transition-all duration-300 bg-slate-50/20">
+                <div class="px-6 pb-6 text-sm text-secondary leading-relaxed border-t border-slate-100 pt-4">
+                    The platform operates on a primary PostgreSQL RDS configuration. To ensure fast, read-only demo execution without constant server overhead, an automated background synchronization process clones motor specifications to a local cache SQLite database every 30 seconds.
                 </div>
             </div>
+        </div>
 
-            <div class="calc-result-panel" id="calc-result-panel">
-                <span class="result-class-badge" id="res-class">Heavy Duty Lift</span>
-                <div class="result-title-row">
-                    <h5 id="res-motor-name">U8 Lite KV150</h5>
-                    <p id="res-motor-company">by T-Motor</p>
+        <!-- FAQ 3 -->
+        <div class="tech-border bg-white rounded-lg overflow-hidden transition-all duration-300">
+            <button onclick="toggleFaq(this)" class="w-full text-left px-6 py-5 flex justify-between items-center hover:bg-slate-50/50 transition-colors">
+                <span class="font-button text-[15px] text-primary font-semibold">Does this console store flight logs and ITAR classified specifications?</span>
+                <span class="material-symbols-outlined text-outline transition-transform duration-300 faq-icon">expand_more</span>
+            </button>
+            <div class="faq-content overflow-hidden max-h-0 opacity-0 transition-all duration-300 bg-slate-50/20">
+                <div class="px-6 pb-6 text-sm text-secondary leading-relaxed border-t border-slate-100 pt-4">
+                    Under strict ITAR guidelines, flight logs containing restricted drone payload capabilities or flight paths must reside on classified local servers. ThrustVault serves as an unclassified specs repository for standard motor dimensions and thrust data; do not upload restricted flight logs.
                 </div>
+            </div>
+        </div>
 
-                <div class="result-specs-grid">
-                    <div class="result-spec-item">
-                        <span class="lbl">Required Thrust (2:1 Ratio)</span>
-                        <span class="val" id="res-thrust">2,000 g</span>
-                    </div>
-                    <div class="result-spec-item">
-                        <span class="lbl">Recommended Propeller</span>
-                        <span class="val" id="res-prop">CF26x8.5 folding</span>
-                    </div>
-                    <div class="result-spec-item">
-                        <span class="lbl">Recommended ESC Class</span>
-                        <span class="val" id="res-esc">80A Flame</span>
-                    </div>
-                    <div class="result-spec-item">
-                        <span class="lbl">Optimal KV Class</span>
-                        <span class="val" id="res-kv">150 KV</span>
-                    </div>
-                </div>
-
-                <div class="calc-action-row">
-                    <a href="/login" class="btn-primary" style="text-align: center; text-decoration: none;">Launch
-                        Console to View Spec <i data-lucide="arrow-right" style="width:16px;"></i></a>
+        <!-- FAQ 4 -->
+        <div class="tech-border bg-white rounded-lg overflow-hidden transition-all duration-300">
+            <button onclick="toggleFaq(this)" class="w-full text-left px-6 py-5 flex justify-between items-center hover:bg-slate-50/50 transition-colors">
+                <span class="font-button text-[15px] text-primary font-semibold">What data formats are supported for powertrain ingestion?</span>
+                <span class="material-symbols-outlined text-outline transition-transform duration-300 faq-icon">expand_more</span>
+            </button>
+            <div class="faq-content overflow-hidden max-h-0 opacity-0 transition-all duration-300 bg-slate-50/20">
+                <div class="px-6 pb-6 text-sm text-secondary leading-relaxed border-t border-slate-100 pt-4">
+                    The platform supports CSV and Excel spreadsheets (such as Rotrix test telemetry logs). Standardized headers are mapped directly to corresponding PostgreSQL columns, and any auxiliary columns are safely stored under our structured `extra_data` JSONB field for future retrieval.
                 </div>
             </div>
         </div>
     </div>
+</section>
 
-    <!-- Interactive Console Showcase Section -->
-    <section class="landing-showcase" id="showcase">
-        <div class="showcase-header reveal-on-scroll">
-            <span class="badge-hero"><i data-lucide="monitor" style="width:14px; height:14px;"></i> Interactive
-                Walkthrough</span>
-            <h3>Explore the Console Engine</h3>
-            <p>Select a view tab below to interact with simulated dashboards of our database modules.</p>
-        </div>
+<!-- Pre-Footer / Value Prop -->
+<section class="py-32 px-margin-page max-w-container-max mx-auto text-center fade-in-up relative z-10 bg-surface-container-lowest">
+    <h2 class="font-headline-md text-headline-md text-primary mb-stack-md">Engineering Data Deserves Better Than Spreadsheets</h2>
+    <p class="font-body-base text-body-base text-secondary max-w-3xl mx-auto">
+        Your propulsion systems generate knowledge every day. Capture it. Organize it. Validate it. Reuse it. Build a permanent engineering memory for every propulsion system your organization develops.
+    </p>
+</section>
 
-        <div class="showcase-container reveal-on-scroll">
-            <!-- Left Side Tabs -->
-            <div class="showcase-tabs">
-                <button class="showcase-tab active" onclick="switchShowcaseTab(0)">
-                    <div class="tab-icon-wrapper"><i data-lucide="database"></i></div>
-                    <div class="tab-text-wrapper">
-                        <h5>Specs Catalog</h5>
-                        <p>Search, sort and filter certified motors</p>
-                    </div>
-                </button>
-                <button class="showcase-tab" onclick="switchShowcaseTab(1)">
-                    <div class="tab-icon-wrapper"><i data-lucide="git-compare"></i></div>
-                    <div class="tab-text-wrapper">
-                        <h5>Comparison Engine</h5>
-                        <p>Evaluate ESC and propeller matches side-by-side</p>
-                    </div>
-                </button>
-                <button class="showcase-tab" onclick="switchShowcaseTab(2)">
-                    <div class="tab-icon-wrapper"><i data-lucide="trending-up"></i></div>
-                    <div class="tab-text-wrapper">
-                        <h5>Analytics Charts</h5>
-                        <p>Visual brand count distributions</p>
-                    </div>
-                </button>
-            </div>
-
-            <!-- Right Side Preview Screen -->
-            <div class="showcase-viewport glass-panel">
-                <!-- Inner Screen -->
-                <div class="viewport-screen">
-
-                    <!-- View 1: Database Catalog -->
-                    <div id="showcase-view-db" class="view-panel active">
-                        <div class="viewport-header">
-                            <div class="search-bar-mock">
-                                <i data-lucide="search" style="width:14px;"></i>
-                                <span class="mock-text">Search motors (e.g. T-Motor)...</span>
-                            </div>
-                            <div class="filters-mock">
-                                <span class="filter-pill">Brand: All</span>
-                                <span class="filter-pill">Class: 12S</span>
-                            </div>
-                        </div>
-                        <div class="table-mock">
-                            <div class="table-mock-row header">
-                                <div>Motor Spec</div>
-                                <div>Brand</div>
-                                <div>Max Thrust</div>
-                                <div>ESC Rating</div>
-                            </div>
-                            <div class="table-mock-row">
-                                <div class="motor-name-mock"><i data-lucide="cpu"
-                                        style="width:12px; color:#2563eb;"></i> KDE8205 KV110</div>
-                                <div>KDE Direct</div>
-                                <div><span class="thrust-badge-mock">12,500g</span></div>
-                                <div>120A</div>
-                            </div>
-                            <div class="table-mock-row">
-                                <div class="motor-name-mock"><i data-lucide="cpu"
-                                        style="width:12px; color:#2563eb;"></i> U8 Lite KV150</div>
-                                <div>T-Motor</div>
-                                <div><span class="thrust-badge-mock">8,400g</span></div>
-                                <div>80A</div>
-                            </div>
-                            <div class="table-mock-row">
-                                <div class="motor-name-mock"><i data-lucide="cpu"
-                                        style="width:12px; color:#2563eb;"></i> BH2806.5 KV1300</div>
-                                <div>BrotherHobby</div>
-                                <div><span class="thrust-badge-mock">2,100g</span></div>
-                                <div>45A</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- View 2: Comparison Engine -->
-                    <div id="showcase-view-compare" class="view-panel">
-                        <div class="compare-mock-header">
-                            <i data-lucide="git-compare" style="color:#2563eb;"></i>
-                            <span>Selected Comparison (2 of 3 max)</span>
-                        </div>
-                        <div class="compare-columns">
-                            <div class="compare-col">
-                                <div class="col-head">KDE8205 KV110</div>
-                                <div class="col-spec-item"><strong>Brand:</strong> KDE Direct</div>
-                                <div class="col-spec-item"><strong>KV Rating:</strong> 110 RPM/V</div>
-                                <div class="col-spec-item"><strong>Voltage:</strong> 12S LiPo</div>
-                                <div class="col-spec-item"><strong>Max Thrust:</strong> 12.5 kg</div>
-                                <div class="col-spec-item"><strong>Prop Size:</strong> 28-30 inches</div>
-                                <div class="col-spec-item"><strong>ESC Match:</strong> 120A Opto</div>
-                            </div>
-                            <div class="compare-col divider-left">
-                                <div class="col-head">U8 Lite KV150</div>
-                                <div class="col-spec-item"><strong>Brand:</strong> T-Motor</div>
-                                <div class="col-spec-item"><strong>KV Rating:</strong> 150 RPM/V</div>
-                                <div class="col-spec-item"><strong>Voltage:</strong> 12S LiPo</div>
-                                <div class="col-spec-item"><strong>Max Thrust:</strong> 8.4 kg</div>
-                                <div class="col-spec-item"><strong>Prop Size:</strong> 26-28 inches</div>
-                                <div class="col-spec-item"><strong>ESC Match:</strong> 80A Flame</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- View 3: Analytics Charts -->
-                    <div id="showcase-view-metrics" class="view-panel">
-                        <div class="metrics-grid-mock">
-                            <div class="metric-card-mock">
-                                <span class="m-label">Database Distribution</span>
-                                <span class="m-val">Chart.js Preview</span>
-                                <span class="m-sub">Visual brand distributions</span>
-                            </div>
-                            <div class="metric-card-mock">
-                                <span class="m-label">Spec Curation</span>
-                                <span class="m-val">Active Filters</span>
-                                <span class="m-sub">Updated dynamically</span>
-                            </div>
-                        </div>
-                        <div class="chart-mock-visual">
-                            <div class="chart-bar-labels">
-                                <span>KDE</span>
-                                <span>T-Motor</span>
-                                <span>BH</span>
-                                <span>Xing</span>
-                            </div>
-                            <div class="chart-bars">
-                                <div class="bar-mock" style="height: 75%"><span class="bar-val">12</span></div>
-                                <div class="bar-mock" style="height: 90%"><span class="bar-val">15</span></div>
-                                <div class="bar-mock" style="height: 45%"><span class="bar-val">8</span></div>
-                                <div class="bar-mock" style="height: 30%"><span class="bar-val">5</span></div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Testimonials Section -->
-    <section class="landing-testimonials">
-        <span class="badge-hero reveal-on-scroll"><i data-lucide="message-square" style="width:14px; height:14px;"></i>
-            Customer Stories</span>
-        <h3 class="section-title reveal-on-scroll" style="margin-top: 10px;">Endorsed by UAV Engineers</h3>
-        <p class="section-subtitle reveal-on-scroll">Read how propulsion researchers and UAV developers streamline
-            hardware validation with ThrustVault.</p>
-
-        <div class="testimonials-grid">
-            <div class="testimonial-card reveal-on-scroll reveal-stagger-1">
-                <div class="testimonial-stars">
-                    <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
-                    <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
-                    <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
-                    <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
-                    <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
-                </div>
-                <p class="testimonial-text">"ThrustVault completely transformed our motor matching workflow. We reduced
-                    propeller-ESC selection validation times from days to minutes using the side-by-side spec
-                    comparison."</p>
-                <div class="testimonial-user">
-                    <div class="testimonial-avatar">JD</div>
-                    <div class="testimonial-details">
-                        <h6>John Doe</h6>
-                        <span>Senior Propulsion Engineer, Skydio</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="testimonial-card reveal-on-scroll reveal-stagger-2">
-                <div class="testimonial-stars">
-                    <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
-                    <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
-                    <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
-                    <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
-                    <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
-                </div>
-                <p class="testimonial-text">"The schema customizer let us extend columns to track custom thermal
-                    ratings, and the auto-generated Excel template kept our lab user uploads 100% bug-free."</p>
-                <div class="testimonial-user">
-                    <div class="testimonial-avatar purple">AS</div>
-                    <div class="testimonial-details">
-                        <h6>Alice Smith</h6>
-                        <span>UAV Systems Lead, Zipline</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="testimonial-card reveal-on-scroll reveal-stagger-3">
-                <div class="testimonial-stars">
-                    <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
-                    <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
-                    <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
-                    <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
-                    <i data-lucide="star" style="width:16px;height:16px;fill:currentColor;"></i>
-                </div>
-                <p class="testimonial-text">"Having a central, verified catalog of motors with strict RLS permissions
-                    means our contractors can browse specs safely without risking unauthorized database alterations."
-                </p>
-                <div class="testimonial-user">
-                    <div class="testimonial-avatar emerald">MB</div>
-                    <div class="testimonial-details">
-                        <h6>Marcus Brown</h6>
-                        <span>Fleet Administrator, Wing</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- MNC Performance Stats Grid -->
-    <div class="landing-stats-grid">
-        <div class="landing-stat-card reveal-on-scroll reveal-stagger-1">
-            <span class="landing-stat-num">12M+</span>
-            <span class="landing-stat-lbl">Data Points Logged</span>
-        </div>
-        <div class="landing-stat-card reveal-on-scroll reveal-stagger-2">
-            <span class="landing-stat-num">&lt;12ms</span>
-            <span class="landing-stat-lbl">Query Latency</span>
-        </div>
-        <div class="landing-stat-card reveal-on-scroll reveal-stagger-3">
-            <span class="landing-stat-num">99.99%</span>
-            <span class="landing-stat-lbl">Validation SLA</span>
-        </div>
-        <div class="landing-stat-card reveal-on-scroll reveal-stagger-4">
-            <span class="landing-stat-num">42+</span>
-            <span class="landing-stat-lbl">UAV Teams Active</span>
-        </div>
+<!-- Final CTA -->
+<section class="py-24 px-margin-page bg-surface-container-low border-t border-outline-variant/20 text-center relative z-10">
+    <div class="max-w-container-max mx-auto fade-in-up">
+        <h2 class="font-display-lg-mobile md:font-display-lg text-primary tracking-tighter mb-4">The Operating System for Drone Propulsion Intelligence.</h2>
+        <p class="font-body-base text-body-base text-secondary mb-stack-lg">Start building your propulsion knowledge base today.</p>
+        <a href="/login" class="bg-primary-container text-white font-button text-button px-10 py-5 rounded DEFAULT hover:bg-primary transition-colors inline-flex items-center gap-2 shadow-md" style="text-decoration:none;">
+            Get Started
+            <span class="material-symbols-outlined text-sm">rocket_launch</span>
+        </a>
     </div>
+</section>
 
-    <!-- Collaborative Role Workspace Section (RBAC) -->
-    <section class="landing-roles" id="roles">
-        <span class="badge-hero reveal-on-scroll"><i data-lucide="users" style="width:14px; height:14px;"></i> Role
-            Matrix</span>
-        <h3 class="section-title reveal-on-scroll">Designed for Collaborate Workflows</h3>
-        <p class="section-subtitle reveal-on-scroll">Secure role-based permissions allow drone hardware teams to
-            maintain data integrity across functions.</p>
+<!-- Footer -->
+<footer class="w-full py-stack-lg px-margin-page flex justify-between items-center bg-surface-container-lowest border-t border-outline-variant/10 relative z-10">
+    <div class="flex items-center gap-stack-lg">
+        <span class="font-label-mono text-label-mono font-bold text-secondary dark:text-secondary-fixed">ThrustVault</span>
+        <span class="font-label-mono text-label-mono uppercase tracking-widest text-outline text-[10px]">© 2026 ThrustVault Propulsion Intelligence. Proprietary Aerospace Data.</span>
+    </div>
+    <div class="flex gap-stack-md font-label-mono text-label-mono uppercase tracking-widest text-[10px] flex-wrap justify-end">
+        <a class="text-outline hover:text-primary transition-colors" href="/login">Sign In</a>
+        <a class="text-outline hover:text-primary transition-colors" href="/request_access">Request Access</a>
+        <a class="text-outline hover:text-primary transition-colors" href="/versions">Website Version</a>
+        <a class="text-outline hover:text-primary transition-colors" href="/docs">Documentation</a>
+        <a class="text-outline hover:text-primary transition-colors" href="/docs#security">ITAR Compliance</a>
+        <span class="text-outline">Version 2.0.0</span>
+    </div>
+</footer>
 
-        <div class="roles-grid">
-            <!-- Guest Panel -->
-            <div class="role-card glass-panel reveal-on-scroll reveal-stagger-1">
-                <div class="role-icon-box guest"><i data-lucide="eye"></i></div>
-                <h4>Guest Profile</h4>
-                <p class="role-desc">Read-only workspace for builders and engineers to browse cataloged specs, utilize
-                    filters, and compare motors.</p>
-                <div class="role-features">
-                    <span><i data-lucide="check"></i> Multi-Spec Comparison Matrix</span>
-                    <span><i data-lucide="check"></i> CSV & JSON Telemetry Exports</span>
-                    <span><i data-lucide="check"></i> Interactive Brand Analytics</span>
-                </div>
-                <a href="/demo/dashboard" class="btn-role-action">Browse as Guest</a>
-            </div>
+<script>
+    // Simple Intersection Observer for scroll animations
+    document.addEventListener('DOMContentLoaded', () => {
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
 
-            <!-- User Panel -->
-            <div class="role-card glass-panel reveal-on-scroll reveal-stagger-2">
-                <div class="role-icon-box user"><i data-lucide="edit-3"></i></div>
-                <h4>User Editor</h4>
-                <p class="role-desc">Data curation workspace for editors. Access templates, import raw Excel sheets, and
-                    draft motor specs.</p>
-                <div class="role-features">
-                    <span><i data-lucide="check"></i> Add & Edit Motor Specs</span>
-                    <span><i data-lucide="check"></i> Excel Import Template</span>
-                    <span><i data-lucide="check"></i> Category Management Console</span>
-                </div>
-                <a href="/login" class="btn-role-action">Access User Console</a>
-            </div>
-
-            <!-- Admin Panel -->
-            <div class="role-card glass-panel reveal-on-scroll reveal-stagger-3">
-                <div class="role-icon-box admin"><i data-lucide="shield-alert"></i></div>
-                <h4>System Admin</h4>
-                <p class="role-desc">Full administration privileges. Update user roles, add categories, and run SQL
-                    database performance logs.</p>
-                <div class="role-features">
-                    <span><i data-lucide="check"></i> Edit User Roles & Profiles</span>
-                    <span><i data-lucide="check"></i> Category & Motor CRUD Operations</span>
-                    <span><i data-lucide="check"></i> Database Performance Monitoring</span>
-                </div>
-                <a href="/login" class="btn-role-action">Access Admin Console</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- FAQ Section (Accordion) -->
-    <section class="landing-faqs" id="faqs">
-        <span class="badge-hero reveal-on-scroll"><i data-lucide="help-circle" style="width:14px; height:14px;"></i>
-            FAQs</span>
-        <h3 class="section-title reveal-on-scroll">Frequently Asked Questions</h3>
-        <p class="section-subtitle reveal-on-scroll">Common questions regarding the ThrustVault database console and
-            security rules.</p>
-
-        <div class="faq-accordion reveal-on-scroll">
-            <!-- FAQ 1 -->
-            <div class="faq-item">
-                <button class="faq-question" onclick="toggleFaq(this)">
-                    <span>What accounts are pre-configured for the console demo?</span>
-                    <i data-lucide="chevron-down" class="faq-chevron"></i>
-                </button>
-                <div class="faq-answer">
-                    <p>The console offers three active demo profiles for testing access levels: a Guest Profile
-                        (read-only), an User Profile (data editor), and a System Admin Profile (full privileges). You
-                        can quickly click the credentials cards on the login screen to autofill and sign in.</p>
-                </div>
-            </div>
-
-            <!-- FAQ 2 -->
-            <div class="faq-item">
-                <button class="faq-question" onclick="toggleFaq(this)">
-                    <span>What data formats are supported for import and export?</span>
-                    <i data-lucide="chevron-down" class="faq-chevron"></i>
-                </button>
-                <div class="faq-answer">
-                    <p>ThrustVault supports exporting motor lists in both CSV and JSON formats directly. For data
-                        imports, editors and admins can download a standardized Excel spreadsheet template, populate it,
-                        and upload it to add motors in bulk.</p>
-                </div>
-            </div>
-
-            <!-- FAQ 3 -->
-            <div class="faq-item">
-                <button class="faq-question" onclick="toggleFaq(this)">
-                    <span>How does the motor comparison engine work?</span>
-                    <i data-lucide="chevron-down" class="faq-chevron"></i>
-                </button>
-                <div class="faq-answer">
-                    <p>From the main specs grid, users can check boxes to select up to 3 motors. The system opens a
-                        bottom comparison drawer that displays a detailed side-by-side matrix comparing recommended
-                        ESCs, voltage configurations, propeller fits, and buy links.</p>
-                </div>
-            </div>
-
-            <!-- FAQ 4 -->
-            <div class="faq-item">
-                <button class="faq-question" onclick="toggleFaq(this)">
-                    <span>How is data security enforced in ThrustVault?</span>
-                    <i data-lucide="chevron-down" class="faq-chevron"></i>
-                </button>
-                <div class="faq-answer">
-                    <p>Security is enforced at the database layer using PostgreSQL Row-Level Security (RLS) policies.
-                        While all users can read verified catalogs, write access to add, edit, or delete categories and
-                        motor specifications is strictly restricted to logged-in Users and Admins.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Glow CTA Section -->
-    <section class="landing-cta">
-        <div class="cta-glow-box reveal-on-scroll">
-            <h3>Ready to Manage Your UAV Propulsions Database?</h3>
-            <p>Access the ThrustVault console now to view certified specifications, run analytics charts, and manage
-                categories.</p>
-            <div class="cta-actions" style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
-                <a href="/login" class="btn-cta-primary" style="text-decoration:none;">Access Database Console <i
-                        data-lucide="arrow-right" style="width:16px;"></i></a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="landing-footer">
-        <div class="footer-top">
-            <div class="footer-brand">
-                <div class="logo-container">
-                    <a href="/" class="logo-link">
-                        <img src="logo_light.png" alt="ThrustVault Logo" class="logo-image logo-light">
-                        <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark">
-                    </a>
-                </div>
-                <p class="brand-subtext">Verified database repository for drone motor telemetry and specification
-                    analytics.</p>
-                <div class="system-status">
-                    <span class="status-dot pulsing"></span>
-                    <span>Console Connection: Online</span>
-                </div>
-            </div>
-
-            <div class="footer-links-col">
-                <h5>Console Views</h5>
-                <a href="#features">Capabilities</a>
-                <a href="#showcase">Walkthrough</a>
-                <a href="/login">Sign In Portal</a>
-                <a href="/request_access">Request Access</a>
-                <a href="/versions">Website Version</a>
-            </div>
-
-            <div class="footer-links-col">
-                <h5>Data Formats</h5>
-                <a href="#features">Excel Templates</a>
-                <a href="#features">CSV Listings</a>
-                <a href="#features">JSON Catalogs</a>
-            </div>
-        </div>
-
-        <div class="footer-bottom">
-            <p>&copy; 2026 ThrustVault Systems. Developed for professional UAV development teams. All rights reserved.
-            </p>
-            <div class="footer-legal-links">
-                <a href="#">Security RLS Policies</a>
-                <a href="#">Terms of Service</a>
-            </div>
-        </div>
-    </footer>
-
-
-
-    <!-- Scripts -->
-    <script>
-        // Initialize Lucide Icons
-        lucide.createIcons();
-
-        // Intersection Observer for Scroll Animations
-        document.addEventListener('DOMContentLoaded', () => {
-            const observerOptions = {
-                root: null,
-                rootMargin: '0px -8% -8% 0px',
-                threshold: 0.08
-            };
-
-            const observer = new IntersectionObserver((entries, observer) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('revealed');
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, observerOptions);
-
-            document.querySelectorAll('.reveal-on-scroll').forEach(el => {
-                observer.observe(el);
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
             });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in-up').forEach((elem) => {
+            observer.observe(elem);
         });
 
-        // Switch Interactive Showcase Tabs
-        function switchShowcaseTab(tabIndex) {
-            // Update Active Tab Button
-            const tabs = document.querySelectorAll('.showcase-tab');
-            tabs.forEach((tab, index) => {
-                if (index === tabIndex) {
-                    tab.classList.add('active');
+        // Navbar Scroll Shadow transition logic
+        const navbar = document.getElementById('navbar');
+        if (navbar) {
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 20) {
+                    navbar.classList.add('shadow-md', 'bg-white/90', 'border-slate-300/80');
+                    navbar.classList.remove('shadow-sm', 'bg-white/75', 'border-slate-200/50');
                 } else {
-                    tab.classList.remove('active');
-                }
-            });
-
-            // Update Active Preview Panel
-            const panels = document.querySelectorAll('.view-panel');
-            panels.forEach((panel, index) => {
-                if (index === tabIndex) {
-                    panel.classList.add('active');
-                } else {
-                    panel.classList.remove('active');
+                    navbar.classList.add('shadow-sm', 'bg-white/75', 'border-slate-200/50');
+                    navbar.classList.remove('shadow-md', 'bg-white/90', 'border-slate-300/80');
                 }
             });
         }
+    });
 
-        // Toggle Accordion FAQ items
-        function toggleFaq(buttonElement) {
-            const faqItem = buttonElement.parentElement;
-            const isOpen = faqItem.classList.contains('active');
-
-            // Close all items
-            document.querySelectorAll('.faq-item').forEach(item => {
-                item.classList.remove('active');
-            });
-
-            // Open selected if it wasn't open
-            if (!isOpen) {
-                faqItem.classList.add('active');
-            }
+    // Toggle FAQ Accordion Row
+    function toggleFaq(button) {
+        const content = button.nextElementSibling;
+        const icon = button.querySelector('.faq-icon');
+        if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+            content.style.maxHeight = '0px';
+            content.style.opacity = '0';
+            icon.style.transform = 'rotate(0deg)';
+        } else {
+            content.style.maxHeight = content.scrollHeight + "px";
+            content.style.opacity = '1';
+            icon.style.transform = 'rotate(180deg)';
         }
+    }
 
+    // Propulsion Calculator Logic
+    let calcState = {
+        payload: 1000,
+        battery: '6S'
+    };
 
+    const motorRecommendations = {
+        '1000_6S': { name: 'BH2806.5 KV1300', company: 'by BrotherHobby', thrust: '2,100 g', prop: '7x4.5 inch tri-blade', esc: '45A Brushless', kv: '1300 KV', efficiency: '8.2 g/W', class: 'Racing & Freestyle' },
+        '1000_12S': { name: 'MN5008 KV170', company: 'by T-Motor', thrust: '2,200 g', prop: 'CF18x6 folding', esc: '40A Opto', kv: '170 KV', efficiency: '9.4 g/W', class: 'Cinematic & Long Range' },
+        '3000_6S': { name: 'KDE4215 KV465', company: 'by KDE Direct', thrust: '6,100 g', prop: 'CF15x5.2 folding', esc: '60A Heavy Duty', kv: '465 KV', efficiency: '7.8 g/W', class: 'Commercial Surveying' },
+        '3000_12S': { name: 'U8 Lite KV150', company: 'by T-Motor', thrust: '6,300 g', prop: 'CF22x7.2 folding', esc: '80A Flame', kv: '150 KV', efficiency: '9.1 g/W', class: 'Heavy Duty Curation' },
+        '6000_6S': { name: 'MN8012 KV120', company: 'by T-Motor', thrust: '12,200 g', prop: 'CF28x9.2 folding', esc: '100A Opto Pro', kv: '120 KV', efficiency: '7.2 g/W', class: 'Enterprise Logistics' },
+        '6000_12S': { name: 'KDE8205 KV110', company: 'by KDE Direct', thrust: '12,500 g', prop: 'CF30x10.5 folding', esc: '120A Heavy Lift', kv: '110 KV', efficiency: '8.6 g/W', class: 'Industrial Transport' },
+        '10000_6S': { name: 'U15 II KV100', company: 'by T-Motor', thrust: '20,100 g', prop: 'CF36x12.5 folding', esc: '150A Flame Pro', kv: '100 KV', efficiency: '6.4 g/W', class: 'Tactical Load Carriage' },
+        '10000_12S': { name: 'U15 II KV80', company: 'by T-Motor', thrust: '20,400 g', prop: 'CF40x13.5 folding', esc: '180A Industrial', kv: '80 KV', efficiency: '7.9 g/W', class: 'Heavy Cargo Transit' }
+    };
 
-        // Interactive Propulsion Simulator Calculator State & Recommendation Logic
-        let calcState = {
-            payload: 1000,
-            battery: '6S'
-        };
+    function setCalcPayload(payloadVal, btnElement) {
+        const buttons = document.querySelectorAll('#calc-payload-tabs button');
+        buttons.forEach(btn => btn.classList.remove('active', 'border-primary-container', 'bg-slate-50/80'));
+        btnElement.classList.add('active', 'border-primary-container', 'bg-slate-50/80');
 
-        const motorRecommendations = {
-            '1000_6S': {
-                name: 'BH2806.5 KV1300',
-                company: 'by BrotherHobby',
-                thrust: '2,100 g',
-                prop: '7x4.5 inch tri-blade',
-                esc: '45A Brushless',
-                kv: '1300 KV',
-                class: 'Racing & Freestyle'
-            },
-            '1000_12S': {
-                name: 'MN5008 KV170',
-                company: 'by T-Motor',
-                thrust: '2,200 g',
-                prop: 'CF18x6 folding',
-                esc: '40A Opto',
-                kv: '170 KV',
-                class: 'Cinematic & Long Range'
-            },
-            '3000_6S': {
-                name: 'KDE4215 KV465',
-                company: 'by KDE Direct',
-                thrust: '6,100 g',
-                prop: 'CF15x5.2 folding',
-                esc: '60A Heavy Duty',
-                kv: '465 KV',
-                class: 'Commercial Surveying'
-            },
-            '3000_12S': {
-                name: 'U8 Lite KV150',
-                company: 'by T-Motor',
-                thrust: '6,300 g',
-                prop: 'CF22x7.2 folding',
-                esc: '80A Flame',
-                kv: '150 KV',
-                class: 'Heavy Duty Curation'
-            },
-            '6000_6S': {
-                name: 'MN8012 KV120',
-                company: 'by T-Motor',
-                thrust: '12,200 g',
-                prop: 'CF28x9.2 folding',
-                esc: '100A Opto Pro',
-                kv: '120 KV',
-                class: 'Enterprise Logistics'
-            },
-            '6000_12S': {
-                name: 'KDE8205 KV110',
-                company: 'by KDE Direct',
-                thrust: '12,500 g',
-                prop: 'CF30x10.5 folding',
-                esc: '120A Heavy Lift',
-                kv: '110 KV',
-                class: 'Industrial Transport'
-            },
-            '10000_6S': {
-                name: 'U15 II KV100',
-                company: 'by T-Motor',
-                thrust: '20,100 g',
-                prop: 'CF36x12.5 folding',
-                esc: '150A Flame Pro',
-                kv: '100 KV',
-                class: 'Tactical Load Carriage'
-            },
-            '10000_12S': {
-                name: 'U15 II KV80',
-                company: 'by T-Motor',
-                thrust: '20,400 g',
-                prop: 'CF40x13.5 folding',
-                esc: '180A Industrial',
-                kv: '80 KV',
-                class: 'Heavy Cargo Transit'
-            }
-        };
+        calcState.payload = payloadVal;
+        recalculatePropulsion();
+    }
 
-        function setCalcPayload(payloadVal, btnElement) {
-            // Update Active button state
-            const buttons = document.querySelectorAll('#calc-payload-tabs .calc-tab-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            btnElement.classList.add('active');
+    function setCalcBattery(batteryVal, btnElement) {
+        const buttons = document.querySelectorAll('#calc-battery-tabs button');
+        buttons.forEach(btn => btn.classList.remove('active', 'border-primary-container', 'bg-slate-50/80'));
+        btnElement.classList.add('active', 'border-primary-container', 'bg-slate-50/80');
 
-            calcState.payload = payloadVal;
-            recalculatePropulsion();
+        calcState.battery = batteryVal;
+        recalculatePropulsion();
+    }
+
+    function recalculatePropulsion() {
+        const key = `${calcState.payload}_${calcState.battery}`;
+        const match = motorRecommendations[key];
+
+        if (match) {
+            const panel = document.getElementById('calc-result-panel');
+            panel.style.transform = 'scale(0.98)';
+            panel.style.opacity = '0.7';
+            panel.style.transition = 'all 0.15s ease-out';
+
+            setTimeout(() => {
+                document.getElementById('res-class').textContent = match.class;
+                document.getElementById('res-motor-name').textContent = match.name;
+                document.getElementById('res-motor-company').textContent = match.company;
+                document.getElementById('res-thrust').textContent = match.thrust;
+                document.getElementById('res-prop').textContent = match.prop;
+                document.getElementById('res-esc').textContent = match.esc;
+                document.getElementById('res-kv').textContent = match.kv;
+                document.getElementById('res-efficiency').textContent = match.efficiency;
+
+                panel.style.transform = 'scale(1)';
+                panel.style.opacity = '1';
+            }, 150);
         }
-
-        function setCalcBattery(batteryVal, btnElement) {
-            // Update Active button state
-            const buttons = document.querySelectorAll('#calc-battery-tabs .calc-tab-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            btnElement.classList.add('active');
-
-            calcState.battery = batteryVal;
-            recalculatePropulsion();
-        }
-
-        function recalculatePropulsion() {
-            const key = `${calcState.payload}_${calcState.battery}`;
-            const match = motorRecommendations[key];
-
-            if (match) {
-                // Apply a subtle scale-out/scale-in transition
-                const panel = document.getElementById('calc-result-panel');
-                panel.style.transform = 'scale(0.98)';
-                panel.style.opacity = '0.7';
-                panel.style.transition = 'all 0.15s ease-out';
-
-                setTimeout(() => {
-                    document.getElementById('res-class').textContent = match.class;
-                    document.getElementById('res-motor-name').textContent = match.name;
-                    document.getElementById('res-motor-company').textContent = match.company;
-                    document.getElementById('res-thrust').textContent = match.thrust;
-                    document.getElementById('res-prop').textContent = match.prop;
-                    document.getElementById('res-esc').textContent = match.esc;
-                    document.getElementById('res-kv').textContent = match.kv;
-
-                    panel.style.transform = 'scale(1)';
-                    panel.style.opacity = '1';
-                }, 150);
-            }
-        }
-    </script>
+    }
+</script>
 </body>
-
 </html>

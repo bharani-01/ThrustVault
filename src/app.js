@@ -50,6 +50,8 @@ app.get('/',      send('index.html'));
 app.get('/login', send('login.html'));
 app.get('/request_access', send('request_access.html'));
 app.get('/versions', send('version_catalog.html'));
+app.get('/docs', send('documentation.html'));
+app.get('/documentation', redir('/docs'));
 
 app.get('/dashboard', (req, res) => {
   const role = req.session.role;

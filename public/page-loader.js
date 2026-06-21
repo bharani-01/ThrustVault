@@ -34,6 +34,11 @@
                           window.location.pathname === '';
     const currentTheme = isLandingPage ? 'light' : (localStorage.getItem('thrustvault_theme') || 'light');
     document.documentElement.setAttribute('data-theme', currentTheme);
+    if (currentTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
 
     const path = window.location.pathname;
     
@@ -282,7 +287,7 @@
                     sidebarRole = 'user';
                 }
                 
-                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}_v2.0`;
+                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}_v2.2`;
                 const cachedHTML = sessionStorage.getItem(cacheKey);
                 if (cachedHTML) {
                     const existingScript = sidebarEl.querySelector('script');
@@ -447,6 +452,11 @@
                     toggleBtn.onclick = () => {
                         const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
                         document.documentElement.setAttribute('data-theme', theme);
+                        if (theme === 'dark') {
+                            document.documentElement.classList.add('dark');
+                        } else {
+                            document.documentElement.classList.remove('dark');
+                        }
                         localStorage.setItem('thrustvault_theme', theme);
                         
                         const newIcon = theme === 'dark' ? 'sun' : 'moon';
@@ -501,7 +511,7 @@
                 initializeSidebarEvents(sidebarEl, sidebarRole);
             } else {
                 // First load: fetch, cache, and then render
-                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}_v2.0`;
+                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}_v2.2`;
                 fetch(`sidebar_${sidebarRole}.html`)
                     .then(res => {
                         if (!res.ok) throw new Error("Failed to load sidebar template");

@@ -1,0 +1,3225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/png" href="favicon_light.png" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThrustVault Documentation Portal | Aerospace Propulsion Intelligence</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css?v=1.6">
+    <!-- Page Loader Transition Script -->
+    <script src="page-loader.js?v=2.1"></script>
+    
+    <style>
+        /* CSS variables overrides & extensions */
+        :root {
+            --bg-base: #f8fafc;
+            --bg-panel: rgba(255, 255, 255, 0.85);
+            --bg-panel-solid: #ffffff;
+            --bg-input: #f1f5f9;
+            --bg-code: #0f172a;
+            --text-primary: #0f172a;
+            --text-secondary: #334155;
+            --text-muted: #64748b;
+            --text-code: #38bcd8;
+            --border-color: rgba(226, 232, 240, 0.8);
+            --primary-color: #003366;
+            --primary-hover: #001e40;
+            --primary-light: rgba(0, 51, 102, 0.06);
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.02);
+            --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.03), 0 2px 6px -1px rgba(0, 0, 0, 0.01);
+            --shadow-lg: 0 12px 28px -5px rgba(0, 0, 0, 0.04), 0 8px 16px -6px rgba(0, 0, 0, 0.02);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-full: 9999px;
+            --font-sans: 'Inter', sans-serif;
+            --font-display: 'Outfit', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Courier New', Courier, monospace;
+        }
+
+        [data-theme="dark"] {
+            --bg-base: #000000;
+            --bg-panel: rgba(12, 12, 12, 0.75);
+            --bg-panel-solid: #080808;
+            --bg-input: #1e293b;
+            --bg-code: #0f172a;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --text-code: #38bcd8;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary-color: #a7c8ff;
+            --primary-hover: #d5e3ff;
+            --primary-light: rgba(167, 200, 255, 0.12);
+        }
+
+        /* Logo visibility by theme */
+        .logo-light { display: block; }
+        .logo-dark { display: none; }
+        [data-theme="dark"] .logo-light { display: none; }
+        [data-theme="dark"] .logo-dark { display: block; }
+
+        .docs-body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            font-family: var(--font-sans);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .docs-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Sidebar Navigation */
+        .docs-sidebar {
+            background-color: var(--bg-panel-solid);
+            border-right: 1px solid var(--border-color);
+            padding: 24px 20px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-color) transparent;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .docs-sidebar::-webkit-scrollbar { width: 4px; }
+        .docs-sidebar::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 4px; }
+
+        .sidebar-brand {
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .theme-toggle-floating {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-md);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            outline: none;
+            box-shadow: none;
+            flex-shrink: 0;
+        }
+        .theme-toggle-floating:hover { background-color: var(--bg-input); color: var(--primary-color); }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 0 14px;
+            height: 38px;
+            transition: all 0.2s ease;
+            margin-bottom: 24px;
+            position: relative;
+            width: 100% !important;
+            box-sizing: border-box;
+        }
+        .search-container:hover {
+            border-color: var(--text-muted);
+        }
+        .search-container:focus-within {
+            border-color: var(--primary-color);
+            background-color: var(--bg-panel-solid);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+        .search-icon {
+            color: var(--text-muted);
+            pointer-events: none;
+            width: 15px;
+            height: 15px;
+            margin-right: 10px;
+            flex-shrink: 0;
+            transition: color 0.2s ease;
+        }
+        .search-container:focus-within .search-icon {
+            color: var(--primary-color);
+        }
+        .search-container input,
+        .search-input {
+            width: 100% !important;
+            border: none !important;
+            border-width: 0 !important;
+            background: transparent !important;
+            color: var(--text-primary) !important;
+            font-size: 0.85rem !important;
+            padding: 6px 0 !important;
+            outline: none !important;
+            box-shadow: none !important;
+            font-family: var(--font-sans) !important;
+        }
+        .search-clear-btn {
+            background: none !important;
+            border: none !important;
+            border-width: 0 !important;
+            cursor: pointer !important;
+            color: var(--text-muted) !important;
+            padding: 4px !important;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease;
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        .search-clear-btn:hover {
+            color: var(--primary-color) !important;
+        }
+        .no-results-card {
+            display: none;
+            text-align: center;
+            padding: 48px 32px;
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            background-color: var(--bg-panel-solid);
+            margin: 32px 0;
+        }
+        .no-results-card i {
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            width: 48px;
+            height: 48px;
+            display: inline-block;
+        }
+        .no-results-card h3 {
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            margin-top: 0;
+        }
+        .no-results-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        /* Navigation Tree */
+        .tree-title {
+            font-family: var(--font-display);
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-top: 24px;
+            margin-bottom: 10px;
+            padding-left: 12px;
+        }
+
+        .tree-node { margin-bottom: 4px; }
+        .tree-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-decoration: none;
+            text-align: left;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            outline: none;
+            box-shadow: none;
+            font-family: var(--font-sans);
+        }
+        .tree-header:hover { background-color: var(--bg-input); color: var(--text-primary); }
+        .tree-header.active { background-color: var(--primary-light); color: var(--primary-color); font-weight: 600; }
+
+        .tree-header-left { display: flex; align-items: center; gap: 8px; width: 100%; }
+        .tree-toggle-icon {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            user-select: none;
+            width: 16px;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .tree-children {
+            padding-left: 12px;
+            margin-top: 2px;
+            border-left: 1px dashed var(--border-color);
+            margin-left: 20px;
+            display: none;
+        }
+        .tree-children.expanded { display: block; }
+
+        .tree-child-item {
+            display: block;
+            padding: 6px 12px 6px 24px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+            margin: 2px 0;
+        }
+        .tree-child-item:hover { color: var(--text-primary); background-color: var(--bg-input); }
+        .tree-child-item.active { color: var(--primary-color); background-color: var(--primary-light); font-weight: 600; }
+
+        /* Right Content Area */
+        .docs-main {
+            padding: 40px 60px;
+            max-width: 960px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 1200px) {
+            .docs-main { padding: 40px; }
+        }
+
+        @media (max-width: 960px) {
+            .docs-container { grid-template-columns: 1fr; }
+            .docs-sidebar {
+                position: fixed;
+                top: 0;
+                left: -300px;
+                width: 300px;
+                height: 100vh;
+                z-index: 200;
+                box-shadow: var(--shadow-lg);
+                transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                display: flex !important;
+            }
+            .docs-sidebar.drawer-open { transform: translateX(300px); }
+            .mobile-header { display: flex !important; }
+            .docs-main { padding: 24px 20px; }
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.4);
+                backdrop-filter: blur(4px);
+                z-index: 190;
+            }
+            .sidebar-overlay.active { display: block; }
+        }
+
+        .mobile-header {
+            display: none;
+            height: 64px;
+            background-color: var(--bg-panel-solid);
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            position: sticky;
+            top: 0;
+            z-index: 150;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* Breadcrumbs */
+        .docs-breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.825rem;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+        }
+        .docs-breadcrumbs a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .docs-breadcrumbs a:hover { color: var(--primary-color); }
+        .breadcrumbs-separator { color: var(--text-muted); opacity: 0.5; font-size: 0.75rem; }
+
+        /* Informative Alert Banner */
+        .docs-alert-banner {
+            background-color: var(--primary-light);
+            border-left: 4px solid var(--primary-color);
+            padding: 16px 20px;
+            border-radius: var(--radius-md);
+            margin-bottom: 36px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        .docs-alert-banner i { color: var(--primary-color); flex-shrink: 0; width: 20px; height: 20px; }
+        .docs-alert-content h4 {
+            font-family: var(--font-display);
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .docs-alert-content p { margin-bottom: 0; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; }
+
+        /* Sections styling */
+        .docs-card-section {
+            scroll-margin-top: 120px;
+            margin-bottom: 64px;
+        }
+        .docs-card-section h1 {
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+        .docs-card-section h2 {
+            font-family: var(--font-display);
+            font-size: 1.625rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-top: 40px;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+            line-height: 1.25;
+        }
+        .docs-card-section h3 {
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+        .docs-card-section p { font-size: 0.95rem; line-height: 1.7; color: var(--text-secondary); margin-bottom: 24px; }
+        .docs-card-section ul { list-style-type: none; padding-left: 8px; margin-bottom: 24px; }
+        .docs-card-section li {
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            position: relative;
+            padding-left: 20px;
+        }
+        .docs-card-section li::before {
+            content: "•";
+            color: var(--primary-color);
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        .tech-info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            font-size: 0.9rem;
+            box-shadow: var(--shadow-sm);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        .tech-info-table th {
+            background-color: var(--bg-input);
+            color: var(--text-primary);
+            font-family: var(--font-display);
+            font-weight: 700;
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .tech-info-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            background-color: var(--bg-panel-solid);
+        }
+        .tech-info-table tr:last-child td { border-bottom: none; }
+
+        .code-snippet-inline {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            background-color: var(--bg-input);
+            color: var(--primary-color);
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .code-block-premium {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            background-color: var(--bg-code);
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            margin: 20px 0;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            line-height: 1.5;
+        }
+
+        .error-grid { display: flex; flex-direction: column; gap: 24px; margin-top: 32px; }
+        .error-card {
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-panel-solid);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-sm);
+        }
+        .error-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-color);
+        }
+        .error-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .error-code {
+            font-family: var(--font-mono);
+            background-color: var(--bg-input);
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 0.85rem;
+            padding: 6px 12px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            letter-spacing: -0.01em;
+        }
+        .error-severity {
+            font-family: var(--font-display);
+            font-size: 0.725rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+        }
+        .severity-low { background-color: rgba(34, 197, 94, 0.08); color: #10b981; border: 1px solid rgba(34, 197, 94, 0.2); }
+        .severity-medium { background-color: rgba(245, 158, 11, 0.08); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+        .severity-high { background-color: rgba(239, 68, 68, 0.08); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+
+        .error-desc-title {
+            font-family: var(--font-display);
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .error-desc-text { font-size: 0.925rem; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.6; }
+
+        .error-resolution {
+            background-color: var(--bg-input);
+            padding: 16px 20px;
+            border-radius: var(--radius-md);
+            border: 1px dashed var(--border-color);
+            transition: border-color 0.3s ease;
+        }
+        .error-card:hover .error-resolution { border-color: var(--primary-color); }
+        .error-resolution-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: var(--primary-color);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .error-resolution-title i { width: 14px; height: 14px; }
+        .error-resolution-text { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
+    </style>
+</head>
+<body class="docs-body">
+
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <button id="mobile-menu-btn" class="theme-toggle-floating" title="Open Navigation Menu">
+            <i data-lucide="menu" style="width:20px; height:20px;"></i>
+        </button>
+        <a href="/">
+            <img src="logo_light.png" alt="ThrustVault Logo" class="logo-light" style="height: 28px;">
+            <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-dark" style="height: 28px;">
+        </a>
+        <button id="theme-toggle-btn-mobile" class="theme-toggle-floating" title="Toggle Theme">
+            <i data-lucide="moon" style="width:20px; height:20px;"></i>
+        </button>
+    </header>
+
+    <!-- Docs Main Grid Container -->
+    <div class="docs-container">
+        
+        <!-- Sidebar Navigation (Read the Docs Style) -->
+        <aside class="docs-sidebar">
+            <div class="sidebar-brand">
+                <a href="/">
+                    <img src="logo_light.png" alt="ThrustVault Logo" class="logo-light" style="height: 30px;">
+                    <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-dark" style="height: 30px;">
+                </a>
+                <button id="theme-toggle-btn" class="theme-toggle-floating" title="Toggle Theme">
+                    <i data-lucide="moon" style="width:16px; height:16px;"></i>
+                </button>
+            </div>
+
+            <!-- Search Docs Input -->
+            <div class="search-container">
+                <i data-lucide="search" class="search-icon"></i>
+                <input type="text" id="docs-search-input" placeholder="Search docs..." class="search-input" autocomplete="off">
+                <button id="docs-search-clear" class="search-clear-btn" title="Clear search">
+                    <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                </button>
+            </div>
+
+            <!-- Nav Tree -->
+            <div style="flex:1;">
+                <div class="tree-title">User Guide</div>
+                
+                <!-- Introduction Item -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header active">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊟</span>
+                            <span class="nav-title-text">Introduction</span>
+                        </span>
+                    </button>
+                    <div class="tree-children expanded">
+                        <a href="#about" class="tree-child-item active">What is ThrustVault</a>
+                        <a href="#intro-why" class="tree-child-item">Why ThrustVault Exists</a>
+                        <a href="#intro-benefits" class="tree-child-item">Key Benefits & Users</a>
+                        <a href="#intro-vision" class="tree-child-item">Platform Vision</a>
+                    </div>
+                </div>
+
+                <!-- Propulsion Systems -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊞</span>
+                            <span class="nav-title-text">Propulsion Science</span>
+                        </span>
+                    </button>
+                    <div class="tree-children">
+                        <a href="#uav-motors" class="tree-child-item">Motors Theory</a>
+                        <a href="#uav-escs" class="tree-child-item">ESC Integration</a>
+                        <a href="#uav-props" class="tree-child-item">Propeller Dynamics</a>
+                        <a href="#uav-batteries" class="tree-child-item">Battery Management</a>
+                        <a href="#uav-chain" class="tree-child-item">The Propulsion Chain</a>
+                    </div>
+                </div>
+
+                <!-- Getting Started -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊞</span>
+                            <span class="nav-title-text">Getting Started</span>
+                        </span>
+                    </button>
+                    <div class="tree-children">
+                        <a href="#get-setup" class="tree-child-item">Account Setup</a>
+                        <a href="#get-dashboard" class="tree-child-item">Dashboard & UI</a>
+                        <a href="#get-checklist" class="tree-child-item">Onboarding Checklist</a>
+                    </div>
+                </div>
+
+                <div class="tree-title">Component Databases</div>
+
+                <!-- Motor Database -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊞</span>
+                            <span class="nav-title-text">Motor Database</span>
+                        </span>
+                    </button>
+                    <div class="tree-children">
+                        <a href="#motor-db-schema" class="tree-child-item">Database Records</a>
+                        <a href="#motor-db-standards" class="tree-child-item">Best Practices</a>
+                    </div>
+                </div>
+
+                <!-- ESC Database -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊞</span>
+                            <span class="nav-title-text">ESC Database</span>
+                        </span>
+                    </button>
+                    <div class="tree-children">
+                        <a href="#esc-db-comp" class="tree-child-item">ESC Compatibility</a>
+                        <a href="#esc-db-calc" class="tree-child-item">Safety Calculations</a>
+                    </div>
+                </div>
+
+                <!-- Propeller Database -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊞</span>
+                            <span class="nav-title-text">Propeller Science</span>
+                        </span>
+                    </button>
+                    <div class="tree-children">
+                        <a href="#prop-db-geom" class="tree-child-item">Geometry & Material</a>
+                        <a href="#prop-db-match" class="tree-child-item">Motor Matching</a>
+                    </div>
+                </div>
+
+                <!-- Battery Database -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊞</span>
+                            <span class="nav-title-text">Battery Intelligence</span>
+                        </span>
+                    </button>
+                    <div class="tree-children">
+                        <a href="#bat-db-specs" class="tree-child-item">Specifications</a>
+                        <a href="#bat-db-safety" class="tree-child-item">Safety Guidelines</a>
+                    </div>
+                </div>
+
+                <div class="tree-title">Testing & Analytics</div>
+
+                <!-- Test Run -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊞</span>
+                            <span class="nav-title-text">Test Management</span>
+                        </span>
+                    </button>
+                    <div class="tree-children">
+                        <a href="#test-setup" class="tree-child-item">Bench Setup</a>
+                        <a href="#test-workflow" class="tree-child-item">QA Review Process</a>
+                    </div>
+                </div>
+
+                <!-- Telemetry -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊞</span>
+                            <span class="nav-title-text">Telemetry Data</span>
+                        </span>
+                    </button>
+                    <div class="tree-children">
+                        <a href="#tel-sources" class="tree-child-item">Telemetry Sources</a>
+                        <a href="#tel-analysis" class="tree-child-item">Analysis Metrics</a>
+                    </div>
+                </div>
+
+                <!-- Analytics -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊞</span>
+                            <span class="nav-title-text">Analytics Insights</span>
+                        </span>
+                    </button>
+                    <div class="tree-children">
+                        <a href="#anl-dash" class="tree-child-item">Dashboards & Overlay</a>
+                        <a href="#anl-fore" class="tree-child-item">Decisions & Forecast</a>
+                    </div>
+                </div>
+
+                <div class="tree-title">Standard Procedures</div>
+
+                <!-- Workflows -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊞</span>
+                            <span class="nav-title-text">Workflows</span>
+                        </span>
+                    </button>
+                    <div class="tree-children">
+                        <a href="#work-heavy" class="tree-child-item">Heavy-Lift Selection</a>
+                        <a href="#work-motor" class="tree-child-item">Motor Validation</a>
+                        <a href="#work-cruise" class="tree-child-item">Cruise Efficiency</a>
+                        <a href="#work-esc" class="tree-child-item">ESC Benchmarking</a>
+                        <a href="#work-rd" class="tree-child-item">R&D Prototype</a>
+                        <a href="#work-flight" class="tree-child-item">Flight Readiness</a>
+                        <a href="#work-academic" class="tree-child-item">Academic Study</a>
+                        <a href="#work-factory" class="tree-child-item">Factory Quality</a>
+                    </div>
+                </div>
+
+                <div class="tree-title">Reference Library</div>
+
+                <!-- Troubleshooting Center -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊞</span>
+                            <span class="nav-title-text">Troubleshooting</span>
+                        </span>
+                    </button>
+                    <div class="tree-children">
+                        <a href="#troubleshooting-center" class="tree-child-item">Diagnostics Center</a>
+                    </div>
+                </div>
+
+                <!-- Academy -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊞</span>
+                            <span class="nav-title-text">Engineering Academy</span>
+                        </span>
+                    </button>
+                    <div class="tree-children">
+                        <a href="#academy-fundamentals" class="tree-child-item">Propulsion Theory</a>
+                        <a href="#academy-design" class="tree-child-item">UAV Design Concepts</a>
+                    </div>
+                </div>
+
+                <div class="tree-title">Platform Specifications</div>
+
+                <!-- System Specs -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊞</span>
+                            <span class="nav-title-text">Architecture</span>
+                        </span>
+                    </button>
+                    <div class="tree-children">
+                        <a href="#arch-overview" class="tree-child-item">Platform Details</a>
+                        <a href="#arch-dataflow" class="tree-child-item">Data Flow Schema</a>
+                    </div>
+                </div>
+
+                <!-- Security & Governance -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊞</span>
+                            <span class="nav-title-text">Governance</span>
+                        </span>
+                    </button>
+                    <div class="tree-children">
+                        <a href="#gov-auth" class="tree-child-item">RBAC & ITAR Security</a>
+                        <a href="#gov-recovery" class="tree-child-item">Backup & Auditing</a>
+                    </div>
+                </div>
+
+                <!-- API Docs -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊞</span>
+                            <span class="nav-title-text">REST API</span>
+                        </span>
+                    </button>
+                    <div class="tree-children">
+                        <a href="#api-endpoints" class="tree-child-item">Endpoints Reference</a>
+                        <a href="#api-integrations" class="tree-child-item">SDK & Webhooks</a>
+                    </div>
+                </div>
+
+                <!-- Changelog -->
+                <div class="tree-node">
+                    <button onclick="toggleTreeNode(this)" class="tree-header">
+                        <span class="tree-header-left">
+                            <span class="tree-toggle-icon">⊞</span>
+                            <span class="nav-title-text">Changelog</span>
+                        </span>
+                    </button>
+                    <div class="tree-children">
+                        <a href="#sys-changelog" class="tree-child-item">Release History</a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Main Content Area -->
+        <main class="docs-main">
+            <!-- Breadcrumbs -->
+            <div class="docs-breadcrumbs">
+                <a href="/"><i data-lucide="home" style="width:14px; height:14px;"></i>Home</a>
+                <span class="breadcrumbs-separator">/</span>
+                <span id="breadcrumb-category">User Guide</span>
+                <span class="breadcrumbs-separator">/</span>
+                <span id="breadcrumb-current" style="color:var(--text-primary); font-weight:600;">What is ThrustVault</span>
+            </div>
+
+            <!-- Note Alert Banner -->
+            <div class="docs-alert-banner">
+                <i data-lucide="info"></i>
+                <div class="docs-alert-content">
+                    <h4>Note</h4>
+                    <p>ThrustVault documentation is fully translation-compliant. You can navigate through categories using the left collapsible tree, or input phrases in the search box to find specific diagnostic codes instantly.</p>
+                </div>
+            </div>
+
+            <!-- No Results Found Card -->
+            <div id="no-results-card" class="no-results-card">
+                <i data-lucide="help-circle"></i>
+                <h3>No Results Found</h3>
+                <p>We couldn't find any documentation or troubleshooting articles matching your query.</p>
+                <button id="no-results-clear-btn" class="theme-toggle-floating" style="margin: 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; padding: 0 16px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-input); color: var(--text-primary); font-size: 0.85rem;" title="Clear search">
+                    <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Reset Search
+                </button>
+            </div>
+
+            <!-- Section 1: Introduction -->
+            <section id="about" class="docs-card-section">
+                <h1>Introduction</h1>
+                
+                <h2>What is ThrustVault</h2>
+                <p>ThrustVault is a high-performance, enterprise-grade aerospace propulsion intelligence platform designed for systems engineers, flight test teams, and UAV designers. By serving as a single source of truth, the platform manages, analyzes, and compares propulsion component specifications and real-world test telemetry logs. From stator configuration structures to dynamic load cell results, ThrustVault helps teams optimize multirotor performance, validate powertrain choices, and comply with safety and security regulations.</p>
+
+                <h2 id="intro-why">Why ThrustVault Exists</h2>
+                <p>UAV developers face significant data fragmentation and process gaps that compromise engineering quality. ThrustVault solves these common problems:</p>
+                <ul>
+                    <li><strong>Scattered Spreadsheets:</strong> Telemetry logs, KV specs, and battery parameters are often stored in individual local files, making global database searches impossible.</li>
+                    <li><strong>Lost Validation Reports:</strong> Crucial reports mapping ESC heat limits to specific propeller sizes are often lost across engineering teams.</li>
+                    <li><strong>Inconsistent Test Records:</strong> Different test benches yield non-standardized logs, which limits comparative analysis.</li>
+                    <li><strong>Duplicate Testing:</strong> Teams duplicate load cell runs because they cannot search for historical motor logs.</li>
+                    <li><strong>Lack of Engineering Traceability:</strong> Hardware modifications are made without audit trails, exposing teams to export compliance risks.</li>
+                </ul>
+
+                <h2 id="intro-benefits">Key Benefits & Users</h2>
+                <p>By consolidating files into a structured relational schema, ThrustVault enables:</p>
+                <ul>
+                    <li><strong>Traceability:</strong> Track component modifications, ingestion dates, and validation state logs.</li>
+                    <li><strong>Searchability:</strong> Locate optimal component sets using filter sliders.</li>
+                    <li><strong>Integrity:</strong> Prevent runtime desync and component failure with automated safety margin verification.</li>
+                </ul>
+                <p>Our typical users include:</p>
+                <ul>
+                    <li><strong>Drone Engineers:</strong> Design flight control laws and select powertrains.</li>
+                    <li><strong>Test Engineers:</strong> Set up load cells and ingest bench files.</li>
+                    <li><strong>UAV Manufacturers:</strong> Track production runs and quality logs.</li>
+                    <li><strong>Aerospace Researchers & University Teams:</strong> Conduct aerodynamic study and compare telemetry curves.</li>
+                    <li><strong>R&D Departments:</strong> Build and validate propulsion systems.</li>
+                </ul>
+
+                <h2 id="intro-vision">Platform Vision</h2>
+                <p>ThrustVault turns raw propulsion data into accessible engineering intelligence. Instead of manually reviewing legacy spreadsheets, engineers can query historical test logs, verify safety margins, and evaluate powertrain efficiency immediately, creating a reliable foundation for aerospace development.</p>
+            </section>
+
+            <!-- Section 2: Understanding UAV Propulsion Systems -->
+            <section id="uav-motors" class="docs-card-section">
+                <h1>Understanding UAV Propulsion Systems</h1>
+                
+                <h2>Motors</h2>
+                <p>UAV platforms use Brushless DC (BLDC) outrunner motors. The stator volume determines magnetic flux capacity, and the casing (rotor bell) rotates with permanent magnets to drive the propeller shaft.</p>
+                <ul>
+                    <li><strong>KV Rating:</strong> Defines the RPM a motor spins per Volt without load (RPM/V). Higher KV motors spin faster but generate less torque, while lower KV motors turn larger propellers more efficiently.</li>
+                    <li><strong>Selection Criteria:</strong> Select motors based on continuous current limits, power-to-weight ratio, winding resistance, and stator heat dissipations.</li>
+                </ul>
+
+                <h2 id="uav-escs">Electronic Speed Controllers (ESCs)</h2>
+                <p>The ESC switches DC power from the battery to three-phase AC, controlling motor RPM.
+                - <strong>Communication Protocols:</strong> DShot (digital, noise-resistant), PWM (analog, legacy), UAVCAN (packetized CAN bus).
+                - <strong>Ratings:</strong> Must clear continuous and burst current limits, plus battery voltage range limits (S-rating).</p>
+
+                <h2 id="uav-props">Propellers</h2>
+                <p>Propellers convert motor torque into thrust.
+                - <strong>Diameter:</strong> Outer rotational diameter. Larger diameters sweep more air, improving efficiency but increasing torque requirements.
+                - <strong>Pitch:</strong> Theoretical travel distance per rotation. Higher pitch speeds up the UAV but risks aerodynamic stalling.
+                - <strong>Blade Count:</strong> 2-blade designs are most efficient, while 3-blade options provide responsiveness in tight spaces.</p>
+
+                <h2 id="uav-batteries">Batteries</h2>
+                <p>Lithium-Polymer (LiPo) and Lithium-Ion packs provide power.
+                - <strong>Cell Count (S):</strong> Each cell adds 3.7V nominal. Higher voltage reduces current draw for the same power, limiting heat loss.
+                - <strong>Discharge Rate (C-Rating):</strong> Multiplier of nominal capacity defining safe current limits ($C \times \text{Ah}$).</p>
+
+                <h2 id="uav-chain">The Propulsion Chain</h2>
+                <p>The system operates as an interdependent chain: <span class="code-snippet-inline">Battery → ESC → Motor → Propeller → Aircraft</span>.
+                A change to any component impacts the entire system. For example, a larger propeller increases motor torque load, raising current draw from the ESC, which in turn causes voltage sag in the battery.</p>
+            </section>
+
+            <!-- Section 3: Getting Started -->
+            <section id="get-setup" class="docs-card-section">
+                <h1>Getting Started</h1>
+                
+                <h2>Account Setup & Roles</h2>
+                <p>Create credentials via the onboarding form. Users are assigned one of three role tiers:</p>
+                <ul>
+                    <li><strong>Guest:</strong> Read-only access to browse the catalog and view metrics.</li>
+                    <li><strong>Flight Engineer:</strong> Full access to import logs, register motors, and build comparison groups.</li>
+                    <li><strong>Systems Administrator:</strong> Full clearance to manage requests, toggle auto-approvals, and view audit trails.</li>
+                </ul>
+
+                <h2 id="get-dashboard">Dashboard & Navigation</h2>
+                <p>Log in to view:
+                - <strong>Top NavBar:</strong> Quick links to features, the version catalog, documentation, and your profile toggle.
+                - <strong>Main Dashboard Grid:</strong> Displays performance cards, search fields, Kv filter sliders, and rotrix CSV upload triggers.</p>
+
+                <h2 id="get-checklist">New User Checklist</h2>
+                <p>Complete these initial steps:</p>
+                <ul>
+                    <li><strong>Step 1:</strong> Register your engineer account on the onboarding form.</li>
+                    <li><strong>Step 2:</strong> Log in and explore the Motor Catalog Grid.</li>
+                    <li><strong>Step 3:</strong> Select two motors and click <em>Compare Selected</em>.</li>
+                    <li><strong>Step 4:</strong> Download the CSV template, populate it, and upload it to test the ingestion system.</li>
+                </ul>
+            </section>
+
+            <!-- Section 4: Motor Intelligence Database -->
+            <section id="motor-db-schema" class="docs-card-section">
+                <h1>Motor Intelligence Database</h1>
+                
+                <h2>Motor Records & Schemas</h2>
+                <p>Each motor record contains structural specifications, with mandatory verification fields to maintain database reliability:</p>
+                <div style="width: 100%; overflow-x: auto; margin: 24px 0; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                    <table class="tech-info-table" style="margin: 0; border: none; box-shadow: none;">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Unit / Format</th>
+                                <th>Type</th>
+                                <th>Validation Rule</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Motor Model</strong></td>
+                                <td>String (e.g. U8 II)</td>
+                                <td>Required</td>
+                                <td>Unique alphanumeric code.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>KV Rating</strong></td>
+                                <td>RPM/V</td>
+                                <td>Required</td>
+                                <td>Integer between 10 and 3000.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Stator Weight</strong></td>
+                                <td>grams</td>
+                                <td>Required</td>
+                                <td>Decimal greater than 0.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Coil Resistance</strong></td>
+                                <td>milliohms</td>
+                                <td>Optional</td>
+                                <td>Decimal greater than 0.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>JSONB extra_data</strong></td>
+                                <td>Key-Value Object</td>
+                                <td>Optional</td>
+                                <td>Valid JSON object.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h2 id="motor-db-standards">Best Practices & Data Ingestion</h2>
+                <p>To avoid schema rejection, follow these guidelines:</p>
+                <ul>
+                    <li><strong>Verify units:</strong> Stator weights must be in grams, coil resistance in milliohms.</li>
+                    <li><strong>Search before adding:</strong> Check historical records to prevent duplicate model names.</li>
+                    <li><strong>Include extra metrics:</strong> Add slot-pole configurations (<span class="code-snippet-inline">12S14P</span>) in the JSON payload to improve filtering.</li>
+                </ul>
+            </section>
+
+            <!-- Section 5: ESC Compatibility Management -->
+            <section id="esc-db-comp" class="docs-card-section">
+                <h1>ESC Compatibility Management</h1>
+                
+                <h2>Database & Compatibility Rules</h2>
+                <p>The system validates compatibility using safety margins to prevent component failures:</p>
+                <ul>
+                    <li><strong>Peak Current Margin:</strong> The ESC's continuous current rating must be at least 1.2x (preferably 1.5x) the motor's peak rated current.</li>
+                    <li><strong>Voltage Tolerance:</strong> The ESC's voltage limit (S-rating) must match or exceed the battery's maximum voltage output.</li>
+                    <li><strong>Signal Check:</strong> The flight controller's output protocol must match the ESC's input settings (e.g., DShot vs. UAVCAN).</li>
+                </ul>
+
+                <h2 id="esc-db-calc">Safety Calculations Example</h2>
+                <div class="code-block-premium">
+// Safety Calculation: Peak Current validation
+const motorMaxCurrent = 45.0; // Amps
+const safetyMargin = 1.25; // 25% overhead
+const targetESCRating = motorMaxCurrent * safetyMargin; // 56.25A
+
+if (esc.continuous_amps < targetESCRating) {
+    throw new Error("ERR_ESC_011: Insufficient ESC current headroom.");
+}
+                </div>
+            </section>
+
+            <!-- Section 6: Propeller Intelligence -->
+            <section id="prop-db-geom" class="docs-card-section">
+                <h1>Propeller Intelligence</h1>
+                
+                <h2>Geometry & Material Science</h2>
+                <p>Aerodynamic performance is determined by propeller geometry:</p>
+                <ul>
+                    <li><strong>Diameter (D):</strong> Increasing diameter increases static thrust but requires more motor torque.</li>
+                    <li><strong>Pitch (P):</strong> Higher pitch drives air faster but risks aerodynamic stall under static loads.</li>
+                    <li><strong>Material Choice:</strong> Carbon-fiber offers high rigidity and resists deflection under load, while nylon composites are quieter and absorb impact.</li>
+                </ul>
+
+                <h2 id="prop-db-match">Motor Matching & Testing</h2>
+                <p>Match propellers to motors using stator volume guidelines:
+                - Stator size 2306 pairs with 5" to 6" props (small quads).
+                - Stator size 8318 pairs with 28" to 32" props (heavy lift).
+                Avoid oversized props, which can overload coils and cause thermal degradation.</p>
+            </section>
+
+            <!-- Section 7: Battery Intelligence -->
+            <section id="bat-db-specs" class="docs-card-section">
+                <h1>Battery Intelligence</h1>
+                
+                <h2>Battery Cell & Discharge Metrics</h2>
+                <p>The battery pack must deliver sufficient voltage and current without excessive sag:</p>
+                <ul>
+                    <li><strong>Cell Count (S):</strong> nominal voltage = $S \times 3.7\text{V}$, max charge = $S \times 4.2\text{V}$ (4.35V for LiHV).</li>
+                    <li><strong>Continuous Current Delivery:</strong> Calculated as:
+                      $$\text{Max Current (Amps)} = \text{Capacity (Ah)} \times \text{C-Rating}$$
+                    </li>
+                </ul>
+
+                <h2 id="bat-db-safety">Safety Guidelines</h2>
+                <p>Observe these precautions:</p>
+                <ul>
+                    <li><strong>Thermal Limits:</strong> Do not exceed $60^\circ\text{C}$ during flight or test bench runs.</li>
+                    <li><strong>Voltage Limits:</strong> Never discharge cells below 3.0V under load to avoid irreversible damage.</li>
+                    <li><strong>Storage:</strong> Store packs at 3.8V to 3.85V per cell in a fireproof container.</li>
+                </ul>
+            </section>
+
+            <!-- Section 8: Test Run Management -->
+            <section id="test-setup" class="docs-card-section">
+                <h1>Test Run Management</h1>
+                
+                <h2>Bench Setup & Records</h2>
+                <p>Test runs validate propulsion performance before flight. Standard bench setups require:</p>
+                <ul>
+                    <li><strong>Calibration:</strong> Calibrate the load cell before each test run.</li>
+                    <li><strong>Environment Logs:</strong> Record ambient temperature, humidity, and atmospheric pressure.</li>
+                    <li><strong>Safety Rules:</strong> Clear all personnel from the prop plane and enable automated thermal shutdown limits.</li>
+                </ul>
+
+                <h2 id="test-workflow">Quality Assurance & Sign-off</h2>
+                <p>Uploaded test files undergo an review process before approval. This workflow ensures data integrity:</p>
+                <ul>
+                    <li><strong>Submission:</strong> The test operator uploads the telemetry file, creating a pending run record.</li>
+                    <li><strong>Automated Scan:</strong> The database engine checks for data anomalies (e.g., negative currents or missing timestamps).</li>
+                    <li><strong>Engineer Review:</strong> A Flight Engineer reviews the curves and signs off on the test run.</li>
+                </ul>
+            </section>
+
+            <!-- Section 9: Telemetry and Performance Data -->
+            <section id="tel-sources" class="docs-card-section">
+                <h1>Telemetry and Performance Data</h1>
+                
+                <h2>Data Sources & Ingestion</h2>
+                <p>ThrustVault ingests raw metrics from several sources:</p>
+                <ul>
+                    <li><strong>Bench Sensors:</strong> High-precision load cells and torque transducers.</li>
+                    <li><strong>ESC Telemetry:</strong> Real-time RPM, voltage, current, and temperature data.</li>
+                    <li><strong>Ingestion Formats:</strong> Data can be uploaded as standard CSV or Excel files, mapped via the columns mapper.</li>
+                </ul>
+
+                <h2 id="tel-analysis">Analysis Metrics</h2>
+                <p>Key metrics calculated by the analytics engine:</p>
+                <ul>
+                    <li><strong>Electrical Power ($P_e$):</strong> Current (A) $\times$ Voltage (V).</li>
+                    <li><strong>Mechanical Power ($P_m$):</strong> Torque (Nm) $\times$ Angular Velocity (rad/s).</li>
+                    <li><strong>Propulsion Efficiency:</strong> thrust (g) / Electrical Power (W). Peak target values exceed $10\text{g/W}$ at hover throttle.</li>
+                </ul>
+            </section>
+
+            <!-- Section 10: Analytics and Insights -->
+            <section id="anl-dash" class="docs-card-section">
+                <h1>Analytics and Insights</h1>
+                
+                <h2>Dashboards & Telemetry Curves</h2>
+                <p>The analytics module processes telemetry logs to generate performance charts:</p>
+                <ul>
+                    <li><strong>Thrust vs. Current:</strong> Maps motor torque characteristics.</li>
+                    <li><strong>Efficiency ($g/W$) vs. Throttle:</strong> Locates optimal hover nodes.</li>
+                    <li><strong>Temperature Rise vs. Time:</strong> Evaluates winding thermal performance.</li>
+                </ul>
+
+                <h2 id="anl-fore">Engineering Forecasts & Decisions</h2>
+                <p>The system models lifecycle changes over time, helping engineers plan maintenance and replace components before failure.</p>
+            </section>
+
+            <!-- Section 11: Engineering Workflows -->
+            <section id="work-heavy" class="docs-card-section">
+                <h1>Engineering Workflows</h1>
+                
+                <h2>Workflow 1: Selecting a propulsion system for a heavy-lift drone</h2>
+                <ul>
+                    <li><strong>Objective:</strong> Identify a motor, ESC, prop, and battery combination to hover a 40kg drone (10kg per rotor) for 30 minutes.</li>
+                    <li><strong>Steps:</strong> Open the simulator widget, select a 10kg payload and 12S battery, review recommendations, click *Compare specs*, and confirm safety margins.</li>
+                    <li><strong>Expected Results:</strong> System outputs KV120 motor, 80A ESC, and 30" carbon prop specifications.</li>
+                </ul>
+
+                <h2 id="work-motor">Workflow 2: Validating a newly released motor</h2>
+                <ul>
+                    <li><strong>Objective:</strong> Add and approve specs for a new motor.</li>
+                    <li><strong>Steps:</strong> Check the database for duplicates, create the record, upload the test bench CSV, and submit for review.</li>
+                    <li><strong>Expected Results:</strong> Winding resistance and KV ratings are validated.</li>
+                </ul>
+
+                <h2 id="work-cruise">Workflow 3: Finding the most efficient configuration</h2>
+                <ul>
+                    <li><strong>Objective:</strong> Find the powertrain combo with the highest g/W efficiency at $6\text{kg}$ thrust.</li>
+                    <li><strong>Steps:</strong> Search historical data for $6\text{kg}$ runs, compare overlay curves, and identify the highest efficiency node.</li>
+                    <li><strong>Expected Results:</strong> System identifies a low-KV motor paired with high-voltage packs.</li>
+                </ul>
+
+                <h2 id="work-esc">Workflow 4: Comparing ESC manufacturers</h2>
+                <ul>
+                    <li><strong>Objective:</strong> Compare timing advance efficiency across two different ESC brands.</li>
+                    <li><strong>Steps:</strong> Run identical test sequences on both ESCs, upload the logs, and compare the telemetry curves.</li>
+                    <li><strong>Expected Results:</strong> Chart overlays identify the ESC with lower thermal losses.</li>
+                </ul>
+
+                <h2 id="work-rd">Workflow 5: R&D Prototype Validation</h2>
+                <ul>
+                    <li><strong>Objective:</strong> Validate motor thermal limits under cyclical thrust loads.</li>
+                    <li><strong>Steps:</strong> Run a variable thrust sequence on the bench, upload logs, and check the temperature curves.</li>
+                    <li><strong>Expected Results:</strong> Identifies limits to prevent motor demagnetization.</li>
+                </ul>
+
+                <h2 id="work-flight">Workflow 6: Flight Readiness Powertrain Sign-off</h2>
+                <ul>
+                    <li><strong>Objective:</strong> Sign off on components before flight.</li>
+                    <li><strong>Steps:</strong> Verify component models against database entries and review the QA checklist.</li>
+                    <li><strong>Expected Results:</strong> Validated clearance checklist output.</li>
+                </ul>
+
+                <h2 id="work-academic">Workflow 7: Academic Propulsion Research Study</h2>
+                <ul>
+                    <li><strong>Objective:</strong> Analyze the effect of blade count on aerodynamic efficiency.</li>
+                    <li><strong>Steps:</strong> Test 2-blade and 3-blade props on the same motor, upload the data, and compare thrust curves.</li>
+                    <li><strong>Expected Results:</strong> Outputs comparative charts showing performance differences.</li>
+                </ul>
+
+                <h2 id="work-factory">Workflow 8: Factory Quality Validation</h2>
+                <ul>
+                    <li><strong>Objective:</strong> Check production motor KV consistency.</li>
+                    <li><strong>Steps:</strong> Run a no-load spin test on batch motors and upload the logs.</li>
+                    <li><strong>Expected Results:</strong> Flags motors outside the $\pm 3\%$ KV range.</li>
+                </ul>
+            </section>
+
+            <!-- Section 12: Troubleshooting Center (100 diagnostic codes index) -->
+            <section id="troubleshooting-center" class="docs-card-section">
+                <h1>Troubleshooting & Diagnostics Center</h1>
+                <p>Use the search input at the top of the sidebar or browse this directory to diagnose and resolve propulsion system anomalies, interface glitches, and data integration errors.</p>
+                
+                <div class="error-grid">
+                    <!-- Standard errors (ERR_AUTH_001 to ERR_LIM_008) -->
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">ERR_AUTH_001: ACCESS_UNAUTHORIZED</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Your session lacks authorized permissions to perform edits, upload files, or view protected dashboard panels.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Log out and sign back in to refresh your token. Contact your administrator to request a role upgrade if you need write access.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">ERR_DB_002: READ_ONLY_DEMO</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Attempted database edits are disabled within the read-only guest workspace.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Submit an onboarding request for active clearances, then sign in with your approved profile.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">ERR_FILE_003: INGESTION_FORMAT_MISMATCH</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">The uploaded CSV or Excel file header format does not map correctly to database categories.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Download the official template file from the dashboard, copy your columns without modifying header strings, and re-upload.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">ERR_SYS_004: SYNCHRONIZATION_DELAY</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">A temporary synchronization delay exists between the Postgres primary DB and the sqlite local mirror cache.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Wait 30 seconds and refresh the dashboard. Cache databases sync automatically.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">ERR_MAIL_005: NOTIFICATIONS_PAUSED</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Automatic email notifications for access approval or system updates are temporarily paused.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">System notifications are currently suspended. Please contact your administrator to verify request approvals manually.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">ERR_NET_006: GATEWAY_TIMEOUT</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">The database server timed out while processing a complex comparison query.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Reduce the number of selected motors or filter by a smaller KV range, then try the comparison again.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">ERR_VAL_007: SCHEMA_CONSTRAINT_VIOLATION</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">The data you attempted to submit contains schema constraint violations, such as negative weights or invalid KV ranges.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Check your inputs. Ensure that motor values are positive and required fields are populated.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">ERR_LIM_008: EXPORT_LIMIT_EXCEEDED</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">You have exceeded the maximum row limit for a single CSV/Excel export, which is restricted to 100 rows for guest profiles.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Filter the catalog to reduce the number of rows, or upgrade to a Flight Engineer account to remove export limits.</div>
+                        </div>
+                    </div>
+
+                    <!-- 100 realistic diagnostic scenarios (TS_MTR_001 to TS_SYS_100) -->
+                    <!-- Motors -->
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_MTR_001: STATOR_OVERHEATING</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">The motor stator temperature exceeds the thermal limit ($85^\circ\text{C}$) during static hover testing.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Reduce throttle immediately to prevent damage. Check winding health, verify current draws, and ensure the prop is not oversized for the motor's KV rating.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_MTR_002: INSULATION_BREAKDOWN</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Short-circuit detected between motor windings and the stator core, causing erratic startup behavior.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Disconnect the motor from power. Check continuity using a multimeter, inspect coil enamel for damage, and replace the motor if windings are shorted.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_MTR_003: MAGNET_DEMAGNETIZATION</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Permanent rotor magnets degrade due to thermal limit violations, reducing motor torque.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Replace the damaged rotor bell. Set up automated thermal warning thresholds on your dashboard to prevent overheating in future runs.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_MTR_004: BEARING_AXIAL_PLAY</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Wear in motor bearings creates axial play, resulting in noise and high vibration levels.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Check the shaft assembly for play and replace worn bearings. Clean the motor bell to prevent dust contamination.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_MTR_005: COGGING_TORQUE_MISMATCH</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Uneven resistance when manually rotating the bell, suggesting magnet misalignment or winding defects.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Inspect magnet spacing inside the bell. If magnets are loose, replace the rotor bell to ensure correct spacing.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_MTR_006: PHASE_RESISTANCE_IMBALANCE</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Winding resistance differs by more than $5\%$ between phases, causing uneven motor heating.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Measure phase-to-phase resistance. Check solder joints on lead wires and reflow cold solder points to restore balance.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_MTR_007: SHAFT_SLIPPAGE</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">The motor shaft slips relative to the bell casing under high loads, losing propulsion control.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Tighten the shaft retention screws on the rotor bell casing, using medium-strength threadlocker to prevent loosening.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_MTR_008: PHASE_SHORT_CIRCUIT</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Short-circuit between phase lines triggers ESC overcurrent protection.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Inspect lead wire insulation for cracks. Apply heat shrink tubing to exposed conductors, or replace lead lines if necessary.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_MTR_009: BELL_UNBALANCE</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Imbalance in the rotor bell causes high vibrations, raising accelerometer noise.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Balance the motor using a dynamic balancer. Apply small weights to the inner rim of the bell until vibrations drop below standard thresholds.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_MTR_010: BASE_THREAD_STRIP</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Stripped mounting hole threads prevent secure motor attachment.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Install a helicoil insert in the stripped hole, or mount the motor using alternative mounting points with correct screw lengths.</div>
+                        </div>
+                    </div>
+
+                    <!-- ESCs -->
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ESC_011: DESYNCHRONIZATION</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">The ESC loses synchronization with rotor position during rapid acceleration.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Reduce acceleration ramps in the flight controller or ESC settings. Increase timing advance configuration slightly in the ESC manager.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ESC_012: THERMAL_SHUTDOWN</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">The ESC's internal temp exceeds thermal safety limits ($110^\circ\text{C}$), triggering thermal shutdown.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Improve airflow to the ESC. Add a larger aluminum heatsink or select an ESC with higher continuous current ratings.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ESC_013: VOLTAGE_RIPPLE_SHUTDOWN</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Excessive voltage ripple in power lines trigger ESC low-voltage protection.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Add low ESR electrolytic capacitors across the ESC power inputs to smooth out voltage ripple. Keep battery leads as short as possible.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ESC_014: SIGNAL_JITTER</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Signal jitter in control lines causes erratic motor speed changes.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Use shielded signal cables and route them away from power lines to reduce EMI. Verify output protocols in flight controller configurations.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ESC_015: CAN_ADDRESS_CLASH</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Multiple ESCs share the same address on the CAN bus, preventing individual node discovery.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Connect each ESC individually to assign unique node IDs using the configuration manager.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ESC_016: TIMING_MISMATCH</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Suboptimal motor timing settings lower efficiency and raise heat production.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Set timing advance to default or auto. For high-pole-count motors, set timing to $20^\circ$ or higher for stable commutation.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ESC_017: BEC_VOLTAGE_DROP</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">The ESC's internal BEC voltage drops under load, causing flight controller brownouts.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Use a dedicated external UBEC to power flight controllers and avionics, keeping electronics isolated from propulsion power draws.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ESC_018: BOOTLOADER_MISMATCH</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Incompatible bootloader version prevents firmware updates.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Flash the matching bootloader version using an external programmer, or restore default factory firmware to re-enable communication.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ESC_019: BRAKING_CURRENT_SPIKE</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Regenerative braking current spikes exceed battery acceptance limits, triggering overvoltage protection.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Lower regenerative braking power in ESC configurations, or use active load resistors to absorb excess energy.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ESC_020: PACKET_DROP_RATE</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Loss of control packets in DShot signal lines causing motor response lag.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Verify signal cable shielding and ground connections. Lower DShot speeds (e.g., from DShot600 to DShot300) to improve signal integrity.</div>
+                        </div>
+                    </div>
+
+                    <!-- Propellers -->
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRP_021: HUB_STRUCTURAL_FAILURE</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Micro-cracks in the propeller hub lead to blade separation at high RPMs.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Inspect hubs for fatigue cracks before test runs. Replace damaged propellers immediately and do not exceed rated RPM limits.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRP_022: DYNAMIC_IMBALANCE</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Propeller weight mismatch causes dynamic imbalance, increasing vibration.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Balance blades using a magnetic balancer. Apply thin layers of clear tape or sand blade tips to correct imbalances.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRP_023: TRACKING_ERROR</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Blades rotate in different horizontal planes due to hub pitch errors.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Inspect blade pitch angles and hub alignment. Replace deformed propellers and check adapter concentricity.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRP_024: STATIC_PITCH_STALL</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">High-pitch propeller blades stall under static conditions, lowering static thrust efficiency.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Use props with lower pitch-to-diameter ratios for high static thrust requirements, or evaluate performance dynamic conditions.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRP_025: MOISTURE_ABSORPTION</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Nylon composite blades absorb humidity, causing blade softening and shape deformation.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Store nylon composite blades in sealed bags with desiccant packs. Switch to carbon-fiber blades for consistent performance in humid environments.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRP_026: TIP_CAVITATION</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Propeller tip velocities approach Mach 0.7, causing flow separation and reduced efficiency.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Reduce motor voltage or switch to lower KV motors. Select smaller propeller diameters to maintain tip speeds below safety margins.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRP_027: UV_DEGRADATION</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">UV exposure degrades composite plastics, making propeller blades brittle.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Inspect blade surfaces for discoloration or micro-cracks. Store propellers away from direct sunlight.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRP_028: HINGE_BINDING</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Hinge bolts on folding propellers are over-tightened, preventing smooth blade deployment.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Loosen hinge bolts slightly and apply threadlocker. Ensure blades fold and deploy freely without resistance.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRP_029: BLADE_DEFLECTION</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Flexible plastic blades deflect under heavy aerodynamic load, causing efficiency losses.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Replace flexible props with carbon-fiber or rigid carbon-reinforced nylon blades to maintain aerodynamic shapes under load.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRP_030: ADAPTER_RUNOUT</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Adapter concentricity error causes prop wobble during rotation.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Measure runout with a dial indicator. Re-seat the propeller adapter hub or replace the adapter assembly to restore concentricity.</div>
+                        </div>
+                    </div>
+
+                    <!-- Batteries -->
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_BAT_031: VOLTAGE_SAG</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Excessive voltage sag under load suggests high internal resistance.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Verify individual cell internal resistance. Keep packs warm in cold weather and use high C-rated batteries for peak current loads.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_BAT_032: CELL_IR_SPIKE</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Internal resistance spike in a single cell causes unbalanced discharge.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Retire packs with high cell-to-cell resistance imbalances. Use balance charging for all charge cycles.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_BAT_033: CELL_SWELLING</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Gas generation swells the battery pack, posing a fire risk.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Discontinue use of swollen battery packs. Discharge safely using a salt bath and dispose of them according to local environmental regulations.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_BAT_034: BALANCE_LEAD_DISCONNECT</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Loose balance wire contacts cause charger cell reading errors.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Inspect the JST-XH balance connector and reflow loose solder points. Re-seat connector pins inside the plug housing.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_BAT_035: CAPACITY_DEGRADATION</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Battery capacity drops rapidly after repeated discharge cycles.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Avoid discharging cells below 3.0V. Cycle batteries at moderate rates to extend operational lifespan.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_BAT_036: THERMAL_RUNAWAY</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Rapid battery temperature rise ($65^\circ\text{C}$) under load poses risk of thermal runaway.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Disconnect the load and place the battery in a fireproof container. Inspect for external damage or internal short-circuits.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_BAT_037: CHARGE_REJECTION</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Charger rejects low-temperature packs ($<0^\circ\text{C}$) to prevent lithium plating.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Warm battery packs to room temperature ($18^\circ\text{C}-25^\circ\text{C}$) before charging.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_BAT_038: SELF_DISCHARGE_SPIKE</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Packs lose significant charge when stored for short periods.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Measure self-discharge rates. Isolate and replace cells with high self-discharge to prevent pack imbalances.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_BAT_039: CONNECTOR_SHORT</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Damaged insulation on battery connectors leads to short-circuits.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Insulate exposed wires with electrical tape. Replace damaged connectors using insulated tools to prevent shorts.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_BAT_040: CHARGER_ERROR</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Charger displays error code indicating cell count mismatch.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Verify charger cell count settings. Check balance lead connections and select the matching S-rating configuration.</div>
+                        </div>
+                    </div>
+
+                    <!-- Telemetry -->
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_TEL_041: LOAD_CELL_DRIFT</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Thermal expansion causes load cell zero-point drift during test runs.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Tare the load cell before every run. Use temperature-compensated load cells to minimize drift.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_TEL_042: ESC_CLOCK_DESYNC</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Clock desynchronization between flight controller and ESC causes telemetry logging gaps.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Update the flight controller firmware. Set DShot telemetry settings to match native speed limits.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_TEL_043: SERIAL_PACKET_DROP</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">EMI in serial data lines causes packet drop rate issues.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Use shielded twisted-pair cables for serial data, and ground shielding to the system ground. Keep cables short.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_TEL_044: THROTTLE_COMMAND_LAG</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Propagation delay in throttle signals, causing slow motor responses.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Verify signal path connections and lower protocol filtering delays. Switch to faster update rates (e.g. DShot600).</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_TEL_045: THERMOCOUPLE_NOISE</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Electrical noise from motor phases causes erratic thermocouple readings.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Use shielded, grounded thermocouple extensions. Apply digital signal filtering in the test manager to smooth data.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_TEL_046: TACHOMETER_INTERFERENCE</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Flickering ambient lights cause tachometer RPM measurement errors.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Shield optical tachometer sensors from ambient light. Use high-contrast reflective tape on the rotor bell.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_TEL_047: CURRENT_SENSOR_OFFSET</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Thermal drift causes Hall-effect current sensor offset errors.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Calibrate current sensor zero offsets prior to each run. Add cooling air ducts to the sensor enclosure.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_TEL_048: GROUND_LOOP</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Different ground reference voltages cause ground loops, corrupting sensor signals.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Use a single point star grounding scheme. Opto-isolate digital signal lines between the bench and controllers.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_TEL_049: INGEST_BUFFER_OVERFLOW</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Data rates exceed processing limits, causing buffer overflow errors.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Optimize database write procedures. Set telemetry logging rates to standard levels (e.g. 50Hz) to prevent overload.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_TEL_050: TIMESTAMP_RESOLUTION</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Timestamp mismatch between load cell and ESC logs prevents dataset alignment.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Synchronize logs using start-pulse triggers. Use time-alignment scripts to match files before importing.</div>
+                        </div>
+                    </div>
+
+                    <!-- Analytics -->
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ANL_051: OVERLAY_LATENCY</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Overlay graph rendering delays when comparing multiple datasets.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Downsample datasets before displaying them in UI charts. Select fewer compare runs to speed up rendering.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ANL_052: EFFICIENCY_MISCALCULATION</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Calculation errors in propulsion system efficiency due to incorrect parameter units.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Ensure input units are correct (thrust in grams, power in Watts). Verify calculation logic before saving metrics.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ANL_053: POWER_CONVERSION_ERR</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Mismatch between active and apparent power values in three-phase calculations.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Apply the correct motor power factor ($\approx 0.85$) to three-phase AC calculations, or use ESC DC input values.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ANL_054: PLOT_OVERLAP</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Overlapping data points in scatter plots reduce chart readability.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Adjust opacity and point sizing settings. Use color-coded legends to differentiate motor datasets.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ANL_055: TORQUE_CALC_OFFSET</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Torque offset errors skew calculated mechanical power outputs.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Calibrate torque transducers under static conditions. Apply compensation formulas to correct data offsets.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ANL_056: CURVE_FIT_ERROR</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Polynomial curve fitting algorithms fail to resolve outlier telemetry points.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Filter out invalid sensor spikes before running curve fitting algorithms. Use regression parameters to optimize curves.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ANL_057: THERMAL_LOOKUP_FAIL</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Thermal properties lookup fails due to missing copper resistivity parameters.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Verify material constant tables in the database. Ensure temperature coefficients are populated for copper windings.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ANL_058: TREND_DISCREPANCY</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Changes in parameters skew historical performance trend analyses.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Normalize telemetry metrics to standard ISA atmospheric conditions before analyzing trends.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ANL_059: REPORT_FORMAT_ERR</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Formatting errors in generated PDF reports due to chart sizing issues.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Resize charts to fit standard page layouts. Use print stylesheets to keep PDF outputs aligned.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_ANL_060: CHART_EXPORT_FAIL</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Chart export fails due to browser memory limits when rendering large datasets.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Downsample datasets before exporting. Use SVG or PNG output formats to reduce file size.</div>
+                        </div>
+                    </div>
+
+                    <!-- Search -->
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_SCH_061: QUERY_LATENCY</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Search queries run slowly on large databases without indices.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Limit search results using filter options. Contact your database administrator to create indices on searched columns.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_SCH_062: CASING_MISMATCH</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Case-sensitive search filters exclude matching lowercase database records.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Convert search inputs and target strings to lowercase before running comparison checks.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_SCH_063: MONOSPACE_INDEX</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Database fails to index monospace characters, causing search misses.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Normalize text encoding in ingestion scripts. Strip out hidden formatting tags before saving records.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_SCH_064: CHAR_REJECTION</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Queries with special characters are rejected by input sanitization filters.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Use alphanumeric characters in search fields. Escape special characters to prevent sanitization blocks.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_SCH_065: HIGHLIGHT_DISPLACE</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Search term highlights displace text alignment in the results view.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Verify highlight display styles. Use CSS tags that do not change block layout dimensions.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_SCH_066: FUZZY_FALSE_POSITIVE</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Fuzzy search logic matches unrelated components, cluttering results.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Increase the search term length or raise search matching thresholds to filter out irrelevant results.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_SCH_067: SLIDER_MISMATCH</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Dynamic filter sliders fail to register changes when adjusted quickly.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Add small input validation delays to update queries once slider movements stop.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_SCH_068: CACHE_OUT_OF_SYNC</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">New components are not searchable due to search index sync delays.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Refresh the search index manually, or wait for the automatic sync cycle to complete.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_SCH_069: CATEGORY_OMISSION</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Category filter exclusions drop matching motors from the catalog view.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Check your active filter parameters. Reset all category filter settings to display the full catalog.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_SCH_070: FOCUS_LOSS</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">The search input loses focus on mobile devices when dynamic results reload.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Adjust input event listeners to run in the background, updating results without resetting focus on active inputs.</div>
+                        </div>
+                    </div>
+
+                    <!-- Permissions -->
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRM_071: GUEST_WRITE_BLOCKED</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Write operations are blocked for guest profiles to protect the demo catalog.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Log in with a Flight Engineer account to add, update, or delete catalog records.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRM_072: TOKEN_REFRESH_DELAY</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Delays in token refresh loops result in unauthorized errors on active pages.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Sign out and log in again to manually refresh your session token.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRM_073: UPLOAD_DENIED</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Import actions are blocked due to insufficient user authorization clearances.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Confirm your account permissions. Upgrade your profile to Flight Engineer to enable import tools.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRM_074: ROUTING_LOOP</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Redirect loops affect users with unconfirmed profile registrations.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Clear your browser cookies and cache. Contact your administrator to manually confirm your account registration.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRM_075: API_KEY_REJECTED</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">The API gateway rejects the provided security token.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Verify your API key format. Re-issue the security token from your profile settings page.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRM_076: SESSION_CONFLICT</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Multiple concurrent administrator logins close active sessions.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Use individual administrator credentials. Avoid sharing logins across sessions.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRM_077: MFA_SMS_DELAY</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Delays in delivering MFA codes block portal access.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Request a new code, or use an authenticator app for MFA confirmation.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRM_078: APPROVAL_FILTER_BYPASS</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Auto-approval rules fail to process requests from non-whitelisted email domains.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Enter corporate email addresses exactly. Request manual confirmation from the admin portal if domain issues persist.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRM_079: CLEARANCE_CONFLICT</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Assigned user clearance conflicts block access to high-payload records.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Check your profile clearance status and request required clearances from your administrator.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRM_080: ITAR_DOWNLOAD_BLOCK</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Downloads of ITAR-protected specifications are blocked for non-US IP addresses.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Verify your connection. Access ITAR-regulated data only from secure, authorized networks.</div>
+                        </div>
+                    </div>
+
+                    <!-- Imports -->
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_IMP_081: HEADER_MISMATCH</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Import actions fail because Excel headers do not match target categories.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Open the column mapping interface to match spreadsheet headers to target database columns before uploading.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_IMP_082: PARSING_EXCEPTION</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">CSV float parsing errors occur due to non-numeric characters in data columns.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Verify your data cells. Remove non-numeric units (e.g. "g" or "V") from cells, leaving only clean numerical values.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_IMP_083: MISSING_STATOR_WEIGHT</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Ingestion fails because the mandatory stator weight column is empty.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Fill in the missing weight parameters in your source file and run the ingestion process again.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_IMP_084: ROW_LENGTH_CONSTRAINT</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Import fails because the number of fields in a row exceeds structural limits.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Check for and remove extra columns at the end of the spreadsheet before uploading.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_IMP_085: DIALECT_UNRECOGNIZED</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">The CSV parser fails due to unrecognized separators (e.g., semicolons instead of commas).</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Convert your file to standard comma-separated format before uploading.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_IMP_086: UNIQUE_ID_CLASH</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Ingestion fails because motor model codes conflict with existing database records.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Change model codes in your spreadsheet to ensure uniqueness, or select the overwrite option.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_IMP_087: FILE_SIZE_OVERFLOW</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">The uploaded file size exceeds the database limit of $10\text{MB}$ per upload.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Split your dataset into smaller files and upload them sequentially.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_IMP_088: BLANK_ROWS_EXCEPTION</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Empty rows at the end of the spreadsheet trigger validation errors.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Open the file, delete empty rows at the bottom, save, and retry the upload.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_IMP_089: JSONB_MAPPING_ERROR</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Formatting errors in nested key-value cells prevent conversion to JSONB.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Ensure extra parameter columns are populated with standard text or numbers to allow correct JSON serialization.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_IMP_090: EXCEL_PARSING_CRASH</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Macro-enabled spreadsheets (.xlsm) trigger security and parsing errors.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Save the worksheet as a standard Excel file (.xlsx) or CSV, then re-upload.</div>
+                        </div>
+                    </div>
+
+                    <!-- Exports / Validation / API / Performance / User Management -->
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_EXP_091: BULK_EXPORT_DENIED</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Guest profiles are restricted from performing bulk exports of the database.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Filter search results to show fewer than 100 rows, or log in with an engineering account to remove export limits.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_VAL_092: STATOR_OUT_OF_BOUNDS</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Stator dimensions exceed logical parameters (e.g. width values $> 150\text{mm}$).</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Verify stator width and height inputs. Correct typos to ensure values fit physical constraints.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_VAL_093: NEGATIVE_RESISTANCE</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Negative coil resistance values are rejected by database constraints.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Enter positive resistance values in milliohms. Check your sensor measurements if errors persist.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_API_094: RATE_LIMIT_REACHED</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">API call rates exceed standard limits (max 100 requests/min per client IP).</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Reduce request rates. Batch telemetry uploads to minimize API traffic.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_API_095: SERIALIZATION_ERROR</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Malformed custom fields cause API payload serialization to fail.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Ensure all custom values are mapped as standard strings or numbers before sending API requests.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRF_096: GRID_LOAD_LATENCY</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Displaying too many records at once slows down catalog loading times.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Enable pagination or apply filters to limit the number of active display rows.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_PRF_097: SYNC_MIRROR_LATENCY</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Delayed synchronization updates on the local SQLite mirror after writing to PostgreSQL.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Wait 30 seconds for automatic synchronization, or refresh the page to force a cache reload.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_USR_098: ACTIVATION_DELAY</span>
+                            <span class="error-severity severity-low">Low</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Delays in sending email verification links after registration.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Check your spam folder. If email notifications are paused by administrator policy, contact support to manually activate your account.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_USR_099: STATUS_MISMATCH</span>
+                            <span class="error-severity severity-medium">Medium</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">Account status errors block portal access for active users.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Contact system administrators to verify your profile status. Ensure your account is set to active in the database.</div>
+                        </div>
+                    </div>
+
+                    <div class="error-card">
+                        <div class="error-header">
+                            <span class="error-code">TS_SYS_100: MEMORY_LIMIT_WARNING</span>
+                            <span class="error-severity severity-high">High</span>
+                        </div>
+                        <div class="error-desc-title">Description:</div>
+                        <div class="error-desc-text">High system memory usage warnings on the administrative dashboard dashboard.</div>
+                        <div class="error-resolution">
+                            <div class="error-resolution-title"><i data-lucide="check-circle-2"></i> Resolution Strategy:</div>
+                            <div class="error-resolution-text">Close unused dashboard views, clear active query memory, and limit the size of concurrent comparison queries.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 13: Engineering Academy -->
+            <section id="academy-fundamentals" class="docs-card-section">
+                <h1>Engineering Academy</h1>
+                
+                <h2>Drone Motor Fundamentals</h2>
+                <p>Brushless motors operate using electronic commutation. By sequencing currents through stator coils, magnetic fields rotate and pull permanent magnets on the bell, driving shaft rotation. Key concepts include:</p>
+                <ul>
+                    <li><strong>KV Constant ($K_v$):</strong> Defines the RPM generated per Volt ($V$). Under load, actual RPM is lower due to copper and aerodynamic losses.</li>
+                    <li><strong>Torque Constant ($K_t$):</strong> Defines torque generated per Ampere ($A$). Crucially:
+                      $$K_t \propto \frac{1}{K_v}$$
+                      Therefore, low KV motors provide higher torque, ideal for spinning larger propellers.
+                    </li>
+                    <li><strong>Copper Losses:</strong> Heat generated in winding resistance, calculated as $I^2 R$. Reducing current or winding resistance minimizes these losses.</li>
+                    <li><strong>Iron Losses:</strong> Losses from hysteresis and eddy currents in stator laminations. These rise rapidly with RPM and frequency.</li>
+                </ul>
+
+                <h2 id="academy-design">UAV Design Concepts</h2>
+                <p>Selecting propulsion components requires a balanced approach. To optimize a design:</p>
+                <ul>
+                    <li><strong>Determine Thrust Requirements:</strong> A multirotor needs a thrust-to-weight ratio of at least 2:1 for stable flight. The hover thrust per rotor equals the total UAV weight divided by the number of motors.</li>
+                    <li><strong>Calculate Power Loading:</strong> Lower pitch propellers driven by low KV motors generate thrust more efficiently (g/W), extending flight times.</li>
+                    <li><strong>Thermal Management:</strong> Maintain winding temperatures below $80^\circ\text{C}$ to protect wire insulation and prevent magnets from demagnetizing.</li>
+                </ul>
+            </section>
+
+            <!-- Section 14: Platform Architecture -->
+            <section id="arch-overview" class="docs-card-section">
+                <h1>Platform Architecture</h1>
+                
+                <h2>System Overview</h2>
+                <p>ThrustVault uses a multi-tier, cache-synchronized architecture to provide fast query performance while maintaining write integrity:</p>
+                <ul>
+                    <li><strong>Frontend Layer:</strong> A single-page application built with HTML, CSS Variables, and JavaScript, displaying real-time metrics and dynamic comparison charts.</li>
+                    <li><strong>API Gateway:</strong> An Express.js backend server handling security, authorization middleware, input validation, and query processing.</li>
+                    <li><strong>Data Layer:</strong> A primary PostgreSQL database for writes and transaction logs, synchronized with a local SQLite cache mirror to speed up dashboard queries.</li>
+                </ul>
+
+                <h2 id="arch-dataflow">Data Flow Schema</h2>
+                <div class="code-block-premium">
+[Test Bench Ingest] ──> [Express API Gateway] ──> [PostgreSQL Primary DB]
+                                                          │
+                                                (Auto-Sync / 30s Loop)
+                                                          ▼
+[Dashboard UI] <────── [Read Operations] <────── [SQLite Cache Mirror]
+                </div>
+            </section>
+
+            <!-- Section 15: Security and Governance -->
+            <section id="gov-auth" class="docs-card-section">
+                <h1>Security and Governance</h1>
+                
+                <h2>Authentication & RBAC</h2>
+                <p>User authentication uses encrypted sessions. Role-Based Access Control (RBAC) enforces clearances (Guest, Flight Engineer, and Systems Administrator) at the API gateway layer, protecting database records from unauthorized modifications.</p>
+
+                <h2 id="gov-recovery">Audit Logging & ITAR Compliance</h2>
+                <p>The platform maintains detailed logs for compliance auditing:
+                - **Audit Logs:** The database logs all additions, updates, and deletions of motor, ESC, and propeller specs.
+                - **ITAR Compliance:** Data residency rules restrict high-payload UAV motor specs to classified US networks. Automated filters block access from unauthorized external IP addresses.</p>
+            </section>
+
+            <!-- Section 16: API Documentation -->
+            <section id="api-endpoints" class="docs-card-section">
+                <h1>REST API Documentation</h1>
+                
+                <h2>REST Endpoints</h2>
+                <p>Authorized external services can interact with ThrustVault using these API endpoints:</p>
+                <div style="width: 100%; overflow-x: auto; margin: 24px 0; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                    <table class="tech-info-table" style="margin: 0; border: none; box-shadow: none;">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Endpoint</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>GET</strong></td>
+                                <td><span class="code-snippet-inline">/api/motors</span></td>
+                                <td>Browse the complete motor catalog. Supports pagination and KV filters.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>POST</strong></td>
+                                <td><span class="code-snippet-inline">/api/motors</span></td>
+                                <td>Register a new motor record in the database. (Requires Flight Engineer role).</td>
+                            </tr>
+                            <tr>
+                                <td><strong>GET</strong></td>
+                                <td><span class="code-snippet-inline">/api/motors/:id</span></td>
+                                <td>Fetch full parameters for a specific motor by UUID.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>POST</strong></td>
+                                <td><span class="code-snippet-inline">/api/test-runs</span></td>
+                                <td>Ingest a new Rotrix test run log.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h2 id="api-integrations">API Ingestion Example</h2>
+                <div class="code-block-premium">
+POST /api/motors HTTP/1.1
+Host: localhost:8000
+Content-Type: application/json
+Authorization: Bearer api_key_secure_token
+
+{
+    "model_name": "T-Motor U8 II",
+    "kv_rating": 120,
+    "weight_g": 240.0,
+    "resistance_mohm": 186.0,
+    "max_current_a": 50.0,
+    "extra_data": {
+        "poles": 24,
+        "slots": 18,
+        "configuration": "12S"
+    }
+}
+
+// Success Response
+HTTP/1.1 201 Created
+Content-Type: application/json
+
+{
+    "status": "success",
+    "message": "Motor registered successfully",
+    "motor_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d"
+}
+                </div>
+            </section>
+
+            <!-- Section 17: Release Notes and Changelog -->
+            <section id="sys-changelog" class="docs-card-section">
+                <h1>Release Notes and Changelog</h1>
+                
+                <h2>v2.0.0 (Beta) - System Integration</h2>
+                <p>Released on June 21, 2026. Key updates:</p>
+                <ul>
+                    <li><strong>Admin Portal:</strong> Independent Express server running on port 8001.</li>
+                    <li><strong>Dual Database:</strong> Introduced the synchronized SQLite cache mirror to speed up dashboard queries.</li>
+                    <li><strong>Security:</strong> Expanded validation schemas and added detailed error codes.</li>
+                </ul>
+
+                <h2>v1.5.0 - Telemetry & Analysis</h2>
+                <p>Released on June 11, 2026. Key updates:</p>
+                <ul>
+                    <li><strong>Ingestion:</strong> Added automated column mapping for Rotrix CSV telemetry logs.</li>
+                    <li><strong>Charts:</strong> Added overlay charts for side-by-side motor comparisons.</li>
+                </ul>
+
+                <h2>v1.0.0 - Database Launch</h2>
+                <p>Released on June 8, 2026. Initial database MVP release including motor catalog grids, user sessions, and access request workflows.</p>
+            </section>
+        </main>
+    </div>
+
+        <!-- Scripts -->
+    <script>
+        // Collapsible tree node logic
+        function toggleTreeNode(button) {
+            const node = button.parentElement;
+            const children = node.querySelector('.tree-children');
+            const toggleIcon = button.querySelector('.tree-toggle-icon');
+            
+            if (children.classList.contains('expanded')) {
+                children.classList.remove('expanded');
+                toggleIcon.textContent = '⊞';
+            } else {
+                children.classList.add('expanded');
+                toggleIcon.textContent = '⊟';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Lucide Icons
+            if (window.lucide) window.lucide.createIcons();
+
+            // Category Navigation logic
+            const treeLinks = document.querySelectorAll('.tree-child-item');
+            const treeHeaders = document.querySelectorAll('.tree-header');
+            const sections = document.querySelectorAll('.docs-card-section');
+            
+            const breadcrumbCategory = document.getElementById('breadcrumb-category');
+            const breadcrumbCurrent = document.getElementById('breadcrumb-current');
+            const searchInput = document.getElementById('docs-search-input');
+            const searchClearBtn = document.getElementById('docs-search-clear');
+            const noResultsCard = document.getElementById('no-results-card');
+            const noResultsClearBtn = document.getElementById('no-results-clear-btn');
+
+            // ScrollSpy Viewport tracking setup
+            const scrollTargets = [];
+            treeLinks.forEach(link => {
+                const targetId = link.getAttribute('href').substring(1);
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) {
+                    scrollTargets.push({
+                        link: link,
+                        element: targetEl,
+                        id: targetId
+                    });
+                }
+            });
+
+            let isScrollingFromClick = false;
+            let scrollTimeout;
+
+            function highlightSidebarLink(activeLink) {
+                // Remove active class from all links
+                treeLinks.forEach(l => l.classList.remove('active'));
+                activeLink.classList.add('active');
+
+                // Remove active class from all headers
+                treeHeaders.forEach(h => h.classList.remove('active'));
+
+                // Find parent tree node to expand and highlight header
+                const parentNode = activeLink.closest('.tree-node');
+                if (parentNode) {
+                    const header = parentNode.querySelector('.tree-header');
+                    if (header) {
+                        header.classList.add('active');
+                        
+                        // Update breadcrumb category
+                        const categoryText = header.querySelector('.nav-title-text').textContent;
+                        breadcrumbCategory.textContent = categoryText;
+                    }
+
+                    // Expand the parent tree children and collapse others
+                    const children = parentNode.querySelector('.tree-children');
+                    if (children && !children.classList.contains('expanded')) {
+                        // Collapse all other expanded node children
+                        document.querySelectorAll('.tree-children').forEach(c => {
+                            if (c !== children) {
+                                c.classList.remove('expanded');
+                                const btn = c.parentElement.querySelector('.tree-header');
+                                if (btn) {
+                                    const icon = btn.querySelector('.tree-toggle-icon');
+                                    if (icon) icon.textContent = '⊞';
+                                }
+                            }
+                        });
+
+                        children.classList.add('expanded');
+                        const toggleIcon = parentNode.querySelector('.tree-toggle-icon');
+                        if (toggleIcon) toggleIcon.textContent = '⊟';
+                    }
+                }
+
+                // Update breadcrumb current item text
+                breadcrumbCurrent.textContent = activeLink.textContent;
+            }
+
+            function updateScrollSpy() {
+                if (searchInput.value.trim().length > 0) return; // Skip if search is active
+                if (isScrollingFromClick) return; // Skip if smoothly scrolling from navigation click
+
+                let activeTarget = null;
+                const isAtBottom = (window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 60;
+
+                if (isAtBottom && scrollTargets.length > 0) {
+                    activeTarget = scrollTargets[scrollTargets.length - 1];
+                } else {
+                    let minDistance = Infinity;
+                    for (const target of scrollTargets) {
+                        const rect = target.element.getBoundingClientRect();
+                        // Check if the element is near or above the top section of the screen
+                        if (rect.top <= 250) {
+                            const dist = Math.abs(rect.top);
+                            if (dist < minDistance || rect.top > -50) {
+                                minDistance = dist;
+                                activeTarget = target;
+                            }
+                        }
+                    }
+                }
+
+                if (activeTarget) {
+                    highlightSidebarLink(activeTarget.link);
+                }
+            }
+
+            window.addEventListener('scroll', updateScrollSpy);
+            // Run initial check to highlight first item
+            updateScrollSpy();
+
+            // Smooth Scrolling on Sidebar Clicks
+            treeLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href').substring(1);
+                    const targetEl = document.getElementById(targetId);
+                    if (targetEl) {
+                        isScrollingFromClick = true;
+                        clearTimeout(scrollTimeout);
+                        
+                        // Scroll target element into view
+                        window.scrollTo({
+                            top: targetEl.offsetTop - 120, // Offset for top header/breadcrumbs space
+                            behavior: 'smooth'
+                        });
+
+                        highlightSidebarLink(link);
+
+                        // Re-enable scroll spy after scrolling completes
+                        scrollTimeout = setTimeout(() => {
+                            isScrollingFromClick = false;
+                        }, 800);
+                    }
+                });
+            });
+
+            // Client-Side Docs Search Filtering (Global Search across all sections and diagnostics)
+            function performSearch() {
+                const query = searchInput.value.toLowerCase().trim();
+                const errorCards = document.querySelectorAll('.error-card');
+                
+                if (query.length > 0) {
+                    searchClearBtn.style.display = 'flex';
+                    let sectionMatchesAny = false;
+
+                    // Search through each section
+                    sections.forEach(sec => {
+                        const sectionText = sec.textContent.toLowerCase();
+                        const sectionId = sec.id;
+                        
+                        // If section text contains the query
+                        if (sectionText.includes(query)) {
+                            sec.style.display = 'block';
+                            sectionMatchesAny = true;
+
+                            // If this is the Troubleshooting Center, filter individual cards
+                            if (sectionId === 'troubleshooting-center') {
+                                let cardMatchesAny = false;
+                                errorCards.forEach(card => {
+                                    const codeEl = card.querySelector('.error-code');
+                                    const descEl = card.querySelector('.error-desc-text');
+                                    const resEl = card.querySelector('.error-resolution-text');
+                                    
+                                    const codeText = codeEl ? codeEl.textContent.toLowerCase() : '';
+                                    const descText = descEl ? descEl.textContent.toLowerCase() : '';
+                                    const resText = resEl ? resEl.textContent.toLowerCase() : '';
+                                    
+                                    if (codeText.includes(query) || descText.includes(query) || resText.includes(query)) {
+                                        card.style.display = 'block';
+                                        cardMatchesAny = true;
+                                    } else {
+                                        card.style.display = 'none';
+                                    }
+                                });
+                                
+                                // If no individual error cards matched, hide the section
+                                if (!cardMatchesAny) {
+                                    sec.style.display = 'none';
+                                }
+                            }
+                        } else {
+                            sec.style.display = 'none';
+                        }
+                    });
+
+                    // Filter sidebar links & tree nodes based on search matches
+                    const treeNodes = document.querySelectorAll('.tree-node');
+                    treeNodes.forEach(node => {
+                        const header = node.querySelector('.tree-header');
+                        const headerText = header ? header.querySelector('.nav-title-text').textContent.toLowerCase() : '';
+                        const childrenContainer = node.querySelector('.tree-children');
+                        const childItems = node.querySelectorAll('.tree-child-item');
+                        
+                        let nodeMatches = false;
+
+                        childItems.forEach(item => {
+                            const itemText = item.textContent.toLowerCase();
+                            const targetId = item.getAttribute('href').substring(1);
+                            const targetEl = document.getElementById(targetId);
+                            
+                            // Item matches if its link text matches query, or if its target section text matches query
+                            const targetContentMatches = targetEl && targetEl.textContent.toLowerCase().includes(query);
+                            const itemVisible = itemText.includes(query) || targetContentMatches;
+                            
+                            if (itemVisible) {
+                                item.style.display = 'block';
+                                nodeMatches = true;
+                            } else {
+                                item.style.display = 'none';
+                            }
+                        });
+
+                        if (nodeMatches || headerText.includes(query)) {
+                            node.style.display = 'block';
+                            if (childrenContainer) {
+                                childrenContainer.classList.add('expanded');
+                                const toggleIcon = node.querySelector('.tree-toggle-icon');
+                                if (toggleIcon) toggleIcon.textContent = '⊟';
+                            }
+                        } else {
+                            node.style.display = 'none';
+                        }
+                    });
+
+                    // Show or hide No Results Card
+                    if (sectionMatchesAny) {
+                        noResultsCard.style.display = 'none';
+                    } else {
+                        noResultsCard.style.display = 'block';
+                    }
+                } else {
+                    // Restore default view (all sections block, no results hidden, show all tree nodes)
+                    searchClearBtn.style.display = 'none';
+                    noResultsCard.style.display = 'none';
+                    
+                    sections.forEach(sec => {
+                        sec.style.display = 'block';
+                    });
+
+                    errorCards.forEach(card => {
+                        card.style.display = 'block';
+                    });
+
+                    const treeNodes = document.querySelectorAll('.tree-node');
+                    treeNodes.forEach(node => {
+                        node.style.display = 'block';
+                        const childItems = node.querySelectorAll('.tree-child-item');
+                        childItems.forEach(item => {
+                            item.style.display = 'block';
+                        });
+                    });
+
+                    // Trigger scroll spy update to highlight correctly
+                    updateScrollSpy();
+                }
+            }
+
+            searchInput.addEventListener('input', performSearch);
+            
+            // Clear search trigger
+            function resetSearch() {
+                searchInput.value = '';
+                performSearch();
+                searchInput.focus();
+            }
+            
+            searchClearBtn.addEventListener('click', resetSearch);
+            noResultsClearBtn.addEventListener('click', resetSearch);
+
+            // Mobile Hamburger Drawer Logic
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const docsSidebar = document.querySelector('.docs-sidebar');
+            
+            // Create overlay in DOM
+            const overlay = document.createElement('div');
+            overlay.className = 'sidebar-overlay';
+            document.body.appendChild(overlay);
+
+            if (mobileMenuBtn && docsSidebar) {
+                mobileMenuBtn.addEventListener('click', () => {
+                    const isOpen = docsSidebar.classList.toggle('drawer-open');
+                    overlay.classList.toggle('active', isOpen);
+                    const menuIcon = mobileMenuBtn.querySelector('i');
+                    if (menuIcon && window.lucide) {
+                        if (isOpen) {
+                            menuIcon.setAttribute('data-lucide', 'x');
+                        } else {
+                            menuIcon.setAttribute('data-lucide', 'menu');
+                        }
+                        window.lucide.createIcons();
+                    }
+                });
+
+                overlay.addEventListener('click', () => {
+                    docsSidebar.classList.remove('drawer-open');
+                    overlay.classList.remove('active');
+                    const menuIcon = mobileMenuBtn.querySelector('i');
+                    if (menuIcon && window.lucide) {
+                        menuIcon.setAttribute('data-lucide', 'menu');
+                        window.lucide.createIcons();
+                    }
+                });
+
+                // Close drawer on click links on mobile
+                const allSidebarLinks = docsSidebar.querySelectorAll('.tree-child-item');
+                allSidebarLinks.forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth <= 960) {
+                            docsSidebar.classList.remove('drawer-open');
+                            overlay.classList.remove('active');
+                            const menuIcon = mobileMenuBtn.querySelector('i');
+                            if (menuIcon && window.lucide) {
+                                menuIcon.setAttribute('data-lucide', 'menu');
+                                window.lucide.createIcons();
+                            }
+                        }
+                    });
+                });
+            }
+
+            // Theme toggler logic
+            const themeBtn = document.getElementById('theme-toggle-btn');
+            const themeBtnMobile = document.getElementById('theme-toggle-btn-mobile');
+            
+            function updateTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('thrustvault_theme', theme);
+                
+                const icon = themeBtn ? themeBtn.querySelector('i') : null;
+                const iconMobile = themeBtnMobile ? themeBtnMobile.querySelector('i') : null;
+                
+                if (theme === 'dark') {
+                    if (icon) icon.setAttribute('data-lucide', 'sun');
+                    if (iconMobile) iconMobile.setAttribute('data-lucide', 'sun');
+                    if (themeBtn) themeBtn.title = "Switch to Light Mode";
+                } else {
+                    if (icon) icon.setAttribute('data-lucide', 'moon');
+                    if (iconMobile) iconMobile.setAttribute('data-lucide', 'moon');
+                    if (themeBtn) themeBtn.title = "Switch to Dark Mode";
+                }
+                if (window.lucide) window.lucide.createIcons();
+            }
+
+            const currentTheme = localStorage.getItem('thrustvault_theme') || 'light';
+            updateTheme(currentTheme);
+
+            if (themeBtn) {
+                themeBtn.addEventListener('click', () => {
+                    const nextTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                    updateTheme(nextTheme);
+                });
+            }
+
+            if (themeBtnMobile) {
+                themeBtnMobile.addEventListener('click', () => {
+                    const nextTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                    updateTheme(nextTheme);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

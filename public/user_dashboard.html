@@ -1,372 +1,986 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="scroll-smooth" lang="en">
 <head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>User Dashboard | ThrustVault</title>
+    
     <link rel="icon" type="image/png" href="favicon_light.png" media="(prefers-color-scheme: light)">
     <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Dashboard | ThrustVault</title>
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS with Forms and Container Queries -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="style.css?v=2.1">
+    
     <!-- Lucide Icons -->
     <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
     <!-- Chart.js -->
     <script src="libs/chart.umd.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/chart.js';"></script>
-    <!-- Supabase JS Client -->
     <!-- SheetJS Library -->
     <script src="libs/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="style.css?v=1.6">
-    <!-- Modal scrolling and overflow fixes -->
-    <style>
-        .modal-container {
-            max-height: 90vh !important;
-            display: flex !important;
-            flex-direction: column !important;
-        }
-        .modal-container form {
-            display: flex !important;
-            flex-direction: column !important;
-            overflow: hidden !important;
-            flex: 1 !important;
-        }
-        .modal-container .modal-body {
-            overflow-y: auto !important;
-            flex: 1 !important;
-            padding-right: 8px;
-        }
-    </style>
+
     <!-- Page Loader Transition Script -->
     <script src="page-loader.js?v=2.1"></script>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-container": "#003366",
+                        "surface-container-high": "#e7e8e9",
+                        "tertiary": "#381300",
+                        "surface-bright": "#f8f9fa",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "inverse-surface": "#2e3132",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#001b3c",
+                        "on-surface": "#191c1d",
+                        "surface-container-low": "#f3f4f5",
+                        "tertiary-fixed": "#ffdbca",
+                        "background": "#f8f9fa",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb690",
+                        "surface-container-highest": "#e1e3e4",
+                        "surface-tint": "#3a5f94",
+                        "inverse-primary": "#a7c8ff",
+                        "on-tertiary-fixed-variant": "#723610",
+                        "outline-variant": "#c3c6d1",
+                        "on-surface-variant": "#43474f",
+                        "outline": "#737780",
+                        "secondary": "#505f76",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "on-tertiary-container": "#d8885c",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#a7c8ff",
+                        "secondary-container": "#d0e1fb",
+                        "primary-fixed": "#d5e3ff",
+                        "secondary-fixed": "#d3e4fe",
+                        "surface-container": "#edeeef",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "on-secondary-fixed": "#0b1c30",
+                        "inverse-on-surface": "#f0f1f2",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#54647a",
+                        "on-background": "#191c1d",
+                        "on-primary-container": "#799dd6",
+                        "on-error-container": "#93000a",
+                        "primary": "#001e40",
+                        "surface-dim": "#d9dadb",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#592300",
+                        "on-tertiary-fixed": "#341100",
+                        "surface": "#f8f9fa",
+                        "surface-variant": "#e1e3e4"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #191c1d;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .blueprint-grid {
+            background-image: linear-gradient(rgba(0, 51, 102, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 51, 102, 0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+
+        .hairline-border {
+            border: 1px solid rgba(195, 198, 209, 0.45);
+        }
+
+        /* Modal backdrop visibility states */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 30, 64, 0.35);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-backdrop.show {
+            display: flex;
+        }
+
+        /* Slide-out side compare drawer layout styles */
+        .comparison-sidebar {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+            transform: translateX(100%);
+            opacity: 0;
+            display: none;
+        }
+        
+        .comparison-sidebar.show {
+            transform: translateX(0);
+            opacity: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Motor spec item inside sidecompare drawer */
+        .compare-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 8px;
+            padding: 10px 14px;
+            gap: 12px;
+        }
+
+        .compare-item-info {
+            font-size: 0.825rem;
+            font-weight: 600;
+            color: #001e40;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .compare-item-brand {
+            font-size: 0.725rem;
+            color: #64748b;
+        }
+
+        .compare-thumb-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 54px;
+            height: 54px;
+            border: 2px dashed rgba(148, 163, 184, 0.4);
+            border-radius: 8px;
+            color: rgba(148, 163, 184, 0.6);
+            transition: all 0.2s ease;
+        }
+
+        /* Treemap layout container styling */
+        .treemap-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            width: 100%;
+            min-height: 180px;
+        }
+
+        .treemap-block {
+            padding: 10px;
+            color: white;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: transform 0.2s ease, filter 0.2s ease;
+            min-width: 90px;
+            box-shadow: inset 0 0 12px rgba(255,255,255,0.08);
+        }
+
+        .treemap-block:hover {
+            transform: scale(1.015);
+            filter: brightness(1.05);
+        }
+
+        .treemap-block-label {
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .treemap-block-pct {
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+
+        .treemap-block-sub {
+            font-size: 0.68rem;
+            opacity: 0.9;
+        }
+
+        /* Top 10 horizontal bar styling */
+        .top-bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.825rem;
+        }
+
+        .bar-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            width: 24px;
+            color: #64748b;
+        }
+
+        .bar-label {
+            width: 110px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #001e40;
+            font-weight: 500;
+        }
+
+        .bar-track {
+            flex: 1;
+            height: 10px;
+            background: #e2e8f0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(95deg, #003366, #2563eb);
+            border-radius: 5px;
+            animation: bar-grow 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes bar-grow {
+            from { width: 0%; }
+        }
+
+        .bar-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: #001e40;
+            text-align: right;
+            width: 50px;
+        }
+
+        /* Motor circle spec icon thumbnail */
+        .motor-thumbnail {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 0.8rem;
+            font-family: 'Outfit', sans-serif;
+            border: 1px solid transparent;
+        }
+
+        /* Badges */
+        .badge-thrust {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 9999px;
+            font-size: 0.725rem;
+            font-weight: 600;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            background: rgba(241, 245, 249, 0.5);
+            color: #475569;
+        }
+
+        .action-links {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .action-links a {
+            color: #64748b;
+            padding: 4px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .action-links a:hover {
+            color: #003366;
+            background: rgba(37, 99, 235, 0.08);
+            border-color: rgba(37, 99, 235, 0.15);
+        }
+
+        /* Suggestion Search dropdown item styling */
+        .search-suggestions-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 16px -6px rgba(15, 23, 42, 0.05);
+            z-index: 1000;
+            max-height: 320px;
+            overflow-y: auto;
+            padding: 6px;
+        }
+
+        .suggestion-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            color: #94a3b8;
+            padding: 6px 12px 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #f1f5f9;
+            margin-bottom: 4px;
+        }
+
+        .suggestion-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            gap: 10px;
+            transition: background 0.15s ease;
+        }
+
+        .suggestion-item:hover, .suggestion-item.active {
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .suggestion-item-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            color: #475569;
+            font-weight: 700;
+            font-size: 0.75rem;
+        }
+
+        .suggestion-item-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .suggestion-motor-name {
+            font-size: 0.825rem;
+            font-weight: 600;
+            color: #001e40;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .suggestion-motor-meta {
+            font-size: 0.725rem;
+            color: #64748b;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .suggestion-thrust-badge {
+            font-size: 0.68rem;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(37, 99, 235, 0.08);
+            color: #2563eb;
+        }
+
+        .suggestion-no-results {
+            padding: 16px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+        
+        .suggestion-item mark {
+            background: rgba(245, 158, 11, 0.2);
+            color: #b45309;
+            border-radius: 2px;
+            padding: 0 1px;
+        }
+
+        /* Dark Theme overrides for suggestions, items, compare item, markers */
+        [data-theme="dark"] .search-suggestions-dropdown {
+            background: #0f172a;
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        [data-theme="dark"] .suggestion-header {
+            border-bottom-color: rgba(255, 255, 255, 0.05);
+            color: #64748b;
+        }
+        [data-theme="dark"] .suggestion-item:hover, [data-theme="dark"] .suggestion-item.active {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        [data-theme="dark"] .suggestion-item-icon {
+            background: #1e293b;
+            color: #94a3b8;
+        }
+        [data-theme="dark"] .suggestion-motor-name {
+            color: #f8fafc;
+        }
+        [data-theme="dark"] .suggestion-motor-meta {
+            color: #94a3b8;
+        }
+        [data-theme="dark"] .suggestion-thrust-badge {
+            background: rgba(167, 200, 255, 0.12);
+            color: #a7c8ff;
+        }
+        [data-theme="dark"] .compare-item {
+            background: rgba(15, 23, 42, 0.6);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        [data-theme="dark"] .compare-item-info {
+            color: #e2e8f0;
+        }
+        [data-theme="dark"] .compare-item-brand {
+            color: #94a3b8;
+        }
+        [data-theme="dark"] .compare-thumb-box {
+            border-color: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.2);
+        }
+        [data-theme="dark"] .suggestion-item mark {
+            background: rgba(245, 158, 11, 0.35);
+            color: #fbbf24;
+        }
+
+        /* Dark mode overrides for comparison table */
+        [data-theme="dark"] .comparison-result-table th {
+            background: #1e293b;
+            border-color: rgba(255, 255, 255, 0.08);
+            color: #94a3b8;
+        }
+        [data-theme="dark"] .comparison-result-table td {
+            border-color: rgba(255, 255, 255, 0.08);
+            color: #cbd5e1;
+            background: #0f172a;
+        }
+        [data-theme="dark"] .comparison-result-table td strong {
+            color: #f8fafc;
+        }
+
+        /* Dark mode overrides for modals */
+        [data-theme="dark"] .modal-backdrop {
+            background-color: rgba(15, 23, 42, 0.6);
+        }
+        [data-theme="dark"] .modal-container {
+            background: #0f172a;
+            border-color: rgba(255, 255, 255, 0.08);
+            color: #cbd5e1;
+        }
+        [data-theme="dark"] .modal-header {
+            border-bottom-color: rgba(255, 255, 255, 0.08);
+        }
+        [data-theme="dark"] .modal-footer {
+            border-top-color: rgba(255, 255, 255, 0.08);
+        }
+        [data-theme="dark"] .modal-container input,
+        [data-theme="dark"] .modal-container select,
+        [data-theme="dark"] .modal-container textarea {
+            background-color: #020617 !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+            color: #f8fafc !important;
+        }
+        [data-theme="dark"] .modal-container input:focus,
+        [data-theme="dark"] .modal-container select:focus,
+        [data-theme="dark"] .modal-container textarea:focus {
+            border-color: #3b82f6 !important;
+            background-color: #0f172a !important;
+        }
+        [data-theme="dark"] .modal-container label {
+            color: #94a3b8;
+        }
+        [data-theme="dark"] .modal-container .modal-close-trigger {
+            color: #94a3b8;
+        }
+        [data-theme="dark"] .modal-container .modal-close-trigger:hover {
+            color: #f8fafc;
+        }
+        [data-theme="dark"] .modal-container h3,
+        [data-theme="dark"] .modal-container h4,
+        [data-theme="dark"] .modal-container h5 {
+            color: #f8fafc !important;
+        }
+        [data-theme="dark"] .modal-container .bg-rose-50\/50 {
+            background-color: rgba(244, 63, 94, 0.1) !important;
+            border-color: rgba(244, 63, 94, 0.2) !important;
+        }
+        [data-theme="dark"] .modal-container .text-rose-800 {
+            color: #fda4af !important;
+        }
+        [data-theme="dark"] .modal-container .bg-slate-50\/50,
+        [data-theme="dark"] .modal-container #export-columns-selector {
+            background-color: rgba(255, 255, 255, 0.02) !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+            color: #94a3b8 !important;
+        }
+        [data-theme="dark"] .modal-container #export-columns-selector label {
+            color: #cbd5e1 !important;
+        }
+        [data-theme="dark"] .modal-container #export-columns-selector label:hover {
+            color: #60a5fa !important;
+        }
+        [data-theme="dark"] .modal-container button.modal-close-trigger,
+        [data-theme="dark"] .modal-container button[type="button"] {
+            background-color: #1e293b !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+            color: #94a3b8 !important;
+        }
+        [data-theme="dark"] .modal-container button.modal-close-trigger:hover,
+        [data-theme="dark"] .modal-container button[type="button"]:hover {
+            background-color: #334155 !important;
+            color: #f8fafc !important;
+        }
+
+        /* Dark mode overrides for profile overlay */
+        [data-theme="dark"] .motor-profile-overlay {
+            background-color: #020617 !important;
+        }
+        [data-theme="dark"] .motor-profile-overlay .bg-white {
+            background-color: #0f172a !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+        [data-theme="dark"] .motor-profile-overlay h2,
+        [data-theme="dark"] .motor-profile-overlay h3,
+        [data-theme="dark"] .motor-profile-overlay h4,
+        [data-theme="dark"] .motor-profile-overlay h5 {
+            color: #f8fafc !important;
+        }
+        [data-theme="dark"] .motor-profile-overlay .text-slate-400,
+        [data-theme="dark"] .motor-profile-overlay .text-slate-500 {
+            color: #94a3b8 !important;
+        }
+        [data-theme="dark"] .motor-profile-overlay .divide-slate-100 {
+            border-color: rgba(255, 255, 255, 0.05) !important;
+        }
+        [data-theme="dark"] .motor-profile-overlay td {
+            color: #cbd5e1 !important;
+            border-bottom-color: rgba(255, 255, 255, 0.05) !important;
+        }
+        [data-theme="dark"] .motor-profile-overlay td.font-bold {
+            color: #f8fafc !important;
+        }
+        [data-theme="dark"] .motor-profile-overlay .bg-slate-50 {
+            background-color: #090d16 !important;
+            border-color: rgba(255, 255, 255, 0.05) !important;
+        }
+        [data-theme="dark"] .motor-profile-overlay .border-slate-250\/30 {
+            border-color: rgba(255, 255, 255, 0.08) !important;
+            background-color: rgba(255, 255, 255, 0.02) !important;
+        }
+        [data-theme="dark"] .motor-profile-overlay table thead tr {
+            border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+            color: #94a3b8 !important;
+        }
+        [data-theme="dark"] .motor-profile-overlay .divide-y > * + * {
+            border-color: rgba(255, 255, 255, 0.05) !important;
+        }
+        [data-theme="dark"] .motor-profile-overlay #profile-brand-badge {
+            background-color: #1e293b !important;
+            color: #94a3b8 !important;
+        }
+        [data-theme="dark"] .motor-profile-overlay #profile-category-badge {
+            background-color: rgba(167, 200, 255, 0.1) !important;
+            color: #a7c8ff !important;
+        }
+    </style>
 </head>
-<body>
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
-                <aside class="sidebar" data-sidebar="user">
+<body class="bg-[#f8f9fa] dark:bg-slate-950 text-slate-800 dark:text-slate-100 selection:bg-primary-container selection:text-white relative min-h-screen flex flex-col">
+    <!-- Blueprint background shader grid overlay -->
+    <div class="fixed inset-0 w-full h-full pointer-events-none blueprint-grid z-0"></div>
+
+    <div class="app-container relative z-10 flex flex-col flex-1">
+        <!-- Sidebar Navigation (Horizontal Top Navbar template) -->
+        <aside class="sidebar w-full h-[70px] bg-white dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/80 shadow-sm flex items-center justify-between px-6 md:px-8 z-50 shrink-0" data-sidebar="user">
             <script>
                 if (localStorage.getItem('thrustvault_sidebar_collapsed') === 'true') {
                     document.currentScript.parentElement.classList.add('collapsed');
                 }
             </script>
-            <!-- Sidebar Placeholder Skeletons -->
-            <div class="sidebar-skeleton-wrapper" style="padding: 0 24px; display: flex; flex-direction: row; gap: 20px; height: 100%; align-items: center; width: 100%; box-sizing: border-box; justify-content: space-between;">
-                <div class="shimmer" style="height: 32px; width: 140px; border-radius: var(--radius-md); background: var(--border-color);"></div>
-                <div style="display:flex; flex-direction:row; gap:15px; flex:1; align-items:center; margin-left:30px;">
-                    <div class="shimmer" style="height: 32px; width: 120px; border-radius: var(--radius-md); background: var(--border-color);"></div>
-                    <div class="shimmer" style="height: 32px; width: 120px; border-radius: var(--radius-md); background: var(--border-color);"></div>
+            <!-- Sidebar Placeholder Skeletons (rendered before dynamic load) -->
+            <div class="sidebar-skeleton-wrapper flex items-center justify-between w-full h-full">
+                <div class="h-8 w-32 bg-slate-200 rounded animate-pulse"></div>
+                <div class="flex gap-4 items-center">
+                    <div class="h-8 w-24 bg-slate-200 rounded animate-pulse"></div>
+                    <div class="h-8 w-24 bg-slate-200 rounded animate-pulse"></div>
                 </div>
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div class="shimmer" style="height: 32px; width: 32px; border-radius: var(--radius-full); background: var(--border-color);"></div>
-                    <div style="display:flex; flex-direction:column; gap:4px;">
-                        <div class="shimmer" style="height: 10px; width: 100px; border-radius: 4px; background: var(--border-color);"></div>
-                        <div class="shimmer" style="height: 8px; width: 50px; border-radius: 4px; background: var(--border-color);"></div>
+                <div class="flex items-center gap-3">
+                    <div class="h-8 w-8 rounded-full bg-slate-200 animate-pulse"></div>
+                    <div class="flex flex-col gap-1">
+                        <div class="h-3 w-16 bg-slate-200 rounded animate-pulse"></div>
+                        <div class="h-2 w-8 bg-slate-200 rounded animate-pulse"></div>
                     </div>
                 </div>
             </div>
-</aside>
+        </aside>
 
-        <!-- Main Dashboard Area -->
-        <!-- Main Content Area Wrapper -->
-        <div class="main-content-wrapper" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
-            
-            <!-- CATALOG VIEW VIEWPORT -->
-            <main class="main-content" id="catalog-view-section">
-                <!-- Top Bar / Navigation -->
-                <header class="topbar">
-                    <div class="topbar-actions" style="margin-left: auto;">
+        <!-- Main Dashboard View Area -->
+        <div class="main-content-wrapper flex flex-col flex-1 overflow-hidden">
+            <!-- Catalog View Section -->
+            <main class="main-content flex-1 flex flex-col overflow-y-auto px-4 md:px-8 py-6 max-w-7xl w-full mx-auto" id="catalog-view-section">
+                
+                <!-- Page Top Header & Search row -->
+                <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-slate-200/50 dark:border-slate-800 pb-5">
+                    <!-- Title Block -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="px-2 py-0.5 rounded text-[11px] font-bold font-label-mono uppercase tracking-wider bg-[#003366]/10 dark:bg-blue-950/40 text-[#003366] dark:text-[#a7c8ff] inline-block" id="category-badge">
+                                <span class="h-3 w-8 bg-slate-200 dark:bg-slate-850 rounded animate-pulse inline-block"></span>
+                            </span>
+                            <span class="text-xs text-slate-400 dark:text-slate-400 font-medium">Specifications Console</span>
+                        </div>
+                        <h2 class="text-2xl font-extrabold text-[#001e40] dark:text-slate-100 tracking-tight" id="active-category-title">
+                            <span class="h-6 w-32 bg-slate-200 dark:bg-slate-850 rounded animate-pulse inline-block"></span>
+                        </h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1 max-w-xl" id="active-category-desc">
+                            <span class="h-4 w-48 bg-slate-200 dark:bg-slate-850 rounded animate-pulse inline-block"></span>
+                        </p>
+                    </div>
+
+                    <!-- Actions and File Input -->
+                    <div class="flex items-center gap-3">
                         <input type="file" id="file-import-input" accept=".csv, .json, .xlsx" style="display: none;">
-                        <button class="btn-primary" id="btn-add-motor">
-                            <i data-lucide="plus-circle"></i> Add Motor
+                        <button class="bg-[#003366] hover:bg-[#002244] text-white text-xs font-semibold py-2.5 px-4 rounded-lg flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer focus:outline-none" id="btn-add-motor">
+                            <i data-lucide="plus-circle" class="w-4.5 h-4.5"></i> Add Motor
                         </button>
                     </div>
                 </header>
 
+                <!-- Dynamic Metrics Category Quick Stats -->
+                <div class="hidden">
+                    <span id="category-motors-count">0</span>
+                    <span id="category-avg-thrust">0</span>
+                    <span id="category-top-company">0</span>
+                </div>
 
-
-                <!-- Dashboard Content -->
-                <div class="content-body">
-                    <!-- Banner showing selected thrust category details -->
-                    <section class="category-header-panel">
-                        <div class="category-header-info">
-                            <div class="badge-accent" id="category-badge"><span class="shimmer skeleton-badge-shimmer" style="width: 50px;"></span></div>
-                            <h2 id="active-category-title"><span class="shimmer skeleton-title-shimmer" style="width: 150px;"></span></h2>
-                            <p id="active-category-desc"><span class="shimmer skeleton-text" style="width: 250px;"></span></p>
+                <!-- High-Performance Metrics Dashboard Row (5 Cards) -->
+                <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                    <!-- Total Motors -->
+                    <div class="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/80 shadow-sm rounded-xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300" id="kpi-total-motors">
+                        <div class="flex justify-between items-start">
+                            <span class="text-slate-500 dark:text-slate-400 font-label-mono text-[11px] font-semibold uppercase tracking-wider">Total Motors</span>
+                            <div class="text-[#003366] dark:text-[#a7c8ff] bg-[#003366]/5 dark:bg-blue-950/40 rounded-lg p-1.5"><i data-lucide="database" class="w-4 h-4"></i></div>
                         </div>
-                        
-                        <div class="category-quick-stats">
-                            <div class="quick-stat-item">
-                                <span class="value" id="category-motors-count"><span class="shimmer skeleton-text" style="width: 20px;"></span></span>
-                                <span class="label">Motors</span>
+                        <div class="mt-4">
+                            <div class="text-2xl md:text-3xl font-extrabold text-[#001e40] dark:text-slate-100 tracking-tight" id="kpi-total-motors-val">
+                                <span class="h-8 w-12 bg-slate-200 dark:bg-slate-800 rounded animate-pulse inline-block"></span>
                             </div>
-                            <div class="quick-stat-item">
-                                <span class="value" id="category-avg-thrust"><span class="shimmer skeleton-text" style="width: 40px;"></span></span>
-                                <span class="label">Avg Thrust Max</span>
-                            </div>
-                            <div class="quick-stat-item">
-                                <span class="value" id="category-top-company"><span class="shimmer skeleton-text" style="width: 60px;"></span></span>
-                                <span class="label">Leading Brand</span>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- KPI Cards Grid -->
-                    <div class="kpi-grid">
-                        <div class="kpi-card" id="kpi-total-motors">
-                            <div class="kpi-header"><span>Total Motors</span><i data-lucide="database"></i></div>
-                            <div class="kpi-value" id="kpi-total-motors-val"><span class="shimmer skeleton-text" style="width: 30px; height: 24px; border-radius: 4px;"></span></div>
-                            <div class="kpi-footer"><span class="kpi-footer-text">In category</span></div>
-                        </div>
-                        <div class="kpi-card" id="kpi-avg-thrust">
-                            <div class="kpi-header"><span>Avg Thrust</span><i data-lucide="activity"></i></div>
-                            <div class="kpi-value" id="kpi-avg-thrust-val"><span class="shimmer skeleton-text" style="width: 50px; height: 24px; border-radius: 4px;"></span></div>
-                            <div class="kpi-footer"><span class="kpi-footer-text">Thrust mean</span></div>
-                        </div>
-                        <div class="kpi-card" id="kpi-max-thrust">
-                            <div class="kpi-header"><span>Max Thrust</span><i data-lucide="zap"></i></div>
-                            <div class="kpi-value" id="kpi-max-thrust-val"><span class="shimmer skeleton-text" style="width: 50px; height: 24px; border-radius: 4px;"></span></div>
-                            <div class="kpi-footer"><span class="kpi-footer-text">Peak thrust</span></div>
-                        </div>
-                        <div class="kpi-card" id="kpi-brands">
-                            <div class="kpi-header"><span>Total Brands</span><i data-lucide="layers"></i></div>
-                            <div class="kpi-value" id="kpi-brands-val"><span class="shimmer skeleton-text" style="width: 30px; height: 24px; border-radius: 4px;"></span></div>
-                            <div class="kpi-footer"><span class="kpi-footer-text">Active companies</span></div>
-                        </div>
-                        <div class="kpi-card" id="kpi-voltage">
-                            <div class="kpi-header"><span>Voltage Range</span><i data-lucide="battery"></i></div>
-                            <div class="kpi-value" id="kpi-voltage-val" style="font-size: 1.25rem; padding-top: 4px;"><span class="shimmer skeleton-text" style="width: 60px; height: 20px; border-radius: 4px;"></span></div>
-                            <div class="kpi-footer"><span class="kpi-footer-text">Min-Max cells</span></div>
-                        </div>
-                        <div class="kpi-card" id="kpi-completeness">
-                            <div class="kpi-header"><span>Data Integrity</span><i data-lucide="check-circle"></i></div>
-                            <div class="kpi-value" id="kpi-completeness-val"><span class="shimmer skeleton-text" style="width: 40px; height: 24px; border-radius: 4px;"></span></div>
-                            <div class="kpi-footer"><span class="kpi-footer-text">Spec completeness</span></div>
-                        </div>
-                        <div class="kpi-card" id="kpi-active-class">
-                            <div class="kpi-header"><span>Active Category</span><i data-lucide="tag"></i></div>
-                            <div class="kpi-value" id="kpi-active-class-val" style="font-size: 1.1rem; padding-top: 4px;"><span class="shimmer skeleton-text" style="width: 70px; height: 20px; border-radius: 4px;"></span></div>
-                            <div class="kpi-footer"><span class="kpi-footer-text">Selected class</span></div>
+                            <span class="text-xs text-slate-400 font-medium mt-1 block">In active class</span>
                         </div>
                     </div>
 
-
-
-                    <!-- Main Workspace Layout for Catalog Grid -->
-                    <div class="catalog-workspace-layout">
-                        <!-- Left Side Table -->
-                        <div class="catalog-table-container">
-                            <div class="motors-table-panel glass-panel" style="border: none; padding: 0; background: transparent; backdrop-filter: none; box-shadow: none;">
-                                <div class="table-header">
-                                    <div class="table-title">
-                                        <h3 style="font-family:'Outfit'; font-size:1.2rem; font-weight:700;">Motor Catalog</h3>
-                                        <span id="filtered-count-badge" class="count-badge">0 displayed</span>
-                                    </div>
-                                    <div class="table-filters">
-                                        <div class="filter-group">
-                                            <label for="filter-company"><i data-lucide="filter"></i> Brand:</label>
-                                            <select id="filter-company">
-                                                <option value="all">All Brands</option>
-                                            </select>
-                                        </div>
-                                        <div class="filter-group">
-                                            <label for="sort-select"><i data-lucide="arrow-up-down"></i> Sort:</label>
-                                            <select id="sort-select">
-                                                <option value="motor-asc">Motor Name (A-Z)</option>
-                                                <option value="motor-desc">Motor Name (Z-A)</option>
-                                                <option value="company-asc">Brand (A-Z)</option>
-                                                <option value="thrust-desc">Max Thrust (High to Low)</option>
-                                                <option value="thrust-asc">Max Thrust (Low to High)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="table-responsive">
-                                    <table class="motors-table" id="motors-data-table">
-                                        <thead>
-                                            <tr>
-                                                <th style="width: 40px;"><input type="checkbox" id="select-all-motors" title="Select All for comparison"></th>
-                                                <th style="width: 50px;">Spec</th>
-                                                <th>Motor Model</th>
-                                                <th>Brand</th>
-                                                <th style="white-space: nowrap;">KV</th>
-                                                <th style="white-space: nowrap;">Voltage</th>
-                                                <th style="white-space: nowrap;">Thrust</th>
-                                                <th style="white-space: nowrap;">Weight</th>
-                                                <th>Propeller</th>
-                                                <th>ESC</th>
-                                                <th style="width: 90px; text-align: center;">Links</th>
-                                                <th style="width: 80px; text-align: right;">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="motors-list-rows">
-                                            <!-- Skeleton Loader Rows -->
-                                            <tr class="skeleton-row">
-                                                <td><span class="shimmer skeleton-badge-shimmer" style="width: 16px; height: 16px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-circle-shimmer" style="width: 32px; height: 32px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 140px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 80px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 50px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-badge-shimmer" style="width: 60px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-badge-shimmer" style="width: 50px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 45px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 110px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 90px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-badge-shimmer" style="width: 60px; display: block;"></span></td>
-                                                <td style="text-align: right;"><span class="shimmer skeleton-badge-shimmer" style="width: 50px; display: inline-block;"></span></td>
-                                            </tr>
-                                            <tr class="skeleton-row">
-                                                <td><span class="shimmer skeleton-badge-shimmer" style="width: 16px; height: 16px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-circle-shimmer" style="width: 32px; height: 32px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 120px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 70px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 60px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-badge-shimmer" style="width: 55px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-badge-shimmer" style="width: 45px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 50px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 100px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 80px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-badge-shimmer" style="width: 60px; display: block;"></span></td>
-                                                <td style="text-align: right;"><span class="shimmer skeleton-badge-shimmer" style="width: 50px; display: inline-block;"></span></td>
-                                            </tr>
-                                            <tr class="skeleton-row">
-                                                <td><span class="shimmer skeleton-badge-shimmer" style="width: 16px; height: 16px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-circle-shimmer" style="width: 32px; height: 32px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 160px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 90px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 55px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-badge-shimmer" style="width: 50px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-badge-shimmer" style="width: 60px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 40px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 120px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-text" style="width: 100px; display: block;"></span></td>
-                                                <td><span class="shimmer skeleton-badge-shimmer" style="width: 60px; display: block;"></span></td>
-                                                <td style="text-align: right;"><span class="shimmer skeleton-badge-shimmer" style="width: 50px; display: inline-block;"></span></td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <!-- Pagination Controls -->
-                                <div class="pagination-container" id="pagination-controls">
-                                    <div class="pagination-left">
-                                        <div class="page-size-select-wrapper">
-                                            <span>Show:</span>
-                                            <select id="pagination-limit" class="page-size-select">
-                                                <option value="10">10</option>
-                                                <option value="15" selected>15</option>
-                                                <option value="25">25</option>
-                                            </select>
-                                        </div>
-                                        <span class="pagination-info" id="pagination-info-text">Showing 0-0 of 0 motors</span>
-                                    </div>
-                                    <div class="pagination-actions">
-                                        <button class="pagination-nav-btn" id="btn-prev-page">
-                                            <i data-lucide="chevron-left" style="width:14px;height:14px;"></i> Prev
-                                        </button>
-                                        <div id="pagination-pages" style="display: flex; gap: 4px; align-items: center;">
-                                            <!-- Dynamic page buttons -->
-                                        </div>
-                                        <button class="pagination-nav-btn" id="btn-next-page">
-                                            Next <i data-lucide="chevron-right" style="width:14px;height:14px;"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div class="empty-state" id="table-empty-state" style="display: none;">
-                                    <i data-lucide="info" class="empty-icon"></i>
-                                    <h4>No Motors Found</h4>
-                                    <p>No motors match your current search queries or filters.</p>
-                                    <button class="btn-secondary-sm" id="btn-clear-filters">Clear Search & Filters</button>
-                                </div>
-                            </div>
+                    <!-- Average Thrust -->
+                    <div class="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/80 shadow-sm rounded-xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300" id="kpi-avg-thrust">
+                        <div class="flex justify-between items-start">
+                            <span class="text-slate-500 dark:text-slate-400 font-label-mono text-[11px] font-semibold uppercase tracking-wider">Avg Thrust</span>
+                            <div class="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-1.5"><i data-lucide="activity" class="w-4 h-4"></i></div>
                         </div>
+                        <div class="mt-4">
+                            <div class="text-2xl md:text-3xl font-extrabold text-[#001e40] dark:text-slate-100 tracking-tight" id="kpi-avg-thrust-val">
+                                <span class="h-8 w-20 bg-slate-200 dark:bg-slate-800 rounded animate-pulse inline-block"></span>
+                            </div>
+                            <span class="text-xs text-slate-400 font-medium mt-1 block">Thrust mean value</span>
+                        </div>
+                    </div>
 
-                        <!-- Right Side docked comparison panel -->
-                        <div class="comparison-sidebar" id="comparison-sidebar">
-                            <div class="comparison-sidebar-header">
-                                <h3>Compare Specifications</h3>
-                                <button class="btn-icon-close" id="btn-close-comparison-sidebar"><i data-lucide="x" style="width:16px;height:16px;"></i></button>
+                    <!-- Max Thrust -->
+                    <div class="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/80 shadow-sm rounded-xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300" id="kpi-max-thrust">
+                        <div class="flex justify-between items-start">
+                            <span class="text-slate-500 dark:text-slate-400 font-label-mono text-[11px] font-semibold uppercase tracking-wider">Max Thrust</span>
+                            <div class="text-amber-500 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-1.5"><i data-lucide="zap" class="w-4 h-4"></i></div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="text-2xl md:text-3xl font-extrabold text-[#001e40] dark:text-slate-100 tracking-tight" id="kpi-max-thrust-val">
+                                <span class="h-8 w-20 bg-slate-200 dark:bg-slate-800 rounded animate-pulse inline-block"></span>
                             </div>
-                            <div class="comparison-sidebar-body">
-                                <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-bottom: 15px;">Select up to 3 motors to compare side-by-side.</p>
-                                <div class="compare-thumbs-row">
-                                    <div class="compare-thumb-box" id="compare-box-0">
-                                        <i data-lucide="plus" style="width: 18px; height: 18px;"></i>
-                                    </div>
-                                    <div class="compare-thumb-box" id="compare-box-1">
-                                        <i data-lucide="plus" style="width: 18px; height: 18px;"></i>
-                                    </div>
-                                    <div class="compare-thumb-box" id="compare-box-2">
-                                        <i data-lucide="plus" style="width: 18px; height: 18px;"></i>
-                                    </div>
-                                </div>
-                                <div class="compare-check-list" id="compare-check-list">
-                                    <!-- Selected list items -->
-                                </div>
+                            <span class="text-xs text-slate-400 font-medium mt-1 block">Peak record thrust</span>
+                        </div>
+                    </div>
+
+                    <!-- Voltage Range -->
+                    <div class="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/80 shadow-sm rounded-xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300" id="kpi-voltage">
+                        <div class="flex justify-between items-start">
+                            <span class="text-slate-500 dark:text-slate-400 font-label-mono text-[11px] font-semibold uppercase tracking-wider">Voltage Range</span>
+                            <div class="text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 rounded-lg p-1.5"><i data-lucide="battery" class="w-4 h-4"></i></div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="text-xl md:text-2xl font-extrabold text-[#001e40] dark:text-slate-100 tracking-tight pt-1" id="kpi-voltage-val">
+                                <span class="h-7 w-24 bg-slate-200 dark:bg-slate-800 rounded animate-pulse inline-block"></span>
                             </div>
-                            <div class="comparison-sidebar-footer">
-                                <button class="btn-primary" id="btn-compare-sidebar-now" disabled>
-                                    <i data-lucide="git-compare"></i> Compare Side-by-Side
-                                </button>
-                                <button class="btn-secondary" id="btn-clear-comparison-sidebar">Clear Selection</button>
+                            <span class="text-xs text-slate-400 font-medium mt-1 block">Supported LiPo cells</span>
+                        </div>
+                    </div>
+
+                    <!-- Data Integrity -->
+                    <div class="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/80 shadow-sm rounded-xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300" id="kpi-completeness">
+                        <div class="flex justify-between items-start">
+                            <span class="text-slate-500 dark:text-slate-400 font-label-mono text-[11px] font-semibold uppercase tracking-wider">Data Integrity</span>
+                            <div class="text-purple-500 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 rounded-lg p-1.5"><i data-lucide="check-circle" class="w-4 h-4"></i></div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="text-2xl md:text-3xl font-extrabold text-[#001e40] dark:text-slate-100 tracking-tight" id="kpi-completeness-val">
+                                <span class="h-8 w-16 bg-slate-200 dark:bg-slate-800 rounded animate-pulse inline-block"></span>
                             </div>
+                            <span class="text-xs text-slate-400 font-medium mt-1 block">Spec completeness</span>
                         </div>
                     </div>
                 </div>
+
+                <!-- Hidden inputs/labels to support dynamic script calls -->
+                <div class="hidden" id="kpi-brands"><span id="kpi-brands-val">0</span></div>
+                <div class="hidden" id="kpi-active-class"><span id="kpi-active-class-val">0</span></div>
+
+                <!-- Main Layout Container (Table & Compare Drawer Sidebar) -->
+                <div class="flex flex-col lg:flex-row items-start gap-6 w-full mt-3">
+                    <!-- Left Side Table Grid -->
+                    <div class="flex-1 min-w-0 w-full">
+                        <div class="bg-white dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 shadow-sm rounded-xl overflow-hidden p-5">
+                            <!-- Table Title & Filter Settings -->
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 border-b border-slate-100 dark:border-slate-800 pb-4">
+                                <div class="flex items-center gap-3">
+                                    <h3 class="font-extrabold text-[#001e40] dark:text-slate-100 text-[17px]">Motor Specifications</h3>
+                                    <span id="filtered-count-badge" class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                                        0 displayed
+                                    </span>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <!-- Brand Filter dropdown -->
+                                    <div class="flex items-center gap-2">
+                                        <label for="filter-company" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider flex items-center gap-1">
+                                            <i data-lucide="filter" class="w-3.5 h-3.5 text-slate-400"></i>
+                                            Brand:
+                                        </label>
+                                        <select id="filter-company" class="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 px-3 py-1.5 focus:border-[#003366] focus:ring-2 focus:ring-[#003366]/10 outline-none">
+                                            <option value="all">All Brands</option>
+                                        </select>
+                                    </div>
+                                    <!-- Sort dropdown -->
+                                    <div class="flex items-center gap-2">
+                                        <label for="sort-select" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider flex items-center gap-1">
+                                            <i data-lucide="arrow-up-down" class="w-3.5 h-3.5 text-slate-400"></i>
+                                            Sort:
+                                        </label>
+                                        <select id="sort-select" class="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 px-3 py-1.5 focus:border-[#003366] focus:ring-2 focus:ring-[#003366]/10 outline-none">
+                                            <option value="motor-asc">Motor Model (A-Z)</option>
+                                            <option value="motor-desc">Motor Model (Z-A)</option>
+                                            <option value="company-asc">Brand (A-Z)</option>
+                                            <option value="thrust-desc">Max Thrust (High to Low)</option>
+                                            <option value="thrust-asc">Max Thrust (Low to High)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Responsive Specs Table -->
+                            <div class="overflow-x-auto w-full">
+                                <table class="w-full min-w-[1100px] text-sm text-left border-collapse" id="motors-data-table">
+                                    <thead>
+                                        <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-xs font-label-mono uppercase tracking-wider">
+                                            <th class="py-3 px-2 w-10 text-center">
+                                                <input type="checkbox" id="select-all-motors" title="Select All for comparison" class="rounded border-slate-300 dark:border-slate-700 dark:bg-slate-950 text-[#003366] dark:text-blue-500 focus:ring-[#003366]/20">
+                                            </th>
+                                            <th class="py-3 px-2 w-12 text-center">Spec</th>
+                                            <th class="py-3 px-2 font-semibold text-[#001e40] dark:text-blue-300">Motor Model</th>
+                                            <th class="py-3 px-2">Brand</th>
+                                            <th class="py-3 px-2">KV</th>
+                                            <th class="py-3 px-2">Voltage</th>
+                                            <th class="py-3 px-2">Thrust</th>
+                                            <th class="py-3 px-2">Weight</th>
+                                            <th class="py-3 px-2">Propeller</th>
+                                            <th class="py-3 px-2">ESC</th>
+                                            <th class="py-3 px-2 text-center w-24">Links</th>
+                                            <th class="py-3 px-2 text-right w-24">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="motors-list-rows" class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                                        <!-- Skeleton loader rows -->
+                                        <tr class="skeleton-row">
+                                            <td class="py-4 px-4 text-center"><span class="shimmer bg-slate-200 w-4 h-4 rounded block mx-auto animate-pulse"></span></td>
+                                            <td class="py-4 px-3 text-center"><span class="shimmer bg-slate-200 w-8 h-8 rounded-full block mx-auto animate-pulse"></span></td>
+                                            <td class="py-4 px-4"><span class="shimmer bg-slate-200 w-32 h-4 rounded block animate-pulse"></span></td>
+                                            <td class="py-4 px-4"><span class="shimmer bg-slate-200 w-20 h-4 rounded block animate-pulse"></span></td>
+                                            <td class="py-4 px-4"><span class="shimmer bg-slate-200 w-16 h-4 rounded block animate-pulse"></span></td>
+                                            <td class="py-4 px-4"><span class="shimmer bg-slate-200 w-12 h-6 rounded-full block animate-pulse"></span></td>
+                                            <td class="py-4 px-4"><span class="shimmer bg-slate-200 w-14 h-6 rounded-full block animate-pulse"></span></td>
+                                            <td class="py-4 px-4"><span class="shimmer bg-slate-200 w-12 h-4 rounded block animate-pulse"></span></td>
+                                            <td class="py-4 px-4"><span class="shimmer bg-slate-200 w-24 h-4 rounded block animate-pulse"></span></td>
+                                            <td class="py-4 px-4"><span class="shimmer bg-slate-200 w-20 h-4 rounded block animate-pulse"></span></td>
+                                            <td class="py-4 px-4 text-center"><span class="shimmer bg-slate-200 w-16 h-6 rounded-full block mx-auto animate-pulse"></span></td>
+                                            <td class="py-4 px-4 text-right"><span class="shimmer bg-slate-200 w-14 h-6 rounded block ml-auto animate-pulse"></span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Pagination controls -->
+                            <div class="pagination-container flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono" id="pagination-controls">
+                                <div class="pagination-left flex items-center gap-4">
+                                    <div class="page-size-select-wrapper flex items-center gap-2">
+                                        <span>Show:</span>
+                                        <select id="pagination-limit" class="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 outline-none text-slate-600 dark:text-slate-300 focus:border-[#003366] focus:dark:border-blue-500">
+                                            <option value="10">10</option>
+                                            <option value="15" selected>15</option>
+                                            <option value="25">25</option>
+                                        </select>
+                                    </div>
+                                    <span class="pagination-info text-slate-500 dark:text-slate-400" id="pagination-info-text">Showing 0-0 of 0 motors</span>
+                                </div>
+                                <div class="pagination-actions flex items-center gap-2">
+                                    <button class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 rounded border border-slate-200/80 dark:border-slate-800 transition-colors flex items-center gap-1 text-slate-600 dark:text-slate-300" id="btn-prev-page">
+                                        <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i> Prev
+                                    </button>
+                                    <div id="pagination-pages" class="flex gap-1 items-center">
+                                        <!-- Dynamic page buttons -->
+                                    </div>
+                                    <button class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 rounded border border-slate-200/80 dark:border-slate-800 transition-colors flex items-center gap-1 text-slate-600 dark:text-slate-300" id="btn-next-page">
+                                        Next <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Table empty state -->
+                            <div class="flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl mt-4" id="table-empty-state" style="display: none;">
+                                <i data-lucide="info" class="w-10 h-10 text-slate-400 dark:text-slate-500 mb-3"></i>
+                                <h4 class="text-sm font-bold text-[#001e40] dark:text-slate-100">No Motors Found</h4>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">No motors match your current search queries or filters.</p>
+                                <button class="mt-4 px-4 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 transition-colors" id="btn-clear-filters">Clear Search & Filters</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Side Docked Comparison specification drawer panel -->
+                    <div class="comparison-sidebar w-full lg:w-80 shrink-0 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-sm rounded-xl p-5" id="comparison-sidebar">
+                        <div class="comparison-sidebar-header flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+                            <h3 class="font-extrabold text-[#001e40] dark:text-slate-100 text-[15px] flex items-center gap-1.5">
+                                <i data-lucide="git-compare" class="w-4 h-4 text-[#003366] dark:text-[#a7c8ff]"></i>
+                                Specs Comparison
+                            </h3>
+                            <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-355" id="btn-close-comparison-sidebar">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div class="comparison-sidebar-body flex-1 flex flex-col gap-3">
+                            <p class="text-xs text-slate-500 dark:text-slate-400 leading-normal text-center mb-2">Select up to 3 motors to compare side-by-side specs.</p>
+                            <div class="compare-thumbs-row flex justify-between gap-2 px-1 mb-4">
+                                <div class="compare-thumb-box dark:border-slate-800 dark:color-slate-600" id="compare-box-0"><i data-lucide="plus" class="w-4 h-4"></i></div>
+                                <div class="compare-thumb-box dark:border-slate-800 dark:color-slate-600" id="compare-box-1"><i data-lucide="plus" class="w-4 h-4"></i></div>
+                                <div class="compare-thumb-box dark:border-slate-800 dark:color-slate-600" id="compare-box-2"><i data-lucide="plus" class="w-4 h-4"></i></div>
+                            </div>
+                            <div class="compare-check-list flex flex-col gap-2.5 overflow-y-auto max-h-[220px]" id="compare-check-list">
+                                <!-- Dynamic Compare Checklist Items Injected -->
+                            </div>
+                        </div>
+                        <div class="comparison-sidebar-footer border-t border-slate-100 dark:border-slate-800 pt-4 mt-4 flex flex-col gap-2.5">
+                            <button class="w-full bg-[#003366] hover:bg-[#002244] dark:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50 text-white font-button text-[13px] py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 font-semibold shadow-sm transition-colors" id="btn-compare-sidebar-now" disabled>
+                                <i data-lucide="git-compare" class="w-4 h-4"></i> Compare Now
+                            </button>
+                            <button class="w-full bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 font-button text-[12px] py-2 px-4 rounded-lg flex items-center justify-center gap-1 font-semibold border border-slate-200 dark:border-slate-800 transition-colors" id="btn-clear-comparison-sidebar">
+                                Clear Selection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden verification notes container to support scripts queries -->
+                <section class="hidden" id="verification-notes-section">
+                    <div id="verification-notes-toggle"><span class="notes-chevron"></span></div>
+                    <table class="w-full text-xs text-left"><tbody id="verification-notes-rows"></tbody></table>
+                </section>
             </main>
         </div>
     </div>
 
-    <!-- Comparison Modal -->
+    <!-- Comparison Modal Backdrop -->
     <div class="modal-backdrop" id="comparison-modal">
-        <div class="modal-container comparison-modal-container">
-            <div class="modal-header">
-                <h3><i data-lucide="git-compare"></i> Side-by-Side Specifications Comparison</h3>
-                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+        <div class="modal-container bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden mx-4 animate-scale-in">
+            <div class="modal-header flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-4">
+                <h3 class="font-extrabold text-[#001e40] dark:text-slate-100 text-[17px] flex items-center gap-2">
+                    <i data-lucide="git-compare" class="w-5 h-5 text-[#003366] dark:text-[#a7c8ff]"></i>
+                    Specifications Side-by-Side Comparison
+                </h3>
+                <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 modal-close-trigger">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
             </div>
-            <div class="modal-body">
-                <div class="comparison-table-wrapper">
-                    <table class="comparison-result-table" id="comparison-result-table">
-                        <!-- Dynamic comparison -->
+            <div class="modal-body flex-1 overflow-y-auto pr-1">
+                <div class="overflow-x-auto w-full">
+                    <table class="w-full text-sm text-left border-collapse comparison-result-table" id="comparison-result-table">
+                        <!-- Dynamic Comparison Table Columns & Rows Injected -->
                     </table>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn-secondary modal-close-trigger">Close Comparison</button>
+            <div class="modal-footer border-t border-slate-100 dark:border-slate-800 pt-4 mt-4 flex justify-end">
+                <button class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-button text-[13px] px-5 py-2 rounded-lg font-semibold transition-colors modal-close-trigger">
+                    Close Comparison
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Add/Edit Motor Modal -->
+    <!-- Add/Edit Motor Entry Modal Backdrop -->
     <div class="modal-backdrop" id="motor-modal">
-        <div class="modal-container">
-            <div class="modal-header">
-                <h3 id="modal-title"><i data-lucide="plus-circle"></i> Add New Motor Entry</h3>
-                <button class="btn-icon-close modal-close-trigger" id="btn-close-motor-modal"><i data-lucide="x"></i></button>
+        <div class="modal-container bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden mx-4 animate-scale-in">
+            <div class="modal-header flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-4">
+                <h3 class="font-extrabold text-[#001e40] dark:text-slate-100 text-[17px] flex items-center gap-2" id="modal-title">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-[#003366] dark:text-[#a7c8ff]"></i>
+                    Add New Motor Entry
+                </h3>
+                <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 modal-close-trigger" id="btn-close-motor-modal">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
             </div>
-            <form id="motor-form">
-                <div class="modal-body">
-                    <input type="hidden" id="form-motor-index">
+            <form id="motor-form" class="flex flex-col flex-1 overflow-hidden">
+                <input type="hidden" id="form-motor-index">
+                <div class="modal-body flex-1 overflow-y-auto pr-1 py-1 space-y-4">
                     
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="form-motor-name">Motor Model Name *</label>
-                            <input type="text" id="form-motor-name" required placeholder="e.g. U12 II KV120">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col">
+                            <label for="form-motor-name" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider mb-2">Motor Model Name *</label>
+                            <input type="text" id="form-motor-name" required placeholder="e.g. U12 II KV120" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-3.5 text-sm outline-none transition-all focus:border-[#003366] focus:dark:border-blue-500 focus:bg-white focus:dark:bg-slate-900 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400 font-medium">
                         </div>
-                        <div class="form-group">
-                            <label for="form-motor-company">Manufacturer / Company *</label>
-                            <input type="text" id="form-motor-company" required placeholder="e.g. T-Motor, Emax" list="manufacturer-list">
+                        <div class="flex flex-col">
+                            <label for="form-motor-company" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider mb-2">Manufacturer / Company *</label>
+                            <input type="text" id="form-motor-company" required placeholder="e.g. T-Motor, Emax" list="manufacturer-list" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-3.5 text-sm outline-none transition-all focus:border-[#003366] focus:dark:border-blue-500 focus:bg-white focus:dark:bg-slate-900 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400 font-medium">
                             <datalist id="manufacturer-list"></datalist>
                         </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="form-motor-thrust-val">Max Thrust Value *</label>
-                            <div style="display: flex; gap: 8px;">
-                                <input type="number" id="form-motor-thrust-val" required step="any" placeholder="e.g. 2.4, 2400" style="flex: 1;">
-                                <select id="form-motor-thrust-unit" required style="width: 75px; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background-color: var(--bg-card); color: var(--text-main);">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col">
+                            <label for="form-motor-thrust-val" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider mb-2">Max Thrust Value *</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="form-motor-thrust-val" required step="any" placeholder="e.g. 2.4, 2400" class="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-3.5 text-sm outline-none transition-all focus:border-[#003366] focus:dark:border-blue-500 focus:bg-white focus:dark:bg-slate-900 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400 font-medium">
+                                <select id="form-motor-thrust-unit" required class="w-20 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-xs font-bold text-slate-600 dark:text-slate-300 focus:border-[#003366] focus:dark:border-blue-500 outline-none">
                                     <option value="kg">kg</option>
                                     <option value="g">g</option>
                                     <option value="N">N</option>
@@ -375,116 +989,134 @@
                                     <option value="oz">oz</option>
                                 </select>
                             </div>
-                            <small id="thrust-conversion-preview" style="color: var(--text-muted, #8a8f98); display: block; margin-top: 4px; font-size: 11px;"></small>
+                            <small id="thrust-conversion-preview" class="text-[11px] text-slate-400 mt-1.5 block min-h-[16px] font-semibold"></small>
                         </div>
-                        <div class="form-group">
-                            <label for="form-motor-category">Thrust Level Category *</label>
-                            <select id="form-motor-category" required>
+                        <div class="flex flex-col">
+                            <label for="form-motor-category" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider mb-2">Thrust Level Category *</label>
+                            <select id="form-motor-category" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 focus:border-[#003366] focus:dark:border-blue-500 focus:bg-white focus:dark:bg-slate-900 focus:ring-4 focus:ring-[#003366]/10 outline-none">
                                 <!-- Categories injected dynamically -->
                             </select>
                         </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="form-motor-esc">Recommended ESC</label>
-                            <input type="text" id="form-motor-esc" placeholder="e.g. Alpha 120A 12S">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col">
+                            <label for="form-motor-esc" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider mb-2">Recommended ESC</label>
+                            <input type="text" id="form-motor-esc" placeholder="e.g. Alpha 120A 12S" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-3.5 text-sm outline-none transition-all focus:border-[#003366] focus:dark:border-blue-500 focus:bg-white focus:dark:bg-slate-900 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400 font-medium">
                         </div>
-                        <div class="form-group">
-                            <label for="form-motor-propeller">Recommended Propeller</label>
-                            <input type="text" id="form-motor-propeller" placeholder="e.g. CF30x10.5 folding">
+                        <div class="flex flex-col">
+                            <label for="form-motor-propeller" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider mb-2">Recommended Propeller</label>
+                            <input type="text" id="form-motor-propeller" placeholder="e.g. CF30x10.5 folding" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-3.5 text-sm outline-none transition-all focus:border-[#003366] focus:dark:border-blue-500 focus:bg-white focus:dark:bg-slate-900 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400 font-medium">
                         </div>
                     </div>
 
-                    <h4 class="form-section-title"><i data-lucide="link"></i> Reference Links</h4>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="form-motor-link">Motor Product Link</label>
-                            <input type="url" id="form-motor-link" placeholder="https://...">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="form-esc-link">ESC Product Link</label>
-                            <input type="url" id="form-esc-link" placeholder="https://...">
-                        </div>
-                        <div class="form-group">
-                            <label for="form-prop-link">Propeller Product Link</label>
-                            <input type="url" id="form-prop-link" placeholder="https://...">
+                    <div class="border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
+                        <h4 class="text-xs font-bold text-[#001e40] dark:text-slate-200 font-label-mono uppercase tracking-wider mb-3 flex items-center gap-1.5"><i data-lucide="link" class="w-3.5 h-3.5 text-slate-400"></i> Reference Documentation Links</h4>
+                        <div class="grid grid-cols-1 gap-3">
+                            <div class="flex flex-col">
+                                <label for="form-motor-link" class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Motor Product Spec Link</label>
+                                <input type="url" id="form-motor-link" placeholder="https://..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-3.5 text-sm outline-none transition-all focus:border-[#003366] focus:dark:border-blue-500 focus:bg-white focus:dark:bg-slate-900 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400 font-medium">
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div class="flex flex-col">
+                                    <label for="form-esc-link" class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">ESC Spec Link</label>
+                                    <input type="url" id="form-esc-link" placeholder="https://..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-3.5 text-sm outline-none transition-all focus:border-[#003366] focus:dark:border-blue-500 focus:bg-white focus:dark:bg-slate-900 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400 font-medium">
+                                </div>
+                                <div class="flex flex-col">
+                                    <label for="form-prop-link" class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Propeller Spec Link</label>
+                                    <input type="url" id="form-prop-link" placeholder="https://..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-3.5 text-sm outline-none transition-all focus:border-[#003366] focus:dark:border-blue-500 focus:bg-white focus:dark:bg-slate-900 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400 font-medium">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Dynamic Custom Parameters Container -->
-                    <div id="modal-custom-fields-section" style="display:none; margin-top: 15px;">
-                        <h4 class="form-section-title" style="margin-top: 10px;"><i data-lucide="sliders"></i> Custom Specifications</h4>
-                        <div id="modal-custom-fields-rows" style="display:flex; flex-direction:column; gap:12px;">
+                    <div id="modal-custom-fields-section" class="border-t border-slate-100 dark:border-slate-800 pt-4 mt-2" style="display:none;">
+                        <h4 class="text-xs font-bold text-[#001e40] dark:text-slate-200 font-label-mono uppercase tracking-wider mb-3 flex items-center gap-1.5"><i data-lucide="sliders" class="w-3.5 h-3.5 text-slate-400"></i> Custom Specifications</h4>
+                        <div id="modal-custom-fields-rows" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <!-- Injected dynamically based on active schema fields -->
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-secondary modal-close-trigger">Cancel</button>
-                    <button type="submit" class="btn-primary">Save Motor Entry</button>
+                <div class="modal-footer border-t border-slate-100 dark:border-slate-800 pt-4 mt-4 flex justify-end gap-2.5">
+                    <button type="button" class="bg-slate-50 hover:bg-slate-100 dark:bg-slate-850 dark:hover:bg-slate-800 border border-slate-200/85 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-button text-[13px] px-5 py-2.5 rounded-lg font-semibold transition-colors modal-close-trigger">
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-[#003366] hover:bg-[#002244] dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-button text-[13px] px-5 py-2.5 rounded-lg font-semibold shadow-sm transition-colors cursor-pointer">
+                        Save Motor Entry
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Add Category Modal -->
+    <!-- Add Category Modal Backdrop -->
     <div class="modal-backdrop" id="category-modal">
-        <div class="modal-container modal-sm">
-            <div class="modal-header">
-                <h3><i data-lucide="folder-plus"></i> Add Custom Thrust Level</h3>
-                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+        <div class="modal-container bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-6 max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden mx-4 animate-scale-in">
+            <div class="modal-header flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-4">
+                <h3 class="font-extrabold text-[#001e40] dark:text-slate-100 text-[17px] flex items-center gap-2">
+                    <i data-lucide="folder-plus" class="w-5 h-5 text-[#003366] dark:text-[#a7c8ff]"></i>
+                    Add Custom Thrust Level
+                </h3>
+                <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 modal-close-trigger">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
             </div>
             <form id="category-form">
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="form-cat-name">Thrust Category Name *</label>
-                        <input type="text" id="form-cat-name" required placeholder="e.g. 5kg, 10kg">
+                <div class="modal-body space-y-4">
+                    <div class="flex flex-col">
+                        <label for="form-cat-name" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider mb-2">Thrust Category Name *</label>
+                        <input type="text" id="form-cat-name" required placeholder="e.g. 5kg, 10kg" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-3.5 text-sm outline-none transition-all focus:border-[#003366] focus:dark:border-blue-500 focus:bg-white focus:dark:bg-slate-900 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400 font-medium">
                     </div>
-                    <div class="form-group">
-                        <label for="form-cat-desc">Description</label>
-                        <textarea id="form-cat-desc" rows="3" placeholder="Category application details..."></textarea>
+                    <div class="flex flex-col">
+                        <label for="form-cat-desc" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider mb-2">Description</label>
+                        <textarea id="form-cat-desc" rows="3" placeholder="Category application details..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-3.5 text-sm outline-none transition-all focus:border-[#003366] focus:dark:border-blue-500 focus:bg-white focus:dark:bg-slate-900 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400 font-medium resize-none"></textarea>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-secondary modal-close-trigger">Cancel</button>
-                    <button type="submit" class="btn-primary">Create Category</button>
+                <div class="modal-footer border-t border-slate-100 dark:border-slate-800 pt-4 mt-5 flex justify-end gap-2.5">
+                    <button type="button" class="bg-slate-50 hover:bg-slate-100 dark:bg-slate-850 dark:hover:bg-slate-800 border border-slate-200/85 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-button text-[13px] px-5 py-2.5 rounded-lg font-semibold transition-colors modal-close-trigger">Cancel</button>
+                    <button type="submit" class="bg-[#003366] hover:bg-[#002244] dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-button text-[13px] px-5 py-2.5 rounded-lg font-semibold shadow-sm transition-colors cursor-pointer">Create Category</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Custom Confirm Dialog -->
+    <!-- Custom Confirm Dialog Backdrop -->
     <div class="modal-backdrop" id="confirm-modal">
-        <div class="modal-container modal-sm">
-            <div class="modal-header">
-                <h3 id="confirm-title">Are you sure?</h3>
-                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+        <div class="modal-container bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-6 max-w-sm w-full mx-4 animate-scale-in">
+            <div class="modal-header flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-3.5">
+                <h3 class="font-extrabold text-[#001e40] dark:text-slate-100 text-[16px] tracking-tight" id="confirm-title">Are you sure?</h3>
+                <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 modal-close-trigger">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
             </div>
             <div class="modal-body">
-                <p id="confirm-message">This action cannot be undone.</p>
+                <p id="confirm-message" class="text-sm text-slate-500 dark:text-slate-400 leading-normal"></p>
             </div>
-            <div class="modal-footer">
-                <button class="btn-secondary modal-close-trigger">Cancel</button>
-                <button class="btn-danger" id="btn-confirm-action">Confirm</button>
+            <div class="modal-footer border-t border-slate-100 dark:border-slate-800 pt-4 mt-5 flex justify-end gap-2.5">
+                <button class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-button text-[13px] px-4.5 py-2 rounded-lg font-semibold transition-colors modal-close-trigger">Cancel</button>
+                <button class="bg-[#ba1a1a] hover:bg-[#93000a] text-white font-button text-[13px] px-4.5 py-2 rounded-lg font-semibold transition-colors shadow-sm cursor-pointer" id="btn-confirm-action">Confirm</button>
             </div>
         </div>
     </div>
 
-    <!-- Custom Export Modal -->
+    <!-- Custom Export Modal Backdrop -->
     <div class="modal-backdrop" id="custom-export-modal">
-        <div class="modal-container modal-sm" style="width: 450px;">
-            <div class="modal-header">
-                <h3><i data-lucide="download"></i> Custom Data Export</h3>
-                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
+        <div class="modal-container bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-6 max-w-md w-full mx-4 animate-scale-in">
+            <div class="modal-header flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-4">
+                <h3 class="font-extrabold text-[#001e40] dark:text-slate-100 text-[17px] flex items-center gap-2">
+                    <i data-lucide="download" class="w-5 h-5 text-[#003366] dark:text-[#a7c8ff]"></i>
+                    Custom Data Export
+                </h3>
+                <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 modal-close-trigger">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
             </div>
-            <form id="custom-export-form">
-                <div class="modal-body">
-                    <div class="form-group" style="margin-bottom:18px;">
-                        <label for="export-format">Export File Format *</label>
-                        <select id="export-format" required>
+            <form id="custom-export-form" class="space-y-4">
+                <div class="modal-body space-y-4">
+                    <div class="flex flex-col">
+                        <label for="export-format" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider mb-2">Export File Format *</label>
+                        <select id="export-format" required class="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 focus:border-[#003366] focus:dark:border-blue-500 outline-none">
                             <option value="xlsx">Excel Document (.xlsx)</option>
                             <option value="csv">Comma Separated Values (.csv)</option>
                             <option value="json">JSON Catalog Payload (.json)</option>
@@ -493,312 +1125,334 @@
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label style="margin-bottom: 8px; display: block; font-weight:600;">Select Columns to Include:</label>
-                        <div style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; background: var(--bg-base); display:flex; flex-direction:column; gap:8px;" id="export-columns-selector">
-                            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
-                                <input type="checkbox" value="category" checked> Category Name
+                    <div class="flex flex-col">
+                        <label class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider mb-2">Select Columns to Include:</label>
+                        <div class="max-height-[180px] overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-lg p-3 bg-slate-50/50 dark:bg-slate-950/50 flex flex-col gap-2.5 text-xs font-medium text-slate-600 dark:text-slate-300" id="export-columns-selector">
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-[#003366] dark:hover:text-[#a7c8ff]">
+                                <input type="checkbox" value="category" checked class="rounded border-slate-300 dark:border-slate-700 dark:bg-slate-950 text-[#003366] dark:text-blue-500 focus:ring-[#003366]/20"> Category Name
                             </label>
-                            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
-                                <input type="checkbox" value="motor" checked> Motor Model Name
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-[#003366] dark:hover:text-[#a7c8ff]">
+                                <input type="checkbox" value="motor" checked class="rounded border-slate-300 dark:border-slate-700 dark:bg-slate-950 text-[#003366] dark:text-blue-500 focus:ring-[#003366]/20"> Motor Model Name
                             </label>
-                            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
-                                <input type="checkbox" value="company" checked> Manufacturer / Brand
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-[#003366] dark:hover:text-[#a7c8ff]">
+                                <input type="checkbox" value="company" checked class="rounded border-slate-300 dark:border-slate-700 dark:bg-slate-950 text-[#003366] dark:text-blue-500 focus:ring-[#003366]/20"> Manufacturer / Brand
                             </label>
-                            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
-                                <input type="checkbox" value="thrust" checked> Max Thrust
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-[#003366] dark:hover:text-[#a7c8ff]">
+                                <input type="checkbox" value="thrust" checked class="rounded border-slate-300 dark:border-slate-700 dark:bg-slate-950 text-[#003366] dark:text-blue-500 focus:ring-[#003366]/20"> Max Thrust
                             </label>
-                            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
-                                <input type="checkbox" value="esc" checked> Recommended ESC
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-[#003366] dark:hover:text-[#a7c8ff]">
+                                <input type="checkbox" value="esc" checked class="rounded border-slate-300 dark:border-slate-700 dark:bg-slate-950 text-[#003366] dark:text-blue-500 focus:ring-[#003366]/20"> Recommended ESC
                             </label>
-                            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
-                                <input type="checkbox" value="prop" checked> Recommended Propeller
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-[#003366] dark:hover:text-[#a7c8ff]">
+                                <input type="checkbox" value="prop" checked class="rounded border-slate-300 dark:border-slate-700 dark:bg-slate-950 text-[#003366] dark:text-blue-500 focus:ring-[#003366]/20"> Recommended Propeller
                             </label>
-                            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
-                                <input type="checkbox" value="links" checked> Reference Links
+                            <label class="flex items-center gap-2 cursor-pointer hover:text-[#003366] dark:hover:text-[#a7c8ff]">
+                                <input type="checkbox" value="links" checked class="rounded border-slate-300 dark:border-slate-700 dark:bg-slate-950 text-[#003366] dark:text-blue-500 focus:ring-[#003366]/20"> Reference Links
                             </label>
                             <!-- Custom Columns will be injected dynamically here -->
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-secondary modal-close-trigger">Cancel</button>
-                    <button type="submit" class="btn-primary">Export Dataset</button>
+                <div class="modal-footer border-t border-slate-100 dark:border-slate-800 pt-4 mt-5 flex justify-end gap-2.5">
+                    <button type="button" class="bg-slate-50 hover:bg-slate-100 dark:bg-slate-850 dark:hover:bg-slate-800 border border-slate-200/85 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-button text-[13px] px-5 py-2.5 rounded-lg font-semibold transition-colors modal-close-trigger">Cancel</button>
+                    <button type="submit" class="bg-[#003366] hover:bg-[#002244] dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-button text-[13px] px-5 py-2.5 rounded-lg font-semibold shadow-sm transition-colors cursor-pointer">Export Dataset</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Motor Profile View Overlay -->
-    <div class="motor-profile-overlay" id="motor-profile-overlay" style="display: none;">
-        <div class="profile-header-bar">
-            <button class="btn-profile-back" id="btn-profile-back">
-                <i data-lucide="arrow-left"></i> Back to Catalog
+    <!-- Delete Request Modal Backdrop -->
+    <div class="modal-backdrop" id="delete-request-modal">
+        <div class="modal-container bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-6 max-w-md w-full mx-4 animate-scale-in">
+            <div class="modal-header flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-4">
+                <h3 class="font-extrabold text-[#001e40] dark:text-slate-100 text-[17px] flex items-center gap-2">
+                    <i data-lucide="flag" class="w-5 h-5 text-[#ba1a1a] dark:text-rose-400"></i>
+                    Request Motor Deletion
+                </h3>
+                <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 modal-close-trigger" id="btn-close-delete-request-modal">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="delete-request-form" class="space-y-4">
+                <div class="modal-body space-y-4">
+                    <div class="bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 rounded-lg p-3 flex gap-3 items-start">
+                        <i data-lucide="alert-triangle" class="w-5 h-5 text-[#ba1a1a] dark:text-rose-400 shrink-0 mt-0.5"></i>
+                        <p class="text-xs text-rose-800 dark:text-rose-300 leading-normal font-medium">
+                            You don't have administrative permission to directly delete motor catalog entries. Submit a deletion request detailing the reason for admin review.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold font-label-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">Motor</span>
+                            <span id="delete-request-motor-name" class="font-bold text-[#001e40] dark:text-slate-200 text-sm mt-1"></span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold font-label-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">Brand</span>
+                            <span id="delete-request-motor-brand" class="font-semibold text-slate-500 dark:text-slate-400 text-sm mt-1"></span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col">
+                        <label for="delete-request-reason" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider mb-2">Reason for Deletion <span class="text-[#ba1a1a]">*</span></label>
+                        <textarea id="delete-request-reason" rows="4" placeholder="Please explain why this motor specification entry should be removed (e.g. duplicate spec sheet, incorrect test telemetry, obsolete entry)..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-3.5 text-sm outline-none transition-all focus:border-[#ba1a1a] focus:dark:border-rose-500 focus:bg-white focus:dark:bg-slate-900 focus:ring-4 focus:ring-[#ba1a1a]/10 placeholder-slate-400 font-medium min-h-[90px]" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-t border-slate-100 dark:border-slate-800 pt-4 mt-5 flex justify-end gap-2.5">
+                    <button type="button" class="bg-slate-50 hover:bg-slate-100 dark:bg-slate-850 dark:hover:bg-slate-800 border border-slate-200/85 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-button text-[13px] px-5 py-2.5 rounded-lg font-semibold transition-colors modal-close-trigger">Cancel</button>
+                    <button type="submit" class="bg-[#ba1a1a] hover:bg-[#93000a] text-white font-button text-[13px] px-5 py-2.5 rounded-lg flex items-center justify-center gap-1.5 font-semibold shadow-sm transition-colors cursor-pointer">
+                        <i data-lucide="send" class="w-4 h-4"></i> Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Edit Modal Backdrop -->
+    <div class="modal-backdrop" id="quick-edit-modal">
+        <div class="modal-container bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-6 max-w-md w-full mx-4 animate-scale-in">
+            <div class="modal-header flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-4">
+                <h3 class="font-extrabold text-[#001e40] dark:text-slate-100 text-[17px] flex items-center gap-2">
+                    <i data-lucide="edit-2" class="w-5 h-5 text-[#003366] dark:text-[#a7c8ff]"></i>
+                    Edit Recommendations
+                </h3>
+                <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 modal-close-trigger">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="quick-edit-form" class="space-y-4">
+                <input type="hidden" id="quick-edit-motor-id">
+                <div class="modal-body space-y-4">
+                    <p id="quick-edit-motor-name-label" class="text-xs text-slate-400 dark:text-slate-500 font-semibold font-label-mono uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-3 mb-2 block"></p>
+
+                    <div class="flex flex-col">
+                        <label for="quick-edit-esc" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider mb-2">Recommended ESC</label>
+                        <input type="text" id="quick-edit-esc" placeholder="e.g. Alpha 120A 12S" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-3.5 text-sm outline-none transition-all focus:border-[#003366] focus:dark:border-blue-500 focus:bg-white focus:dark:bg-slate-900 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400 font-medium">
+                    </div>
+
+                    <div class="flex flex-col">
+                        <label for="quick-edit-prop" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider mb-2">Recommended Propeller</label>
+                        <input type="text" id="quick-edit-prop" placeholder="e.g. CF30x10.5 folding" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-3.5 text-sm outline-none transition-all focus:border-[#003366] focus:dark:border-blue-500 focus:bg-white focus:dark:bg-slate-900 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400 font-medium">
+                    </div>
+
+                    <div class="flex flex-col">
+                        <label for="quick-edit-battery" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider mb-2">Battery / Voltage</label>
+                        <input type="text" id="quick-edit-battery" placeholder="e.g. 6S, 22.2V, 6S LiPo" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-3.5 text-sm outline-none transition-all focus:border-[#003366] focus:dark:border-blue-500 focus:bg-white focus:dark:bg-slate-900 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400 font-medium">
+                    </div>
+                </div>
+                <div class="modal-footer border-t border-slate-100 dark:border-slate-800 pt-4 mt-5 flex justify-end gap-2.5">
+                    <button type="button" class="bg-slate-50 hover:bg-slate-100 dark:bg-slate-850 dark:hover:bg-slate-800 border border-slate-200/85 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-button text-[13px] px-5 py-2.5 rounded-lg font-semibold transition-colors modal-close-trigger">Cancel</button>
+                    <button type="submit" class="bg-[#003366] hover:bg-[#002244] dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-button text-[13px] px-5 py-2.5 rounded-lg flex items-center justify-center gap-1.5 font-semibold shadow-sm transition-colors cursor-pointer" id="btn-quick-edit-save">
+                        <i data-lucide="save" class="w-4 h-4"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Motor Profile View Overlay Panel -->
+    <div class="motor-profile-overlay fixed inset-0 bg-[#f8f9fa] dark:bg-slate-950 z-[1000] flex-col overflow-y-auto" id="motor-profile-overlay" style="display: none;">
+        <!-- Header bar -->
+        <div class="bg-white dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800 shadow-sm sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+            <button class="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider hover:text-[#003366] dark:hover:text-[#a7c8ff] transition-colors focus:outline-none" id="btn-profile-back">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Catalog
             </button>
-            <div class="profile-header-title-container">
-                <h2 id="profile-motor-name">Motor Model Name</h2>
-                <div class="profile-header-badges">
-                    <span class="badge-profile-brand" id="profile-brand-badge">Brand</span>
-                    <span class="badge-profile-category" id="profile-category-badge">Category</span>
+            <div class="text-right">
+                <h2 class="text-lg font-bold text-[#001e40] dark:text-slate-100 leading-tight" id="profile-motor-name">Motor Model Name</h2>
+                <div class="flex items-center justify-end gap-2 mt-1">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold font-label-mono uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400" id="profile-brand-badge">Brand</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold font-label-mono uppercase tracking-wider bg-[#003366]/10 dark:bg-blue-950/40 text-[#003366] dark:text-[#a7c8ff]" id="profile-category-badge">Category</span>
                 </div>
             </div>
         </div>
 
-        <div class="profile-content-grid">
-            <!-- Left Side: Motor Specifications -->
-            <div class="profile-left-column">
-                <!-- Core Specs Card -->
-                <div class="profile-card">
-                    <h3><i data-lucide="info"></i> Specifications</h3>
-                    <table class="profile-specs-table">
-                        <tbody>
+        <div class="max-w-7xl w-full mx-auto px-4 md:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10 blueprint-grid flex-1">
+            <!-- Left Column: Motor Specs (4 cols) -->
+            <div class="lg:col-span-4 flex flex-col gap-6">
+                <!-- Core specs -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-xl p-5">
+                    <h3 class="font-bold text-[#001e40] dark:text-slate-100 text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5">
+                        <i data-lucide="info" class="w-4 h-4 text-[#003366] dark:text-[#a7c8ff]"></i>
+                        Specifications
+                    </h3>
+                    <table class="w-full text-xs border-collapse">
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-300 font-medium">
                             <tr>
-                                <td>Manufacturer</td>
-                                <td id="profile-spec-company">-</td>
+                                <td class="py-2.5 text-slate-400 dark:text-slate-500 font-label-mono uppercase tracking-wider">Manufacturer</td>
+                                <td class="py-2.5 text-right font-bold text-[#001e40] dark:text-slate-100" id="profile-spec-company">-</td>
                             </tr>
                             <tr>
-                                <td>Max Thrust</td>
-                                <td id="profile-spec-thrust">-</td>
+                                <td class="py-2.5 text-slate-400 dark:text-slate-500 font-label-mono uppercase tracking-wider">Max Thrust</td>
+                                <td class="py-2.5 text-right font-bold text-[#001e40] dark:text-slate-100" id="profile-spec-thrust">-</td>
                             </tr>
                             <tr>
-                                <td>Recommended ESC</td>
-                                <td id="profile-spec-esc">-</td>
+                                <td class="py-2.5 text-slate-400 dark:text-slate-500 font-label-mono uppercase tracking-wider">Recommended ESC</td>
+                                <td class="py-2.5 text-right font-bold text-[#001e40] dark:text-slate-100" id="profile-spec-esc">-</td>
                             </tr>
                             <tr>
-                                <td>Recommended Propeller</td>
-                                <td id="profile-spec-prop">-</td>
+                                <td class="py-2.5 text-slate-400 dark:text-slate-500 font-label-mono uppercase tracking-wider">Recommended Prop</td>
+                                <td class="py-2.5 text-right font-bold text-[#001e40] dark:text-slate-100" id="profile-spec-prop">-</td>
                             </tr>
                             <tr>
-                                <td>Uploaded By</td>
-                                <td id="profile-spec-uploader">-</td>
+                                <td class="py-2.5 text-slate-400 dark:text-slate-500 font-label-mono uppercase tracking-wider">Uploaded By</td>
+                                <td class="py-2.5 text-right font-bold text-[#001e40] dark:text-slate-100" id="profile-spec-uploader">-</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <!-- Custom Parameters Card -->
-                <div class="profile-card" id="profile-custom-specs-card">
-                    <h3><i data-lucide="sliders"></i> Custom Specifications</h3>
-                    <table class="profile-specs-table" id="profile-custom-specs-table">
-                        <tbody>
-                            <!-- Dynamic custom specifications -->
+                <!-- Custom Parameters specs -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-xl p-5" id="profile-custom-specs-card">
+                    <h3 class="font-bold text-[#001e40] dark:text-slate-100 text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5">
+                        <i data-lucide="sliders" class="w-4 h-4 text-[#003366] dark:text-[#a7c8ff]"></i>
+                        Custom Specifications
+                    </h3>
+                    <table class="w-full text-xs border-collapse">
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-300 font-medium" id="profile-custom-specs-table">
+                            <!-- Dynamic custom specifications rows injected -->
                         </tbody>
                     </table>
                 </div>
 
-                <!-- Reference Links Card -->
-                <div class="profile-card">
-                    <h3><i data-lucide="link"></i> Reference Documentation</h3>
-                    <div class="profile-links-container" id="profile-links-container">
-                        <!-- Links -->
+                <!-- Reference links -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-xl p-5">
+                    <h3 class="font-bold text-[#001e40] dark:text-slate-100 text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5">
+                        <i data-lucide="link" class="w-4 h-4 text-[#003366] dark:text-[#a7c8ff]"></i>
+                        Documentation
+                    </h3>
+                    <div class="flex flex-col gap-2.5" id="profile-links-container">
+                        <!-- Dynamic profile specs links buttons inserted -->
                     </div>
                 </div>
 
-                <!-- Summary Stats Card -->
-                <div class="profile-card">
-                    <h3><i data-lucide="activity"></i> Testing Summary</h3>
-                    <div class="profile-stats-grid">
-                        <div class="profile-stat-box">
-                            <span class="stat-number" id="profile-stat-runs">0</span>
-                            <span class="stat-desc">Test Runs</span>
+                <!-- Testing stats summary -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-xl p-5">
+                    <h3 class="font-bold text-[#001e40] dark:text-slate-100 text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5">
+                        <i data-lucide="activity" class="w-4 h-4 text-[#003366] dark:text-[#a7c8ff]"></i>
+                        Telemetry Summary
+                    </h3>
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200/40 dark:border-slate-800/80 p-3 rounded-lg">
+                            <span class="block text-slate-400 dark:text-slate-500 text-[10px] font-semibold font-label-mono uppercase tracking-wider">Runs</span>
+                            <span class="text-lg font-bold text-[#001e40] dark:text-slate-100 mt-1 block" id="profile-stat-runs">0</span>
                         </div>
-                        <div class="profile-stat-box">
-                            <span class="stat-number" id="profile-stat-max-thrust">-</span>
-                            <span class="stat-desc">Max Thrust</span>
+                        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200/40 dark:border-slate-800/80 p-3 rounded-lg">
+                            <span class="block text-slate-400 dark:text-slate-500 text-[10px] font-semibold font-label-mono uppercase tracking-wider">Peak</span>
+                            <span class="text-sm font-bold text-[#001e40] dark:text-slate-100 mt-1 block leading-normal" id="profile-stat-max-thrust">-</span>
                         </div>
-                        <div class="profile-stat-box">
-                            <span class="stat-number" id="profile-stat-avg-eff">-</span>
-                            <span class="stat-desc">Avg Efficiency</span>
+                        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200/40 dark:border-slate-800/80 p-3 rounded-lg">
+                            <span class="block text-slate-400 dark:text-slate-500 text-[10px] font-semibold font-label-mono uppercase tracking-wider">Efficiency</span>
+                            <span class="text-sm font-bold text-[#001e40] dark:text-slate-100 mt-1 block leading-normal" id="profile-stat-avg-eff">-</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Side: Test Telemetry Results -->
-            <div class="profile-right-column">
-                <!-- Test Runs Panel -->
-                <div class="profile-card">
-                    <h3><i data-lucide="history"></i> Telemetry Test Runs</h3>
-                    <div class="test-runs-list" id="profile-test-runs-list">
+            <!-- Right Column: Telemetry graphs & raw logs (8 cols) -->
+            <div class="lg:col-span-8 flex flex-col gap-6">
+                <!-- Telemetry Test runs selector drawer panel -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-xl p-5">
+                    <h3 class="font-bold text-[#001e40] dark:text-slate-100 text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5">
+                        <i data-lucide="history" class="w-4 h-4 text-[#003366] dark:text-[#a7c8ff]"></i>
+                        Available Telemetry runs
+                    </h3>
+                    <div class="flex flex-col gap-2 max-h-40 overflow-y-auto text-sm" id="profile-test-runs-list">
                         <!-- Dynamic list of test runs -->
                     </div>
                 </div>
 
-                <!-- Active Run Telemetry Analytics -->
-                <div class="profile-card telemetry-details-card" id="profile-telemetry-details-card" style="display: none;">
-                    <div class="telemetry-details-header">
-                        <div>
-                            <h4 id="active-run-title">Telemetry Run Details</h4>
-                            <p id="active-run-meta">Conducted by... on...</p>
+                <!-- Active run charts metrics -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-xl p-5 flex flex-col" id="profile-telemetry-details-card" style="display: none;">
+                    <div class="border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-5">
+                        <h4 class="font-extrabold text-[#001e40] dark:text-slate-100 text-[15px]" id="active-run-title">Telemetry Run Details</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1" id="active-run-meta">Conducted by... on...</p>
+                    </div>
+
+                    <!-- Charts Grid canvas elements -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <div class="border border-slate-250/30 dark:border-slate-800 p-3 rounded-lg flex flex-col h-56 bg-slate-50/40 dark:bg-slate-950/40">
+                            <h5 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 font-sans">Throttle vs Time</h5>
+                            <div class="flex-1 min-h-0 relative"><canvas id="profileChartThrottleTime"></canvas></div>
+                        </div>
+                        <div class="border border-slate-250/30 dark:border-slate-800 p-3 rounded-lg flex flex-col h-56 bg-slate-50/40 dark:bg-slate-950/40">
+                            <h5 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 font-sans">Rotation Speed vs Time</h5>
+                            <div class="flex-1 min-h-0 relative"><canvas id="profileChartRpmTime"></canvas></div>
+                        </div>
+                        <div class="border border-slate-250/30 dark:border-slate-800 p-3 rounded-lg flex flex-col h-56 bg-slate-50/40 dark:bg-slate-950/40">
+                            <h5 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 font-sans">Thrust vs Rotation Speed</h5>
+                            <div class="flex-1 min-h-0 relative"><canvas id="profileChartThrustRpm"></canvas></div>
+                        </div>
+                        <div class="border border-slate-250/30 dark:border-slate-800 p-3 rounded-lg flex flex-col h-56 bg-slate-50/40 dark:bg-slate-950/40">
+                            <h5 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 font-sans">Torque vs Rotation Speed</h5>
+                            <div class="flex-1 min-h-0 relative"><canvas id="profileChartTorqueRpm"></canvas></div>
+                        </div>
+                        <div class="border border-slate-250/30 dark:border-slate-800 p-3 rounded-lg flex flex-col h-56 bg-slate-50/40 dark:bg-slate-950/40">
+                            <h5 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 font-sans">Voltage vs Rotation Speed</h5>
+                            <div class="flex-1 min-h-0 relative"><canvas id="profileChartVoltageRpm"></canvas></div>
+                        </div>
+                        <div class="border border-slate-250/30 dark:border-slate-800 p-3 rounded-lg flex flex-col h-56 bg-slate-50/40 dark:bg-slate-950/40">
+                            <h5 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 font-sans">Current vs Rotation Speed</h5>
+                            <div class="flex-1 min-h-0 relative"><canvas id="profileChartCurrentRpm"></canvas></div>
+                        </div>
+                        <div class="border border-slate-250/30 dark:border-slate-800 p-3 rounded-lg flex flex-col h-56 bg-slate-50/40 dark:bg-slate-950/40">
+                            <h5 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 font-sans">Electrical Power vs Rotation Speed</h5>
+                            <div class="flex-1 min-h-0 relative"><canvas id="profileChartElecPowerRpm"></canvas></div>
+                        </div>
+                        <div class="border border-slate-250/30 dark:border-slate-800 p-3 rounded-lg flex flex-col h-56 bg-slate-50/40 dark:bg-slate-950/40">
+                            <h5 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 font-sans">Mechanical Power vs Rotation Speed</h5>
+                            <div class="flex-1 min-h-0 relative"><canvas id="profileChartMechPowerRpm"></canvas></div>
+                        </div>
+                        <div class="border border-slate-250/30 dark:border-slate-800 p-3 rounded-lg flex flex-col h-56 bg-slate-50/40 dark:bg-slate-950/40">
+                            <h5 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 font-sans">Motor & ESC Efficiency</h5>
+                            <div class="flex-1 min-h-0 relative"><canvas id="profileChartMotorEffRpm"></canvas></div>
+                        </div>
+                        <div class="border border-slate-250/30 dark:border-slate-800 p-3 rounded-lg flex flex-col h-56 bg-slate-50/40 dark:bg-slate-950/40">
+                            <h5 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 font-sans">Propeller Efficiency</h5>
+                            <div class="flex-1 min-h-0 relative"><canvas id="profileChartPropEffRpm"></canvas></div>
+                        </div>
+                        <div class="border border-slate-250/30 dark:border-slate-800 p-3 rounded-lg flex flex-col h-56 bg-slate-50/40 dark:bg-slate-950/40">
+                            <h5 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 font-sans">Propulsion System Efficiency</h5>
+                            <div class="flex-1 min-h-0 relative"><canvas id="profileChartSystemEffRpm"></canvas></div>
                         </div>
                     </div>
 
-                    <!-- Chart Visualizations -->
-                    <div class="telemetry-charts-grid">
-                        <div class="profile-chart-container">
-                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Throttle vs Time</h5>
-                            <canvas id="profileChartThrottleTime"></canvas>
-                        </div>
-                        <div class="profile-chart-container">
-                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Rotation Speed vs Time</h5>
-                            <canvas id="profileChartRpmTime"></canvas>
-                        </div>
-                        <div class="profile-chart-container">
-                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Thrust vs Rotation Speed</h5>
-                            <canvas id="profileChartThrustRpm"></canvas>
-                        </div>
-                        <div class="profile-chart-container">
-                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Torque vs Rotation Speed</h5>
-                            <canvas id="profileChartTorqueRpm"></canvas>
-                        </div>
-                        <div class="profile-chart-container">
-                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Voltage vs Rotation Speed</h5>
-                            <canvas id="profileChartVoltageRpm"></canvas>
-                        </div>
-                        <div class="profile-chart-container">
-                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Current vs Rotation Speed</h5>
-                            <canvas id="profileChartCurrentRpm"></canvas>
-                        </div>
-                        <div class="profile-chart-container">
-                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Electrical Power vs Rotation Speed</h5>
-                            <canvas id="profileChartElecPowerRpm"></canvas>
-                        </div>
-                        <div class="profile-chart-container">
-                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Mechanical Power vs Rotation Speed</h5>
-                            <canvas id="profileChartMechPowerRpm"></canvas>
-                        </div>
-                        <div class="profile-chart-container">
-                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Motor & ESC Efficiency</h5>
-                            <canvas id="profileChartMotorEffRpm"></canvas>
-                        </div>
-                        <div class="profile-chart-container">
-                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Propeller Efficiency</h5>
-                            <canvas id="profileChartPropEffRpm"></canvas>
-                        </div>
-                        <div class="profile-chart-container">
-                            <h5 style="margin-bottom: 10px; font-family: 'Outfit'; font-size: 0.9rem; color: var(--text-secondary);">Propulsion System Efficiency</h5>
-                            <canvas id="profileChartSystemEffRpm"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Telemetry Data Table -->
-                    <div style="margin-top: 25px;">
-                        <h5>Raw Telemetry Data Points</h5>
-                        <div class="table-responsive">
-                            <table class="motors-table profile-telemetry-table">
+                    <!-- Telemetry Raw Data table -->
+                    <div class="mt-6 border-t border-slate-100 dark:border-slate-800 pt-5">
+                        <h5 class="font-bold text-[#001e40] dark:text-slate-100 text-sm mb-3">Raw Telemetry Data Points</h5>
+                        <div class="overflow-x-auto w-full">
+                            <table class="w-full text-xs text-left border-collapse">
                                 <thead>
-                                    <tr>
-                                        <th>Throttle (%)</th>
-                                        <th>Voltage (V)</th>
-                                        <th>Current (A)</th>
-                                        <th>Power (W)</th>
-                                        <th>Thrust (g)</th>
-                                        <th>RPM</th>
-                                        <th>Efficiency (g/W)</th>
-                                        <th>Temp (°C)</th>
+                                    <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider">
+                                        <th class="py-2.5 px-3">Throttle (%)</th>
+                                        <th class="py-2.5 px-3">Voltage (V)</th>
+                                        <th class="py-2.5 px-3">Current (A)</th>
+                                        <th class="py-2.5 px-3">Power (W)</th>
+                                        <th class="py-2.5 px-3">Thrust (g)</th>
+                                        <th class="py-2.5 px-3">RPM</th>
+                                        <th class="py-2.5 px-3">Efficiency (g/W)</th>
+                                        <th class="py-2.5 px-3">Temp (°C)</th>
                                     </tr>
                                 </thead>
-                                <tbody id="profile-telemetry-rows">
-                                    <!-- Dynamic rows -->
+                                <tbody id="profile-telemetry-rows" class="divide-y divide-slate-100 dark:divide-slate-800/60 text-[#001e40] dark:text-slate-200 font-medium">
+                                    <!-- Dynamic telemetry data rows injected -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
 
-                <!-- Empty State for Telemetry -->
-                <div class="profile-card text-center" id="profile-telemetry-empty-state" style="padding: 40px;">
-                    <i data-lucide="database-backup" style="width: 48px; height: 48px; opacity: 0.5; margin-bottom: 15px; display: inline-block;"></i>
-                    <h4>No Telemetry Test Data Available</h4>
-                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 5px;">This motor does not have any recorded performance telemetry test runs in the database.</p>
+                <!-- Telemetry Empty State -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-xl p-10 flex flex-col items-center justify-center text-center" id="profile-telemetry-empty-state">
+                    <i data-lucide="database-backup" class="w-12 h-12 text-slate-300 dark:text-slate-600 mb-4 animate-pulse"></i>
+                    <h4 class="font-bold text-[#001e40] dark:text-slate-100 text-[15px]">No Telemetry Test Data Available</h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 max-w-sm">This motor does not have any recorded performance telemetry test runs in the database.</p>
                 </div>
             </div>
         </div>
-    </div>
+    </div>>
 
-    <!-- Delete Request Modal -->
-    <div class="modal-backdrop" id="delete-request-modal">
-        <div class="modal-container modal-sm" style="width: 460px;">
-            <div class="modal-header">
-                <h3><i data-lucide="flag" style="width:18px;height:18px;margin-right:6px;vertical-align:middle;color:var(--danger-color);"></i> Request Motor Deletion</h3>
-                <button class="btn-icon-close modal-close-trigger" id="btn-close-delete-request-modal"><i data-lucide="x"></i></button>
-            </div>
-            <form id="delete-request-form">
-                <div class="modal-body">
-                    <div style="background: rgba(225,29,72,0.06); border: 1px solid rgba(225,29,72,0.18); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 18px; display:flex; gap:10px; align-items:flex-start;">
-                        <i data-lucide="alert-triangle" style="width:18px;height:18px;color:var(--danger-color);flex-shrink:0;margin-top:1px;"></i>
-                        <p style="margin:0; font-size:0.85rem; color:var(--text-secondary); line-height:1.5;">
-                            You don't have permission to directly delete motors. Submit a deletion request with a reason for admin review.
-                        </p>
-                    </div>
-
-                    <div class="form-group" style="margin-bottom:14px;">
-                        <label style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Motor</label>
-                        <p id="delete-request-motor-name" style="font-weight:600; margin:4px 0 0; font-size:0.95rem;"></p>
-                    </div>
-
-                    <div class="form-group" style="margin-bottom:14px;">
-                        <label style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Brand</label>
-                        <p id="delete-request-motor-brand" style="margin:4px 0 0; font-size:0.9rem; color:var(--text-secondary);"></p>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="delete-request-reason">Reason for Deletion <span style="color:var(--danger-color);">*</span></label>
-                        <textarea id="delete-request-reason" rows="4" placeholder="Please provide a clear reason why this motor entry should be removed (e.g. duplicate entry, incorrect specifications, discontinued product)..." style="width:100%; resize:vertical; min-height:90px;" required></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-secondary modal-close-trigger">Cancel</button>
-                    <button type="submit" class="btn-danger" id="btn-submit-delete-request">
-                        <i data-lucide="send" style="width:14px;height:14px;margin-right:5px;vertical-align:middle;"></i>
-                        Submit Request
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Quick Edit Recommendations Modal -->
-    <div class="modal-backdrop" id="quick-edit-modal">
-        <div class="modal-container modal-sm" style="width: 460px;">
-            <div class="modal-header">
-                <h3><i data-lucide="edit-2" style="width:16px;height:16px;margin-right:6px;vertical-align:middle;"></i> Edit Recommendations</h3>
-                <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
-            </div>
-            <form id="quick-edit-form">
-                <input type="hidden" id="quick-edit-motor-id">
-                <div class="modal-body">
-                    <p id="quick-edit-motor-name-label" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--border-color); font-weight:600;"></p>
-
-                    <div class="form-group" style="margin-bottom:14px;">
-                        <label for="quick-edit-esc">Recommended ESC</label>
-                        <input type="text" id="quick-edit-esc" placeholder="e.g. Alpha 120A 12S">
-                    </div>
-
-                    <div class="form-group" style="margin-bottom:14px;">
-                        <label for="quick-edit-prop">Recommended Propeller</label>
-                        <input type="text" id="quick-edit-prop" placeholder="e.g. CF30x10.5 folding">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="quick-edit-battery">Battery / Voltage</label>
-                        <input type="text" id="quick-edit-battery" placeholder="e.g. 6S, 22.2V, 6S LiPo">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-secondary modal-close-trigger">Cancel</button>
-                    <button type="submit" class="btn-primary" id="btn-quick-edit-save">
-                        <i data-lucide="save" style="width:14px;height:14px;margin-right:5px;vertical-align:middle;"></i>
-                        Save Changes
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- JavaScript -->
+    <!-- App JavaScript Controller Scripts -->
     <script src="user_app.js?v=1.5"></script>
-    <!-- Onboarding Tour -->
     <script src="onboarding.js"></script>
 </body>
 </html>

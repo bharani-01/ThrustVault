@@ -297,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.activeCategory = cat.id;
                 state.filterCompany = 'all';
                 state.searchQuery = '';
-                state.displayLimit = 8;
+                state.currentPage = 1;
                 elements.searchInput.value = '';
                 elements.searchClear.style.display = 'none';
                 
@@ -381,7 +381,15 @@ document.addEventListener('DOMContentLoaded', () => {
         
         state.totalFiltered = filteredMotors.length;
         const totalItems = filteredMotors.length;
-        const paginatedMotors = filteredMotors.slice(0, state.displayLimit);
+        const totalPages = Math.ceil(totalItems / state.pageSize);
+        if (state.currentPage > totalPages) {
+            state.currentPage = totalPages || 1;
+        }
+        if (state.currentPage < 1) {
+            state.currentPage = 1;
+        }
+        const startIndex = (state.currentPage - 1) * state.pageSize;
+        const paginatedMotors = filteredMotors.slice(startIndex, startIndex + state.pageSize);
         
         // Show/Hide Empty State
         if (totalItems === 0) {
@@ -396,7 +404,11 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.motorsTableBody.innerHTML = '';
         paginatedMotors.forEach((m) => {
             const tr = document.createElement('tr');
+            tr.className = 'hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors';
             const isChecked = state.compareItems.includes(m.id);
+            if (isChecked) {
+                tr.classList.add('bg-blue-50/40', 'dark:bg-blue-950/20');
+            }
             
             const initials = m.motor.charAt(0).toUpperCase();
             
@@ -428,17 +440,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const linksHtml = links.length > 0 ? links.join(' ') : '-';
             
             tr.innerHTML = `
-                <td><input type="checkbox" class="compare-cb" data-id="${m.id}" ${isChecked ? 'checked' : ''}></td>
-                <td><div class="motor-thumbnail" style="${thumbStyle}">${initials}</div></td>
-                <td><a href="#" class="motor-profile-link" data-id="${m.id}"><strong>${escapeHTML(m.motor)}</strong></a></td>
-                <td>${escapeHTML(m.company)}</td>
-                <td><strong>${escapeHTML(kv)}</strong></td>
-                <td><span class="badge-thrust" style="background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.2); color: var(--primary-color);">${escapeHTML(voltage)}</span></td>
-                <td><span class="badge-thrust">${escapeHTML(m.thrust)}</span></td>
-                <td>${escapeHTML(weight)}</td>
-                <td>${escapeHTML(m.prop || '-')}</td>
-                <td>${escapeHTML(m.esc || '-')}</td>
-                <td><div class="action-links">${linksHtml}</div></td>
+                <td class="py-3 px-2 text-center"><input type="checkbox" class="compare-cb rounded border-slate-300 dark:border-slate-700 dark:bg-slate-900 text-[#003366] dark:text-blue-500 focus:ring-[#003366]/20" data-id="${m.id}" ${isChecked ? 'checked' : ''}></td>
+                <td class="py-3 px-2 text-center"><div class="motor-thumbnail mx-auto" style="${thumbStyle}">${initials}</div></td>
+                <td class="py-3 px-2"><a href="#" class="motor-profile-link text-[#003366] hover:text-[#001e40] dark:text-[#a7c8ff] dark:hover:text-[#d5e3ff] font-semibold" data-id="${m.id}">${escapeHTML(m.motor)}</a></td>
+                <td class="py-3 px-2 text-slate-600 dark:text-slate-400">${escapeHTML(m.company)}</td>
+                <td class="py-3 px-2 text-slate-800 dark:text-slate-200"><strong>${escapeHTML(kv)}</strong></td>
+                <td class="py-3 px-2"><span class="badge-thrust px-2 py-0.5 text-xs rounded-full" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); color: var(--primary-color);">${escapeHTML(voltage)}</span></td>
+                <td class="py-3 px-2"><span class="badge-thrust px-2 py-0.5 text-xs rounded-full bg-emerald-50/50 border border-emerald-200/60 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-800/40 dark:text-emerald-400">${escapeHTML(m.thrust)}</span></td>
+                <td class="py-3 px-2 text-slate-600 dark:text-slate-400">${escapeHTML(weight)}</td>
+                <td class="py-3 px-2 text-slate-600 dark:text-slate-400 text-xs max-w-[150px] truncate" title="${escapeHTML(m.prop || '-')}">${escapeHTML(m.prop || '-')}</td>
+                <td class="py-3 px-2 text-slate-600 dark:text-slate-400 text-xs max-w-[130px] truncate" title="${escapeHTML(m.esc || '-')}">${escapeHTML(m.esc || '-')}</td>
+                <td class="py-3 px-2 text-center"><div class="action-links flex items-center justify-center gap-1.5">${linksHtml}</div></td>
             `;
             elements.motorsTableBody.appendChild(tr);
         });
@@ -460,31 +472,115 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         pagControls.style.display = 'flex';
 
-        // Hide pagination pages, buttons, and limits dropdown
+        // Display pagination pages, buttons, and limits dropdown
         const pagesContainer = document.getElementById('pagination-pages');
-        if (pagesContainer) pagesContainer.style.display = 'none';
+        if (pagesContainer) pagesContainer.style.display = '';
         
         const btnPrev = document.getElementById('btn-prev-page');
-        if (btnPrev) btnPrev.style.display = 'none';
+        if (btnPrev) btnPrev.style.display = '';
         
         const btnNext = document.getElementById('btn-next-page');
-        if (btnNext) btnNext.style.display = 'none';
-        
-        const limitLabel = document.querySelector('label[for="pagination-limit"]');
-        if (limitLabel) limitLabel.style.display = 'none';
+        if (btnNext) btnNext.style.display = '';
         
         const limitSelect = document.getElementById('pagination-limit');
-        if (limitSelect) limitSelect.style.display = 'none';
+        if (limitSelect) {
+            limitSelect.style.display = '';
+            limitSelect.value = state.pageSize;
+        }
 
-        const infoText = document.getElementById('pagination-info-text');
-        if (infoText) {
-            infoText.textContent = `Showing ${displayedCount} of ${totalItems} motors`;
-            if (displayedCount < totalItems) {
-                infoText.textContent += ` (scroll down to load more)`;
+        const totalPages = Math.ceil(totalItems / state.pageSize);
+        
+        // Ensure currentPage is valid
+        if (state.currentPage > totalPages) {
+            state.currentPage = totalPages || 1;
+        }
+        if (state.currentPage < 1) {
+            state.currentPage = 1;
+        }
+
+        // Enable/disable prev/next buttons
+        if (btnPrev) {
+            if (state.currentPage === 1) {
+                btnPrev.classList.add('opacity-50', 'pointer-events-none');
+                btnPrev.disabled = true;
             } else {
-                infoText.textContent += ` (all loaded)`;
+                btnPrev.classList.remove('opacity-50', 'pointer-events-none');
+                btnPrev.disabled = false;
             }
         }
+        if (btnNext) {
+            if (state.currentPage === totalPages || totalPages === 0) {
+                btnNext.classList.add('opacity-50', 'pointer-events-none');
+                btnNext.disabled = true;
+            } else {
+                btnNext.classList.remove('opacity-50', 'pointer-events-none');
+                btnNext.disabled = false;
+            }
+        }
+
+        // Update range info text
+        const infoText = document.getElementById('pagination-info-text');
+        if (infoText) {
+            const startIdx = totalItems === 0 ? 0 : (state.currentPage - 1) * state.pageSize + 1;
+            const endIdx = Math.min(state.currentPage * state.pageSize, totalItems);
+            infoText.textContent = `Showing ${startIdx}-${endIdx} of ${totalItems} motors`;
+        }
+
+        // Render page buttons
+        if (pagesContainer) {
+            pagesContainer.innerHTML = '';
+            const pageNumbers = getPageNumbers(state.currentPage, totalPages);
+            pageNumbers.forEach(page => {
+                if (page === '...') {
+                    const span = document.createElement('span');
+                    span.className = 'px-2 py-1 text-slate-400 dark:text-slate-600 font-medium';
+                    span.textContent = '...';
+                    pagesContainer.appendChild(span);
+                } else {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    if (page === state.currentPage) {
+                        btn.className = 'px-3 py-1.5 rounded text-xs font-semibold bg-[#003366] text-white dark:bg-blue-600 dark:text-white border border-[#003366] dark:border-blue-600 transition-all';
+                    } else {
+                        btn.className = 'px-3 py-1.5 rounded text-xs bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-900 border border-slate-200/80 dark:border-slate-800 transition-colors text-slate-600 dark:text-slate-300 font-medium';
+                    }
+                    btn.textContent = page;
+                    btn.onclick = () => {
+                        state.currentPage = page;
+                        renderMainContent();
+                    };
+                    pagesContainer.appendChild(btn);
+                }
+            });
+        }
+    }
+
+    function getPageNumbers(currentPage, totalPages) {
+        const pages = [];
+        const maxVisible = 5;
+        if (totalPages <= maxVisible) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
+        } else {
+            pages.push(1);
+            if (currentPage > 3) pages.push('...');
+            
+            let start = Math.max(2, currentPage - 1);
+            let end = Math.min(totalPages - 1, currentPage + 1);
+            
+            if (currentPage <= 3) {
+                end = 4;
+            } else if (currentPage >= totalPages - 2) {
+                start = totalPages - 3;
+            }
+            
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+            
+            if (currentPage < totalPages - 2) pages.push('...');
+            pages.push(totalPages);
+        }
+        return pages;
     }
 
     function bindRowActions() {
@@ -1062,7 +1158,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.searchInput.addEventListener('input', (e) => {
         state.searchQuery = e.target.value;
         elements.searchClear.style.display = state.searchQuery ? 'block' : 'none';
-        state.displayLimit = 8;
+        state.currentPage = 1;
         renderMainContent();
         showSearchSuggestions(state.searchQuery);
     });
@@ -1172,7 +1268,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.searchQuery = motorName;
                 elements.searchClear.style.display = 'block';
                 suggestionsEl.style.display = 'none';
-                state.displayLimit = 8;
+                state.currentPage = 1;
                 renderMainContent();
             });
         });
@@ -1205,7 +1301,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.searchClear.style.display = 'none';
         suggestionsEl.style.display = 'none';
         activeSuggestionIndex = -1;
-        state.displayLimit = 8;
+        state.currentPage = 1;
         renderMainContent();
     });
 
@@ -1213,25 +1309,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elements.filterCompanySelect.addEventListener('change', (e) => {
         state.filterCompany = e.target.value;
-        state.displayLimit = 8;
+        state.currentPage = 1;
         renderMainContent();
     });
 
     elements.sortSelect.addEventListener('change', (e) => {
         state.sortBy = e.target.value;
-        state.displayLimit = 8;
+        state.currentPage = 1;
         renderMainContent();
     });
 
     elements.btnClearFilters.addEventListener('click', () => {
         state.searchQuery = '';
         state.filterCompany = 'all';
-        state.displayLimit = 8;
+        state.currentPage = 1;
         elements.searchInput.value = '';
         elements.searchClear.style.display = 'none';
         elements.filterCompanySelect.value = 'all';
         renderMainContent();
     });
+
+    const btnPrevPage = document.getElementById('btn-prev-page');
+    if (btnPrevPage) {
+        btnPrevPage.addEventListener('click', () => {
+            if (state.currentPage > 1) {
+                state.currentPage--;
+                renderMainContent();
+            }
+        });
+    }
+
+    const btnNextPage = document.getElementById('btn-next-page');
+    if (btnNextPage) {
+        btnNextPage.addEventListener('click', () => {
+            const totalPages = Math.ceil(state.totalFiltered / state.pageSize);
+            if (state.currentPage < totalPages) {
+                state.currentPage++;
+                renderMainContent();
+            }
+        });
+    }
+
+    const paginationLimitSelect = document.getElementById('pagination-limit');
+    if (paginationLimitSelect) {
+        paginationLimitSelect.addEventListener('change', (e) => {
+            state.pageSize = parseInt(e.target.value, 10) || 15;
+            state.currentPage = 1;
+            renderMainContent();
+        });
+    }
 
     if (elements.verificationNotesToggle) {
         elements.verificationNotesToggle.onclick = () => {
@@ -1714,19 +1840,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             await fetchData();
-
-            // Scroll-based loading listener on .content-body
-            const contentBody = document.querySelector('.content-body');
-            if (contentBody) {
-                contentBody.addEventListener('scroll', () => {
-                    const threshold = 100; // px from bottom
-                    const isNearBottom = contentBody.scrollHeight - contentBody.scrollTop - contentBody.clientHeight < threshold;
-                    if (isNearBottom && state.displayLimit < state.totalFiltered) {
-                        state.displayLimit += 8; // load next 8 motors
-                        renderMainContent();
-                    }
-                }, { passive: true });
-            }
         } catch (e) {
             console.error("Initialization failed", e);
             await logoutAndRedirect();
