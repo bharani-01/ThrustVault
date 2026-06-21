@@ -230,6 +230,7 @@ async function sendResendEmail({ type, to, full_name, temp_password }) {
     return;
   }
 
+  const appUrl = process.env.APP_BASE_URL || 'https://thrustvault.bharani-01.xyz';
   let subject = '';
   let html = '';
 
@@ -243,6 +244,7 @@ async function sendResendEmail({ type, to, full_name, temp_password }) {
           <p>Hello ${full_name},</p>
           <p>Thank you for requesting access to the <strong>ThrustVault UAV Motor Database Console</strong>. We have received your request.</p>
           <p>Our administrators are currently reviewing your application. You will receive an email notification once a decision has been made.</p>
+          <p>You can visit the console home page here: <a href="${appUrl}" style="color: #2563eb; text-decoration: none; font-weight: 500;">${appUrl}</a></p>
           <p style="margin-top: 30px; font-size: 0.82rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px;">
               This is an automated notification from ThrustVault. Please do not reply directly to this email.
           </p>
@@ -262,6 +264,9 @@ async function sendResendEmail({ type, to, full_name, temp_password }) {
               <tr><td style="padding: 5px;"><strong>Email:</strong></td><td style="padding: 5px;">${to}</td></tr>
               <tr><td style="padding: 5px;"><strong>Default Password:</strong></td><td style="padding: 5px;"><code>${temp_password}</code></td></tr>
           </table>
+          <p style="margin-top: 20px; text-align: center; margin-bottom: 20px;">
+              <a href="${appUrl}/login" style="display: inline-block; padding: 10px 20px; background-color: #059669; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-family: sans-serif;">Log In to ThrustVault</a>
+          </p>
           <p style="margin-top: 30px; font-size: 0.82rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px;">
               This is an automated notification from ThrustVault. Please do not reply directly to this email.
           </p>

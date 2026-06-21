@@ -524,6 +524,7 @@ app.post('/api/send-email', async (req, res) => {
     return res.json({ success: true, warning: 'Email dispatch skipped: API key unconfigured' });
   }
 
+  const appUrl = process.env.APP_BASE_URL || 'https://thrustvault.bharani-01.xyz';
   let subject = '';
   let html = '';
 
@@ -537,6 +538,7 @@ app.post('/api/send-email', async (req, res) => {
           <p>Hello ${full_name || 'Applicant'},</p>
           <p>Thank you for requesting access to the <strong>ThrustVault UAV Motor Database Console</strong>. We have received your request.</p>
           <p>Our administrators are currently reviewing your application. You will receive an email notification once a decision has been made.</p>
+          <p>You can visit the console home page here: <a href="${appUrl}" style="color: #2563eb; text-decoration: none; font-weight: 500;">${appUrl}</a></p>
           <p style="margin-top: 30px; font-size: 0.82rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px;">
               This is an automated notification from ThrustVault. Please do not reply directly to this email.
           </p>
@@ -562,6 +564,11 @@ app.post('/api/send-email', async (req, res) => {
       linkSection = `
         <p>You can use the recovery link below to set your password:</p>
         <p><a href="${reset_link}" style="display: inline-block; padding: 10px 20px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold;">Set Your Password</a></p>
+      `;
+    } else {
+      linkSection = `
+        <p>You can log in to the console here:</p>
+        <p><a href="${appUrl}/login" style="display: inline-block; padding: 10px 20px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-family: sans-serif;">Log In to ThrustVault</a></p>
       `;
     }
 

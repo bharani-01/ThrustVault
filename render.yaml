@@ -31,5 +31,7 @@ services:
         sync: false
       - key: RESEND_API_KEY
         sync: false
+      - key: APP_BASE_URL
+        value: https://thrustvault.bharani-01.xyz
       - key: SESSION_SECRET
         generateValue: true
