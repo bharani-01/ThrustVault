@@ -199,40 +199,7 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (err) {
     const msg = err.message || '';
     console.error('[Login Error]', msg);
-
-    // Fallback: local password check using crypt
-    try {
-      console.warn('⚠️ AWS Cognito timeout/failure. Falling back to local crypt verification...');
-      const resDb = await pool.query(
-        `SELECT u.id, p.role 
-         FROM auth.users u
-         JOIN public.user_profiles p ON u.id = p.id
-         WHERE u.email = $1 AND u.encrypted_password = crypt($2, u.encrypted_password)`,
-        [email, password]
-      );
-
-      if (resDb.rows.length > 0) {
-        const userObj = resDb.rows[0];
-        const role = normaliseRole(userObj.role);
-        if (role !== 'admin') {
-          return res.status(403).json({ error: 'Access denied: Admin role required for the admin portal.' });
-        }
-
-        req.session.email        = email;
-        req.session.role         = role;
-        req.session.uid          = userObj.id;
-        req.session.access_token = 'offline_' + crypto.randomBytes(16).toString('hex');
-        req.session.timestamp    = Date.now();
-
-        console.log(`✅ Offline authentication successful for admin: ${email}`);
-        return res.json({ email, role: 'admin', uid: userObj.id, timestamp: req.session.timestamp });
-      } else {
-        return res.status(400).json({ error: 'Invalid email or password' });
-      }
-    } catch (dbErr) {
-      console.error('[Offline Auth Fallback Error]', dbErr.message);
-      return res.status(500).json({ error: 'Database authentication failed' });
-    }
+    return res.status(400).json({ error: msg });
   }
 });
 

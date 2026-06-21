@@ -64,33 +64,6 @@ async function login(req, res) {
     const msg = err.message || '';
     console.error('[Login Error]', msg);
 
-    // 2. Cognito Timeout Fallback: Securely verify credentials locally against Postgres auth.users crypt
-    if (true) {
-      try {
-        console.warn('⚠️ AWS Cognito unreachable or not configured. Falling back to local encrypted password verification...');
-        const resDb = await pool.query(
-          `SELECT u.id, p.role 
-           FROM auth.users u
-           JOIN public.user_profiles p ON u.id = p.id
-           WHERE u.email = $1 AND u.encrypted_password = crypt($2, u.encrypted_password)`,
-          [email, password]
-        );
-
-        if (resDb.rows.length > 0) {
-          const userObj = resDb.rows[0];
-          const role = normaliseRole(userObj.role);
-          setSession(req, { email, role, uid: userObj.id, token: 'offline_' + crypto.randomBytes(16).toString('hex') });
-          console.log(`✅ Offline authentication successful for user: ${email}`);
-          return res.json({ email, role: clientRole(role), uid: userObj.id, timestamp: req.session.timestamp });
-        } else {
-          return res.status(400).json({ error: 'Invalid email or password' });
-        }
-      } catch (dbErr) {
-        console.error('[Offline Auth Fallback Error]', dbErr.message);
-        return res.status(500).json({ error: 'Database authentication failed' });
-      }
-    }
-
     if (/NotAuthorizedException|UserNotFoundException/.test(msg)) {
       return res.status(400).json({ error: 'Invalid email or password' });
     }
