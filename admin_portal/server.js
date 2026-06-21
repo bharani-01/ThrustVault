@@ -712,7 +712,7 @@ app.patch('/api/admin/users/:id', async (req, res) => {
     );
 
     await client.query(
-      `UPDATE auth.users SET raw_user_meta_data = json_build_object('role', $1)::jsonb WHERE id = $2`,
+      `UPDATE auth.users SET raw_user_meta_data = json_build_object('role', $1::text)::jsonb WHERE id = $2`,
       [role, id]
     );
 
