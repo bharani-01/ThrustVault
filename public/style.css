@@ -5376,7 +5376,7 @@ button:active { transform: scale(0.98); }
 
 .navbar-search-input {
     width: 100%;
-    padding: 7px 34px 7px 32px;
+    padding: 7px 34px 7px 38px;
     border-radius: 20px;
     border: 1.5px solid var(--border-color);
     background: var(--bg-card);
