@@ -78,9 +78,9 @@ app.use((req, res, next) => {
     '/style.css'
   ];
 
-  const isPublicFile = publicPaths.includes(req.path) || 
-                       req.path.startsWith('/libs/') || 
-                       req.path.startsWith('/api/auth/');
+  const isPublicFile = publicPaths.includes(req.path) ||
+    req.path.startsWith('/libs/') ||
+    req.path.startsWith('/api/auth/');
 
   if (isPublicFile) {
     return next();
@@ -188,11 +188,11 @@ app.post('/api/auth/login', async (req, res) => {
       }
     }
 
-    req.session.email        = email;
-    req.session.role         = role;
-    req.session.uid          = uid;
+    req.session.email = email;
+    req.session.role = role;
+    req.session.uid = uid;
     req.session.access_token = accessToken;
-    req.session.timestamp    = Date.now();
+    req.session.timestamp = Date.now();
 
     return res.json({ email, role: 'admin', uid, timestamp: req.session.timestamp });
 
@@ -235,8 +235,8 @@ app.post('/api/auth/verify-otp', (req, res) => {
   const { email, token } = req.body || {};
   if (!email || !token) return res.status(400).json({ error: 'Email and token required' });
   req.session.reset_email = email;
-  req.session.reset_code  = token;
-  req.session.reset_ts    = Date.now();
+  req.session.reset_code = token;
+  req.session.reset_ts = Date.now();
   res.json({ success: true });
 });
 
@@ -258,7 +258,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
     const sh = cognitoSecretHash(reset_email);
     if (sh) args.SecretHash = sh;
     await cognito.send(new ConfirmForgotPasswordCommand(args));
-    req.session.destroy(() => {});
+    req.session.destroy(() => { });
     res.json({ success: true });
   } catch (e) {
     res.status(400).json({ error: e.message });
@@ -301,10 +301,74 @@ app.post('/api/admin/rpc/create_vault_user', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
+  const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
+  if (!USER_POOL_ID) {
+    return res.status(500).json({ error: 'AWS Cognito User Pool is not configured in environment variables.' });
+  }
+
+  let newUid = null;
+  let targetUsername = null;
+  try {
+    const {
+      AdminCreateUserCommand,
+      AdminSetUserPasswordCommand,
+      ListUsersCommand
+    } = require('@aws-sdk/client-cognito-identity-provider');
+
+    // 1. Create User in Cognito
+    const cogUsername = crypto.randomUUID();
+    try {
+      const createUserRes = await cognito.send(new AdminCreateUserCommand({
+        UserPoolId: USER_POOL_ID,
+        Username: cogUsername,
+        UserAttributes: [
+          { Name: 'email', Value: email_val },
+          { Name: 'email_verified', Value: 'true' }
+        ],
+        MessageAction: 'SUPPRESS'
+      }));
+      const subAttr = createUserRes.User.Attributes.find(a => a.Name === 'sub');
+      newUid = subAttr ? subAttr.Value : null;
+      targetUsername = createUserRes.User.Username;
+    } catch (cognitoErr) {
+      if (cognitoErr.name === 'UsernameExistsException' || cognitoErr.name === 'AliasExistsException' || cognitoErr.message.includes('exists')) {
+        // User already exists, search by email to retrieve the existing sub/username
+        const listUsersRes = await cognito.send(new ListUsersCommand({
+          UserPoolId: USER_POOL_ID,
+          Filter: `email = "${email_val}"`
+        }));
+        if (listUsersRes.Users && listUsersRes.Users.length > 0) {
+          targetUsername = listUsersRes.Users[0].Username;
+          const subAttr = listUsersRes.Users[0].Attributes.find(a => a.Name === 'sub');
+          newUid = subAttr ? subAttr.Value : null;
+        } else {
+          throw cognitoErr;
+        }
+      } else {
+        throw cognitoErr;
+      }
+    }
+
+    if (!newUid || !targetUsername) {
+      throw new Error('Failed to retrieve user identifiers from AWS Cognito.');
+    }
+
+    // 2. Set permanent password in Cognito (using Cognito Username)
+    await cognito.send(new AdminSetUserPasswordCommand({
+      UserPoolId: USER_POOL_ID,
+      Username: targetUsername,
+      Password: password_val,
+      Permanent: true
+    }));
+
+  } catch (cognitoErr) {
+    console.error('[create_vault_user Cognito Error]:', cognitoErr.message);
+    return res.status(500).json({ error: `Cognito Provisioning Failed: ${cognitoErr.message}` });
+  }
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const newUid = crypto.randomUUID();
 
     // 1. Insert into auth.users (Supabase system structure)
     await client.query(`
@@ -319,9 +383,10 @@ app.post('/api/admin/rpc/create_vault_user', async (req, res) => {
         $1, 'authenticated', 'authenticated', $2, crypt($3, gen_salt('bf')),
         now(), now(), now(),
         '{"provider":"email","providers":["email"]}'::jsonb,
-        json_build_object('role', $4)::jsonb,
+        json_build_object('role', $4::text)::jsonb,
         now(), now(), '', '', '', ''
       )
+      ON CONFLICT (id) DO NOTHING
     `, [newUid, email_val, password_val, role_val]);
 
     // 2. Insert into public.user_profiles
@@ -347,6 +412,34 @@ app.post('/api/admin/rpc/delete_vault_user', async (req, res) => {
   const { user_id } = req.body || {};
   if (!user_id) return res.status(400).json({ error: 'user_id is required' });
 
+  // 1. Delete user from AWS Cognito User Pool
+  const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
+  if (USER_POOL_ID) {
+    try {
+      const { ListUsersCommand, AdminDeleteUserCommand } = require('@aws-sdk/client-cognito-identity-provider');
+      
+      // Resolve the Cognito Username using the sub UUID
+      const listUsersRes = await cognito.send(new ListUsersCommand({
+        UserPoolId: USER_POOL_ID,
+        Filter: `sub = "${user_id}"`
+      }));
+
+      if (listUsersRes.Users && listUsersRes.Users.length > 0) {
+        const targetUsername = listUsersRes.Users[0].Username;
+        await cognito.send(new AdminDeleteUserCommand({
+          UserPoolId: USER_POOL_ID,
+          Username: targetUsername
+        }));
+      } else {
+        console.warn(`[delete_vault_user] User with sub ${user_id} not found in Cognito User Pool.`);
+      }
+    } catch (cognitoErr) {
+      console.error('[delete_vault_user Cognito Error]:', cognitoErr.message);
+      return res.status(500).json({ error: `Cognito Deletion Failed: ${cognitoErr.message}` });
+    }
+  }
+
+  // 2. Delete user from database
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -513,7 +606,7 @@ app.post('/api/send-email', async (req, res) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'ThrustVault <onboarding@resend.dev>',
+        from: 'ThrustVault <onboarding@bharani-01.xyz>',
         to: [to],
         subject,
         html
@@ -643,7 +736,7 @@ app.get(['/api/admin/motor-test-data-points', '/api/admin/motor_test_data_points
         FROM public.motor_test_data_points dp
         JOIN public.motor_test_runs r ON dp.test_run_id = r.id
       `;
-      
+
       const whereParts = [];
       if (test_run_id) {
         if (test_run_id.startsWith('eq.')) {
@@ -657,7 +750,7 @@ app.get(['/api/admin/motor-test-data-points', '/api/admin/motor_test_data_points
           vals.push(ids);
         }
       }
-      
+
       if (whereParts.length) {
         sql += ` WHERE ${whereParts.join(' AND ')}`;
       }
@@ -686,6 +779,69 @@ app.get(['/api/admin/motor-test-data-points', '/api/admin/motor_test_data_points
   } catch (err) {
     console.error('[Custom data-points handler error]', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Override users GET endpoint to list accounts directly from AWS Cognito User Pool with strictly no fallback
+app.get('/api/admin/users', async (req, res) => {
+  const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
+  if (!USER_POOL_ID) {
+    return res.status(500).json({ error: 'AWS Cognito User Pool is not configured.' });
+  }
+
+  try {
+    const { ListUsersCommand } = require('@aws-sdk/client-cognito-identity-provider');
+
+    let filter = undefined;
+    if (req.query.email && req.query.email.startsWith('eq.')) {
+      const emailVal = req.query.email.slice(3);
+      filter = `email = "${emailVal}"`;
+    }
+
+    const listRes = await cognito.send(new ListUsersCommand({
+      UserPoolId: USER_POOL_ID,
+      Filter: filter
+    }));
+
+    const cognitoUsers = (listRes.Users || []).map(u => {
+      const email = u.Attributes.find(a => a.Name === 'email')?.Value;
+      const sub = u.Attributes.find(a => a.Name === 'sub')?.Value;
+      return {
+        id: sub,
+        email: email,
+        created_at: u.UserCreateDate,
+        role: 'guest' // default role
+      };
+    }).filter(u => u.id && u.email);
+
+    if (cognitoUsers.length > 0) {
+      const ids = cognitoUsers.map(u => u.id);
+      const dbRolesRes = await pool.query(
+        'SELECT id, role FROM public.user_profiles WHERE id = ANY($1)',
+        [ids]
+      );
+      const roleMap = {};
+      dbRolesRes.rows.forEach(r => {
+        roleMap[r.id] = r.role;
+      });
+
+      cognitoUsers.forEach(u => {
+        if (roleMap[u.id]) {
+          u.role = roleMap[u.id];
+        }
+      });
+    }
+
+    // Sort by email.asc if requested
+    if (req.query.order === 'email.asc') {
+      cognitoUsers.sort((a, b) => a.email.localeCompare(b.email));
+    }
+
+    return res.json(cognitoUsers);
+
+  } catch (err) {
+    console.error('[GET /api/admin/users Cognito Error]:', err.message);
+    return res.status(500).json({ error: `Failed to fetch users from Cognito: ${err.message}` });
   }
 });
 
