@@ -810,7 +810,7 @@ app.get('/api/admin/users', async (req, res) => {
         id: sub,
         email: email,
         created_at: u.UserCreateDate,
-        role: 'guest' // default role
+        role: 'user' // default role
       };
     }).filter(u => u.id && u.email);
 

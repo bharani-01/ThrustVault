@@ -401,7 +401,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td><strong>${u.email}</strong> ${isSelf ? '<span class="count-badge" style="font-size:0.65rem; padding:2px 6px;">You</span>' : ''}</td>
                 <td>
                     <select class="user-role-select form-group" style="padding:4px 8px; font-size:0.85rem;" data-id="${u.id}" ${isSelf ? 'disabled' : ''}>
-                        <option value="guest" ${u.role === 'guest' ? 'selected' : ''}>Guest (Read-only)</option>
                         <option value="user" ${u.role === 'user' ? 'selected' : ''}>User (Read/Write Catalog)</option>
                         <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin (Full Control)</option>
                     </select>
