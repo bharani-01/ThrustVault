@@ -5434,6 +5434,19 @@ button:active { transform: scale(0.98); }
     box-shadow: 0 0 0 3px hsla(217, 91%, 60%, 0.15);
 }
 
+/* Bulletproof Global Override: Force Deep Black Dark Mode */
+html.dark, [data-theme="dark"] {
+    --bg-base: #000000 !important;
+}
+html.dark body, [data-theme="dark"] body,
+.dark body, [data-theme="dark"] body {
+    background-color: #000000 !important;
+}
+html.dark .dark\:bg-slate-950, [data-theme="dark"] .dark\:bg-slate-950,
+.dark .dark\:bg-slate-950, [data-theme="dark"] .dark\:bg-slate-950 {
+    background-color: #000000 !important;
+}
+
 
 
 
