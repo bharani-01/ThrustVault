@@ -1,5 +1,5 @@
 'use strict';
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+require('dotenv').config();
 
 const express = require('express');
 const session = require('express-session');
@@ -9,12 +9,12 @@ const crypto = require('crypto');
 const os = require('os');
 
 // Reuse parent database connections and query builder
-const pool = require('../src/config/db');
-const { queryTable } = require('../src/utils/queryBuilder');
+const pool = require('./src/config/db');
+const { queryTable } = require('./src/utils/queryBuilder');
 
 // Reuse Cognito config helpers
-const { cognito, cognitoSecretHash } = require('../src/config/cognito');
-const { normaliseRole } = require('../src/utils/roleHelper');
+const { cognito, cognitoSecretHash } = require('./src/config/cognito');
+const { normaliseRole } = require('./src/utils/roleHelper');
 
 const app = express();
 const PORT = parseInt(process.env.ADMIN_PORT || '8001', 10);
