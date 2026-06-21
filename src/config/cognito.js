@@ -9,7 +9,7 @@ const {
 } = require('@aws-sdk/client-cognito-identity-provider');
 
 let credentials;
-if (!process.env.AWS_ACCESS_KEY_ID && !process.env.AWS_SECRET_ACCESS_KEY) {
+if (process.env.NODE_ENV !== 'production' && !process.env.AWS_ACCESS_KEY_ID && !process.env.AWS_SECRET_ACCESS_KEY) {
   try {
     const { fromIni } = require('@aws-sdk/credential-provider-ini');
     credentials = fromIni({ profile: 'ThrustVault' });
