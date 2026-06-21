@@ -2,17 +2,18 @@
 const crypto = require('crypto');
 const pool = require('../config/db');
 const { queryTable } = require('../utils/queryBuilder');
+const { cognito } = require('../config/cognito');
 
 // ACL rules for dynamic database table API endpoints (excluding guest read operations which are handled via guestRoutes)
 const ACL = {
-  motors:                 { POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['admin'] },
-  categories:             { POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
-  custom_specs_schema:    { POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
-  access_requests:        { GET: ['admin'], POST: ['user', 'admin'], PATCH: ['admin'], DELETE: ['admin'] },
-  user_onboarding:        { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'] },
-  motor_test_runs:        { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
+  motors: { POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['admin'] },
+  categories: { POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
+  custom_specs_schema: { POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
+  access_requests: { GET: ['admin'], POST: ['user', 'admin'], PATCH: ['admin'], DELETE: ['admin'] },
+  user_onboarding: { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'] },
+  motor_test_runs: { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
   motor_test_data_points: { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
-  draft_test_runs:        { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
+  draft_test_runs: { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
 };
 
 /**
@@ -38,11 +39,11 @@ async function initData(req, res) {
     });
 
     res.json({
-      categories:      cats.rows,
+      categories: cats.rows,
       category_counts: categoryCounts,
-      custom_schema:   schema.rows,
-      first_motors:    motors.rows,
-      has_more:        motors.rows.length >= LIMIT,
+      custom_schema: schema.rows,
+      first_motors: motors.rows,
+      has_more: motors.rows.length >= LIMIT,
     });
   } catch (e) {
     console.error('[init-data]', e.message);
@@ -276,7 +277,7 @@ async function sendResendEmail({ type, to, full_name, temp_password }) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'ThrustVault <onboarding@resend.dev>',
+        from: 'ThrustVault <no-reply@bharani-01.xyz>',
         to: [to],
         subject,
         html
@@ -305,7 +306,7 @@ async function requestAccess(req, res) {
   try {
     const dup = await pool.query('SELECT id FROM user_profiles WHERE email = $1', [email]);
     if (dup.rows.length) return res.status(409).json({ error: 'An account already exists with this email.' });
-    
+
     const pend = await pool.query("SELECT id FROM access_requests WHERE email = $1 AND status = 'pending'", [email]);
     if (pend.rows.length) return res.status(409).json({ error: 'A request is already pending for this email.' });
 
@@ -315,7 +316,66 @@ async function requestAccess(req, res) {
 
     if (autoApprove) {
       const tempPassword = crypto.randomBytes(6).toString('hex') + 'V@' + Math.floor(Math.random() * 100);
-      const newUid = crypto.randomUUID();
+
+      const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
+      if (!USER_POOL_ID) {
+        throw new Error('AWS Cognito User Pool is not configured in environment variables.');
+      }
+
+      let newUid = null;
+      let targetUsername = null;
+      const {
+        AdminCreateUserCommand,
+        AdminSetUserPasswordCommand,
+        ListUsersCommand
+      } = require('@aws-sdk/client-cognito-identity-provider');
+
+      // 1. Create User in Cognito
+      const cogUsername = crypto.randomUUID();
+      try {
+        const createUserRes = await cognito.send(new AdminCreateUserCommand({
+          UserPoolId: USER_POOL_ID,
+          Username: cogUsername,
+          UserAttributes: [
+            { Name: 'email', Value: email },
+            { Name: 'email_verified', Value: 'true' }
+          ],
+          MessageAction: 'SUPPRESS'
+        }));
+        const subAttr = createUserRes.User.Attributes.find(a => a.Name === 'sub');
+        newUid = subAttr ? subAttr.Value : null;
+        targetUsername = createUserRes.User.Username;
+      } catch (cognitoErr) {
+        if (cognitoErr.name === 'UsernameExistsException' || cognitoErr.name === 'AliasExistsException' || cognitoErr.message.includes('exists')) {
+          // User already exists, search by email to retrieve the existing sub/username
+          const listUsersRes = await cognito.send(new ListUsersCommand({
+            UserPoolId: USER_POOL_ID,
+            Filter: `email = "${email}"`
+          }));
+          if (listUsersRes.Users && listUsersRes.Users.length > 0) {
+            targetUsername = listUsersRes.Users[0].Username;
+            const subAttr = listUsersRes.Users[0].Attributes.find(a => a.Name === 'sub');
+            newUid = subAttr ? subAttr.Value : null;
+          } else {
+            throw cognitoErr;
+          }
+        } else {
+          throw cognitoErr;
+        }
+      }
+
+      if (!newUid || !targetUsername) {
+        throw new Error('Failed to retrieve user identifiers from AWS Cognito.');
+      }
+
+      // 2. Set permanent password in Cognito (using Cognito Username)
+      await cognito.send(new AdminSetUserPasswordCommand({
+        UserPoolId: USER_POOL_ID,
+        Username: targetUsername,
+        Password: tempPassword,
+        Permanent: true
+      }));
+
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
@@ -342,6 +402,7 @@ async function requestAccess(req, res) {
             json_build_object('role', 'user')::jsonb,
             now(), now(), '', '', '', ''
           )
+          ON CONFLICT (id) DO NOTHING
         `, [newUid, email, tempPassword]);
 
         // 2. Insert into public.user_profiles (role is 'user' directly now)
@@ -432,7 +493,7 @@ async function dbProxy(req, res) {
         });
       }
     }
-    
+
     // Inject uploaded_by dynamically for new entries in motors or motor_test_runs
     const payload = ['POST', 'PATCH'].includes(m) ? req.body : null;
     if (payload && m === 'POST') {

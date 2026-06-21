@@ -1095,7 +1095,7 @@ def send_email_api():
         """
 
     payload = {
-        "from": "ThrustVault <onboarding@resend.dev>",
+        "from": "ThrustVault <no-reply@bharani-01.xyz>",
         "to": [recipient],
         "subject": subject,
         "html": html_content

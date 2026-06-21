@@ -5,14 +5,14 @@ const { queryTable } = require('../utils/queryBuilder');
 
 // ACL rules for dynamic database table API endpoints
 const ACL = {
-  motors:                 { GET: ['guest', 'user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['admin'] },
-  categories:             { GET: ['guest', 'user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
-  custom_specs_schema:    { GET: ['guest', 'user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
-  access_requests:        { GET: ['admin'], POST: ['guest', 'user', 'admin'], PATCH: ['admin'], DELETE: ['admin'] },
-  user_onboarding:        { GET: ['guest', 'user', 'admin'], POST: ['guest', 'user', 'admin'], PATCH: ['guest', 'user', 'admin'] },
-  motor_test_runs:        { GET: ['guest', 'user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
+  motors: { GET: ['guest', 'user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['admin'] },
+  categories: { GET: ['guest', 'user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
+  custom_specs_schema: { GET: ['guest', 'user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
+  access_requests: { GET: ['admin'], POST: ['guest', 'user', 'admin'], PATCH: ['admin'], DELETE: ['admin'] },
+  user_onboarding: { GET: ['guest', 'user', 'admin'], POST: ['guest', 'user', 'admin'], PATCH: ['guest', 'user', 'admin'] },
+  motor_test_runs: { GET: ['guest', 'user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
   motor_test_data_points: { GET: ['guest', 'user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
-  draft_test_runs:        { GET: ['guest', 'user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
+  draft_test_runs: { GET: ['guest', 'user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
 };
 
 /**
@@ -38,11 +38,11 @@ async function initData(req, res) {
     });
 
     res.json({
-      categories:      cats.rows,
+      categories: cats.rows,
       category_counts: categoryCounts,
-      custom_schema:   schema.rows,
-      first_motors:    motors.rows,
-      has_more:        motors.rows.length >= LIMIT,
+      custom_schema: schema.rows,
+      first_motors: motors.rows,
+      has_more: motors.rows.length >= LIMIT,
     });
   } catch (e) {
     console.error('[init-data]', e.message);
@@ -274,7 +274,7 @@ async function sendResendEmail({ type, to, full_name, temp_password }) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'ThrustVault <onboarding@resend.dev>',
+        from: 'ThrustVault <no-reply@bharani-01.xyz>',
         to: [to],
         subject,
         html
@@ -303,7 +303,7 @@ async function requestAccess(req, res) {
   try {
     const dup = await pool.query('SELECT id FROM user_profiles WHERE email = $1', [email]);
     if (dup.rows.length) return res.status(409).json({ error: 'An account already exists with this email.' });
-    
+
     const pend = await pool.query("SELECT id FROM access_requests WHERE email = $1 AND status = 'pending'", [email]);
     if (pend.rows.length) return res.status(409).json({ error: 'A request is already pending for this email.' });
 
