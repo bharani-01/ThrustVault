@@ -656,6 +656,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateComparisonDrawer();
         updateManufacturerSuggestions();
         lucide.createIcons();
+        checkUrlForDeepLink();
     }
 
     function updateStats() {
@@ -2696,6 +2697,346 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    window.switchChartTab = function(tabName) {
+        const tabs = ['performance', 'electrical', 'time'];
+        tabs.forEach(name => {
+            const content = document.getElementById(`tab-content-${name}`);
+            const btn = document.getElementById(`tab-btn-${name}`);
+            if (content) {
+                if (name === tabName) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            }
+            if (btn) {
+                if (name === tabName) {
+                    btn.className = 'flex-1 py-2 px-3 rounded-md bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm transition-all duration-200';
+                } else {
+                    btn.className = 'flex-1 py-2 px-3 rounded-md bg-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-all duration-200';
+                }
+            }
+        });
+
+        // Trigger resize on the next tick so DOM layout is updated
+        setTimeout(() => {
+            Object.keys(profileCharts).forEach(key => {
+                if (profileCharts[key]) {
+                    profileCharts[key].resize();
+                }
+            });
+        }, 50);
+    };
+
+    // Helper: download file with custom filename
+    function downloadProfileFile(content, mimeType, filename) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // Helper: generate formatted HTML datasheet report
+    function generateDatasheetHTMLReport(m, cat) {
+        let customRows = '';
+        if (state.customSchema && m.custom_parameters) {
+            state.customSchema.forEach(field => {
+                const val = m.custom_parameters[field.key];
+                if (val !== undefined && val !== null && val !== '') {
+                    const unit = field.unit ? ` ${field.unit}` : '';
+                    customRows += `<tr><td class="label">${escapeHTML(field.label)}</td><td>${escapeHTML(val)}${escapeHTML(unit)}</td></tr>`;
+                }
+            });
+        }
+
+        return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>${escapeHTML(m.motor)} Datasheet | ThrustVault</title>
+    <style>
+        body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; color: #191c1d; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.5; }
+        .header-logo { color: #003366; font-weight: 800; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 20px; }
+        h1 { color: #001e40; font-size: 28px; border-bottom: 2px solid #E2E8F0; padding-bottom: 12px; margin-top: 0; margin-bottom: 30px; letter-spacing: -0.02em; text-transform: uppercase; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 35px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid #E2E8F0; }
+        th { background: #f8f9fa; color: #003366; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+        td { font-size: 14px; }
+        td.label { font-weight: 600; color: #505f76; width: 35%; }
+        .footer { font-size: 11px; color: #737780; text-align: center; margin-top: 50px; border-top: 1px solid #E2E8F0; padding-top: 15px; }
+        @media print {
+            body { margin: 20px; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-logo">THRUSTVAULT // propulsion intelligence</div>
+    <h1>${escapeHTML(m.company)} ${escapeHTML(m.motor)} Specification Sheet</h1>
+    
+    <table>
+        <thead>
+            <tr>
+                <th colspan="2">Core Specifications</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td class="label">Motor Model Name</td><td>${escapeHTML(m.motor)}</td></tr>
+            <tr><td class="label">Manufacturer</td><td>${escapeHTML(m.company)}</td></tr>
+            <tr><td class="label">Thrust Class Category</td><td>${escapeHTML(cat ? cat.name : "N/A")}</td></tr>
+            <tr><td class="label">Max Thrust Output</td><td>${escapeHTML(m.thrust)}</td></tr>
+            <tr><td class="label">Recommended ESC</td><td>${escapeHTML(m.esc || "-")}</td></tr>
+            <tr><td class="label">Recommended Propeller</td><td>${escapeHTML(m.prop || "-")}</td></tr>
+            <tr><td class="label">Uploaded By</td><td>${escapeHTML(m.uploaded_by || "System Default")}</td></tr>
+        </tbody>
+    </table>
+
+    ${customRows ? `
+    <table>
+        <thead>
+            <tr>
+                <th colspan="2">Custom Template Parameters</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${customRows}
+        </tbody>
+    </table>
+    ` : ''}
+    
+    <div class="footer">
+        Generated automatically by ThrustVault. Confidential Aerospace Powertrain Engineering Data.
+    </div>
+</body>
+</html>`;
+    }
+
+    // Export datasheet formatting controller
+    function exportProfileDatasheet(format) {
+        const motorId = state.activeProfileMotorId;
+        if (!motorId) return;
+        const m = state.motors.find(x => x.id === motorId);
+        if (!m) return;
+
+        const cat = state.categories.find(c => c.id === m.categoryId);
+        const data = [
+            ["THRUSTVAULT MOTOR SPECIFICATION SHEET"],
+            [],
+            ["Motor Name", m.motor],
+            ["Manufacturer", m.company],
+            ["Category", cat ? cat.name : "N/A"],
+            ["Max Thrust", m.thrust],
+            ["Recommended ESC", m.esc || "-"],
+            ["Recommended Propeller", m.prop || "-"],
+            ["Uploaded By", m.uploaded_by || "System Default"]
+        ];
+
+        if (state.customSchema && m.custom_parameters) {
+            data.push([]);
+            data.push(["Custom Template Parameters", "Value"]);
+            state.customSchema.forEach(field => {
+                const val = m.custom_parameters[field.key];
+                if (val !== undefined && val !== null && val !== '') {
+                    const unit = field.unit ? ` ${field.unit}` : '';
+                    data.push([field.label, `${val}${unit}`]);
+                }
+            });
+        }
+
+        const baseFileName = `${m.company}_${m.motor}`.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+        if (format === 'xlsx') {
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{ wch: 25 }, { wch: 40 }];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Datasheet");
+            XLSX.writeFile(wb, `${baseFileName}_datasheet.xlsx`);
+            logUserActivity(session.email, session.role, 'Exported Datasheet (Excel)', `Exported datasheet for motor: ${m.company} ${m.motor}`);
+        } 
+        else if (format === 'csv') {
+            const csvContent = data.map(r => r.map(val => `"${val.toString().replace(/"/g, '""')}"`).join(',')).join('\n');
+            downloadProfileFile(csvContent, 'text/csv;charset=utf-8;', `${baseFileName}_datasheet.csv`);
+            logUserActivity(session.email, session.role, 'Exported Datasheet (CSV)', `Exported CSV datasheet for motor: ${m.company} ${m.motor}`);
+        }
+        else if (format === 'json') {
+            const jsonObj = {
+                motor_name: m.motor,
+                manufacturer: m.company,
+                category: cat ? cat.name : "N/A",
+                max_thrust: m.thrust,
+                recommended_esc: m.esc || "",
+                recommended_propeller: m.prop || "",
+                uploaded_by: m.uploaded_by || "System Default",
+                custom_parameters: m.custom_parameters || {}
+            };
+            downloadProfileFile(JSON.stringify(jsonObj, null, 2), 'application/json', `${baseFileName}_datasheet.json`);
+            logUserActivity(session.email, session.role, 'Exported Datasheet (JSON)', `Exported JSON datasheet for motor: ${m.company} ${m.motor}`);
+        }
+        else if (format === 'html') {
+            const htmlReport = generateDatasheetHTMLReport(m, cat);
+            downloadProfileFile(htmlReport, 'text/html;charset=utf-8;', `${baseFileName}_datasheet.html`);
+            logUserActivity(session.email, session.role, 'Exported Datasheet (HTML)', `Exported HTML datasheet report for: ${m.company} ${m.motor}`);
+        }
+        else if (format === 'pdf') {
+            const htmlReport = generateDatasheetHTMLReport(m, cat);
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(htmlReport);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 500);
+            logUserActivity(session.email, session.role, 'Exported Datasheet (PDF)', `Triggered PDF generation for motor: ${m.company} ${m.motor}`);
+        }
+    }
+
+    // Export test runs formatting controller
+    function exportProfileTestRuns(format) {
+        const motorId = state.activeProfileMotorId;
+        if (!motorId) return;
+        const m = state.motors.find(x => x.id === motorId);
+        if (!m) return;
+
+        const runs = state.activeProfileRuns || [];
+        const dataPoints = state.activeProfileDataPoints || [];
+
+        if (runs.length === 0) {
+            alert("No test runs are available for this motor.");
+            return;
+        }
+
+        const baseFileName = `${m.company}_${m.motor}`.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+        const pointsByRun = {};
+        dataPoints.forEach(pt => {
+            if (!pointsByRun[pt.test_run_id]) {
+                pointsByRun[pt.test_run_id] = [];
+            }
+            pointsByRun[pt.test_run_id].push(pt);
+        });
+
+        if (format === 'xlsx') {
+            const wb = XLSX.utils.book_new();
+
+            runs.forEach((run, index) => {
+                const runPts = pointsByRun[run.id] || [];
+                
+                const sheetData = [
+                    ["TEST RUN PARAMETERS"],
+                    ["Propeller Model", run.propeller_model],
+                    ["ESC Model", run.esc_model || "N/A"],
+                    ["Battery Setup", run.battery_info || "N/A"],
+                    ["Tested By", run.test_conducted_by || "Unknown"],
+                    ["Date", new Date(run.tested_at).toLocaleString()],
+                    [],
+                    ["Throttle (%)", "Voltage (V)", "Current (A)", "Power (W)", "Thrust (g)", "RPM", "Efficiency (g/W)", "Temperature (°C)"]
+                ];
+
+                runPts.forEach(pt => {
+                    let throttlePercent = parseFloat(pt.throttle);
+                    if (throttlePercent <= 1.0) {
+                        throttlePercent = Math.round(throttlePercent * 100);
+                    } else {
+                        throttlePercent = Math.round(throttlePercent);
+                    }
+
+                    sheetData.push([
+                        throttlePercent,
+                        parseFloat(pt.voltage || 0),
+                        parseFloat(pt.current || 0),
+                        parseFloat(pt.power || 0),
+                        parseFloat(pt.thrust_g || 0),
+                        parseFloat(pt.rpm || 0),
+                        pt.efficiency !== null ? parseFloat(pt.efficiency) : "",
+                        pt.temperature !== null ? parseFloat(pt.temperature) : ""
+                    ]);
+                });
+
+                const ws = XLSX.utils.aoa_to_sheet(sheetData);
+                ws['!cols'] = [
+                    { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
+                    { wch: 15 }, { wch: 15 }, { wch: 18 }, { wch: 18 }
+                ];
+
+                let sheetName = `Run ${index + 1} - ${run.propeller_model}`.substring(0, 31).replace(/[\[\]\*\\\?\/]/g, "");
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            });
+
+            XLSX.writeFile(wb, `${baseFileName}_test_runs.xlsx`);
+            logUserActivity(session.email, session.role, 'Exported Test Runs (Excel)', `Exported test runs for motor: ${m.company} ${m.motor}`);
+        }
+        else if (format === 'csv') {
+            const headers = ["Run ID", "Propeller Model", "ESC Model", "Throttle (%)", "Voltage (V)", "Current (A)", "Power (W)", "Thrust (g)", "RPM", "Efficiency (g/W)", "Temperature (C)"];
+            const rows = [];
+            
+            runs.forEach((run, index) => {
+                const runPts = pointsByRun[run.id] || [];
+                runPts.forEach(pt => {
+                    let throttlePercent = parseFloat(pt.throttle);
+                    if (throttlePercent <= 1.0) {
+                        throttlePercent = Math.round(throttlePercent * 100);
+                    } else {
+                        throttlePercent = Math.round(throttlePercent);
+                    }
+                    rows.push([
+                        index + 1,
+                        run.propeller_model,
+                        run.esc_model || "N/A",
+                        throttlePercent,
+                        parseFloat(pt.voltage || 0),
+                        parseFloat(pt.current || 0),
+                        parseFloat(pt.power || 0),
+                        parseFloat(pt.thrust_g || 0),
+                        parseFloat(pt.rpm || 0),
+                        pt.efficiency !== null ? parseFloat(pt.efficiency) : "",
+                        pt.temperature !== null ? parseFloat(pt.temperature) : ""
+                    ]);
+                });
+            });
+
+            const csvContent = [headers.join(','), ...rows.map(r => r.map(val => `"${val.toString().replace(/"/g, '""')}"`).join(','))].join('\n');
+            downloadProfileFile(csvContent, 'text/csv;charset=utf-8;', `${baseFileName}_test_runs.csv`);
+            logUserActivity(session.email, session.role, 'Exported Test Runs (CSV)', `Exported CSV test runs dataset for motor: ${m.company} ${m.motor}`);
+        }
+        else if (format === 'json') {
+            const exportData = runs.map((run, index) => {
+                const runPts = pointsByRun[run.id] || [];
+                return {
+                    run_id: index + 1,
+                    propeller_model: run.propeller_model,
+                    esc_model: run.esc_model || "N/A",
+                    battery_info: run.battery_info || "N/A",
+                    test_conducted_by: run.test_conducted_by || "Unknown",
+                    tested_at: run.tested_at,
+                    data_points: runPts.map(pt => {
+                        let throttlePercent = parseFloat(pt.throttle);
+                        if (throttlePercent <= 1.0) {
+                            throttlePercent = Math.round(throttlePercent * 100);
+                        } else {
+                            throttlePercent = Math.round(throttlePercent);
+                        }
+                        return {
+                            throttle_pct: throttlePercent,
+                            voltage_v: parseFloat(pt.voltage || 0),
+                            current_a: parseFloat(pt.current || 0),
+                            power_w: parseFloat(pt.power || 0),
+                            thrust_g: parseFloat(pt.thrust_g || 0),
+                            rpm: parseFloat(pt.rpm || 0),
+                            efficiency_gw: pt.efficiency !== null ? parseFloat(pt.efficiency) : null,
+                            temperature_c: pt.temperature !== null ? parseFloat(pt.temperature) : null
+                        };
+                    })
+                };
+            });
+            downloadProfileFile(JSON.stringify(exportData, null, 2), 'application/json', `${baseFileName}_test_runs.json`);
+            logUserActivity(session.email, session.role, 'Exported Test Runs (JSON)', `Exported JSON test runs for motor: ${m.company} ${m.motor}`);
+        }
+    }
+
     // Bind back button
     const backBtn = document.getElementById('btn-profile-back');
     if (backBtn) {
@@ -2703,12 +3044,76 @@ document.addEventListener('DOMContentLoaded', () => {
             const overlay = document.getElementById('motor-profile-overlay');
             overlay.style.display = 'none';
             destroyProfileCharts();
+            history.pushState(null, '', '/dashboard');
         };
     }
 
-    async function showMotorProfile(motorId) {
+    // Dropdown triggers logic
+    const exportDatasheetToggle = document.getElementById('btn-profile-export-datasheet-toggle');
+    const menuDatasheet = document.getElementById('menu-profile-export-datasheet');
+    const exportRunsToggle = document.getElementById('btn-profile-export-runs-toggle');
+    const menuRuns = document.getElementById('menu-profile-export-runs');
+
+    if (exportDatasheetToggle && menuDatasheet) {
+        exportDatasheetToggle.onclick = (e) => {
+            e.stopPropagation();
+            menuDatasheet.classList.toggle('hidden');
+            if (menuRuns) menuRuns.classList.add('hidden');
+        };
+    }
+
+    if (exportRunsToggle && menuRuns) {
+        exportRunsToggle.onclick = (e) => {
+            e.stopPropagation();
+            menuRuns.classList.toggle('hidden');
+            if (menuDatasheet) menuDatasheet.classList.add('hidden');
+        };
+    }
+
+    // Dismiss dropdowns clicking outside
+    document.addEventListener('click', () => {
+        if (menuDatasheet) menuDatasheet.classList.add('hidden');
+        if (menuRuns) menuRuns.classList.add('hidden');
+    });
+
+    if (menuDatasheet) {
+        menuDatasheet.querySelectorAll('button').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                menuDatasheet.classList.add('hidden');
+                const format = btn.dataset.format;
+                exportProfileDatasheet(format);
+            };
+        });
+    }
+
+    if (menuRuns) {
+        menuRuns.querySelectorAll('button').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                menuRuns.classList.add('hidden');
+                const format = btn.dataset.format;
+                exportProfileTestRuns(format);
+            };
+        });
+    }
+
+    async function showMotorProfile(motorId, skipPushState = false) {
+        state.activeProfileMotorId = motorId;
+        state.activeProfileRuns = [];
+        state.activeProfileDataPoints = [];
+
+        // Reset active tab to Performance
+        if (window.switchChartTab) {
+            window.switchChartTab('performance');
+        }
+
         const m = state.motors.find(x => x.id === motorId);
         if (!m) return;
+
+        if (!skipPushState) {
+            history.pushState({ motorId: motorId }, '', '/dashboard/' + encodeURIComponent(m.motor));
+        }
 
         const overlay = document.getElementById('motor-profile-overlay');
         overlay.style.display = 'flex';
@@ -2740,8 +3145,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const label = field.label;
                     const unit = field.unit ? ` ${field.unit}` : '';
                     tr.innerHTML = `
-                        <td>${label}</td>
-                        <td>${val}${unit}</td>
+                        <td class="py-2.5 text-slate-400 dark:text-slate-500 font-label-mono uppercase tracking-wider">${label}</td>
+                        <td class="py-2.5 text-right font-bold text-[#001e40] dark:text-slate-100 font-mono">${val}${unit}</td>
                     `;
                     customTableBody.appendChild(tr);
                 }
@@ -2804,14 +3209,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!runs || runs.length === 0) {
                 runsList.innerHTML = '<div style="color:var(--text-muted); font-size:0.9rem; padding:10px; font-style:italic;">No test runs found.</div>';
                 lucide.createIcons();
+                const runsToggle = document.getElementById('btn-profile-export-runs-toggle');
+                if (runsToggle) runsToggle.style.display = 'none';
                 return;
             }
+
+            const runsToggle = document.getElementById('btn-profile-export-runs-toggle');
+            if (runsToggle) runsToggle.style.display = 'inline-flex';
 
             const runIds = runs.map(r => r.id);
             const runIdsParam = runIds.join(',');
             const ptsRes = await fetch(`/api/motor-test-data-points?test_run_id=in.(${runIdsParam})&order=throttle.asc`);
             if (!ptsRes.ok) throw new Error("Failed to load test run data points");
             const dataPoints = await ptsRes.json();
+
+            state.activeProfileRuns = runs;
+            state.activeProfileDataPoints = dataPoints;
 
             const pointsByRun = {};
             dataPoints.forEach(pt => {
@@ -2896,6 +3309,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         dataPoints.forEach(pt => {
             const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50/40 dark:hover:bg-slate-900/40 odd:bg-slate-50/10 dark:odd:bg-slate-900/10 transition-colors";
             let throttlePercent = parseFloat(pt.throttle);
             if (throttlePercent <= 1.0) {
                 throttlePercent = Math.round(throttlePercent * 100);
@@ -2908,14 +3322,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const tempStr = (pt.temperature !== null && pt.temperature !== undefined) ? `${temp.toFixed(1)}` : '-';
             
             tr.innerHTML = `
-                <td><strong>${throttlePercent}%</strong></td>
-                <td>${parseFloat(pt.voltage || 0).toFixed(1)} V</td>
-                <td>${parseFloat(pt.current || 0).toFixed(1)} A</td>
-                <td>${parseFloat(pt.power || 0).toFixed(0)} W</td>
-                <td><strong>${parseFloat(pt.thrust_g || 0).toFixed(0)} g</strong></td>
-                <td>${parseFloat(pt.rpm || 0).toFixed(0)}</td>
-                <td>${eff > 0 ? eff.toFixed(2) : '-'}</td>
-                <td>${tempStr}</td>
+                <td class="py-2.5 px-3 text-left font-mono"><strong>${throttlePercent}%</strong></td>
+                <td class="py-2.5 px-3 text-right font-mono">${parseFloat(pt.voltage || 0).toFixed(1)} V</td>
+                <td class="py-2.5 px-3 text-right font-mono">${parseFloat(pt.current || 0).toFixed(1)} A</td>
+                <td class="py-2.5 px-3 text-right font-mono">${parseFloat(pt.power || 0).toFixed(0)} W</td>
+                <td class="py-2.5 px-3 text-right font-mono"><strong>${parseFloat(pt.thrust_g || 0).toFixed(0)} g</strong></td>
+                <td class="py-2.5 px-3 text-right font-mono">${parseFloat(pt.rpm || 0).toFixed(0)}</td>
+                <td class="py-2.5 px-3 text-right font-mono">${eff > 0 ? eff.toFixed(2) : '-'}</td>
+                <td class="py-2.5 px-3 text-right font-mono">${tempStr}</td>
             `;
             tbody.appendChild(tr);
         });
@@ -3236,4 +3650,37 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         window.addEventListener('sidebarLoaded', setupSidebar);
     }
+
+    let hasCheckedDeepLink = false;
+    function checkUrlForDeepLink() {
+        if (hasCheckedDeepLink) return;
+        const pathParts = window.location.pathname.split('/');
+        const motorNameParam = pathParts[2] ? decodeURIComponent(pathParts[2]) : null;
+        if (motorNameParam && state.motors && state.motors.length > 0) {
+            const m = state.motors.find(x => x.motor.toLowerCase() === motorNameParam.toLowerCase() || `${x.company} ${x.motor}`.toLowerCase() === motorNameParam.toLowerCase());
+            if (m) {
+                hasCheckedDeepLink = true;
+                showMotorProfile(m.id, true);
+            }
+        } else if (!motorNameParam) {
+            hasCheckedDeepLink = true;
+        }
+    }
+
+    window.addEventListener('popstate', (e) => {
+        const pathParts = window.location.pathname.split('/');
+        const motorNameParam = pathParts[2] ? decodeURIComponent(pathParts[2]) : null;
+        if (motorNameParam) {
+            const m = state.motors.find(x => x.motor.toLowerCase() === motorNameParam.toLowerCase() || `${x.company} ${x.motor}`.toLowerCase() === motorNameParam.toLowerCase());
+            if (m) {
+                showMotorProfile(m.id, true);
+            }
+        } else {
+            const overlay = document.getElementById('motor-profile-overlay');
+            if (overlay && overlay.style.display !== 'none') {
+                overlay.style.display = 'none';
+                destroyProfileCharts();
+            }
+        }
+    });
 });

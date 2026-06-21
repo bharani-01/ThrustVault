@@ -62,6 +62,12 @@ async function bootstrap() {
       -- Uploader By tracking field migrations
       ALTER TABLE public.motors ADD COLUMN IF NOT EXISTS uploaded_by VARCHAR(255);
       ALTER TABLE public.motor_test_runs ADD COLUMN IF NOT EXISTS uploaded_by VARCHAR(255);
+
+      -- Add username column to user_profiles and populate defaults
+      ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS username VARCHAR(255) UNIQUE;
+      UPDATE public.user_profiles 
+      SET username = split_part(email, '@', 1) || '_' || substring(id::text, 1, 4)
+      WHERE username IS NULL;
     `);
 
     console.log('✅  AWS RDS PostgreSQL connection verified, system settings initialized, and migrations applied');

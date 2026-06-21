@@ -53,7 +53,7 @@ app.get('/versions', send('version_catalog.html'));
 app.get('/docs', send('documentation.html'));
 app.get('/documentation', redir('/docs'));
 
-app.get('/dashboard', (req, res) => {
+app.get('/dashboard/:motorname?', (req, res) => {
   const role = req.session.role;
   if (role && ['admin', 'user'].includes(role)) {
     return res.sendFile(path.join(PUBLIC, 'user_dashboard.html'));

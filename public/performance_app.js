@@ -78,20 +78,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Show creator tab for all; disable/lock it for guests
     const isWriter = session.role === 'admin' || session.role === 'user';
-    const tabBtnCreator = document.getElementById('tab-btn-creator');
-    if (tabBtnCreator) {
-        tabBtnCreator.style.display = 'flex';
-        if (!isWriter) {
-            tabBtnCreator.disabled = true;
-            tabBtnCreator.title = 'Create Dataset is only available to Admins and Users';
-            tabBtnCreator.style.opacity = '0.45';
-            tabBtnCreator.style.cursor = 'not-allowed';
-            tabBtnCreator.style.filter = 'grayscale(0.5)';
-            // Prepend lock icon
-            const lockIcon = document.createElement('i');
-            lockIcon.setAttribute('data-lucide', 'lock');
-            lockIcon.style.cssText = 'width:13px;height:13px;margin-right:2px;flex-shrink:0;';
-            tabBtnCreator.insertBefore(lockIcon, tabBtnCreator.firstChild);
+    if (!isWriter) {
+        // Disable form inputs and buttons to lock creator form for guests
+        const form = document.getElementById('dataset-creator-form');
+        if (form) {
+            const inputs = form.querySelectorAll('input, select, textarea, button');
+            inputs.forEach(inp => {
+                inp.disabled = true;
+                if (inp.tagName === 'BUTTON' || inp.tagName === 'INPUT' || inp.tagName === 'SELECT') {
+                    inp.style.opacity = '0.6';
+                    inp.style.cursor = 'not-allowed';
+                }
+            });
+            // Show access restricted banner
+            const banner = document.createElement('div');
+            banner.className = 'ob-tip';
+            banner.style.cssText = 'background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-weight: 500; font-size: 0.88rem; display: flex; align-items: center; gap: 8px;';
+            banner.innerHTML = '<i data-lucide="lock" style="width:16px; height:16px;"></i><span>Access Restricted: You must sign in as an Admin or User to create calibration datasets and manage telemetry test runs.</span>';
+            form.parentNode.insertBefore(banner, form);
         }
     }
 
@@ -209,16 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Tab Switching
-    if (elements.tabBtnVisualizer) {
-        elements.tabBtnVisualizer.onclick = () => {
-            // Disabled: Visualizer is removed
-        };
-    }
-
-    elements.tabBtnCreator.onclick = () => {
-        // Disabled: Creator is always active
-    };
+    // Tab Switching (Removed visualizer)
 
     // Logout
     
@@ -1249,7 +1244,6 @@ document.addEventListener('DOMContentLoaded', () => {
             addCreatorRow(pt.throttle * 100, rowData);
         });
 
-        elements.tabBtnCreator.click();
         alert(`Loaded test run for "${run.motorModel}" into editor! You can now adjust and save manually.`);
     }
 
@@ -1502,20 +1496,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert("Successfully finalized draft run!");
                 closeModal(modal);
 
-                const newMotor = state.allMotors.find(m => m.id === selectedMotorId);
-                if (newMotor) {
-                    state.activeMotorId = selectedMotorId;
-                    state.activeRunId = run.id;
-                    await refreshVisualizerData();
-                    elements.plotCategorySelect.value = newMotor.category_id;
-                    onPlotCategoryChange();
-                    setPlotMotor(selectedMotorId);
-                    await loadMotorRuns(selectedMotorId);
-                    loadGridPoints(run.id);
-                    elements.activeRunLabel.textContent = `Inspecting Configuration: Prop ${cleanPropeller} + ESC ${run.esc_model || 'None'}`;
-                } else {
-                    await refreshVisualizerData();
-                }
+                await refreshVisualizerData();
 
                 await fetchStats();
             } catch (err) {
@@ -1938,20 +1919,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await fetchStats();
             
             if (!isDraft && finalizedRunId) {
-                // Select finalized run in the curves visualizer
-                const newMotor = state.allMotors.find(m => m.id === finalizedMotorId);
-                if (newMotor) {
-                    state.activeMotorId = finalizedMotorId;
-                    state.activeRunId = finalizedRunId;
-                    await refreshVisualizerData();
-                    elements.plotCategorySelect.value = newMotor.category_id;
-                    onPlotCategoryChange();
-                    setPlotMotor(finalizedMotorId);
-                    await loadMotorRuns(finalizedMotorId);
-                    loadGridPoints(finalizedRunId);
-                    elements.activeRunLabel.textContent = `Inspecting Configuration: Prop ${propeller} + ESC ${esc || 'None'}`;
-                }
-                elements.tabBtnVisualizer.click();
+                await refreshVisualizerData();
             }
         } catch (err) {
             console.error("Error saving dataset:", err);
@@ -2427,431 +2395,19 @@ document.addEventListener('DOMContentLoaded', () => {
             populateCategorySelects();
 
             // Reset motor selects to locked state
-            elements.plotMotorSelect.innerHTML  = '<option value="">-- Select Thrust Level First --</option>';
-            elements.plotMotorSelect.disabled   = true;
-            elements.formTestMotor.innerHTML    = '<option value="">-- Select Thrust Level First --</option>';
-            elements.formTestMotor.disabled     = true;
-
-            // Restore active motor if there was a previous selection
-            if (state.activeMotorId) {
-                const motor = state.allMotors.find(m => m.id === state.activeMotorId);
-                if (motor && motor.category_id) {
-                    elements.plotCategorySelect.value = motor.category_id;
-                    onPlotCategoryChange();
-                    setPlotMotor(state.activeMotorId);
-                    await loadMotorRuns(state.activeMotorId);
-                }
+            if (elements.plotMotorSelect) {
+                elements.plotMotorSelect.innerHTML  = '<option value="">-- Select Thrust Level First --</option>';
+                elements.plotMotorSelect.disabled   = true;
+            }
+            if (elements.formTestMotor) {
+                elements.formTestMotor.disabled     = true;
             }
         } catch (err) {
             console.error("Error refreshing visualizer:", err);
         }
     }
 
-    // Load runs on motor select change
-    elements.plotMotorSelect.onchange = async () => {
-        const motorId = elements.plotMotorSelect.value;
-        state.activeMotorId = motorId;
-        state.activeRunId = null;
-        elements.activeRunLabel.textContent = 'Select a test run to inspect readings';
-        elements.dataPointsGridRows.innerHTML = `
-            <tr>
-                <td colspan="8" style="text-align:center; color:#64748b; font-size:0.85rem; padding: 30px 0;">
-                    No configuration selected. Choose a motor and click a test run.
-                </td>
-            </tr>
-        `;
-        
-        const bannerEl = document.getElementById('draft-run-banner');
-        if (bannerEl) bannerEl.style.display = 'none';
 
-        if (motorId) {
-            await loadMotorRuns(motorId);
-        } else {
-            elements.testRunsList.innerHTML = `
-                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 0;gap:10px;color:var(--text-muted);">
-                    <i data-lucide="mouse-pointer-click" style="width:28px;height:28px;color:#cbd5e1;"></i>
-                    <span style="font-size:0.82rem;text-align:center;">Select a motor to view test runs.</span>
-                </div>
-            `;
-            if (state.chartInstance) {
-                state.chartInstance.destroy();
-                state.chartInstance = null;
-            }
-            const emSt = document.getElementById('chart-empty-state');
-            const emCv = document.getElementById('performanceCurveChart');
-            if (emSt) emSt.style.display = 'flex';
-            if (emCv) emCv.style.display = 'none';
-            if (window.lucide) window.lucide.createIcons();
-        }
-    };
-
-    if (elements.plotMetricSelect) {
-        elements.plotMetricSelect.onchange = () => {
-            state.activeMetric = elements.plotMetricSelect.value;
-            if (state.activeMotorId) {
-                drawPerformanceCurve();
-            }
-        };
-    }
-
-    // Load available runs for a specific motor
-    async function loadMotorRuns(motorId) {
-        try {
-            const runsRes = await fetch(`/api/motor-test-runs?motor_id=eq.${motorId}&order=created_at.desc`);
-            if (!runsRes.ok) throw new Error("Failed to load test runs");
-            const runs = await runsRes.json();
-            state.testRuns = runs || [];
-
-            if (state.testRuns.length === 0) {
-                elements.testRunsList.innerHTML = `
-                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 0;gap:10px;color:var(--text-muted);">
-                        <i data-lucide="inbox" style="width:28px;height:28px;color:#cbd5e1;"></i>
-                        <span style="font-size:0.82rem;text-align:center;">No calibration datasets found for this motor.</span>
-                    </div>
-                `;
-                if (state.chartInstance) {
-                    state.chartInstance.destroy();
-                    state.chartInstance = null;
-                }
-                // Show empty state
-                const emSt = document.getElementById('chart-empty-state');
-                const emCv = document.getElementById('performanceCurveChart');
-                if (emSt) emSt.style.display = 'flex';
-                if (emCv) emCv.style.display = 'none';
-                const bannerEl = document.getElementById('draft-run-banner');
-                if (bannerEl) bannerEl.style.display = 'none';
-                if (window.lucide) window.lucide.createIcons();
-                return;
-            }
-
-            // Update runs badge
-            const runsBadge = document.getElementById('test-runs-count-badge');
-            if (runsBadge) { runsBadge.textContent = state.testRuns.length; runsBadge.style.display = 'inline-block'; }
-
-            elements.testRunsList.innerHTML = state.testRuns.map(run => {
-                const date = new Date(run.tested_at).toLocaleDateString();
-                const isSelected = state.activeRunId === run.id;
-                const isDraft = run.motor_id === state.draftMotorId;
-                const displayProp = isDraft ? run.propeller_model.replace(/^\[DRAFT:.*?\]\s*/, '') : run.propeller_model;
-                const draftBadge = isDraft ? `<span class="run-draft-badge">Draft</span>` : '';
-                const deleteBtn = isWriter ? `<button class="btn-run-del btn-run-delete" data-run-id="${run.id}" title="Delete this test run"><i data-lucide="trash-2"></i></button>` : '';
-
-                return `
-                    <div class="run-card ${isSelected ? 'active-run' : ''}" data-id="${run.id}">
-                        <div class="run-card-title">
-                            ${escapeHTML(displayProp)} ${draftBadge}
-                            <span class="run-card-date">${date}${deleteBtn}</span>
-                        </div>
-                        <div class="run-card-meta">
-                            <span><strong>ESC:</strong> ${escapeHTML(run.esc_model || '—')}</span>
-                            <span><strong>Battery:</strong> ${escapeHTML(run.battery_info || '—')}</span>
-                        </div>
-                        <div class="run-card-footer">
-                            <span>Tester: ${escapeHTML(run.test_conducted_by || '—')} (Uploader: ${escapeHTML(run.uploaded_by || 'System')})</span>
-                            <span class="run-card-action-text">Click to inspect ›</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            // Bind click to runs cards
-            elements.testRunsList.querySelectorAll('[data-id]').forEach(card => {
-                card.onclick = () => {
-                    const runId = card.dataset.id;
-                    state.activeRunId = runId;
-                    
-                    // Mark card as active visually
-                    elements.testRunsList.querySelectorAll('[data-id]').forEach(c => {
-                        c.classList.remove('active-run');
-                    });
-                    card.classList.add('active-run');
-
-                    const run = state.testRuns.find(x => x.id === runId);
-                    
-                    const isDraft = run.motor_id === state.draftMotorId;
-                    const bannerEl = document.getElementById('draft-run-banner');
-                    if (isDraft && bannerEl) {
-                        const originalMotorMatch = run.propeller_model.match(/^\[DRAFT:\s*(.*?)\s*\]/);
-                        const originalMotorName = originalMotorMatch ? originalMotorMatch[1] : 'Unknown';
-                        document.getElementById('draft-original-motor-label').textContent = originalMotorName;
-                        bannerEl.style.display = 'flex';
-                        
-                        const btnFinalize = document.getElementById('btn-trigger-finalize');
-                        if (btnFinalize) {
-                            btnFinalize.onclick = () => openFinalizeModal(run, originalMotorName);
-                        }
-                    } else if (bannerEl) {
-                        bannerEl.style.display = 'none';
-                    }
-
-                    elements.activeRunLabel.textContent = `Inspecting Configuration: Prop ${isDraft ? run.propeller_model.replace(/^\[DRAFT:.*?\]\s*/, '') : run.propeller_model} + ESC ${run.esc_model || 'None'}`;
-                    loadGridPoints(runId);
-                };
-            });
-
-            // Bind click to delete buttons
-            if (isWriter) {
-                elements.testRunsList.querySelectorAll('.btn-run-delete').forEach(btn => {
-                    btn.onclick = async (e) => {
-                        e.stopPropagation(); // Prevent card selection click event
-                        const runId = btn.dataset.runId;
-                        const confirmDelete = await customConfirm("Delete Test Run?", "Are you sure you want to delete this test run and all its recorded calibration data points?");
-                        if (confirmDelete) {
-                            try {
-                                const res = await fetch(`/api/motor-test-runs?id=eq.${runId}`, {
-                                    method: 'DELETE'
-                                });
-                                if (!res.ok) throw new Error("Failed to delete test run");
-                                
-                                logUserActivity(session.email, session.role, 'Performance Dataset Deleted', `Deleted test run ${runId}`);
-                                
-                                // Reset selection if active was deleted
-                                if (state.activeRunId === runId) {
-                                    state.activeRunId = null;
-                                    elements.activeRunLabel.textContent = 'Select a test run to inspect readings';
-                                    elements.dataPointsGridRows.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#64748b; font-size:0.85rem; padding: 30px 0;">No configuration selected. Choose a motor and click a test run.</td></tr>`;
-                                    const bannerEl = document.getElementById('draft-run-banner');
-                                    if (bannerEl) bannerEl.style.display = 'none';
-                                }
-
-                                // Refresh list
-                                await loadMotorRuns(state.activeMotorId);
-                                await fetchStats();
-                            } catch (err) {
-                                console.error("Error deleting run:", err);
-                                alert("Failed to delete test run: " + err.message);
-                            }
-                        }
-                    };
-                });
-            }
-
-            // Draw multi-line line chart
-            drawPerformanceCurve();
-        } catch (err) {
-            console.error("Error loading motor runs:", err);
-        }
-    }
-
-    // Load data points table for selected run
-    async function loadGridPoints(runId) {
-        try {
-            const ptsRes = await fetch(`/api/motor-test-data-points?test_run_id=eq.${runId}&order=throttle.asc`);
-            if (!ptsRes.ok) throw new Error("Failed to load data points");
-            const pts = await ptsRes.json();
-            
-            if (!pts || pts.length === 0) {
-                elements.dataPointsGridRows.innerHTML = `
-                    <tr>
-                        <td colspan="8" style="text-align:center; color:#64748b; font-size:0.85rem; padding: 20px 0;">
-                            No steps data recorded for this run.
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            elements.dataPointsGridRows.innerHTML = pts.map(p => {
-                const throttlePercent = Math.round(p.throttle * 100);
-                const power = p.power ? p.power.toFixed(2) : '-';
-                const efficiency = p.efficiency ? p.efficiency.toFixed(2) : '-';
-                return `
-                    <tr>
-                        <td><strong>${throttlePercent}%</strong></td>
-                        <td>${p.voltage || '-'} V</td>
-                        <td>${p.current || '-'} A</td>
-                        <td>${power} W</td>
-                        <td><span class="badge-thrust">${p.thrust_g} g</span></td>
-                        <td>${p.rpm || '-'}</td>
-                        <td><strong style="color:var(--success-color);">${efficiency}</strong> g/W</td>
-                        <td>${p.temperature || '-'} ℃</td>
-                    </tr>
-                `;
-            }).join('');
-        } catch (err) {
-            console.error("Error loading grid points:", err);
-        }
-    }
-
-    // Draw Comparative Chart
-    async function drawPerformanceCurve() {
-        const emptyState = document.getElementById('chart-empty-state');
-        const chartCanvas = document.getElementById('performanceCurveChart');
-        if (!chartCanvas) return;
-        if (!state.activeMotorId || state.testRuns.length === 0) {
-            if (state.chartInstance) {
-                state.chartInstance.destroy();
-                state.chartInstance = null;
-            }
-            if (emptyState) emptyState.style.display = 'flex';
-            if (chartCanvas) chartCanvas.style.display = 'none';
-            return;
-        }
-        // Hide empty state, show canvas
-        if (emptyState) emptyState.style.display = 'none';
-        if (chartCanvas) chartCanvas.style.display = 'block';
-
-        try {
-            // Fetch all data points for all runs of this motor
-            const runIds = state.testRuns.map(r => r.id);
-            
-            const runIdsParam = runIds.join(',');
-            const ptsRes = await fetch(`/api/motor-test-data-points?test_run_id=in.(${runIdsParam})&order=throttle.asc`);
-            if (!ptsRes.ok) throw new Error("Failed to load data points");
-            const pts = await ptsRes.json();
-
-            const datasets = [];
-            const borderColors = ['#2563eb', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4'];
-
-            // Group data points by test run
-            state.testRuns.forEach((run, index) => {
-                const runPts = pts.filter(p => p.test_run_id === run.id);
-                if (runPts.length === 0) return;
-
-                let labelText = `Prop: ${run.propeller_model}`;
-                if (run.esc_model) labelText += ` (ESC: ${run.esc_model})`;
-
-                let chartData = [];
-
-                if (state.activeMetric === 'thrust') {
-                    // Y: Thrust (g), X: Throttle (%)
-                    chartData = runPts.map(p => ({
-                        x: Math.round(p.throttle * 100),
-                        y: p.thrust_g
-                    }));
-                } else if (state.activeMetric === 'efficiency') {
-                    // Y: Efficiency (g/W), X: Thrust (g)
-                    chartData = runPts.map(p => ({
-                        x: p.thrust_g,
-                        y: p.efficiency
-                    })).sort((a,b) => a.x - b.x);
-                } else if (state.activeMetric === 'current') {
-                    // Y: Current (A), X: Throttle (%)
-                    chartData = runPts.map(p => ({
-                        x: Math.round(p.throttle * 100),
-                        y: p.current
-                    }));
-                } else if (state.activeMetric === 'rpm') {
-                    // Y: RPM, X: Throttle (%)
-                    chartData = runPts.map(p => ({
-                        x: Math.round(p.throttle * 100),
-                        y: p.rpm
-                    }));
-                }
-
-                datasets.push({
-                    label: labelText,
-                    data: chartData,
-                    borderColor: borderColors[index % borderColors.length],
-                    backgroundColor: borderColors[index % borderColors.length] + '15',
-                    borderWidth: 2.5,
-                    tension: 0.35,
-                    fill: false,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                });
-            });
-
-            // Chart Configuration
-            const ctx = document.getElementById('performanceCurveChart').getContext('2d');
-            if (state.chartInstance) {
-                state.chartInstance.destroy();
-            }
-
-            let xAxisTitle = 'Throttle (%)';
-            let yAxisTitle = 'Max Thrust (g)';
-
-            if (state.activeMetric === 'thrust') {
-                xAxisTitle = 'Throttle (%)';
-                yAxisTitle = 'Max Thrust (g)';
-            } else if (state.activeMetric === 'efficiency') {
-                xAxisTitle = 'Thrust Stand Output (g)';
-                yAxisTitle = 'Efficiency (g/W)';
-            } else if (state.activeMetric === 'current') {
-                xAxisTitle = 'Throttle (%)';
-                yAxisTitle = 'Current Consumption (A)';
-            } else if (state.activeMetric === 'rpm') {
-                xAxisTitle = 'Throttle (%)';
-                yAxisTitle = 'RPM Speed';
-            }
-
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0';
-            const titleColor = isDark ? '#cbd5e1' : '#1e293b';
-            const ticksColor = isDark ? '#94a3b8' : '#475569';
-            const legendColor = isDark ? '#cbd5e1' : '#475569';
-
-            state.chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: { datasets },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            type: 'linear',
-                            title: {
-                                display: true,
-                                text: xAxisTitle,
-                                font: { family: 'Outfit', weight: '600', size: 12 },
-                                color: titleColor
-                            },
-                            grid: { color: gridColor },
-                            ticks: {
-                                color: ticksColor,
-                                font: { family: 'Inter', size: 10 }
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: yAxisTitle,
-                                font: { family: 'Outfit', weight: '600', size: 12 },
-                                color: titleColor
-                            },
-                            grid: { color: gridColor },
-                            ticks: {
-                                color: ticksColor,
-                                font: { family: 'Inter', size: 10 }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                font: { family: 'Inter', size: 11 },
-                                color: legendColor,
-                                boxWidth: 12,
-                                padding: 15
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const yVal = context.parsed.y;
-                                    const xVal = context.parsed.x;
-                                    if (state.activeMetric === 'efficiency') {
-                                        return `${context.dataset.label}: ${yVal.toFixed(2)} g/W at ${xVal}g thrust`;
-                                    } else if (state.activeMetric === 'thrust') {
-                                        return `${context.dataset.label}: ${yVal}g thrust at ${xVal}% throttle`;
-                                    } else if (state.activeMetric === 'current') {
-                                        return `${context.dataset.label}: ${yVal}A current at ${xVal}% throttle`;
-                                    } else if (state.activeMetric === 'rpm') {
-                                        return `${context.dataset.label}: ${yVal} RPM at ${xVal}% throttle`;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-        } catch (err) {
-            console.error("Error drawing performance curve:", err);
-        }
-    }
 
     // Sidebar navigation trigger is setup dynamically in setupSidebar()
 
@@ -2997,30 +2553,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (elements.formTestMotor) elements.formTestMotor.value = '';
 
-            // Bind manual filter searches for motor select dropdowns
-            const plotMotorInput = document.getElementById('plot-motor-input');
-            if (plotMotorInput) {
-                plotMotorInput.oninput = (e) => {
-                    const val = e.target.value;
-                    const catId = elements.plotCategorySelect.value;
-                    if (!catId) return;
-                    
-                    const list = state.motorsByCat[catId] || [];
-                    const matched = list.find(m => getMotorDisplayString(m) === val);
-                    
-                    if (matched) {
-                        if (elements.plotMotorSelect.value !== matched.id) {
-                            elements.plotMotorSelect.value = matched.id;
-                            elements.plotMotorSelect.dispatchEvent(new Event('change'));
-                        }
-                    } else {
-                        if (elements.plotMotorSelect.value !== '') {
-                            elements.plotMotorSelect.value = '';
-                            elements.plotMotorSelect.dispatchEvent(new Event('change'));
-                        }
-                    }
-                };
-            }
+
 
             if (elements.formTestMotorInput) {
                 elements.formTestMotorInput.oninput = (e) => {

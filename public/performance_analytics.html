@@ -5,333 +5,323 @@
     <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Runs | ThrustVault</title>
+    <title>Analytics | ThrustVault</title>
+    <meta name="description" content="ThrustVault Performance Analytics — explore motor test runs, visualize thrust curves, and create calibration datasets.">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
     <!-- Chart.js -->
     <script src="libs/chart.umd.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/chart.js';"></script>
-    <!-- Supabase JS Client -->
     <!-- SheetJS Excel/CSV Parser -->
     <script src="libs/xlsx.full.min.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';"></script>
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="style.css?v=1.6">
     <style>
-        /* Extra styles for performance analytics tab system and dataset creator */
-        .analytics-tabs {
-            display: flex;
-            gap: 16px;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 25px;
-            padding-bottom: 4px;
-        }
-        .tab-btn {
-            background: none;
-            border: none;
-            padding: 12px 24px;
-            font-family: 'Outfit', sans-serif;
-            font-weight: 600;
-            font-size: 0.95rem;
-            color: var(--text-secondary);
-            cursor: pointer;
+        /* =========================================
+           ANALYTICS PAGE — REDESIGNED v3
+        ========================================= */
+
+        /* ----- Page Hero Banner ----- */
+        .analytics-hero {
+            background: var(--bg-panel-solid);
+            border-radius: var(--radius-lg);
+            padding: 28px 32px;
+            margin-bottom: 28px;
             position: relative;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: var(--radius-md) var(--radius-md) 0 0;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+        .analytics-hero::before {
+            content: '';
+            position: absolute;
+            top: -60px; right: -60px;
+            width: 280px; height: 280px;
+            background: radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            display: none;
+        }
+        .analytics-hero::after {
+            content: '';
+            position: absolute;
+            bottom: -80px; left: 30%;
+            width: 200px; height: 200px;
+            background: radial-gradient(circle, rgba(139,92,246,0.04) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            display: none;
+        }
+        .analytics-hero-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+        .analytics-hero-title {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .analytics-hero-icon {
+            width: 52px; height: 52px;
+            background: rgba(37,99,235,0.08);
+            border: 1px solid rgba(37,99,235,0.15);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            flex-shrink: 0;
+        }
+        .analytics-hero-text h1 {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 4px 0;
+            line-height: 1.1;
+        }
+        .analytics-hero-text p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        .analytics-hero-stats {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .hero-stat-pill {
+            background: var(--bg-base);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
+            padding: 8px 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+        }
+        .hero-stat-pill:hover {
+            background: var(--bg-panel-solid);
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-sm);
+        }
+        .hero-stat-pill-icon {
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+        }
+        .hero-stat-pill-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-family: 'Inter', sans-serif;
+        }
+        .hero-stat-pill-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* ----- Tab Navigation ----- */
+        .analytics-nav {
             display: flex;
             align-items: center;
             gap: 6px;
-        }
-        .tab-btn::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 50%;
-            right: 50%;
-            height: 3px;
-            background: var(--primary-color);
-            border-radius: 3px 3px 0 0;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            opacity: 0;
-        }
-        .tab-btn:hover {
-            color: var(--primary-color);
-            background: rgba(37, 99, 235, 0.05);
-        }
-        .tab-btn.active {
-            color: var(--primary-color);
-            background: rgba(37, 99, 235, 0.02);
-        }
-        .tab-btn.active::after {
-            left: 0;
-            right: 0;
-            opacity: 1;
-            box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
-        }
-        .analytics-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 25px;
-        }
-        @media(min-width: 1024px) {
-            .analytics-grid {
-                grid-template-columns: 2fr 1fr;
-            }
-            .full-width-analytics {
-                grid-column: span 2;
-            }
-        }
-        .creator-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 25px;
-            align-items: start;
-        }
-        @media(min-width: 900px) {
-            .creator-grid {
-                grid-template-columns: 340px 1fr;
-            }
-        }
-        /* Category info badge under selects */
-        .cat-info-badge {
-            display: none;
-            align-items: center;
-            gap: 8px;
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(59, 130, 246, 0.05));
-            border: 1px solid rgba(37, 99, 235, 0.2);
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-size: 0.82rem;
-            color: var(--primary-color);
-            margin-top: 6px;
-            animation: fadeIn 0.25s ease;
-        }
-        .cat-info-badge.visible { display: flex; }
-        .cat-info-badge i { flex-shrink: 0; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Motor select locked state */
-        select:disabled { opacity: 0.4; cursor: not-allowed; }
-
-        /* Dynamic table row inputs styling */
-        .creator-table input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.85rem;
-            box-sizing: border-box;
-            background: var(--bg-panel-solid);
-            color: var(--text-primary);
-            transition: all 0.2s ease;
-        }
-        .creator-table input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.18);
-        }
-        .creator-table input[readonly] {
-            background: rgba(0, 0, 0, 0.02);
-            border-color: var(--border-color);
-            color: var(--text-muted);
-            cursor: not-allowed;
-        }
-        [data-theme="dark"] .creator-table input[readonly] {
-            background: rgba(255, 255, 255, 0.02);
-        }
-        .creator-table th {
-            font-size: 0.8rem;
-            padding: 12px 10px;
-        }
-        .creator-table td {
-            padding: 8px 6px;
-        }
-        .btn-header-copy-down {
-            border: none;
-            background: none;
-            padding: 4px;
-            color: var(--text-muted);
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            border-radius: 4px;
-            transition: all 0.15s ease;
-        }
-        .btn-header-copy-down:hover {
-            background-color: rgba(37, 99, 235, 0.1) !important;
-            color: var(--primary-color) !important;
-        }
-
-        /* Test Run & Draft Cards UI Improvements */
-        .run-card, .draft-card {
             background: var(--bg-panel-solid);
             border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 16px;
-            margin-bottom: 4px;
-            cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            border-radius: 14px;
+            padding: 5px;
+            margin-bottom: 28px;
             box-shadow: var(--shadow-sm);
-            flex-shrink: 0;
+            width: fit-content;
         }
-        .run-card::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 4px;
-            background: transparent;
-            transition: background-color 0.2s ease;
-        }
-        .run-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-            border-color: rgba(37, 99, 235, 0.3);
-            background: rgba(37, 99, 235, 0.01);
-        }
-        .run-card.active-run {
-            border-color: var(--primary-color);
-            background: rgba(37, 99, 235, 0.04) !important;
-            box-shadow: var(--shadow-md), 0 0 0 1px var(--primary-color);
-        }
-        .run-card.active-run::before {
-            background: var(--primary-color);
-        }
-
-        /* Draft Cards specific warning/amber design */
-        .draft-card {
-            border-left: 4px solid #f59e0b;
-            box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.05), 0 2px 4px -1px rgba(245, 158, 11, 0.03);
-        }
-        .draft-card:hover {
-            transform: translateY(-2px);
-            border-color: #f59e0b;
-            background: rgba(245, 158, 11, 0.02);
-            box-shadow: var(--shadow-md), 0 0 8px rgba(245, 158, 11, 0.1);
-        }
-
-        /* Card Content Inner Classes */
-        .run-card-title {
+        .analytics-nav-btn {
             display: flex;
             align-items: center;
-            font-family: 'Outfit', sans-serif;
-            font-weight: 600;
-            font-size: 0.92rem;
-            color: var(--text-primary);
             gap: 8px;
-            width: 100%;
-        }
-        .run-card-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            font-size: 0.78rem;
-            color: var(--text-secondary);
-        }
-        .run-card-meta span {
-            background: rgba(0, 0, 0, 0.03);
-            padding: 3px 8px;
-            border-radius: 4px;
-            border: 1px solid var(--border-color);
-        }
-        [data-theme="dark"] .run-card-meta span {
-            background: rgba(255, 255, 255, 0.03);
-        }
-        .run-card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            border-top: 1px dashed var(--border-color);
-            padding-top: 8px;
-            margin-top: 4px;
-        }
-
-        /* Badges for Draft/Status on cards */
-        .run-draft-badge {
-            background: rgba(245, 158, 11, 0.15);
-            color: #d97706;
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            font-size: 0.7rem;
-            font-weight: 600;
-            padding: 1px 6px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.02em;
-        }
-        [data-theme="dark"] .run-draft-badge {
-            background: rgba(245, 158, 11, 0.2);
-            color: #fbbf24;
-        }
-
-        /* Custom Run delete button style */
-        .btn-run-del {
-            background: none;
+            padding: 10px 20px;
             border: none;
-            color: var(--text-muted);
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
             cursor: pointer;
-            padding: 4px;
-            border-radius: 4px;
-            display: inline-flex;
+            transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+            color: var(--text-secondary);
+            background: transparent;
+            white-space: nowrap;
+            position: relative;
+        }
+        .analytics-nav-btn .nav-icon {
+            width: 16px; height: 16px;
+            transition: all 0.25s ease;
+        }
+        .analytics-nav-btn:hover {
+            color: var(--primary-color);
+            background: rgba(37,99,235,0.06);
+        }
+        .analytics-nav-btn.active {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(37,99,235,0.35);
+        }
+        .analytics-nav-btn.active .nav-icon {
+            filter: brightness(10);
+        }
+        .nav-badge {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+        }
+        .analytics-nav-btn:not(.active) .nav-badge {
+            background: rgba(37,99,235,0.12);
+            color: var(--primary-color);
+        }
+
+        /* ----- Sections ----- */
+        .analytics-section {
+            display: none;
+            animation: sectionFadeIn 0.3s ease forwards;
+        }
+        .analytics-section.active {
+            display: block;
+        }
+        @keyframes sectionFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ----- Section Headers ----- */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .section-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header-icon {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
-            margin-left: 6px;
+            background: rgba(37,99,235,0.1);
+            color: var(--primary-color);
+            flex-shrink: 0;
         }
-        .btn-run-del:hover {
-            color: var(--danger-color);
-            background: rgba(225, 29, 72, 0.08);
-        }
-
-        /* Dark Mode Specific Overrides for elements created dynamically */
-        [data-theme="dark"] .run-card {
-            background: rgba(20, 24, 33, 0.65);
-        }
-        [data-theme="dark"] .run-card.active-run {
-            background: rgba(59, 130, 246, 0.08) !important;
-            border-color: var(--primary-color);
-        }
-        [data-theme="dark"] .draft-card {
-            background: rgba(20, 24, 33, 0.65);
-            border-left: 4px solid #d97706;
-        }
-        [data-theme="dark"] .draft-card:hover {
-            background: rgba(217, 119, 6, 0.04);
-        }
-
-        /* Interactive table/card edit button styles */
-        .btn-draft-delete:hover {
-            background-color: rgba(225, 29, 72, 0.08) !important;
-        }
-
-        /* Count Badge inside Tab/Saved drafts header */
-        .count-badge {
-            font-size: 0.72rem;
-            padding: 2px 7px;
-            border-radius: 12px;
-            font-weight: 600;
+        .section-title {
             font-family: 'Inter', sans-serif;
-            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.15);
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        .section-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            margin-top: 1px;
         }
 
-        /* Form Group refinements */
+
+        /* ----- Dataset Creator ----- */
+        .creator-layout {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+        @media (max-width: 960px) {
+            .creator-layout { grid-template-columns: 1fr; }
+        }
+
+        .creator-panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+        }
+        .creator-panel:hover {
+            box-shadow: var(--shadow-md);
+            border-color: rgba(37, 99, 235, 0.25);
+        }
+        .creator-panel-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        [data-theme="dark"] .creator-panel-title { color: #e2e8f0; }
+
+        /* ----- Blueprint Grid Background ----- */
+        .blueprint-grid {
+            background-image: linear-gradient(rgba(0, 51, 102, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 51, 102, 0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+        [data-theme="dark"] .blueprint-grid {
+            background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        }
+
+        /* ----- Title Gradient Mask ----- */
+        .hero-title-mask {
+            background: linear-gradient(to right, #001e40, #003366);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        [data-theme="dark"] .hero-title-mask {
+            background: linear-gradient(to right, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-group:last-child { margin-bottom: 0; }
         .form-group label {
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-secondary);
             margin-bottom: 6px;
             display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
         .form-group input[type="text"],
         .form-group input[type="number"],
@@ -342,18 +332,160 @@
             border: 1px solid var(--border-color);
             outline: none;
             font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
-            background: var(--bg-panel-solid);
+            font-size: 0.875rem;
+            background: var(--bg-base);
             color: var(--text-primary);
             transition: all 0.2s ease;
+            box-sizing: border-box;
         }
         .form-group input:focus,
         .form-group select:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+        }
+        select:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* Editing banner */
+        #creator-editing-banner {
+            display: none;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, rgba(37,99,235,0.08), rgba(59,130,246,0.05));
+            border: 1px solid rgba(37,99,235,0.2);
+            border-radius: 10px;
+            color: var(--primary-color);
+            font-size: 0.83rem;
+            font-weight: 500;
+            margin-bottom: 16px;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        #creator-editing-banner.show { display: flex; }
+
+        /* Cat info badge */
+        .cat-info-badge {
+            display: none;
+            align-items: center;
+            gap: 7px;
+            background: linear-gradient(135deg, rgba(37,99,235,0.07), rgba(59,130,246,0.04));
+            border: 1px solid rgba(37,99,235,0.18);
+            border-radius: 8px;
+            padding: 9px 12px;
+            font-size: 0.78rem;
+            color: var(--primary-color);
+            margin-top: 6px;
+            animation: fadeSlideIn 0.2s ease;
+        }
+        .cat-info-badge.visible { display: flex; }
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Draft Card Inner Content Styles */
+        /* Stats Grid */
+        .stats-grid-creator {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        @media (max-width: 600px) {
+            .stats-grid-creator { grid-template-columns: 1fr; }
+        }
+        .stat-card-creator {
+            background: var(--bg-panel-solid);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.25s ease;
+            box-shadow: var(--shadow-sm);
+        }
+        .stat-card-creator:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: rgba(37,99,235,0.2);
+        }
+        [data-theme="dark"] .stat-card-creator { background: rgba(20,24,33,0.65); }
+        .stat-card-creator-icon {
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(37,99,235,0.08);
+            color: var(--primary-color);
+            flex-shrink: 0;
+        }
+        [data-theme="dark"] .stat-card-creator-icon { background: rgba(59,130,246,0.15); color: #60a5fa; }
+        .stat-card-creator-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-family: 'Inter', sans-serif;
+        }
+        .stat-card-creator-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            margin-top: 1px;
+        }
+
+        /* Creator table */
+        .creator-table th {
+            font-size: 0.75rem;
+            padding: 10px 8px;
+        }
+        .creator-table td {
+            padding: 6px 6px;
+        }
+        .creator-table input {
+            width: 100%;
+            padding: 7px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.82rem;
+            box-sizing: border-box;
+            background: var(--bg-panel-solid);
+            color: var(--text-primary);
+            transition: all 0.18s ease;
+        }
+        .creator-table input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+        }
+        .creator-table input[readonly] {
+            background: var(--bg-base);
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+        [data-theme="dark"] .creator-table input[readonly] { background: rgba(255,255,255,0.02); }
+
+        .btn-header-copy-down {
+            border: none;
+            background: none;
+            padding: 3px;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            border-radius: 4px;
+            transition: all 0.15s ease;
+        }
+        .btn-header-copy-down:hover {
+            background: rgba(37,99,235,0.1) !important;
+            color: var(--primary-color) !important;
+        }
+
+        /* Draft Cards */
         .draft-card-header {
             display: flex;
             justify-content: space-between;
@@ -363,168 +495,93 @@
         }
         .draft-card-title {
             font-weight: 700;
-            font-family: 'Outfit', sans-serif;
-            font-size: 0.88rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
             color: var(--text-primary);
             display: block;
             word-break: break-all;
         }
         .draft-card-sub {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
             word-break: break-all;
         }
         .draft-card-actions {
             display: flex;
-            gap: 6px;
+            gap: 5px;
             align-items: center;
         }
         .draft-card-footer {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: var(--text-muted);
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-top: 1px dashed var(--border-color);
-            padding-top: 8px;
-            margin-top: 4px;
+            padding-top: 7px;
+            margin-top: 2px;
         }
         .draft-card-badge {
-            background: rgba(0, 0, 0, 0.04);
+            background: rgba(0,0,0,0.04);
             padding: 2px 6px;
             border-radius: 4px;
             color: var(--text-secondary);
         }
-        [data-theme="dark"] .draft-card-badge {
-            background: rgba(255, 255, 255, 0.04);
-        }
-        .run-card-date {
-            margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: 2px;
-            font-size: 0.72rem;
-            color: var(--text-muted);
-            font-family: 'Inter', sans-serif;
-            font-weight: 400;
-        }
-        .run-card-action-text {
-            font-size: 0.7rem;
-            color: var(--primary-color);
-            font-weight: 600;
-        }
+        [data-theme="dark"] .draft-card-badge { background: rgba(255,255,255,0.04); }
+        .btn-draft-delete:hover { background-color: rgba(225,29,72,0.08) !important; }
 
-        /* Redesigned Performance Analytics Layout Styles */
-        .hero-banner {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            border-radius: var(--radius-lg);
-            padding: 24px 30px;
-            color: #ffffff;
-            margin-bottom: 25px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .hero-banner::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -10%;
-            width: 320px;
-            height: 320px;
-            background: radial-gradient(circle, rgba(37, 99, 235, 0.22) 0%, transparent 70%);
-            border-radius: var(--radius-full);
-            pointer-events: none;
-        }
-        .hero-banner h1 {
-            font-size: 1.85rem;
-            font-weight: 800;
-            margin-bottom: 8px;
-            background: linear-gradient(to right, #ffffff, #e2e8f0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .hero-banner p {
-            font-size: 0.92rem;
-            color: #94a3b8;
-            max-width: 650px;
-            line-height: 1.6;
-            margin: 0;
-        }
-        
-        .stats-grid-creator {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-        
-        .stat-card-creator {
-            background: var(--bg-panel-solid);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 16px 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: var(--shadow-sm);
-        }
-        .stat-card-creator:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-            border-color: rgba(37, 99, 235, 0.25);
-        }
-        .stat-card-creator-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(37, 99, 235, 0.08);
-            color: var(--primary-color);
-            flex-shrink: 0;
-        }
-        .stat-card-creator-info {
+        /* Drafts List */
+        #creator-drafts-list {
             display: flex;
             flex-direction: column;
+            gap: 8px;
+            max-height: 260px;
+            overflow-y: auto;
+            padding-right: 3px;
         }
-        .stat-card-creator-label {
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+        #creator-drafts-list::-webkit-scrollbar { width: 4px; }
+        #creator-drafts-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+        /* Action buttons bar */
+        .creator-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 12px 0;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 16px;
         }
-        .stat-card-creator-value {
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            font-family: 'Outfit', sans-serif;
-            margin-top: 2px;
+        .creator-action-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            flex: 1;
         }
-        
-        /* Dark mode overrides */
-        [data-theme="dark"] .stat-card-creator {
-            background: rgba(20, 24, 33, 0.65);
+        .creator-submit-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
-        [data-theme="dark"] .stat-card-creator-icon {
-            background: rgba(59, 130, 246, 0.15);
-            color: #60a5fa;
-        }
+
+        /* Dark mode fixes for panel titles */
+        [data-theme="dark"] .creator-panel-title { color: #e2e8f0; }
+        [data-theme="dark"] .section-title { color: #e2e8f0; }
+    
+        h1, h2, h3, h4 { font-family: 'Inter', sans-serif; }
     </style>
     <!-- Page Loader Transition Script -->
     <script src="page-loader.js?v=2.1"></script>
 </head>
 <body>
-    <div class="app-container">
+    <!-- Blueprint Grid Background -->
+    <div class="blueprint-grid" style="position: fixed; inset: 0; z-index: 0; pointer-events: none;"></div>
+
+    <div class="app-container" style="position: relative; z-index: 1;">
         <!-- Sidebar Navigation -->
-                <aside class="sidebar" data-sidebar="dynamic">
+        <aside class="sidebar" data-sidebar="dynamic">
             <script>
                 if (localStorage.getItem('thrustvault_sidebar_collapsed') === 'true') {
                     document.currentScript.parentElement.classList.add('collapsed');
@@ -545,83 +602,49 @@
                     </div>
                 </div>
             </div>
-</aside>
+        </aside>
 
         <!-- Main Content Area -->
         <div class="main-content-wrapper" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
-            
+
             <!-- TOPBAR -->
             <header class="topbar">
-                <h2 style="font-family:'Outfit'; font-size:1.5rem; font-weight:700; display:flex; align-items:center; gap:10px;">
-                    <i data-lucide="clipboard-list" style="color:var(--primary-color); width: 28px; height: 28px;"></i>
-                    Test Runs
+                <h2 style="font-family:'Inter'; font-size:1.5rem; font-weight:700; display:flex; align-items:center; gap:10px;">
+                    <i data-lucide="bar-chart-2" style="color:var(--primary-color); width: 28px; height: 28px;"></i>
+                    <span class="hero-title-mask">Performance Analytics</span>
                 </h2>
             </header>
 
             <!-- MAIN VIEWPORT -->
-            <main class="main-content" style="overflow-y:auto; padding:30px;">
-                
-                <!-- View Tabs (Hidden) -->
-                <div class="analytics-tabs" style="display: none !important;">
-                    <button class="tab-btn active" id="tab-btn-visualizer"><i data-lucide="clipboard-list" style="width:16px; height:16px; vertical-align:middle; margin-right:4px;"></i> Test Runs Directory</button>
-                    <button class="tab-btn" id="tab-btn-creator" style="display:none;"><i data-lucide="plus-circle" style="width:16px; height:16px; vertical-align:middle; margin-right:4px;"></i> Create/Import Dataset</button>
-                </div>
+            <main class="main-content" style="overflow-y:auto; padding:28px;">
 
-                <!-- SECTION 1: TEST RUNS DIRECTORY (Hidden Hook Structure to prevent script crashes) -->
-                <div id="section-visualizer" style="display: none !important;">
-                    <select id="plot-category-select"></select>
-                    <input type="hidden" id="plot-motor-select">
-                    <input type="text" id="plot-motor-input">
-                    <datalist id="plot-motor-datalist"></datalist>
-                    <select id="plot-metric-select"></select>
-                    <div id="test-runs-list"></div>
-                    <span id="test-runs-count-badge">0</span>
-                    <span id="active-run-label"></span>
-                    <span id="total-test-runs-count">0</span>
-                    <span id="total-data-points-count">0</span>
-                    <div id="draft-run-banner">
-                        <strong id="draft-original-motor-label"></strong>
-                        <button type="button" id="btn-trigger-finalize"></button>
-                    </div>
-                    <table id="data-points-grid-table">
-                        <tbody id="data-points-grid-rows"></tbody>
-                    </table>
-                </div>
-
-                <!-- SECTION 2: DATASET CREATOR -->
-                <div class="tab-section" id="section-creator" style="display: block;">
-                    <!-- Hero Banner -->
-                    <div class="hero-banner">
-                        <h1>
-                            <i data-lucide="zap" style="color:#f59e0b; width:30px; height:30px; fill:#f59e0b;"></i>
-                            Calibration Dataset Creator
-                        </h1>
-                        <p>
-                            Import spreadsheet test runs or add custom throttle calibration steps manually. Build clean UAV motor performance profiles to publish into the catalog.
-                        </p>
-                    </div>
+                <!-- ====== SECTION: DATASET CREATOR ====== -->
+                <div id="section-creator" class="analytics-section active">
 
                     <form id="dataset-creator-form">
                         <!-- Editing Draft Banner -->
-                        <div id="creator-editing-banner" style="display:none; padding:12px 16px; background:linear-gradient(135deg, #eff6ff, #dbeafe); border:1px solid #bfdbfe; border-radius:8px; color:#1e40af; font-size:0.85rem; font-weight:500; margin-bottom:15px; justify-content:space-between; align-items:center; gap:12px;">
-                            <span>Currently editing Draft Run: <strong id="creator-editing-draft-name">--</strong></span>
-                            <button type="button" class="btn-secondary" id="btn-cancel-edit-draft" style="padding:4px 8px; font-size:0.75rem; border-radius:6px; height:24px; cursor:pointer;">Cancel Edit</button>
+                        <div id="creator-editing-banner" style="display:none; padding:12px 16px; background:linear-gradient(135deg, rgba(37,99,235,0.08), rgba(59,130,246,0.05)); border:1px solid rgba(37,99,235,0.2); border-radius:10px; color:var(--primary-color); font-size:0.83rem; font-weight:500; margin-bottom:16px; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+                            <span style="display:flex; align-items:center; gap:8px;">
+                                <i data-lucide="edit-3" style="width:14px; height:14px;"></i>
+                                Editing Draft: <strong id="creator-editing-draft-name">--</strong>
+                            </span>
+                            <button type="button" class="btn-secondary" id="btn-cancel-edit-draft" style="padding:5px 10px; font-size:0.75rem; border-radius:6px; cursor:pointer;">Cancel Edit</button>
                         </div>
 
-                        <div class="creator-grid">
-                            
-                            <!-- Left Column: Config and Drafts list -->
-                            <div style="display:flex; flex-direction:column; gap:20px;">
-                                <!-- Metadata Form Fields -->
-                                <div class="glass-panel" style="display:flex; flex-direction:column; gap:18px;">
-                                    <h3 style="font-family:'Outfit'; font-size:1.15rem; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
-                                        <i data-lucide="info" style="color:var(--primary-color); width:18px;"></i>
+                        <div class="creator-layout">
+                            <!-- Left: Config + Drafts -->
+                            <div style="display:flex; flex-direction:column; gap:18px;">
+
+                                <!-- Test Configuration -->
+                                <div class="creator-panel">
+                                    <div class="creator-panel-title">
+                                        <i data-lucide="settings-2" style="width:17px; height:17px; color:var(--primary-color);"></i>
                                         Test Configuration
-                                    </h3>
-                                    
-                                    <div class="form-group" style="margin-bottom: 5px;">
-                                        <label style="display:flex; align-items:center; gap:8px; font-weight:600; cursor:pointer; font-family:'Inter'; font-size:0.9rem; margin:0;">
-                                            <input type="checkbox" id="form-is-draft" style="width:16px; height:16px; cursor:pointer;">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label style="display:flex; align-items:center; gap:8px; font-weight:600; cursor:pointer; font-family:'Inter'; font-size:0.875rem; margin:0; text-transform:none; letter-spacing:0;">
+                                            <input type="checkbox" id="form-is-draft" style="width:15px; height:15px; cursor:pointer; accent-color:var(--primary-color);">
                                             <span>Save as Draft (Unregistered Motor)</span>
                                         </label>
                                     </div>
@@ -633,26 +656,28 @@
 
                                     <div class="form-group">
                                         <label for="form-category-select">Thrust Level *</label>
-                                        <select id="form-category-select" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-family:'Inter'; font-size:0.9rem;">
+                                        <select id="form-category-select" required>
                                             <option value="">-- Select Thrust Level --</option>
                                         </select>
                                         <div class="cat-info-badge" id="form-cat-info-badge">
-                                            <i data-lucide="info" style="width:14px; height:14px;"></i>
+                                            <i data-lucide="info" style="width:13px; height:13px;"></i>
                                             <span id="form-cat-info-text"></span>
                                         </div>
                                     </div>
+
                                     <div class="form-group" id="form-test-motor-container">
                                         <label for="form-test-motor-input">Motor Model *</label>
-                                        <div style="position: relative;">
-                                            <i data-lucide="search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: #94a3b8;"></i>
-                                            <input type="text" id="form-test-motor-input" disabled required placeholder="-- Select Thrust Level First --" list="form-test-motor-datalist" style="width:100%; padding:10px 10px 10px 32px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-family:'Inter'; font-size:0.9rem; box-sizing: border-box; transition: all 0.2s;">
+                                        <div style="position:relative;">
+                                            <i data-lucide="search" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); width:13px; height:13px; color:#94a3b8; pointer-events:none;"></i>
+                                            <input type="text" id="form-test-motor-input" disabled required placeholder="-- Select Thrust Level First --" list="form-test-motor-datalist" style="padding-left:32px; box-sizing:border-box;">
                                             <datalist id="form-test-motor-datalist"></datalist>
                                             <input type="hidden" id="form-test-motor">
                                         </div>
                                     </div>
+
                                     <div class="form-group">
                                         <label for="form-test-propeller">Propeller Model *</label>
-                                        <input type="text" id="form-test-propeller" required placeholder="e.g. T-MOTOR 14*4.8CF">
+                                        <input type="text" id="form-test-propeller" required placeholder="e.g. T-MOTOR 14×4.8CF">
                                     </div>
                                     <div class="form-group">
                                         <label for="form-test-esc">ESC Model</label>
@@ -668,43 +693,49 @@
                                     </div>
                                 </div>
 
-                                <!-- Saved Drafts Panel -->
-                                <div class="glass-panel" id="panel-saved-drafts" style="display:flex; flex-direction:column; gap:15px;">
-                                    <h3 style="font-family:'Outfit'; font-size:1.15rem; color:#0f172a; margin:0; display:flex; align-items:center; justify-content:space-between;">
+                                <!-- Saved Drafts -->
+                                <div class="creator-panel" id="panel-saved-drafts">
+                                    <div class="creator-panel-title" style="justify-content:space-between;">
                                         <span style="display:flex; align-items:center; gap:8px;">
-                                            <i data-lucide="clipboard-list" style="color:var(--primary-color); width:18px;"></i>
+                                            <i data-lucide="bookmark" style="width:17px; height:17px; color:#f59e0b;"></i>
                                             Saved Drafts
                                         </span>
-                                        <span id="drafts-count-badge" class="count-badge" style="background:var(--primary-color); color:#fff; font-size:0.75rem; padding:2px 8px; border-radius:12px; font-weight:600; font-family:'Inter';">0</span>
-                                    </h3>
-                                    <div id="creator-drafts-list" style="display:flex; flex-direction:column; gap:10px; max-height: 250px; overflow-y:auto; padding-right:4px;">
-                                        <div style="color: #64748b; font-size: 0.85rem; text-align: center; padding: 20px 0;">
-                                            Loading drafts...
-                                        </div>
+                                        <span id="drafts-count-badge" class="count-badge" style="background:var(--primary-color); color:#fff; padding:2px 8px; border-radius:12px;">0</span>
+                                    </div>
+                                    <div id="creator-drafts-list">
+                                        <div style="color:var(--text-muted); font-size:0.83rem; text-align:center; padding:18px 0;">Loading drafts…</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Interactive Grid Table -->
-                            <div class="glass-panel" style="display:flex; flex-direction:column; gap:15px; min-width: 0;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                                    <h3 style="font-family:'Outfit'; font-size:1.15rem; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
-                                        <i data-lucide="table" style="color:var(--primary-color); width:18px;"></i>
+                            <!-- Right: Calibration Table -->
+                            <div class="creator-panel" style="min-width:0;">
+                                <div class="creator-panel-title" style="justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                                    <span style="display:flex; align-items:center; gap:8px;">
+                                        <i data-lucide="table" style="width:17px; height:17px; color:var(--primary-color);"></i>
                                         Throttle Steps Calibration Table
-                                    </h3>
-                                    <div style="display:flex; gap:10px; align-items:center;">
-                                        <button type="button" class="btn-outline-sm" id="btn-download-runs-template" style="padding:6px 12px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; font-family:'Inter',sans-serif; font-weight:500; border-radius:var(--radius-md);">
-                                            <i data-lucide="download" style="width:14px; height:14px;"></i> Download XLSX Template
+                                    </span>
+                                </div>
+
+                                <!-- Action buttons -->
+                                <div class="creator-actions">
+                                    <div class="creator-action-group">
+                                        <button type="button" class="btn-outline-sm" id="btn-download-runs-template" style="padding:7px 12px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; border-radius:var(--radius-md);">
+                                            <i data-lucide="download" style="width:13px; height:13px;"></i>
+                                            XLSX Template
                                         </button>
-                                        <a href="thrustvault_runs_template.csv" download class="btn-outline-sm" style="padding:6px 12px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; text-decoration:none; color:inherit; font-family:'Inter',sans-serif; font-weight:500; border-radius:var(--radius-md);">
-                                            <i data-lucide="download" style="width:14px; height:14px;"></i> Download CSV Template
+                                        <a href="thrustvault_runs_template.csv" download class="btn-outline-sm" style="padding:7px 12px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; text-decoration:none; color:inherit; border-radius:var(--radius-md);">
+                                            <i data-lucide="download" style="width:13px; height:13px;"></i>
+                                            CSV Template
                                         </a>
-                                        <label class="btn-outline-sm" style="padding:6px 12px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; cursor:pointer; margin:0; font-family:'Inter',sans-serif; font-weight:500; border-radius:var(--radius-md);">
-                                            <i data-lucide="upload" style="width:14px; height:14px;"></i> Import Spreadsheet (XLSX, CSV)
+                                        <label class="btn-outline-sm" style="padding:7px 12px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; cursor:pointer; margin:0; border-radius:var(--radius-md);">
+                                            <i data-lucide="upload" style="width:13px; height:13px;"></i>
+                                            Import (XLSX/CSV)
                                             <input type="file" id="btn-import-file" accept=".xlsx,.xls,.csv" style="display:none;">
                                         </label>
-                                        <button type="button" class="btn-outline-sm" id="btn-add-step-row" style="padding:6px 12px; font-size:0.8rem; display:flex; align-items:center; gap:6px;">
-                                            <i data-lucide="plus" style="width:14px;"></i> Add Throttle Step
+                                        <button type="button" class="btn-outline-sm" id="btn-add-step-row" style="padding:7px 12px; font-size:0.8rem; display:flex; align-items:center; gap:6px;">
+                                            <i data-lucide="plus" style="width:13px; height:13px;"></i>
+                                            Add Step
                                         </button>
                                     </div>
                                 </div>
@@ -713,68 +744,69 @@
                                 <div class="stats-grid-creator">
                                     <div class="stat-card-creator">
                                         <div class="stat-card-creator-icon">
-                                            <i data-lucide="layers" style="width:20px; height:20px;"></i>
+                                            <i data-lucide="layers" style="width:18px; height:18px;"></i>
                                         </div>
-                                        <div class="stat-card-creator-info">
-                                            <span class="stat-card-creator-label">Total Steps</span>
-                                            <span class="stat-card-creator-value" id="stat-total-steps">5</span>
-                                        </div>
-                                    </div>
-                                    <div class="stat-card-creator">
-                                        <div class="stat-card-creator-icon" style="background: rgba(16, 185, 129, 0.08); color: #10b981;">
-                                            <i data-lucide="trending-up" style="width:20px; height:20px;"></i>
-                                        </div>
-                                        <div class="stat-card-creator-info">
-                                            <span class="stat-card-creator-label">Peak Thrust</span>
-                                            <span class="stat-card-creator-value" id="stat-max-thrust">0 g</span>
+                                        <div>
+                                            <div class="stat-card-creator-label">Total Steps</div>
+                                            <div class="stat-card-creator-value" id="stat-total-steps">5</div>
                                         </div>
                                     </div>
                                     <div class="stat-card-creator">
-                                        <div class="stat-card-creator-icon" style="background: rgba(245, 158, 11, 0.08); color: #f59e0b;">
-                                            <i data-lucide="activity" style="width:20px; height:20px;"></i>
+                                        <div class="stat-card-creator-icon" style="background:rgba(16,185,129,0.08); color:#10b981;">
+                                            <i data-lucide="trending-up" style="width:18px; height:18px;"></i>
                                         </div>
-                                        <div class="stat-card-creator-info">
-                                            <span class="stat-card-creator-label">Best Efficiency</span>
-                                            <span class="stat-card-creator-value" id="stat-peak-efficiency">0.00 g/W</span>
+                                        <div>
+                                            <div class="stat-card-creator-label">Peak Thrust</div>
+                                            <div class="stat-card-creator-value" id="stat-max-thrust">0 g</div>
+                                        </div>
+                                    </div>
+                                    <div class="stat-card-creator">
+                                        <div class="stat-card-creator-icon" style="background:rgba(245,158,11,0.08); color:#f59e0b;">
+                                            <i data-lucide="activity" style="width:18px; height:18px;"></i>
+                                        </div>
+                                        <div>
+                                            <div class="stat-card-creator-label">Best Efficiency</div>
+                                            <div class="stat-card-creator-value" id="stat-peak-efficiency">0.00 g/W</div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="table-responsive" style="max-height: 380px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;">
+                                <!-- Table -->
+                                <div class="table-responsive" style="max-height:360px; overflow-y:auto; border:1px solid var(--border-color); border-radius:10px;">
                                     <table class="motors-table creator-table" style="margin:0;">
-                                        <thead style="position:sticky; top:0; background:#f8fafc; z-index:10; border-bottom:2px solid #e2e8f0;">
+                                        <thead style="position:sticky; top:0; background:var(--bg-base); z-index:10; border-bottom:2px solid var(--border-color);">
                                             <tr id="creator-table-headers">
                                                 <th style="width:80px; white-space:nowrap;">Throttle (%)</th>
                                                 <th style="white-space:nowrap;">
                                                     <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
                                                         <span>Voltage (V)</span>
-                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-voltage" title="Copy first row to all rows" style="border:none; background:none; padding:2px; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s;"><i data-lucide="chevron-down" style="width:14px; height:14px;"></i></button>
+                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-voltage" title="Copy first row to all rows"><i data-lucide="chevron-down" style="width:13px; height:13px;"></i></button>
                                                     </div>
                                                 </th>
                                                 <th style="white-space:nowrap;">
                                                     <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
                                                         <span>Current (A)</span>
-                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-current" title="Copy first row to all rows" style="border:none; background:none; padding:2px; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s;"><i data-lucide="chevron-down" style="width:14px; height:14px;"></i></button>
+                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-current" title="Copy first row to all rows"><i data-lucide="chevron-down" style="width:13px; height:13px;"></i></button>
                                                     </div>
                                                 </th>
                                                 <th style="white-space:nowrap;">Power (W)</th>
                                                 <th style="white-space:nowrap;">
                                                     <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
                                                         <span>Thrust (g)</span>
-                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-thrust" title="Copy first row to all rows" style="border:none; background:none; padding:2px; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s;"><i data-lucide="chevron-down" style="width:14px; height:14px;"></i></button>
+                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-thrust" title="Copy first row to all rows"><i data-lucide="chevron-down" style="width:13px; height:13px;"></i></button>
                                                     </div>
                                                 </th>
                                                 <th style="white-space:nowrap;">
                                                     <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
                                                         <span>RPM</span>
-                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-rpm" title="Copy first row to all rows" style="border:none; background:none; padding:2px; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s;"><i data-lucide="chevron-down" style="width:14px; height:14px;"></i></button>
+                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-rpm" title="Copy first row to all rows"><i data-lucide="chevron-down" style="width:13px; height:13px;"></i></button>
                                                     </div>
                                                 </th>
                                                 <th style="white-space:nowrap;">Efficiency (g/W)</th>
                                                 <th style="white-space:nowrap;">
                                                     <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
                                                         <span>Temp (℃)</span>
-                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-temp" title="Copy first row to all rows" style="border:none; background:none; padding:2px; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; border-radius:4px; transition:all 0.15s;"><i data-lucide="chevron-down" style="width:14px; height:14px;"></i></button>
+                                                        <button type="button" class="btn-header-copy-down" data-target-class="inp-temp" title="Copy first row to all rows"><i data-lucide="chevron-down" style="width:13px; height:13px;"></i></button>
                                                     </div>
                                                 </th>
                                                 <th style="width:40px; text-align:center;"></th>
@@ -786,21 +818,27 @@
                                     </table>
                                 </div>
 
-                                <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:10px; border-top:1px solid #f1f5f9; padding-top:15px;">
-                                    <button type="button" class="btn-secondary" id="btn-reset-creator" style="border-radius:8px;">Clear Dataset</button>
+                                <!-- Submit bar -->
+                                <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:16px; padding-top:16px; border-top:1px solid var(--border-color);">
+                                    <button type="button" class="btn-secondary" id="btn-reset-creator" style="border-radius:8px;">
+                                        <i data-lucide="trash-2" style="width:14px; height:14px; vertical-align:middle; margin-right:4px;"></i>
+                                        Clear Dataset
+                                    </button>
                                     <button type="submit" class="btn-primary" style="border-radius:8px; display:flex; align-items:center; gap:8px;">
-                                        <i data-lucide="save" style="width:16px;"></i> Save Performance Dataset
+                                        <i data-lucide="save" style="width:15px; height:15px;"></i>
+                                        Save Performance Dataset
                                     </button>
                                 </div>
                             </div>
-
                         </div>
                     </form>
-                </div>
+                </div><!-- end section-creator -->
 
             </main>
         </div>
     </div>
+
+    <!-- ====== MODALS (kept intact) ====== -->
 
     <!-- Custom Confirm Dialog -->
     <div class="modal-backdrop" id="confirm-modal">
@@ -823,11 +861,11 @@
     <div class="modal-backdrop" id="multi-run-modal">
         <div class="modal-container" style="max-width: 600px; width: 90%;">
             <div class="modal-header">
-                <h3 style="font-family:'Outfit'; font-weight:700;"><i data-lucide="layers" style="color:var(--primary-color); vertical-align:middle; margin-right:6px; width:20px; height:20px; display:inline-block;"></i> Multiple Test Runs Detected</h3>
+                <h3 style="font-family:'Inter'; font-weight:700;"><i data-lucide="layers" style="color:var(--primary-color); vertical-align:middle; margin-right:6px; width:20px; height:20px; display:inline-block;"></i> Multiple Test Runs Detected</h3>
                 <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom:15px; color:#475569; font-size:0.9rem;">We found multiple test configurations in this spreadsheet. Please select which run you would like to map and import:</p>
+                <p style="margin-bottom:15px; color:var(--text-secondary); font-size:0.9rem;">We found multiple test configurations in this spreadsheet. Please select which run you would like to map and import:</p>
                 <div id="multi-run-list" style="display:flex; flex-direction:column; gap:10px; max-height: 350px; overflow-y:auto; padding-right:4px;">
                     <!-- Populated dynamically by JavaScript -->
                 </div>
@@ -842,24 +880,22 @@
     <div class="modal-backdrop" id="column-mapping-modal">
         <div class="modal-container" style="max-width: 95%; width: 1200px; height: 85vh; display: flex; flex-direction: column;">
             <div class="modal-header">
-                <h3 style="font-family:'Outfit'; font-weight:700;"><i data-lucide="edit" style="color:var(--primary-color); vertical-align:middle; margin-right:6px; width:20px; height:20px; display:inline-block;"></i> Map & Edit Spreadsheet Columns</h3>
+                <h3 style="font-family:'Inter'; font-weight:700;"><i data-lucide="edit" style="color:var(--primary-color); vertical-align:middle; margin-right:6px; width:20px; height:20px; display:inline-block;"></i> Map &amp; Edit Spreadsheet Columns</h3>
                 <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 20px;">
-                <p style="color:#475569; font-size:0.9rem; margin-bottom:15px;">
+                <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:15px;">
                     We detected the columns shown below. Map each spreadsheet column to a standard field, metadata field, or custom field.
                 </p>
-                
                 <!-- Validation messages -->
                 <div id="mapping-validation-alert" style="display:none; padding:10px 15px; background-color:#fee2e2; border:1px solid #fecaca; border-radius:6px; color:#b91c1c; font-size:0.85rem; margin-bottom:15px; font-weight:500; align-items:center; gap:8px;">
                     <i data-lucide="alert-circle" style="width:16px; height:16px; flex-shrink:0;"></i>
                     <span id="mapping-validation-text"></span>
                 </div>
-
                 <!-- Table Preview Workspace -->
-                <div class="table-responsive" style="flex: 1; overflow: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+                <div class="table-responsive" style="flex: 1; overflow: auto; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-base);">
                     <table class="motors-table" style="margin:0; min-width: 100%; border-collapse: collapse;">
-                        <thead style="position:sticky; top:0; background:#f8fafc; z-index:10; border-bottom:2px solid #e2e8f0;" id="mapping-table-header">
+                        <thead style="position:sticky; top:0; background:var(--bg-base); z-index:10; border-bottom:2px solid var(--border-color);" id="mapping-table-header">
                             <!-- Populated by JS -->
                         </thead>
                         <tbody id="mapping-table-body">
@@ -868,8 +904,8 @@
                     </table>
                 </div>
             </div>
-            <div class="modal-footer" style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #e2e8f0; padding-top:15px; margin-top:0;">
-                <span style="font-size:0.8rem; color:#64748b; font-weight:500;" id="mapping-info-summary"></span>
+            <div class="modal-footer" style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-color); padding-top:15px; margin-top:0;">
+                <span style="font-size:0.8rem; color:var(--text-muted); font-weight:500;" id="mapping-info-summary"></span>
                 <div style="display:flex; gap:10px;">
                     <button class="btn-secondary modal-close-trigger">Cancel</button>
                     <button class="btn-primary" id="btn-confirm-mapping" disabled style="display:flex; align-items:center; gap:6px;">
@@ -884,16 +920,16 @@
     <div class="modal-backdrop" id="bulk-preview-modal">
         <div class="modal-container" style="max-width: 1100px; width: 95%; height: 85vh; display: flex; flex-direction: column;">
             <div class="modal-header">
-                <h3 style="font-family:'Outfit'; font-weight:700;"><i data-lucide="clipboard-list" style="color:var(--primary-color); vertical-align:middle; margin-right:6px; width:20px; height:20px; display:inline-block;"></i> Bulk Import Preview</h3>
+                <h3 style="font-family:'Inter'; font-weight:700;"><i data-lucide="clipboard-list" style="color:var(--primary-color); vertical-align:middle; margin-right:6px; width:20px; height:20px; display:inline-block;"></i> Bulk Import Preview</h3>
                 <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 20px;">
-                <p style="color:#475569; font-size:0.9rem; margin-bottom:15px;">
+                <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:15px;">
                     Review the detected test runs below. Match each run to a motor model from the database, or import them as drafts if the motor is unregistered.
                 </p>
-                <div class="table-responsive" style="border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
+                <div class="table-responsive" style="border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-panel-solid);">
                     <table class="motors-table" style="margin:0; min-width: 100%; border-collapse: collapse;">
-                        <thead style="position:sticky; top:0; background:#f8fafc; z-index:10; border-bottom:2px solid #e2e8f0;">
+                        <thead style="position:sticky; top:0; background:var(--bg-base); z-index:10; border-bottom:2px solid var(--border-color);">
                             <tr>
                                 <th style="width: 50px; text-align: center;">Import</th>
                                 <th>Motor Model (Sheet)</th>
@@ -913,12 +949,12 @@
                     </table>
                 </div>
             </div>
-            <div class="modal-footer" style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; border-top:1px solid #e2e8f0; padding-top:15px; margin-top:0;">
-                <span style="font-size:0.85rem; color:#64748b; font-weight:500;" id="bulk-preview-summary">Ready to Import: 0 | Drafts: 0</span>
+            <div class="modal-footer" style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-color); padding-top:15px; margin-top:0;">
+                <span style="font-size:0.85rem; color:var(--text-muted); font-weight:500;" id="bulk-preview-summary">Ready to Import: 0 | Drafts: 0</span>
                 <div style="display:flex; gap:10px;">
                     <button class="btn-secondary modal-close-trigger">Cancel</button>
                     <button class="btn-primary" id="btn-bulk-save" style="display:flex; align-items:center; gap:6px;">
-                        <i data-lucide="save" style="width:16px; height:16px;"></i> Save & Import Selected
+                        <i data-lucide="save" style="width:16px; height:16px;"></i> Save &amp; Import Selected
                     </button>
                 </div>
             </div>
@@ -929,30 +965,41 @@
     <div class="modal-backdrop" id="finalize-draft-modal">
         <div class="modal-container modal-sm">
             <div class="modal-header">
-                <h3 style="font-family:'Outfit'; font-weight:700;"><i data-lucide="check-square" style="color:var(--primary-color); vertical-align:middle; margin-right:6px; width:20px; height:20px; display:inline-block;"></i> Finalize Draft Run</h3>
+                <h3 style="font-family:'Inter'; font-weight:700;"><i data-lucide="check-square" style="color:var(--primary-color); vertical-align:middle; margin-right:6px; width:20px; height:20px; display:inline-block;"></i> Finalize Draft Run</h3>
                 <button class="btn-icon-close modal-close-trigger"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body" style="padding: 20px 0;">
                 <div style="display:flex; flex-direction:column; gap:12px;">
                     <div>
-                        <span style="font-size:0.8rem; color:#64748b; font-weight:600; text-transform:uppercase;">Original Motor Name (from Sheet):</span>
-                        <div id="finalize-original-motor-name" style="font-family:'Outfit'; font-weight:600; color:var(--text-primary); margin-top:4px; font-size:1rem; background:var(--bg-base); border:1px solid var(--border-color); padding:8px 12px; border-radius:6px;">--</div>
+                        <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Original Motor Name (from Sheet):</span>
+                        <div id="finalize-original-motor-name" style="font-family:'Inter'; font-weight:600; color:var(--text-primary); margin-top:4px; font-size:1rem; background:var(--bg-base); border:1px solid var(--border-color); padding:8px 12px; border-radius:6px;">--</div>
                     </div>
-                    
                     <div class="form-group" style="margin:0;">
-                        <label for="finalize-motor-select" style="font-size:0.8rem; font-weight:600; margin-bottom:6px; display:block;">Select Registered Motor *</label>
-                        <select id="finalize-motor-select" style="width:100%; padding:8px 10px; border-radius:6px; outline:none; font-size:0.85rem;">
+                        <label for="finalize-motor-select" style="font-size:0.75rem; font-weight:600; margin-bottom:6px; display:block; text-transform:uppercase; letter-spacing:0.04em;">Select Registered Motor *</label>
+                        <select id="finalize-motor-select" style="width:100%; padding:8px 10px; border-radius:6px; outline:none; font-size:0.85rem; border:1px solid var(--border-color); background:var(--bg-base); color:var(--text-primary);">
                             <!-- Populated dynamically -->
                         </select>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer" style="padding-top:15px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:10px; margin-top:0;">
+            <div class="modal-footer" style="padding-top:15px; border-top:1px solid var(--border-color); display:flex; justify-content:flex-end; gap:10px; margin-top:0;">
                 <button class="btn-secondary modal-close-trigger">Cancel</button>
-                <button class="btn-primary" id="btn-save-finalize">Save & Finalize</button>
+                <button class="btn-primary" id="btn-save-finalize">Save &amp; Finalize</button>
             </div>
         </div>
     </div>
+
+    <!-- Tab initialization helper -->
+    <script>
+        window.switchAnalyticsTab = function(tab) {};
+        document.addEventListener('DOMContentLoaded', function() {
+            const cre = document.getElementById('section-creator');
+            if (cre) {
+                cre.classList.add('active');
+                cre.style.display = '';
+            }
+        });
+    </script>
 
     <!-- JavaScript Controller -->
     <script src="performance_app.js?v=2"></script>
