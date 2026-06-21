@@ -858,13 +858,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             tr.innerHTML = `
                 <td class="py-3 px-2 text-center"><input type="checkbox" class="compare-cb rounded border-slate-300 dark:border-slate-700 dark:bg-slate-900 text-[#003366] dark:text-blue-500 focus:ring-[#003366]/20" data-id="${m.id}" ${isChecked ? 'checked' : ''}></td>
-                <td class="py-3 px-2 text-center"><div class="motor-thumbnail mx-auto" style="${thumbStyle}">${initials}</div></td>
                 <td class="py-3 px-2"><a href="#" class="motor-profile-link text-[#003366] hover:text-[#001e40] dark:text-[#a7c8ff] dark:hover:text-[#d5e3ff] font-semibold" data-id="${m.id}">${escapeHTML(m.motor)}</a></td>
                 <td class="py-3 px-2 text-slate-600 dark:text-slate-400">${escapeHTML(m.company)}</td>
                 <td class="py-3 px-2 text-slate-800 dark:text-slate-200"><strong>${escapeHTML(kv)}</strong></td>
                 <td class="py-3 px-2"><span class="badge-thrust px-2 py-0.5 text-xs rounded-full" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); color: var(--primary-color);">${escapeHTML(voltage)}</span></td>
                 <td class="py-3 px-2"><span class="badge-thrust px-2 py-0.5 text-xs rounded-full bg-emerald-50/50 border border-emerald-200/60 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-800/40 dark:text-emerald-400">${escapeHTML(m.thrust)}</span></td>
-                <td class="py-3 px-2 text-slate-600 dark:text-slate-400">${escapeHTML(weight)}</td>
                 <td class="py-3 px-2 text-slate-600 dark:text-slate-400 text-xs max-w-[150px] truncate" title="${escapeHTML(m.prop || '-')}">${escapeHTML(m.prop || '-')}</td>
                 <td class="py-3 px-2 text-slate-600 dark:text-slate-400 text-xs max-w-[130px] truncate" title="${escapeHTML(m.esc || '-')}">${escapeHTML(m.esc || '-')}</td>
                 <td class="py-3 px-2 text-center"><div class="action-links flex items-center justify-center gap-1.5">${linksHtml}</div></td>
