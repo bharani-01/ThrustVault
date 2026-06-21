@@ -3157,11 +3157,11 @@ button:active { transform: scale(0.98); }
 }
 
 /* Sidebar in dark mode */
-[data-theme="dark"] .sidebar {
-    background-color: #080808;
+[data-theme="dark"] .sidebar, html.dark .sidebar {
+    background-color: #000000 !important;
 }
-[data-theme="dark"] .sidebar-footer {
-    background: #080808;
+[data-theme="dark"] .sidebar-footer, html.dark .sidebar-footer {
+    background: #000000 !important;
 }
 [data-theme="dark"] .btn-sidebar-link.active {
     background: rgba(59, 130, 246, 0.15) !important;
@@ -4601,8 +4601,8 @@ button:active { transform: scale(0.98); }
     transition: background 0.3s, border-color 0.3s;
 }
 
-[data-theme="dark"] .sidebar {
-    background: rgba(15, 23, 42, 0.75) !important;
+[data-theme="dark"] .sidebar, html.dark .sidebar {
+    background: #000000 !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
