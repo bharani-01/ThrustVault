@@ -305,7 +305,48 @@ async function requestAccess(req, res) {
 
   try {
     const dup = await pool.query('SELECT id FROM user_profiles WHERE email = $1', [email]);
-    if (dup.rows.length) return res.status(409).json({ error: 'An account already exists with this email.' });
+    if (dup.rows.length) {
+      // Self-healing: Check if user actually exists in AWS Cognito User Pool.
+      // If they don't, we clean up the stale DB records so registration can proceed.
+      const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
+      let existsInCognito = false;
+      if (USER_POOL_ID) {
+        try {
+          const { ListUsersCommand } = require('@aws-sdk/client-cognito-identity-provider');
+          const listUsersRes = await cognito.send(new ListUsersCommand({
+            UserPoolId: USER_POOL_ID,
+            Filter: `email = "${email}"`
+          }));
+          existsInCognito = listUsersRes.Users && listUsersRes.Users.length > 0;
+        } catch (cognitoErr) {
+          console.warn('[Self-Healing] Failed to list users from Cognito:', cognitoErr.message);
+          // If we fail to check Cognito (e.g. credentials error), we assume they exist to be safe.
+          existsInCognito = true;
+        }
+      }
+
+      if (!existsInCognito) {
+        console.log(`[Self-Healing] User ${email} exists in database but not in Cognito. Cleaning up stale database records...`);
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+          const userId = dup.rows[0].id;
+          await client.query('DELETE FROM public.user_onboarding WHERE user_id = $1', [userId]);
+          await client.query('DELETE FROM public.user_profiles WHERE id = $1', [userId]);
+          await client.query('DELETE FROM auth.users WHERE id = $1', [userId]);
+          await client.query('DELETE FROM public.access_requests WHERE email = $1', [email]);
+          await client.query('COMMIT');
+        } catch (err) {
+          await client.query('ROLLBACK');
+          console.error('[Self-Healing] DB cleanup error:', err.message);
+          return res.status(500).json({ error: 'Database cleanup failed during self-healing: ' + err.message });
+        } finally {
+          client.release();
+        }
+      } else {
+        return res.status(409).json({ error: 'An account already exists with this email.' });
+      }
+    }
 
     const pend = await pool.query("SELECT id FROM access_requests WHERE email = $1 AND status = 'pending'", [email]);
     if (pend.rows.length) return res.status(409).json({ error: 'A request is already pending for this email.' });
