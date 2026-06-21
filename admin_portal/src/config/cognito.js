@@ -27,10 +27,20 @@ if (process.env.NODE_ENV !== 'production' && !process.env.AWS_ACCESS_KEY_ID && !
   }
 }
 
-const cognito = new CognitoIdentityProviderClient({
+const clientConfig = {
   region: process.env.COGNITO_REGION || process.env.AWS_REGION || 'eu-north-1',
-  credentials,
-});
+};
+
+if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+  clientConfig.credentials = {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  };
+} else if (credentials) {
+  clientConfig.credentials = credentials;
+}
+
+const cognito = new CognitoIdentityProviderClient(clientConfig);
 
 function cognitoSecretHash(username) {
   const secret = process.env.COGNITO_CLIENT_SECRET;
