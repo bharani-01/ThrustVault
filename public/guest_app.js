@@ -1105,25 +1105,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        let bestRatioName = '-';
-        let maxRatio = 0;
-        catMotors.forEach(m => {
-            const thrustKg = parseThrustToKg(m.thrust);
-            const weightG = parseFloat(m.custom_parameters && (m.custom_parameters.weight || m.custom_parameters.weight_g || m.custom_parameters.motor_weight) ? m.custom_parameters.weight || m.custom_parameters.weight_g || m.custom_parameters.motor_weight : 0);
-            if (thrustKg > 0 && weightG > 0) {
-                const ratio = (thrustKg * 1000) / weightG;
-                if (ratio > maxRatio) {
-                    maxRatio = ratio;
-                    bestRatioName = m.motor;
-                }
-            }
-        });
-        
         const insights = [
             { label: 'Popular ESC', val: topEsc, icon: 'zap' },
             { label: 'Standard Propeller', val: topProp, icon: 'wind' },
-            { label: 'Max Thrust Leader', val: maxThrustMotorName !== '-' ? `${maxThrustMotorName} (${maxThrustVal.toFixed(1)} kg)` : '-', icon: 'trending-up' },
-            { label: 'Thrust-to-Weight Leader', val: bestRatioName !== '-' ? `${bestRatioName} (${maxRatio.toFixed(1)}x)` : '-', icon: 'award' }
+            { label: 'Max Thrust Leader', val: maxThrustMotorName !== '-' ? `${maxThrustMotorName} (${maxThrustVal.toFixed(1)} kg)` : '-', icon: 'trending-up' }
         ];
         
         insights.forEach(item => {
