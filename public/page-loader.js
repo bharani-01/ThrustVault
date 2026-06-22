@@ -16,7 +16,7 @@
             isGuest = true;
         }
 
-        if (isGuest && typeof url === 'string' && url.startsWith('/api/') && !url.startsWith('/api/auth/') && !url.startsWith('/api/guest/')) {
+        if (isGuest && typeof url === 'string' && url.startsWith('/api/') && !url.startsWith('/api/auth/') && !url.startsWith('/api/guest/') && !url.startsWith('/api/public/') && !url.startsWith('/api/request-demo')) {
             const newUrl = url.replace('/api/', '/api/guest/');
             if (typeof input === 'string') {
                 input = newUrl;
