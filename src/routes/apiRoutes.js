@@ -3,11 +3,15 @@ const express = require('express');
 const router = express.Router();
 const dataController = require('../controllers/dataController');
 const { requireRole } = require('../middlewares/auth');
-const { requestAccessLimiter } = require('../middlewares/rateLimiter');
+const { requestAccessLimiter, guestLimiter } = require('../middlewares/rateLimiter');
+const aiController = require('../controllers/aiController');
 
 // Public write-only Postgres submission endpoints
 router.post('/request-demo', dataController.requestDemo);
 router.post('/public/request-access', requestAccessLimiter, dataController.requestAccess);
+
+// AI Chat Copilot endpoint
+router.post('/ai/chat', guestLimiter, aiController.getChatCompletions);
 
 // Lock all remaining database endpoints to 'admin' and 'user' roles only
 router.get('/init-data', requireRole('admin', 'user'), dataController.initData);
