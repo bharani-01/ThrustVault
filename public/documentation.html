@@ -1,11 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" type="image/png" href="favicon_light.png" media="(prefers-color-scheme: light)">
-    <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)">
+    <link rel="icon" type="image/webp" href="favicon_light.webp" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/webp" href="favicon_dark.webp" media="(prefers-color-scheme: dark)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ThrustVault Documentation Portal | Aerospace Propulsion Intelligence</title>
+    <meta name="description" content="ThrustVault Documentation Portal — theory, science, setup manuals, and workflow rules for aerospace UAV propulsion. Get FAQs, database layouts, and API details."/>
+    <meta name="keywords" content="ThrustVault documentation, UAV motor guides, drone propulsion specs, ESC safety limits, ITAR compliance, sitemap sync, aerospace science"/>
+    <meta name="robots" content="index, follow"/>
+    <link rel="canonical" href="https://thrustvault.reude.tech/docs"/>
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="article"/>
+    <meta property="og:url" content="https://thrustvault.reude.tech/docs"/>
+    <meta property="og:title" content="ThrustVault Documentation Portal | Aerospace Propulsion Intelligence"/>
+    <meta property="og:description" content="ThrustVault Documentation Portal — theory, science, setup manuals, and workflow rules for aerospace UAV propulsion. Get FAQs, database layouts, and API details."/>
+    <meta property="og:image" content="https://thrustvault.reude.tech/feature_catalog.webp"/>
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="twitter:url" content="https://thrustvault.reude.tech/docs"/>
+    <meta name="twitter:title" content="ThrustVault Documentation Portal | Aerospace Propulsion Intelligence"/>
+    <meta name="twitter:description" content="ThrustVault Documentation Portal — theory, science, setup manuals, and workflow rules for aerospace UAV propulsion."/>
+    <meta name="twitter:image" content="https://thrustvault.reude.tech/feature_catalog.webp"/>
+
+    <!-- Structured Data JSON-LD Schema (AEO & Rich Snippets) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "TechArticle",
+          "@id": "https://thrustvault.reude.tech/docs/#article",
+          "headline": "ThrustVault Documentation Portal - Aerospace Propulsion Intelligence",
+          "description": "Comprehensive reference documentation and science guides for UAV/drone propulsion systems, database schemas, and testing standard operations procedures.",
+          "inLanguage": "en",
+          "url": "https://thrustvault.reude.tech/docs",
+          "author": {
+            "@type": "Organization",
+            "name": "ThrustVault Enterprise"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://thrustvault.reude.tech/docs/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How do I obtain full access to ThrustVault?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Access request forms can be submitted via the Request Access page. Access profiles undergo admin review, verifying corporate email credentials and requested role permissions."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What database synchronization protocol is active?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The platform operates on a primary PostgreSQL RDS configuration. To ensure fast, read-only demo execution without constant server overhead, an automated background synchronization process clones motor specifications to a local cache SQLite database every 30 seconds."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -594,8 +655,8 @@
             <i data-lucide="menu" style="width:20px; height:20px;"></i>
         </button>
         <a href="/">
-            <img src="logo_light.png" alt="ThrustVault Logo" class="logo-light" style="height: 28px;">
-            <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-dark" style="height: 28px;">
+            <img src="logo_light.webp" alt="ThrustVault Logo" class="logo-light" style="height: 28px;">
+            <img src="logo_dark.webp" alt="ThrustVault Logo" class="logo-dark" style="height: 28px;">
         </a>
         <button id="theme-toggle-btn-mobile" class="theme-toggle-floating" title="Toggle Theme">
             <i data-lucide="moon" style="width:20px; height:20px;"></i>
@@ -609,8 +670,8 @@
         <aside class="docs-sidebar">
             <div class="sidebar-brand">
                 <a href="/">
-                    <img src="logo_light.png" alt="ThrustVault Logo" class="logo-light" style="height: 30px;">
-                    <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-dark" style="height: 30px;">
+                    <img src="logo_light.webp" alt="ThrustVault Logo" class="logo-light" style="height: 30px;">
+                    <img src="logo_dark.webp" alt="ThrustVault Logo" class="logo-dark" style="height: 30px;">
                 </a>
                 <button id="theme-toggle-btn" class="theme-toggle-floating" title="Toggle Theme">
                     <i data-lucide="moon" style="width:16px; height:16px;"></i>

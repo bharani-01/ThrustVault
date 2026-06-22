@@ -1,11 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" type="image/png" href="favicon_light.png" media="(prefers-color-scheme: light)">
-    <link rel="icon" type="image/png" href="favicon_dark.png" media="(prefers-color-scheme: dark)">
+    <link rel="icon" type="image/webp" href="favicon_light.webp" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/webp" href="favicon_dark.webp" media="(prefers-color-scheme: dark)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Version Catalog | ThrustVault</title>
+    <meta name="description" content="Chronological registry of design iterations, analytical tools, database releases, and performance logs for the ThrustVault UAV propulsion console."/>
+    <meta name="keywords" content="ThrustVault versions, release notes, UAV database updates, propulsion software changelog"/>
+    <meta name="robots" content="index, follow"/>
+    <link rel="canonical" href="https://thrustvault.reude.tech/versions"/>
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website"/>
+    <meta property="og:url" content="https://thrustvault.reude.tech/versions"/>
+    <meta property="og:title" content="Version Catalog | ThrustVault"/>
+    <meta property="og:description" content="Chronological registry of design iterations, analytical tools, database releases, and performance logs for the ThrustVault UAV propulsion console."/>
+    <meta property="og:image" content="https://thrustvault.reude.tech/feature_catalog.webp"/>
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="twitter:url" content="https://thrustvault.reude.tech/versions"/>
+    <meta name="twitter:title" content="Version Catalog | ThrustVault"/>
+    <meta name="twitter:description" content="Chronological registry of design iterations, analytical tools, database releases, and performance logs for the ThrustVault UAV propulsion console."/>
+    <meta name="twitter:image" content="https://thrustvault.reude.tech/feature_catalog.webp"/>
+
+    <!-- Structured Data JSON-LD Schema (AEO & Rich Snippets) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "ItemCollection",
+          "@id": "https://thrustvault.reude.tech/versions/#collection",
+          "name": "ThrustVault Release History",
+          "url": "https://thrustvault.reude.tech/versions",
+          "description": "Changelog and version history of drone propulsion specifications and features added to ThrustVault.",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "v2.0.0 (Beta) / v1.8.9 - Modernization & Admin Portal Integration",
+              "description": "Standalone administration dashboards, SQLite local cache syncer, unified page loaders, and brand highlights layout."
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "v1.5.0 - Chart Overlays & Scrapers",
+              "description": "Telemetry charting, SheetJS dataset log mappers, smart search suggestions, and powertrain scraper scripts."
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "v1.0.0 - Relational Core MVP",
+              "description": "Relational PostgreSQL database schemas, CSV log template downloads, guest view access, and analytics module."
+            }
+          ]
+        }
+      ]
+    }
+    </script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -271,8 +325,8 @@
     <header class="version-header-nav">
         <div style="display:flex; align-items:center; gap:10px;">
             <a href="/" style="display:flex; align-items:center; gap:10px; text-decoration:none;" class="logo-link">
-                <img src="logo_light.png" alt="ThrustVault Logo" class="logo-image logo-light" style="height: 32px; width: auto;">
-                <img src="logo_dark.png" alt="ThrustVault Logo" class="logo-image logo-dark" style="height: 32px; width: auto;">
+                <img src="logo_light.webp" alt="ThrustVault Logo" class="logo-image logo-light" style="height: 32px; width: auto;">
+                <img src="logo_dark.webp" alt="ThrustVault Logo" class="logo-image logo-dark" style="height: 32px; width: auto;">
             </a>
         </div>
         

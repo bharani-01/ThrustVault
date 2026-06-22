@@ -1,5 +1,104 @@
+# ==============================================================================
+# ThrustVault robots.txt
+# MNC-Grade Crawler & AI Search Engine Configuration
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Global Search Crawlers (Googlebot, Bingbot, Yahoo!, etc.)
+# ------------------------------------------------------------------------------
 User-agent: *
-Allow: /
+Allow: /$
+Allow: /versions$
+Allow: /docs
+Allow: /documentation
+Disallow: /login
+Disallow: /request_access
 Disallow: /admin/
 Disallow: /api/
+Disallow: /dashboard/
+Disallow: /analytics/
+Disallow: /explorer/
+Disallow: /user_dashboard.html
+Disallow: /guest_dashboard.html
+Disallow: /performance_analytics.html
+Disallow: /motor_explorer.html
+Disallow: /sidebar_*.html
+Disallow: /*_app.js
+
+# ------------------------------------------------------------------------------
+# 2. Modern AI Search Agents (AEO - Answer Engine Optimization)
+# ------------------------------------------------------------------------------
+# ChatGPT Bot (OpenAI)
+User-agent: GPTBot
+Allow: /$
+Allow: /versions$
+Allow: /docs
+Allow: /documentation
+Disallow: /login
+Disallow: /request_access
+Disallow: /admin/
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /analytics/
+Disallow: /explorer/
+
+# Claude AI Bot (Anthropic)
+User-agent: ClaudeBot
+Allow: /$
+Allow: /versions$
+Allow: /docs
+Allow: /documentation
+Disallow: /login
+Disallow: /request_access
+Disallow: /admin/
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /analytics/
+Disallow: /explorer/
+
+# Perplexity AI Search Crawler
+User-agent: PerplexityBot
+Allow: /$
+Allow: /versions$
+Allow: /docs
+Allow: /documentation
+Disallow: /login
+Disallow: /request_access
+Disallow: /admin/
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /analytics/
+Disallow: /explorer/
+
+# Gemini Crawling Directives (Google-Extended)
+User-agent: Google-Extended
+Allow: /$
+Allow: /versions$
+Allow: /docs
+Allow: /documentation
+Disallow: /login
+Disallow: /request_access
+Disallow: /admin/
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /analytics/
+Disallow: /explorer/
+
+# Apple Intelligence Crawler
+User-agent: Applebot-Extended
+Allow: /$
+Allow: /versions$
+Allow: /docs
+Allow: /documentation
+Disallow: /login
+Disallow: /request_access
+Disallow: /admin/
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /analytics/
+Disallow: /explorer/
+
+# ------------------------------------------------------------------------------
+# 3. Global XML Sitemap Directive
+# ------------------------------------------------------------------------------
 Sitemap: https://thrustvault.reude.tech/sitemap.xml
