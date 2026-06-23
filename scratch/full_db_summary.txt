@@ -1,0 +1,544 @@
+Total Categories: 5
+Total Motors: 133
+Total Custom Specs: 4
+
+=== CATEGORIES ===
+ID: d7c0e913-7c3f-4242-a689-557253c9328c | Name: 1-2 kg | Description: Standard multirotor and inspection drones (typically 3S – 4S LiPo)
+ID: 806dbc13-dd33-4c82-81b7-731c20773de0 | Name: 3-5 kg | Description: Mid-range commercial multirotors and survey drones (typically 4S – 6S)
+ID: 3ceda2e9-eaae-4a38-8c94-9f6655ac7b95 | Name: 8-10 kg | Description: Heavy-lift inspection and payload drones (typically 6S – 12S)
+ID: fe1c3dfe-bb77-4a11-855a-58c11da61b12 | Name: 18-22 kg | Description: Industrial mapping, agricultural and large-frame drones (typically 12S – 14S)
+ID: 8d73b976-3062-4f3c-ab13-3bdc91c2f96e | Name: 45-55 kg | Description: High-payload cargo and heavy agricultural drones (typically 14S – 24S)
+
+=== MOTORS ===
+1. Company: T-MOTOR | Name: MN3510 KV360/KV630/KV700 | Max Thrust: 2.2 kg | Cat: 1-2 kg
+   Rec ESC: AIR 20A 3-4S Multi-Rotor UAV Drone ESC | Rec Prop: P15*5 Prop-2PCS/PAIR
+   Links: Motor: https://store.tmotor.com/product/mn3510-motor-navigator-type.html?srsltid=AfmBOor8NsV6mcJcW9PM0YS42pLxYfKfNMYfK6bkz35U-2_1O2dTUOOC | ESC: https://store.tmotor.com/product/air-20a-4s-esc.html | Prop: https://store.tmotor.com/product/polish-carbon-fiber-15x5-prop.html
+   Custom Parameters: {}
+2. Company: T-MOTOR | Name: MN4010  KV370/KV475/KV580 | Max Thrust: 2.2kg | Cat: 1-2 kg
+   Rec ESC: AIR 40A 2-6S NO BEC Multi-Rotor UAV ESC | Rec Prop: P16*5.4 Prop-2PCS/PAIR
+   Links: Motor: https://store.tmotor.com/product/mn4010-kv475-motor-navigator-type.html?srsltid=AfmBOorkjdZr8PLewik8gaibF_hbjso3Z3rz7Rcc2J7lhGP5aBPrQw88 | ESC: https://store.tmotor.com/product/air-40a-6s-esc.html | Prop: https://store.tmotor.com/product/polish-carbon-fiber-16x5_4-prop.html
+   Custom Parameters: {}
+3. Company: T-MOTOR | Name: MN4012 KV340/KV400/KV480 | Max Thrust: 2.1 kg | Cat: 1-2 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: https://store.tmotor.com/product/mn4012-kv400-motor-navigator-type.html?srsltid=AfmBOoprPET-SQykLGgOPxOLh_WR9JfrD4QjVyikHS7DORS7olp0zJY4 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+4. Company: T-MOTOR | Name: AT4120 KV250/KV500/KV560 | Max Thrust: 2.3 kg | Cat: 1-2 kg
+   Rec ESC: T-Motor AT115A | Rec Prop: T-Motor FS15*8 folding propellers.
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+5. Company: SunnySky | Name: V3508 KV380/580/700 | Max Thrust: 2.3 kg | Cat: 1-2 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+6. Company: KDE Direct | Name: KDE4215XF-465 | Max Thrust: 2.5 kg | Cat: 1-2 kg
+   Rec ESC: KDE Direct UAS 55A+ HVC Multi-Rotor Series | Rec Prop: KDE Direct 15.5" x 5.3 Triple-Propeller Blades
+   Links: Motor: https://www.kdedirect.com/products/kde4215xf-465 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+7. Company: KDE Direct | Name: KDE4215XF-330 | Max Thrust: 2.3 kg | Cat: 1-2 kg
+   Rec ESC: KDE Direct UAS 75A+ HVC Multi-Rotor Series | Rec Prop: KDE Direct 18.5" x 6.3 Triple-Propeller Blades
+   Links: Motor: https://www.kdedirect.com/products/kde5215xf-330 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+8. Company: KDE Direct | Name: KDE3510XF-475 | Max Thrust: 2.1 kg | Cat: 1-2 kg
+   Rec ESC: KDE Direct UAS 55A+ Multi-Rotor Series | Rec Prop: KDE Direct 15.5" x 5.3 Dual-Propeller Blades
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+9. Company: KDE Direct | Name: KDE4014XF-380 | Max Thrust: 2.4 kg | Cat: 1-2 kg
+   Rec ESC: KDE Direct UAS 35A+ HVC Multi-Rotor Series | Rec Prop: KDE Direct 15.5" x 5.3 Triple-Propeller Blades
+   Links: Motor: https://www.kdedirect.com/products/kde4014xf-380 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+10. Company: MAD Components | Name: 4006 IPE 380KV 740KV | Max Thrust: 2.2 kg | Cat: 1-2 kg
+   Rec ESC: MAD AMPX PRO 40A(2-6S) | Rec Prop: 13x4.4,14x4.8,15x5.0,16x5.4
+   Links: Motor: https://www.mad-motor.com/products/mad-components-4006-ipe?VariantsId=10391 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+11. Company: MAD Components | Name: 4012 EEE - 430KV | Max Thrust: 2.9 kg | Cat: 1-2 kg
+   Rec ESC: MAD AMPX PRO 40A(2-6S) | Rec Prop: 13x4.4,14x4.8,15x5.0
+   Links: Motor: https://mad-motor.com/products/mad-4012-eee?VariantsId=10379 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+12. Company: MAD Components | Name: 5008 EEE 170KV 240KV 340KV 300KV 400KV | Max Thrust: 2.8 kg | Cat: 1-2 kg
+   Rec ESC: MAD AMPX 40A (5-14S) HV / MAD AMPX PRO 40A /MAD AMPX PRO 40A /MAD AMPX PRO 40A/MAD AMPX PRO 40A | Rec Prop: 17x5.8, 18x6.1, and 18x5.7 / 20x6.0, 21x6.3, 22x6.6, 22x7.0, 18x6.1, 22x7.0, 18x6.1, 18x5.7, 17x5.8 / 18x6.1, 18x5.7, 19x5.7, and 20x6.0/17x5.8 ,18x6.1,19x5.7 /16x5.4,17x5.8
+   Links: Motor: https://mad-motor.com/products/mad-components-5008-eee?VariantsId=10441 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+13. Company: EMAX | Name: MT4114 - 340KV | Max Thrust: 2.2 kg | Cat: 1-2 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+14. Company: iFlight | Name: NIDICI 3115 900KV 1250KV | Max Thrust: 2.9 kg | Cat: 1-2 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: https://shop.iflight.com/NIDICI-3115-FPV-Motor-Pro2317 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+15. Company: T-Hobby | Name: F80 Pro | Max Thrust: 2.0 kg | Cat: 1-2 kg
+   Rec ESC: TMOTOR FPV F55A PRO II 4 IN 1 ESC | Rec Prop: FPV 5-6inch propellers
+   Links: Motor: https://www.t-hobby.com/products/fpv-drones-brushless-motor-f80-pro | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+16. Company: Tarot | Name: Tarot 4008 | Max Thrust: 2.1 kg | Cat: 1-2 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: https://www.foxtechfpv.com/4008-martin-brushless-motor-tl2955.html#yt_tab_products1 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+17. Company: Foxtech | Name: Foxtech 4008 | Max Thrust: 2.2 kg | Cat: 1-2 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: https://store.foxtech.com/4008-motor-tl2955/ | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+18. Company: Scorpion | Name: SII-4020 | Max Thrust: 2.5 kg | Cat: 1-2 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: https://www.scorpionsystem.com/catalog/aeroplane/motors_1/sii-40/SII_4020-420/ | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+19. Company: T-MOTOR | Name: U5 KV400 | Max Thrust: 2.7kg | Cat: 1-2 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: https://store.tmotor.com/product/u-power-u5.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+20. Company: T-MOTOR | Name: MN3110 KV700 | Max Thrust: 1.2 kg | Cat: 1-2 kg
+   Rec ESC: AIR 20A 3-4S Multi-Rotor UAV Drone ESC | Rec Prop: P15*5 Prop-2PCS/PAIR
+   Links: Motor: https://store.tmotor.com/product/mn3110-motor-navigator-type.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+21. Company: KDE Direct | Name: KDE4114XF-400 | Max Thrust: 2.4 kg | Cat: 1-2 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: https://www.kdedirect.com/products/kde4012xf-400 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+22. Company: KDE Direct | Name: KDE5215XF-330 | Max Thrust: 2.8 kg | Cat: 1-2 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: https://www.kdedirect.com/products/kde5215xf-330 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+23. Company: MAD Components | Name: X5220 IPE KV190 | Max Thrust: 2.5 kg | Cat: 1-2 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: https://www.mad-motor.com/products/x5220-ipe?VariantsId=10905 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+24. Company: T-Motor | Name: T-Motor U7 V2.0 KV280 | Max Thrust: 4.64 kg | Cat: 3-5 kg
+   Rec ESC: T-Motor T80A | Rec Prop: T-Motor CF 20×6 / 18×6.1
+   Links: Motor: https://store.tmotor.com/product/tmotor-u7-v2-motor-u-power.html | ESC: https://store.tmotor.com/product/flame-80a-hv-esc.html | Prop: https://store.tmotor.com/goods.php?id=462
+   Custom Parameters: {}
+25. Company: T-Motor | Name: T-Motor U7 V2.0 KV420 | Max Thrust: 5.06 kg | Cat: 3-5 kg
+   Rec ESC: T-Motor T80A | Rec Prop: T-Motor CF 18×6.1 / 17×5.8
+   Links: Motor: https://store.tmotor.com/product/tmotor-u7-v2-motor-u-power.html | ESC: https://store.tmotor.com/product/flame-80a-hv-esc.html | Prop: https://store.tmotor.com/goods.php?id=462
+   Custom Parameters: {}
+26. Company: MAD Components | Name: MAD 5008 IPE V3 KV240 | Max Thrust: 4.8 kg | Cat: 3-5 kg
+   Rec ESC: MAD AMPX 40A (5-14S) | Rec Prop: FLUXER PRO 18×6.1 / 20×6.0
+   Links: Motor: https://www.mad-motor.com/products/mad-components-5008-ipe-v3.html | ESC: https://mad-motor.com/products/mad-ampx-esc-40a-5s-14s | Prop: https://mad-motor.com/
+   Custom Parameters: {}
+27. Company: MAD Components | Name: MAD 5008 IPE V3 KV300 | Max Thrust: 4.8 kg | Cat: 3-5 kg
+   Rec ESC: MAD AMPX 40A (5-14S) | Rec Prop: FLUXER PRO 18×6.1 / 17×5.8
+   Links: Motor: https://www.mad-motor.com/products/mad-components-5008-ipe-v3.html | ESC: https://mad-motor.com/products/mad-ampx-esc-40a-5s-14s | Prop: https://mad-motor.com/
+   Custom Parameters: {}
+28. Company: MAD Components | Name: MAD 5008 IPE V3 KV340 | Max Thrust: 4.8 kg | Cat: 3-5 kg
+   Rec ESC: MAD AMPX 40A (5-14S) | Rec Prop: FLUXER PRO 17×5.8 / 16×5.4
+   Links: Motor: https://www.mad-motor.com/products/mad-components-5008-ipe-v3.html | ESC: https://mad-motor.com/products/mad-ampx-esc-40a-5s-14s | Prop: https://mad-motor.com/
+   Custom Parameters: {}
+29. Company: MAD Components | Name: MAD 5008 IPE V3 KV400 | Max Thrust: 4.8 kg | Cat: 3-5 kg
+   Rec ESC: MAD AMPX 40A (5-14S) | Rec Prop: FLUXER PRO 16×5.4 / 17×5.8
+   Links: Motor: https://www.mad-motor.com/products/mad-components-5008-ipe-v3.html | ESC: https://mad-motor.com/products/mad-ampx-esc-40a-5s-14s | Prop: https://mad-motor.com/
+   Custom Parameters: {}
+30. Company: MAD Components | Name: MAD 5010 IPE V3 KV200 | Max Thrust: 5.2 kg | Cat: 3-5 kg
+   Rec ESC: MAD AMPX 40A (5-14S) | Rec Prop: FLUXER PRO 20×6.0 / 22×6.6
+   Links: Motor: https://mad-motor.com/products/mad-components-5010-ipe-v3 | ESC: https://mad-motor.com/products/mad-ampx-esc-40a-5s-14s | Prop: https://mad-motor.com/
+   Custom Parameters: {}
+31. Company: MAD Components | Name: MAD 5010 IPE V3 KV240 | Max Thrust: 5.2 kg | Cat: 3-5 kg
+   Rec ESC: MAD AMPX 40A (5-14S) | Rec Prop: FLUXER PRO 18×6.1 / 20×6.0
+   Links: Motor: https://mad-motor.com/products/mad-components-5010-ipe-v3 | ESC: https://mad-motor.com/products/mad-ampx-esc-40a-5s-14s | Prop: https://mad-motor.com/
+   Custom Parameters: {}
+32. Company: MAD Components | Name: MAD 5010 IPE V3 KV310 | Max Thrust: 5.2 kg | Cat: 3-5 kg
+   Rec ESC: MAD AMPX 40A (5-14S) | Rec Prop: FLUXER PRO 17×5.8 / 18×6.1
+   Links: Motor: https://mad-motor.com/products/mad-components-5010-ipe-v3 | ESC: https://mad-motor.com/products/mad-ampx-esc-40a-5s-14s | Prop: https://mad-motor.com/
+   Custom Parameters: {}
+33. Company: MAD Components | Name: MAD 5010 EEE V2.0 KV200 | Max Thrust: 5.2 kg | Cat: 3-5 kg
+   Rec ESC: MAD AMPX 40A PRO (2-6S) | Rec Prop: FLUXER PRO 20×6.0 / 22×6.6
+   Links: Motor: https://mad-motor.com/products/mad-components-5010-eee | ESC: https://mad-motor.com/products/mad-ampx-esc-40a-2s-6s | Prop: https://mad-motor.com/
+   Custom Parameters: {}
+34. Company: MAD Components | Name: MAD 5010 EEE V2.0 KV240 | Max Thrust: 5.2 kg | Cat: 3-5 kg
+   Rec ESC: MAD AMPX 40A PRO (2-6S) | Rec Prop: FLUXER PRO 18×6.1 / 20×6.0
+   Links: Motor: https://mad-motor.com/products/mad-components-5010-eee | ESC: https://mad-motor.com/products/mad-ampx-esc-40a-2s-6s | Prop: https://mad-motor.com/
+   Custom Parameters: {}
+35. Company: MAD Components | Name: MAD 5010 EEE V2.0 KV310 | Max Thrust: 5.2 kg | Cat: 3-5 kg
+   Rec ESC: MAD AMPX 40A PRO (2-6S) | Rec Prop: FLUXER PRO 17×5.8 / 18×6.1
+   Links: Motor: https://mad-motor.com/products/mad-components-5010-eee | ESC: https://mad-motor.com/products/mad-ampx-esc-40a-2s-6s | Prop: https://mad-motor.com/
+   Custom Parameters: {}
+36. Company: Sunnysky | Name: Sunnysky V5210 KV300 | Max Thrust: 5.6 kg (5600g) | Cat: 3-5 kg
+   Rec ESC: 60–80A HV ESC (brand-stated range) | Rec Prop: 17–22 inch CF (brand-stated range)
+   Links: Motor: http://en.rcsunnysky.com/v-multi-rotorefficiencytype/1085.html | ESC: http://en.rcsunnysky.com/industrygradeesc/x/index.html | Prop: http://en.rcsunnysky.com/standardcarbonfiberpaddle/index.html
+   Custom Parameters: {}
+37. Company: T-Motor | Name: T-Motor MN5212 KV280 | Max Thrust: 4.5 kg | Cat: 3-5 kg
+   Rec ESC: T-Motor Flame 60A | Rec Prop: T-Motor CF 20×6
+   Links: Motor: https://store.tmotor.com/categorys/uav-mult-motor-antigravity-type | ESC: https://store.tmotor.com/product/flame-60a-esc.html | Prop: https://store.tmotor.com/goods.php?id=462
+   Custom Parameters: {}
+38. Company: T-Motor | Name: T-Motor MN5212 KV340 | Max Thrust: 4.9 kg | Cat: 3-5 kg
+   Rec ESC: T-Motor Flame 60A | Rec Prop: T-Motor CF 22×6 / 21×7
+   Links: Motor: https://store.tmotor.com/categorys/uav-mult-motor-antigravity-type | ESC: https://store.tmotor.com/product/flame-60a-esc.html | Prop: https://store.tmotor.com/goods.php?id=462
+   Custom Parameters: {}
+39. Company: T-Motor | Name: T-Motor MN5212 KV420 | Max Thrust: 5.1 kg | Cat: 3-5 kg
+   Rec ESC: T-Motor Flame 60A | Rec Prop: T-Motor CF 20×6 / 18×6.1
+   Links: Motor: https://store.tmotor.com/categorys/uav-mult-motor-antigravity-type | ESC: https://store.tmotor.com/product/flame-60a-esc.html | Prop: https://store.tmotor.com/goods.php?id=462
+   Custom Parameters: {}
+40. Company: KDE Direct | Name: KDE5215XF-330 | Max Thrust: ~5.3 kg (6S, 18.5" prop) | Cat: 3-5 kg
+   Rec ESC: KDE Direct UAS 75A+ HVC | Rec Prop: KDE 18.5" × 6.3 Triple-Blade CF
+   Links: Motor: https://www.kdedirect.com/products/kde5215xf-330 | ESC: https://www.kdedirect.com/collections/uas-electronic-speed-controllers | Prop: https://www.kdedirect.com/products/kde-cf185-tp
+   Custom Parameters: {}
+41. Company: MAD Components | Name: MAD 5008 IPE V3 KV170 (12S) | Max Thrust: 4.8 kg | Cat: 3-5 kg
+   Rec ESC: MAD AMPX 40A (5-14S) | Rec Prop: FLUXER PRO 22×6.6 / 20×6.0
+   Links: Motor: https://www.mad-motor.com/products/mad-components-5008-ipe-v3.html | ESC: https://mad-motor.com/products/mad-ampx-esc-40a-5s-14s | Prop: https://mad-motor.com/
+   Custom Parameters: {}
+42. Company: MAD Components | Name: MAD 5010 IPE V3 KV150 (12S) | Max Thrust: 5.2 kg | Cat: 3-5 kg
+   Rec ESC: MAD AMPX 40A (5-14S) | Rec Prop: FLUXER PRO 22×6.6 / 24×7.2
+   Links: Motor: https://mad-motor.com/products/mad-components-5010-ipe-v3 | ESC: https://mad-motor.com/products/mad-ampx-esc-40a-5s-14s | Prop: https://mad-motor.com/
+   Custom Parameters: {}
+43. Company: MAD Components | Name: MAD 5010 EEE V2.0 KV150 (12S) | Max Thrust: 5.2 kg | Cat: 3-5 kg
+   Rec ESC: MAD AMPX 40A (5-14S) | Rec Prop: FLUXER PRO 22×6.6 / 24×7.2
+   Links: Motor: https://mad-motor.com/products/mad-components-5010-eee | ESC: https://mad-motor.com/products/mad-ampx-esc-40a-5s-14s | Prop: https://mad-motor.com/
+   Custom Parameters: {}
+44. Company: MAD Components | Name: MAD 5010 EEE V2.0 KV370 | Max Thrust: 5.2 kg | Cat: 3-5 kg
+   Rec ESC: MAD AMPX 40A PRO (2-6S) | Rec Prop: FLUXER PRO 16×5.4 / 17×5.8
+   Links: Motor: https://mad-motor.com/products/mad-components-5010-eee | ESC: https://mad-motor.com/products/mad-ampx-esc-40a-2s-6s | Prop: https://mad-motor.com/
+   Custom Parameters: {}
+45. Company: T-Motor | Name: T-Motor MN5008 KV340 | Max Thrust: 4.6 kg | Cat: 3-5 kg
+   Rec ESC: T-Motor Flame 40A | Rec Prop: T-Motor CF 22×7 / 20×6
+   Links: Motor: https://store.tmotor.com/categorys/uav-mult-motor-antigravity-type | ESC: https://store.tmotor.com/product/flame-60a-esc.html | Prop: https://store.tmotor.com/goods.php?id=462
+   Custom Parameters: {}
+46. Company: T-Motor | Name: T-Motor MN5008 KV400 | Max Thrust: 5.1 kg | Cat: 3-5 kg
+   Rec ESC: T-Motor Flame 40A | Rec Prop: T-Motor CF 20×6 / 18×6.1
+   Links: Motor: https://store.tmotor.com/categorys/uav-mult-motor-antigravity-type | ESC: https://store.tmotor.com/product/flame-60a-esc.html | Prop: https://store.tmotor.com/goods.php?id=462
+   Custom Parameters: {}
+47. Company: T-Motor | Name: T-Motor MN4014 KV330 | Max Thrust: 4.5 kg | Cat: 3-5 kg
+   Rec ESC: T-Motor Flame 40A | Rec Prop: T-Motor CF 18×6.1 / 17×5.8
+   Links: Motor: https://store.tmotor.com/categorys/uav-mult-motor-navigator-type | ESC: https://store.tmotor.com/product/flame-60a-esc.html | Prop: https://store.tmotor.com/goods.php?id=462
+   Custom Parameters: {}
+48. Company: T-Motor | Name: T-Motor MN4014 KV400 | Max Thrust: 4.8 kg | Cat: 3-5 kg
+   Rec ESC: T-Motor Flame 40A | Rec Prop: T-Motor CF 18×6.1
+   Links: Motor: https://store.tmotor.com/categorys/uav-mult-motor-navigator-type | ESC: https://store.tmotor.com/product/flame-60a-esc.html | Prop: https://store.tmotor.com/goods.php?id=462
+   Custom Parameters: {}
+49. Company: Sunnysky | Name: Sunnysky XS X5212S KV320 | Max Thrust: ~5.0 kg | Cat: 3-5 kg
+   Rec ESC: 60A HV ESC (brand-stated) | Rec Prop: 20–22 inch CF (brand-stated)
+   Links: Motor: http://en.rcsunnysky.com/xs-multi-rotorpowered/index.html | ESC: http://en.rcsunnysky.com/industrygradeesc/x/index.html | Prop: http://en.rcsunnysky.com/standardcarbonfiberpaddle/index.html
+   Custom Parameters: {}
+50. Company: Sunnysky | Name: Sunnysky XS X5212S KV280 | Max Thrust: ~4.6 kg | Cat: 3-5 kg
+   Rec ESC: 60A HV ESC (brand-stated) | Rec Prop: 20–22 inch CF (brand-stated)
+   Links: Motor: http://en.rcsunnysky.com/xs-multi-rotorpowered/index.html | ESC: http://en.rcsunnysky.com/industrygradeesc/x/index.html | Prop: http://en.rcsunnysky.com/standardcarbonfiberpaddle/index.html
+   Custom Parameters: {}
+51. Company: MAD Components | Name: MAD 5008 EEE V2.0 KV300 | Max Thrust: 4.8 kg | Cat: 3-5 kg
+   Rec ESC: MAD AMPX 40A PRO (2-6S) | Rec Prop: FLUXER PRO 18×6.1 / 20×6.0
+   Links: Motor: https://mad-motor.com/products/mad-components-5008-eee | ESC: https://mad-motor.com/products/mad-ampx-esc-40a-2s-6s | Prop: https://mad-motor.com/
+   Custom Parameters: {}
+52. Company: MAD Components | Name: MAD 5008 EEE V2.0 KV400 | Max Thrust: 4.8 kg | Cat: 3-5 kg
+   Rec ESC: MAD AMPX 40A PRO (2-6S) | Rec Prop: FLUXER PRO 16×5.4 / 17×5.8
+   Links: Motor: https://mad-motor.com/products/mad-components-5008-eee | ESC: https://mad-motor.com/products/mad-ampx-esc-40a-2s-6s | Prop: https://mad-motor.com/
+   Custom Parameters: {}
+53. Company: KDE Direct | Name: KDE5215XF-220 (HE) | Max Thrust: ~4.8 kg (6S, 21.5" prop) | Cat: 3-5 kg
+   Rec ESC: KDE Direct UAS 55A+ HVC | Rec Prop: KDE 21.5" × 7.3 Dual-Blade CF
+   Links: Motor: https://www.kdedirect.com/products/kde5215xf-220 | ESC: https://www.kdedirect.com/collections/uas-electronic-speed-controllers | Prop: https://www.kdedirect.com/products/kde-cf215-dp
+   Custom Parameters: {}
+54. Company: T-Motor | Name: T-Motor U8 II PRO KV100 (*9.1 kg) | Max Thrust: 9.1 kg (*) | Cat: 8-10 kg
+   Rec ESC: T-Motor Alpha 80A HV | Rec Prop: T-Motor G28×9.2
+   Links: Motor: https://store.tmotor.com/product/u8-2-pro-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+55. Company: T-Motor | Name: T-Motor U8 II Lite KV100 (*9.1 kg) | Max Thrust: 9.1 kg (*) | Cat: 8-10 kg
+   Rec ESC: T-Motor Alpha 60A 12S | Rec Prop: T-Motor G28×9.2
+   Links: Motor: https://store.tmotor.com/product/u8-v2-lite-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+56. Company: T-Motor | Name: T-Motor U8 II Lite KV85 (*9.1 kg) | Max Thrust: 9.1 kg (*) | Cat: 8-10 kg
+   Rec ESC: T-Motor Alpha 60A 12S | Rec Prop: T-Motor G28×9.2
+   Links: Motor: https://store.tmotor.com/product/u8-v2-lite-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+57. Company: T-Motor | Name: T-Motor U10 Plus KV80 | Max Thrust: ~9.5 kg | Cat: 8-10 kg
+   Rec ESC: T-Motor Flame 80A | Rec Prop: T-Motor CF28×9.2 / CF30×10.5
+   Links: Motor: https://store.tmotor.com/goods-362-U10PLUS+KV80.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+58. Company: T-Motor | Name: T-Motor U10 Plus KV100 | Max Thrust: ~10.0 kg | Cat: 8-10 kg
+   Rec ESC: T-Motor Flame 80A | Rec Prop: T-Motor CF28×9.2 / CF27×8.8
+   Links: Motor: https://store.tmotor.com/goods-362-U10PLUS+KV80.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+59. Company: T-Motor | Name: T-Motor U10 II KV100 (*10.6 kg) | Max Thrust: 10.6 kg (*) | Cat: 8-10 kg
+   Rec ESC: T-Motor Alpha 60A HV (FOC) | Rec Prop: T-Motor G30×10.5
+   Links: Motor: https://store.tmotor.com/product/u10-2-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+60. Company: MAD Components | Name: MAD M6C10 EEE KV150 (12S) | Max Thrust: 10.4 kg | Cat: 8-10 kg
+   Rec ESC: MAD AMPX 40A HV (5-14S) | Rec Prop: FLUXER PRO 22×6.6 / 24×7.2
+   Links: Motor: https://mad-motor.com/products/mad-components-m6c10-eee | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+61. Company: MAD Components | Name: MAD M6C10 EEE KV200 (12S) | Max Thrust: 10.4 kg | Cat: 8-10 kg
+   Rec ESC: MAD AMPX 40A HV (5-14S) | Rec Prop: FLUXER PRO 22×6.6 / 21×6.3
+   Links: Motor: https://mad-motor.com/products/mad-components-m6c10-eee | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+62. Company: MAD Components | Name: MAD M6C10 EEE KV250 (12S) | Max Thrust: 10.4 kg | Cat: 8-10 kg
+   Rec ESC: MAD AMPX 40A HV (5-14S) | Rec Prop: FLUXER PRO 20×6.0 / 21×6.3
+   Links: Motor: https://mad-motor.com/products/mad-components-m6c10-eee | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+63. Company: MAD Components | Name: MAD M6C10 EEE KV300 (6S) | Max Thrust: 10.4 kg | Cat: 8-10 kg
+   Rec ESC: MAD AMPX 60A (5-14S) | Rec Prop: FLUXER PRO 18×6.1 / 20×6.0
+   Links: Motor: https://mad-motor.com/products/mad-components-m6c10-eee | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+64. Company: MAD Components | Name: MAD M6C10 IPE V3 KV150 (12S) | Max Thrust: 10.4 kg | Cat: 8-10 kg
+   Rec ESC: MAD AMPX 40A HV (5-14S) | Rec Prop: FLUXER PRO 22×6.6 / 24×7.2
+   Links: Motor: https://mad-motor.com/products/mad-components-m6c10-ipe-v3 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+65. Company: MAD Components | Name: MAD M6C10 IPE V3 KV200 (12S) | Max Thrust: 10.4 kg | Cat: 8-10 kg
+   Rec ESC: MAD AMPX 40A HV (5-14S) | Rec Prop: FLUXER PRO 22×6.6 / 21×6.3
+   Links: Motor: https://mad-motor.com/products/mad-components-m6c10-ipe-v3 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+66. Company: MAD Components | Name: MAD M6C10 IPE V3 KV250 (12S) | Max Thrust: 10.4 kg | Cat: 8-10 kg
+   Rec ESC: MAD AMPX 40A HV (5-14S) | Rec Prop: FLUXER PRO 20×6.0 / 21×6.3
+   Links: Motor: https://mad-motor.com/products/mad-components-m6c10-ipe-v3 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+67. Company: MAD Components | Name: MAD M6C10 IPE V3 KV300 (6S) | Max Thrust: 10.4 kg | Cat: 8-10 kg
+   Rec ESC: MAD AMPX 60A (5-14S) | Rec Prop: FLUXER PRO 18×6.1 / 20×6.0
+   Links: Motor: https://mad-motor.com/products/mad-components-m6c10-ipe-v3 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+68. Company: KDE Direct | Name: KDE6213XF-185 (HE) | Max Thrust: ~9.6 kg (6S, 24.5" prop) | Cat: 8-10 kg
+   Rec ESC: KDE Direct UAS 75A+ HVC | Rec Prop: KDE 24.5" × 8.1 Dual-Blade CF
+   Links: Motor: https://www.kdedirect.com/products/kde6213xf-185 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+69. Company: KDE Direct | Name: KDE6213XF-185 (HE) — Triple Prop | Max Thrust: ~10.3 kg (6S, 21.5" triple) | Cat: 8-10 kg
+   Rec ESC: KDE Direct UAS 75A+ HVC | Rec Prop: KDE 21.5" × 7.3 Triple-Blade CF
+   Links: Motor: https://www.kdedirect.com/products/kde6213xf-185 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+70. Company: MAD Components | Name: MAD M6C10 EEE KV150 — 24" Prop | Max Thrust: 10.4 kg | Cat: 8-10 kg
+   Rec ESC: MAD AMPX 60A (5-14S) | Rec Prop: FLUXER PRO 24×7.2
+   Links: Motor: https://mad-motor.com/products/mad-components-m6c10-eee | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+71. Company: MAD Components | Name: MAD M6C10 IPE V3 KV150 — HAVOC Fold | Max Thrust: 10.4 kg | Cat: 8-10 kg
+   Rec ESC: MAD AMPX 60A (5-14S) | Rec Prop: HAVOC 22×7.0 Folding
+   Links: Motor: https://mad-motor.com/products/mad-components-m6c10-ipe-v3 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+72. Company: T-Motor | Name: T-Motor U10 II KV80 | Max Thrust: ~9.8 kg | Cat: 8-10 kg
+   Rec ESC: T-Motor Alpha 60A HV (FOC) | Rec Prop: T-Motor G30×10.5
+   Links: Motor: https://store.tmotor.com/product/u10-2-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+73. Company: MAD Components | Name: MAD M6C10 EEE KV200 — HAVOC Fold | Max Thrust: 10.4 kg | Cat: 8-10 kg
+   Rec ESC: MAD AMPX 40A HV (5-14S) | Rec Prop: HAVOC 22×7.0 Folding
+   Links: Motor: https://mad-motor.com/products/mad-components-m6c10-eee | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+74. Company: MAD Components | Name: MAD M6C10 IPE V3 KV200 — 24" Prop | Max Thrust: 10.4 kg | Cat: 8-10 kg
+   Rec ESC: MAD AMPX 60A (5-14S) | Rec Prop: FLUXER PRO 24×7.2
+   Links: Motor: https://mad-motor.com/products/mad-components-m6c10-ipe-v3 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+75. Company: T-Motor | Name: T-Motor MN1005 V2.0 KV90 | Max Thrust: ~10.0 kg | Cat: 8-10 kg
+   Rec ESC: T-Motor Flame 80A | Rec Prop: T-Motor CF30×10.5 / G30×10.5
+   Links: Motor: https://store.tmotor.com/categorys/uav-mult-motor-antigravity-type | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+76. Company: T-Motor | Name: T-Motor MN1005 V2.0 KV130 | Max Thrust: ~9.5 kg | Cat: 8-10 kg
+   Rec ESC: T-Motor Flame 80A | Rec Prop: T-Motor CF28×9.2 / G28×9.2
+   Links: Motor: https://store.tmotor.com/categorys/uav-mult-motor-antigravity-type | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+77. Company: MAD Components | Name: MAD M6C10 EEE KV250 — VTOL Prop | Max Thrust: 10.4 kg | Cat: 8-10 kg
+   Rec ESC: MAD AMPX 40A HV (5-14S) | Rec Prop: CF FLUXER 22.1×7.4 VTOL
+   Links: Motor: https://mad-motor.com/products/mad-components-m6c10-eee | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+78. Company: MAD Components | Name: MAD M6C10 IPE V3 KV250 — VTOL Prop | Max Thrust: 10.4 kg | Cat: 8-10 kg
+   Rec ESC: MAD AMPX 40A HV (5-14S) | Rec Prop: CF FLUXER 22.1×7.4 VTOL
+   Links: Motor: https://mad-motor.com/products/mad-components-m6c10-ipe-v3 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+79. Company: T-Motor | Name: T-Motor U10 II KV100 — Alpha 80A | Max Thrust: 10.6 kg (*) | Cat: 8-10 kg
+   Rec ESC: T-Motor Alpha 80A HV | Rec Prop: T-Motor G30×10.5
+   Links: Motor: https://store.tmotor.com/product/u10-2-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+80. Company: T-Motor | Name: T-Motor U8 II PRO KV100 — G30 Prop | Max Thrust: 9.1 kg (*) | Cat: 8-10 kg
+   Rec ESC: T-Motor Alpha 80A HV | Rec Prop: T-Motor G30×10.5
+   Links: Motor: https://store.tmotor.com/product/u8-2-pro-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+81. Company: MAD Components | Name: MAD M6C10 EEE KV300 — VTOL Prop | Max Thrust: 10.4 kg | Cat: 8-10 kg
+   Rec ESC: MAD AMPX 60A (5-14S) | Rec Prop: CF FLUXER 18.1×7.2 VTOL
+   Links: Motor: https://mad-motor.com/products/mad-components-m6c10-eee | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+82. Company: MAD Components | Name: MAD M6C10 IPE V3 KV300 — VTOL Prop | Max Thrust: 10.4 kg | Cat: 8-10 kg
+   Rec ESC: MAD AMPX 60A (5-14S) | Rec Prop: CF FLUXER 18.1×7.2 VTOL
+   Links: Motor: https://mad-motor.com/products/mad-components-m6c10-ipe-v3 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+83. Company: KDE Direct | Name: KDE6213XF-185 (HE) — 24.5" Triple | Max Thrust: ~10.1 kg (6S, 24.5" triple) | Cat: 8-10 kg
+   Rec ESC: KDE Direct UAS 85A+ UVC | Rec Prop: KDE 24.5" × 8.1 Triple-Blade CF
+   Links: Motor: https://www.kdedirect.com/products/kde6213xf-185 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+84. Company: T-Motor | Name: T-Motor U12 II KV120 | Max Thrust: 20.4 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Alpha 120A 12S (FOC) | Rec Prop: T-Motor CF30×10.5 / G30×10.5
+   Links: Motor: https://store.tmotor.com/product/u12-v2-kv120-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+85. Company: T-Motor | Name: T-Motor U12 II KV60 | Max Thrust: 19.0 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Flame 180A 12S | Rec Prop: T-Motor CF30×10.5 / G30×10.5
+   Links: Motor: https://store.tmotor.com/product/u12-v2-kv60-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+86. Company: T-Motor | Name: T-Motor P80 III KV100 (Pin) | Max Thrust: 18.0 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Flame 180A 12S | Rec Prop: T-Motor 30" Carbon / Polymer Folding Prop
+   Links: Motor: https://store.tmotor.com/product/P80-v3-pin-kv100-p-type.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+87. Company: T-Motor | Name: T-Motor P80 III KV120 (Pin) | Max Thrust: 18.0 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Flame 180A 12S | Rec Prop: T-Motor 30" Carbon / Polymer Folding Prop
+   Links: Motor: https://store.tmotor.com/product/P80-v3-pin-kv120-p-type.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+88. Company: T-Motor | Name: T-Motor P80 III KV100 (No Pin) | Max Thrust: 18.0 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Flame 180A 12S | Rec Prop: T-Motor 30" Carbon / Polymer Folding Prop
+   Links: Motor: https://store.tmotor.com/product/P80-v3-without-pin-kv100-p-type.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+89. Company: T-Motor | Name: T-Motor P80 III KV120 (No Pin) | Max Thrust: 18.0 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Flame 180A 12S | Rec Prop: T-Motor 30" Carbon / Polymer Folding Prop
+   Links: Motor: https://store.tmotor.com/goods-786-P80_Without_Pin_KV120.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+90. Company: T-Motor | Name: T-Motor A12XL-14S Propulsion System | Max Thrust: 20–22 kg (rated/arm) | Cat: 18-22 kg
+   Rec ESC: T-Motor 14S FOC 200A ESC (integrated) | Rec Prop: T-Motor MF4918P Polymer Folding
+   Links: Motor: https://uav-en.tmotor.com/Multirotor/PropulsionSystem/a_series/ | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+91. Company: T-Motor | Name: T-Motor A12XL-18S Propulsion System | Max Thrust: 20–22 kg (rated/arm) | Cat: 18-22 kg
+   Rec ESC: T-Motor 18S FOC 150A ESC (integrated) | Rec Prop: T-Motor MF4918P Polymer Folding
+   Links: Motor: https://uav-en.tmotor.com/Multirotor/PropulsionSystem/a_series/ | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+92. Company: Hobbywing | Name: Hobbywing XRotor X9 (110KV) | Max Thrust: 19.2 kg/axis (46V, sea level) | Cat: 18-22 kg
+   Rec ESC: Integrated FOC ESC (combo unit) | Rec Prop: Hobbywing 34" Composite Folding Prop
+   Links: Motor: https://www.hobbywing.com/en/products/xrotor-x9109 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+93. Company: KDE Direct | Name: KDE8218XF-120 (HE) — 30.5" Dual | Max Thrust: ~18–22 kg (6–12S, 30.5" prop) | Cat: 18-22 kg
+   Rec ESC: KDE Direct UAS 125A+ UVC HE | Rec Prop: KDE 30.5" × 9.7 Dual-Blade CF
+   Links: Motor: https://www.kdedirect.com/products/kde8218xf-120 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+94. Company: KDE Direct | Name: KDE8218XF-120 (HE) — 30.5" Triple | Max Thrust: ~20–24 kg (12S, 30.5" triple) | Cat: 18-22 kg
+   Rec ESC: KDE Direct UAS 125A+ UVC HE | Rec Prop: KDE 30.5" × 9.7 Triple-Blade CF
+   Links: Motor: https://www.kdedirect.com/products/kde8218xf-120 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+95. Company: KDE Direct | Name: KDE8218XF-120 (HE) — 27.5" Dual | Max Thrust: ~18–20 kg (12S, 27.5" prop) | Cat: 18-22 kg
+   Rec ESC: KDE Direct UAS 95A+ HVC | Rec Prop: KDE 27.5" × 8.9 Dual-Blade CF
+   Links: Motor: https://www.kdedirect.com/products/kde8218xf-120 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+96. Company: T-Motor | Name: T-Motor U12 II KV120 — Flame 180A | Max Thrust: 20.4 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Flame 180A 12S | Rec Prop: T-Motor CF30×10.5
+   Links: Motor: https://store.tmotor.com/product/u12-v2-kv120-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+97. Company: T-Motor | Name: T-Motor U12 II KV60 — Alpha 120A | Max Thrust: 19.0 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Alpha 120A 12S (FOC) | Rec Prop: T-Motor G30×10.5
+   Links: Motor: https://store.tmotor.com/product/u12-v2-kv60-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+98. Company: T-Motor | Name: T-Motor U12 II KV120 — NS Prop | Max Thrust: 20.4 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Alpha 120A 12S (FOC) | Rec Prop: T-Motor NS30×10.5 (Ultra-Light CF)
+   Links: Motor: https://store.tmotor.com/product/u12-v2-kv120-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+99. Company: T-Motor | Name: T-Motor U12 II KV60 — NS Prop | Max Thrust: 19.0 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Flame 180A 12S | Rec Prop: T-Motor NS30×10.5 (Ultra-Light CF)
+   Links: Motor: https://store.tmotor.com/product/u12-v2-kv60-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+100. Company: T-Motor | Name: T-Motor P80 III KV100 Pin — MFP30 | Max Thrust: 18.0 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Flame 180A 12S | Rec Prop: T-Motor MFP 30" Polymer Folding
+   Links: Motor: https://store.tmotor.com/product/P80-v3-pin-kv100-p-type.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+101. Company: T-Motor | Name: T-Motor P80 III KV120 No Pin — MFP30 | Max Thrust: 18.0 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Flame 180A 12S | Rec Prop: T-Motor MFP 30" Polymer Folding
+   Links: Motor: https://store.tmotor.com/goods-786-P80_Without_Pin_KV120.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+102. Company: Hobbywing | Name: Hobbywing XRotor X9 110KV — 36" Prop | Max Thrust: 23.0 kg/axis (*) | Cat: 18-22 kg
+   Rec ESC: Integrated FOC ESC (combo unit) | Rec Prop: Hobbywing 36" Composite Folding Prop
+   Links: Motor: https://www.hobbywing.com/en/products/xrotor-x9109 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+103. Company: T-Motor | Name: T-Motor A12L-14S Propulsion System (*) | Max Thrust: 15–18 kg (rated/arm) (*) | Cat: 18-22 kg
+   Rec ESC: T-Motor 14S FOC 200A ESC (integrated) | Rec Prop: T-Motor MF4315P Polymer Folding
+   Links: Motor: https://uav-en.tmotor.com/Multirotor/PropulsionSystem/a_series/ | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+104. Company: T-Motor | Name: T-Motor A12L-18S Propulsion System (*) | Max Thrust: 15–18 kg (rated/arm) (*) | Cat: 18-22 kg
+   Rec ESC: T-Motor 18S FOC 150A ESC (integrated) | Rec Prop: T-Motor MF4315P Polymer Folding
+   Links: Motor: https://uav-en.tmotor.com/Multirotor/PropulsionSystem/a_series/ | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+105. Company: T-Motor | Name: T-Motor U12 II KV120 — Folding Prop | Max Thrust: 20.4 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Alpha 120A 12S (FOC) | Rec Prop: T-Motor MF 30" Polymer Folding
+   Links: Motor: https://store.tmotor.com/product/u12-v2-kv120-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+106. Company: T-Motor | Name: T-Motor U12 II KV60 — Folding Prop | Max Thrust: 19.0 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Flame 180A 12S | Rec Prop: T-Motor MF 30" Polymer Folding
+   Links: Motor: https://store.tmotor.com/product/u12-v2-kv60-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+107. Company: KDE Direct | Name: KDE8218XF-120 (HE) — 27.5" Triple | Max Thrust: ~19–23 kg (12S, 27.5" triple) | Cat: 18-22 kg
+   Rec ESC: KDE Direct UAS 125A+ UVC HE | Rec Prop: KDE 27.5" × 8.9 Triple-Blade CF
+   Links: Motor: https://www.kdedirect.com/products/kde8218xf-120 | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+108. Company: T-Motor | Name: T-Motor P80 III KV100 Pin — 14S | Max Thrust: 18.0 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Flame 180A 14S | Rec Prop: T-Motor 30" Polymer / Carbon Prop
+   Links: Motor: https://store.tmotor.com/product/P80-v3-pin-kv100-p-type.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+109. Company: T-Motor | Name: T-Motor P80 III KV120 Pin — 14S | Max Thrust: 18.0 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Flame 180A 14S | Rec Prop: T-Motor 30" Polymer / Carbon Prop
+   Links: Motor: https://store.tmotor.com/product/P80-v3-pin-kv120-p-type.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+110. Company: T-Motor | Name: T-Motor A14-14S Propulsion System (*) | Max Thrust: 25–27 kg (rated/arm) (*) | Cat: 18-22 kg
+   Rec ESC: T-Motor 14S FOC 200A ESC | Rec Prop: T-Motor MF5620P Polymer Folding
+   Links: Motor: https://uav-en.tmotor.com/Multirotor/PropulsionSystem/a_series/ | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+111. Company: T-Motor | Name: T-Motor A14-18S Propulsion System (*) | Max Thrust: 25–27 kg (rated/arm) (*) | Cat: 18-22 kg
+   Rec ESC: T-Motor 18S FOC 150A ESC (integrated) | Rec Prop: T-Motor MF5620P Polymer Folding
+   Links: Motor: https://uav-en.tmotor.com/Multirotor/PropulsionSystem/a_series/ | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+112. Company: T-Motor | Name: T-Motor U12 II KV120 — Thunder ESC | Max Thrust: 20.4 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Thunder 120A 12S | Rec Prop: T-Motor CF30×10.5
+   Links: Motor: https://store.tmotor.com/product/u12-v2-kv120-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+113. Company: T-Motor | Name: T-Motor U12 II KV60 — Thunder ESC | Max Thrust: 19.0 kg | Cat: 18-22 kg
+   Rec ESC: T-Motor Thunder 120A 12S | Rec Prop: T-Motor CF30×10.5
+   Links: Motor: https://store.tmotor.com/product/u12-v2-kv60-u-efficiency.html | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+114. Company: T-Motor | Name: U17 KV35 | Max Thrust: 50 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+115. Company: T-Motor | Name: U17 KV42 | Max Thrust: 55 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+116. Company: T-Motor | Name: U17 Lite KV35 | Max Thrust: 48 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+117. Company: T-Motor | Name: U17 Lite KV42 | Max Thrust: 52 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+118. Company: T-Motor | Name: U15 XXL KV29 | Max Thrust: 45 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+119. Company: T-Motor | Name: U15 XXL KV50 | Max Thrust: 45–48 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+120. Company: T-Motor | Name: U18 XXL KV24 | Max Thrust: 60 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+121. Company: T-Motor | Name: U18 XXL KV32 | Max Thrust: 65 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+122. Company: T-Motor | Name: P200 Propulsion System | Max Thrust: 50–70 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+123. Company: T-Motor | Name: P230 Propulsion System | Max Thrust: 60–80 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+124. Company: KDE Direct | Name: KDE13218XF-105 | Max Thrust: 45–50 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+125. Company: KDE Direct | Name: KDE13218XF-120 | Max Thrust: 50–55 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+126. Company: KDE Direct | Name: KDE13218XF-140 | Max Thrust: 55 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+127. Company: KDE Direct | Name: KDE1618XF Series | Max Thrust: 50+ kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+128. Company: MAD Components | Name: MAD M50C | Max Thrust: 45 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+129. Company: MAD Components | Name: MAD M50E | Max Thrust: 50 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+130. Company: MAD Components | Name: MAD M60 Series | Max Thrust: 55–65 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+131. Company: Hacker | Name: Hacker Q150-10M | Max Thrust: 45 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+132. Company: Hacker | Name: Hacker Q150-12M | Max Thrust: 50 kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}
+133. Company: Hacker | Name: Hacker Q200 Series | Max Thrust: 55+ kg | Cat: 45-55 kg
+   Rec ESC: N/A | Rec Prop: N/A
+   Links: Motor: N/A | ESC: N/A | Prop: N/A
+   Custom Parameters: {}

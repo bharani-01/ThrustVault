@@ -69,6 +69,46 @@ async function getMotors(req, res) {
   }
 }
 
+/**
+ * GET /api/guest/motors/search?q=<term>&limit=<n>
+ * Full-text LIKE search across motor_name and company columns.
+ */
+async function searchMotors(req, res) {
+  const q     = String(req.query.q || '').trim();
+  const limit = Math.min(parseInt(req.query.limit, 10) || 8, 20);
+
+  if (!q || q.length < 2) {
+    return res.json([]);
+  }
+
+  try {
+    const pattern = `%${q}%`;
+    const stmt = sqliteDb.prepare(`
+      SELECT m.id, m.motor_name, m.company, m.max_thrust,
+             m.category_id, c.name AS category_name,
+             m.custom_parameters
+      FROM motors m
+      LEFT JOIN categories c ON m.category_id = c.id
+      WHERE m.motor_name LIKE ? OR m.company LIKE ?
+      ORDER BY m.motor_name ASC
+      LIMIT ?
+    `);
+    const rows = stmt.all(pattern, pattern, limit);
+
+    const result = rows.map(r => {
+      if (r.custom_parameters && typeof r.custom_parameters === 'string') {
+        try { r.custom_parameters = JSON.parse(r.custom_parameters); } catch (e) {}
+      }
+      return r;
+    });
+
+    res.json(result);
+  } catch (e) {
+    console.error('[guest-search-motors]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+}
+
 async function getCategories(req, res) {
   try {
     const data = await querySQLiteTable('categories', req.query);
@@ -198,6 +238,7 @@ async function getShareItem(req, res) {
 module.exports = {
   initData,
   getMotors,
+  searchMotors,
   getCategories,
   getCustomSpecs,
   getMotorTestRuns,

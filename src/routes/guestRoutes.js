@@ -7,6 +7,7 @@ const { guestLimiter } = require('../middlewares/rateLimiter');
 // Guest catalog endpoints
 router.get('/init-data', guestLimiter, guestController.initData);
 router.get('/categories', guestLimiter, guestController.getCategories);
+router.get('/motors/search', guestLimiter, guestController.searchMotors);
 router.get('/motors', guestLimiter, guestController.getMotors);
 router.get('/custom-specs', guestLimiter, guestController.getCustomSpecs);
 router.get('/motor-test-runs', guestLimiter, guestController.getMotorTestRuns);

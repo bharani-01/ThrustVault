@@ -281,10 +281,22 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 state.activeCategory = null;
             }
+
+            // Pre-fill search from URL param (?q=...) — set by hero search bar
+            const urlQ = new URLSearchParams(window.location.search).get('q');
+            if (urlQ && urlQ.trim()) {
+                state.searchQuery = urlQ.trim();
+            }
             
             await fetchMotorsForActiveCategory();
             
             renderApp();
+
+            // Sync search input UI after render
+            if (state.searchQuery && elements.searchInput) {
+                elements.searchInput.value = state.searchQuery;
+                if (elements.searchClear) elements.searchClear.style.display = 'block';
+            }
         } catch (e) {
             console.error("Error fetching data:", e);
         }

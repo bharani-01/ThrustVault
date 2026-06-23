@@ -201,6 +201,149 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+
+        /* ── Hero Search Bar ───────────────────────────────────────── */
+        #hero-search-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 560px;
+        }
+
+        #hero-search-input {
+            width: 100%;
+            padding: 14px 52px 14px 20px;
+            border: 1.5px solid #d0dae8;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: #191c1d;
+            outline: none;
+            box-shadow: 0 2px 12px rgba(0,30,64,0.08);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        #hero-search-input:focus {
+            border-color: #003366;
+            box-shadow: 0 0 0 3px rgba(0,51,102,0.12), 0 2px 12px rgba(0,30,64,0.08);
+        }
+
+        #hero-search-input::placeholder { color: #8a939f; }
+
+        #hero-search-icon {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #737780;
+            font-size: 20px;
+            pointer-events: none;
+        }
+
+        #hero-search-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            border: 1px solid #dde3ed;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,30,64,0.13);
+            overflow: hidden;
+            z-index: 999;
+            display: none;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        #hero-search-dropdown.open { display: block; }
+
+        .hero-search-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f3f7;
+            transition: background 0.15s;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .hero-search-item:last-child { border-bottom: none; }
+        .hero-search-item:hover, .hero-search-item.active { background: #f0f4fb; }
+
+        .hero-search-item-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: #eef2fb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .hero-search-item-icon .material-symbols-outlined {
+            font-size: 16px;
+            color: #003366;
+        }
+
+        .hero-search-item-name {
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: #191c1d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .hero-search-item-meta {
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            color: #737780;
+            margin-top: 1px;
+        }
+
+        .hero-search-item-thrust {
+            margin-left: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            color: #003366;
+            background: #e8f0fb;
+            padding: 2px 8px;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .hero-search-footer {
+            padding: 10px 16px;
+            background: #f8f9fa;
+            border-top: 1px solid #edf0f5;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            color: #737780;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .hero-search-footer a {
+            color: #003366;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .hero-search-empty {
+            padding: 24px 16px;
+            text-align: center;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            color: #8a939f;
+        }
     </style>
 </head>
 <body class="font-body-base bg-transparent overflow-x-hidden selection:bg-primary-container selection:text-white relative">
@@ -453,6 +596,25 @@
             <a href="/docs" class="border border-outline-variant bg-white/80 text-primary font-button text-button px-8 py-4 rounded DEFAULT hover:bg-white transition-colors shadow-sm" style="text-decoration:none;">
                 View Documentation
             </a>
+        </div>
+
+        <!-- ── Hero Motor Search Bar ─────────────────────────────── -->
+        <div class="w-full mt-8 fade-in-up" style="transition-delay: 0.42s;" id="hero-search-wrapper">
+            <label class="font-label-mono text-[11px] text-secondary tracking-widest uppercase mb-2 block">Search Motors</label>
+            <div style="position:relative;">
+                <input
+                    id="hero-search-input"
+                    type="text"
+                    placeholder="e.g. T-Motor F90, 2306, 2450KV…"
+                    autocomplete="off"
+                    spellcheck="false"
+                    aria-label="Search motors"
+                    aria-autocomplete="list"
+                    aria-controls="hero-search-dropdown"
+                />
+                <span class="material-symbols-outlined" id="hero-search-icon">search</span>
+                <div id="hero-search-dropdown" role="listbox" aria-label="Motor suggestions"></div>
+            </div>
         </div>
     </div>
     <!-- Scroll Indicator -->
@@ -960,6 +1122,135 @@
             }, 150);
         }
     }
+
+    // ──────────────────────────────────────────────────────────────
+    //  Hero Motor Search
+    // ──────────────────────────────────────────────────────────────
+    (function () {
+        const input    = document.getElementById('hero-search-input');
+        const dropdown = document.getElementById('hero-search-dropdown');
+        if (!input || !dropdown) return;
+
+        let debounceTimer = null;
+        let activeIndex   = -1;
+        let currentItems  = [];
+
+        function closeDropdown() {
+            dropdown.classList.remove('open');
+            activeIndex  = -1;
+            currentItems = [];
+        }
+
+        function highlightItem(idx) {
+            const items = dropdown.querySelectorAll('.hero-search-item[role="option"]');
+            items.forEach((el, i) => el.classList.toggle('active', i === idx));
+            activeIndex = idx;
+        }
+
+        function navigateTo(query) {
+            window.location.href = '/guest?q=' + encodeURIComponent(query.trim());
+        }
+
+        async function fetchSuggestions(query) {
+            if (!query || query.length < 2) { closeDropdown(); return; }
+            try {
+                const res  = await fetch(`/api/guest/motors/search?q=${encodeURIComponent(query)}&limit=6`);
+                const data = await res.json();
+                const motors = data.motors || data.data || data || [];
+
+                dropdown.innerHTML = '';
+                activeIndex  = -1;
+                currentItems = motors;
+
+                if (!motors.length) {
+                    dropdown.innerHTML = `<div class="hero-search-empty">No motors found for "<strong>${query}</strong>"</div>`;
+                    dropdown.classList.add('open');
+                    return;
+                }
+
+                motors.forEach((m, i) => {
+                    const rawKv     = m.kv_rating || (m.custom_parameters && m.custom_parameters.kv_rating) || '';
+                    const kv        = rawKv ? `${rawKv} KV` : '';
+                    const thrust    = m.max_thrust || '';
+                    const category  = m.category_name || m.category || '';
+                    const motorName = m.motor_name || m.model_name || m.name || 'Unknown Motor';
+                    const company   = m.company || m.company_name || m.brand || '';
+
+                    const item = document.createElement('a');
+                    item.className   = 'hero-search-item';
+                    item.role        = 'option';
+                    item.href        = `/guest?q=${encodeURIComponent(motorName)}`;
+                    item.setAttribute('aria-selected', 'false');
+                    item.innerHTML   = `
+                        <div class="hero-search-item-icon">
+                            <span class="material-symbols-outlined">electric_bolt</span>
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <div class="hero-search-item-name">${motorName}</div>
+                            <div class="hero-search-item-meta">${[company, category, kv].filter(Boolean).join(' · ')}</div>
+                        </div>
+                        ${thrust ? `<span class="hero-search-item-thrust">${thrust}</span>` : ''}
+                    `;
+                    dropdown.appendChild(item);
+                });
+
+                // Footer "See all results"
+                const footer = document.createElement('div');
+                footer.className = 'hero-search-footer';
+                footer.innerHTML = `
+                    <span>${motors.length} result${motors.length !== 1 ? 's' : ''} shown</span>
+                    <a href="/guest?q=${encodeURIComponent(query)}">See all results →</a>
+                `;
+                dropdown.appendChild(footer);
+
+                dropdown.classList.add('open');
+            } catch (e) {
+                console.warn('Hero search error:', e);
+            }
+        }
+
+        // Input handler with debounce
+        input.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            const q = input.value.trim();
+            if (!q) { closeDropdown(); return; }
+            debounceTimer = setTimeout(() => fetchSuggestions(q), 280);
+        });
+
+        // Keyboard navigation
+        input.addEventListener('keydown', (e) => {
+            const items = dropdown.querySelectorAll('.hero-search-item[role="option"]');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                highlightItem(Math.min(activeIndex + 1, items.length - 1));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                highlightItem(Math.max(activeIndex - 1, 0));
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (activeIndex >= 0 && items[activeIndex]) {
+                    window.location.href = items[activeIndex].href;
+                } else {
+                    navigateTo(input.value);
+                }
+            } else if (e.key === 'Escape') {
+                closeDropdown();
+                input.blur();
+            }
+        });
+
+        // Close on outside click
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('hero-search-wrapper').contains(e.target)) {
+                closeDropdown();
+            }
+        });
+
+        // Re-open on focus if there's a value
+        input.addEventListener('focus', () => {
+            if (input.value.trim().length >= 2) fetchSuggestions(input.value.trim());
+        });
+    })();
 </script>
 </body>
 </html>
