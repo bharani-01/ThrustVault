@@ -191,10 +191,9 @@ flowchart TB
 ### 1) Install dependencies
 
 ```bash
-cd /home/runner/work/ThrustVault/ThrustVault
+# From repository root
 npm install
-cd /home/runner/work/ThrustVault/ThrustVault/admin_portal
-npm install
+(cd ./admin_portal && npm install)
 ```
 
 ### 2) Configure environment
@@ -203,13 +202,11 @@ Create `.env` files for both services with the variables listed above.
 ### 3) Start services
 
 ```bash
-# Main service (port 8000 by default)
-cd /home/runner/work/ThrustVault/ThrustVault
+# Terminal 1 (from repository root) - Main service, port 8000 by default
 npm start
 
-# Admin service (port 8001 by default)
-cd /home/runner/work/ThrustVault/ThrustVault/admin_portal
-npm start
+# Terminal 2 (from repository root) - Admin service, port 8001 by default
+(cd ./admin_portal && npm start)
 ```
 
 ### 4) First run behavior
@@ -279,6 +276,8 @@ On boot, the main service:
 - `POST /api/log-activity`
 - `ALL /api/db/:table` and `ALL /api/db/:table/:id`
 
+`/api/db/:table` is ACL-governed and role-validated in the server layer. Typical table scope includes motors, categories, custom specs schema, access requests, onboarding, motor test runs, motor test data points, and draft test runs.
+
 ### Public + AI APIs
 - `POST /api/request-demo`
 - `POST /api/public/request-access`
@@ -301,7 +300,7 @@ On boot, the main service:
 ## 🗂️ Project Structure
 
 ```text
-/home/runner/work/ThrustVault/ThrustVault
+.
 ├── server.js                  # Main service bootstrap and startup migrations
 ├── src/
 │   ├── app.js                 # Express app wiring and route mounting
@@ -326,12 +325,22 @@ On boot, the main service:
 
 ### Current State
 The repository currently does **not** define automated `lint`, `test`, or `build` scripts in either service package.
+This is a known operational gap and should be prioritized before production hardening.
 
 ### Available Commands
 - Main service: `npm start`, `npm run dev`
 - Admin service: `npm start`
 
+### Interim Manual Verification
+Until automated suites are added, use a pre-release checklist with:
+1. startup smoke check for both services,
+2. authentication and session validation (login/logout/session),
+3. role-boundary checks across guest/user/admin endpoints,
+4. core data CRUD spot checks on motors/categories/custom specs,
+5. admin critical workflow checks (user provision/deprovision, settings updates).
+
 ### Recommended Test Strategy
+Suggested baseline stack: **Jest + Supertest** for API/integration coverage.
 1. **API contract tests** for auth, guest read APIs, and role-protected routes.
 2. **Integration tests** for PostgreSQL + SQLite sync flow.
 3. **Security regression tests** for authorization boundaries and rate limits.
@@ -432,9 +441,7 @@ Capture for each release:
 
 ## 📄 License
 
-This project is distributed under the **MIT License**.
-
-> If you plan to publish externally, add a dedicated `LICENSE` file at the repository root for explicit legal distribution metadata.
+This project is distributed under the **MIT License** (see `/LICENSE`).
 
 ---
 
@@ -444,4 +451,3 @@ This project is distributed under the **MIT License**.
 - **Repository Owner:** `@bharani-01`
 
 For ownership updates, revise this section and release notes together to preserve governance clarity.
-
