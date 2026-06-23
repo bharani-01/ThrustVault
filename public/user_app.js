@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         categories: [],
         users: [],
         activeCategory: null,
-        filterByCategory: null,
+        filterByCategory: 'all',
         searchQuery: '',
         filterCompany: 'all',
         sortBy: 'motor-asc',
@@ -627,12 +627,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 const match = name.match(/(\d+)/);
                 return match ? parseInt(match[1], 10) : 9999;
             };
-            state.categories = (init.categories || []).map(c => ({
-                id: c.id, name: c.name, desc: c.description
-            })).sort((a, b) => parseMinWeight(a.name) - parseMinWeight(b.name));
+            const noThrustCat = (init.categories || []).find(c => c.name === 'No Thrust');
+            if (noThrustCat) {
+                state.noThrustCategoryId = noThrustCat.id;
+            }
+            state.categories = (init.categories || [])
+                .filter(c => c.name !== 'No Thrust')
+                .map(c => ({
+                    id: c.id, name: c.name, desc: c.description
+                })).sort((a, b) => parseMinWeight(a.name) - parseMinWeight(b.name));
+
+            state.categories.unshift({
+                id: 'all',
+                name: 'All Motors',
+                desc: 'All motors across all thrust classes (excluding no-thrust)'
+            });
 
             // ── Category counts (computed server-side) ─────────────────────
             state.categoryCounts = init.category_counts || {};
+            if (state.noThrustCategoryId && state.categoryCounts[state.noThrustCategoryId]) {
+                delete state.categoryCounts[state.noThrustCategoryId];
+            }
+            state.categoryCounts['all'] = Object.values(state.categoryCounts).reduce((a, b) => a + b, 0);
 
             // ── Custom schema ──────────────────────────────────────────────
             state.customSchema = init.custom_schema || [];
@@ -642,9 +658,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // ── First 15 motors → render immediately ──────────────────────
             const firstBatch = init.first_motors || [];
-            state.motors = firstBatch.map(mapMotor);
+            state.motors = firstBatch
+                .filter(m => !state.noThrustCategoryId || m.category_id !== state.noThrustCategoryId)
+                .map(mapMotor);
             
-            state.totalFiltered = state.dashboardStats ? state.dashboardStats.total_motors : state.motors.length;
+            state.totalFiltered = state.categoryCounts['all'];
 
             state.allMotorsLoaded = true;
             hideLoadingBadge();
@@ -675,8 +693,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             params.append('order', dbSort);
             
-            if (state.filterByCategory) {
+            if (state.filterByCategory && state.filterByCategory !== 'all') {
                 params.append('category_id', `eq.${state.filterByCategory}`);
+            } else if (state.noThrustCategoryId) {
+                params.append('category_id', `neq.${state.noThrustCategoryId}`);
             }
             if (state.filterCompany && state.filterCompany !== 'all') {
                 params.append('company', `eq.${state.filterCompany}`);
@@ -732,8 +752,10 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchExportMotors() {
         try {
             const params = new URLSearchParams();
-            if (state.filterByCategory) {
+            if (state.filterByCategory && state.filterByCategory !== 'all') {
                 params.append('category_id', `eq.${state.filterByCategory}`);
+            } else if (state.noThrustCategoryId) {
+                params.append('category_id', `neq.${state.noThrustCategoryId}`);
             }
             if (state.filterCompany && state.filterCompany !== 'all') {
                 params.append('company', `eq.${state.filterCompany}`);
@@ -798,19 +820,20 @@ document.addEventListener('DOMContentLoaded', () => {
         state.categories.forEach(cat => {
             const count = state.categoryCounts[cat.id] || 0;
             const div = document.createElement('div');
+            const isAll = cat.id === 'all';
             div.className = `category-tab ${state.filterByCategory === cat.id ? 'active' : ''}`;
             div.innerHTML = `
                 <span>${cat.name}</span>
                 <div style="display:flex; align-items:center; gap:5px;">
                     <span class="cat-count">${count}</span>
-                    <button class="btn-delete-cat" data-id="${cat.id}" title="Delete Category"><i data-lucide="trash-2" style="width:14px;"></i></button>
+                    ${isAll ? '' : `<button class="btn-delete-cat" data-id="${cat.id}" title="Delete Category"><i data-lucide="trash-2" style="width:14px;"></i></button>`}
                 </div>
             `;
             
             div.onclick = (e) => {
                 if(e.target.closest('.btn-delete-cat')) return;
                 // Toggle: clicking active category clears the filter; clicking new one sets it
-                state.filterByCategory = (state.filterByCategory === cat.id) ? null : cat.id;
+                state.filterByCategory = (state.filterByCategory === cat.id) ? 'all' : cat.id;
                 state.filterCompany = 'all';
                 state.searchQuery = '';
                 state.currentPage = 1;
@@ -820,50 +843,54 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             
             const delBtn = div.querySelector('.btn-delete-cat');
-            delBtn.onclick = async (e) => {
-                e.stopPropagation();
-                const confirmDelete = await customConfirm(
-                    "Delete Category?",
-                    `Are you sure you want to delete the category "${cat.name}"? All specifications inside it will be permanently deleted.`
-                );
-                if (confirmDelete) {
-                    try {
-                        const res = await fetch(`/api/categories/${cat.id}`, {
-                            method: 'DELETE'
-                        });
-                        if (!res.ok) {
-                            const errData = await res.json();
-                            throw new Error(errData.error || `HTTP ${res.status}`);
+            if (delBtn) {
+                delBtn.onclick = async (e) => {
+                    e.stopPropagation();
+                    const confirmDelete = await customConfirm(
+                        "Delete Category?",
+                        `Are you sure you want to delete the category "${cat.name}"? All specifications inside it will be permanently deleted.`
+                    );
+                    if (confirmDelete) {
+                        try {
+                            const res = await fetch(`/api/categories/${cat.id}`, {
+                                method: 'DELETE'
+                            });
+                            if (!res.ok) {
+                                const errData = await res.json();
+                                throw new Error(errData.error || `HTTP ${res.status}`);
+                            }
+                            logUserActivity(session.email, session.role, 'Category Deleted', `Deleted category: ${cat.name}`);
+                            
+                            state.compareItems = state.compareItems.filter(id => {
+                                const m = state.compareMotorsCache && state.compareMotorsCache[id];
+                                return m ? m.categoryId !== cat.id : true;
+                            });
+                            
+                            if (state.filterByCategory === cat.id) {
+                                state.filterByCategory = 'all';
+                            }
+                            await fetchData();
+                        } catch (err) {
+                            console.error("Error deleting category:", err);
+                            alert("Failed to delete category: " + err.message);
                         }
-                        logUserActivity(session.email, session.role, 'Category Deleted', `Deleted category: ${cat.name}`);
-                        
-                        state.compareItems = state.compareItems.filter(id => {
-                            const m = state.compareMotorsCache && state.compareMotorsCache[id];
-                            return m ? m.categoryId !== cat.id : true;
-                        });
-                        
-                        if (state.filterByCategory === cat.id) {
-                            state.filterByCategory = null;
-                        }
-                        await fetchData();
-                    } catch (err) {
-                        console.error("Error deleting category:", err);
-                        alert("Failed to delete category: " + err.message);
                     }
-                }
-            };
+                };
+            }
             elements.catList.appendChild(div);
         });
 
         const catSelect = document.getElementById('form-motor-category');
-        if (catSelect) catSelect.innerHTML = state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        if (catSelect) catSelect.innerHTML = state.categories
+            .filter(c => c.id !== 'all')
+            .map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     }
 
 
     // Main Content Rendering
     function renderMainContent() {
         // Category sidebar filter
-        if (state.filterByCategory) {
+        if (state.filterByCategory && state.filterByCategory !== 'all') {
             const cat = state.categories.find(c => c.id === state.filterByCategory);
             if (elements.catBadge) elements.catBadge.textContent = cat ? cat.name : 'Filtered';
             if (elements.catTitle) elements.catTitle.textContent = cat ? `${cat.name} Class` : 'Filtered';
@@ -871,7 +898,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             if (elements.catBadge) elements.catBadge.textContent = 'All';
             if (elements.catTitle) elements.catTitle.textContent = 'Motor Catalog';
-            if (elements.catDesc) elements.catDesc.textContent = 'All motors across all thrust classes';
+            if (elements.catDesc) elements.catDesc.textContent = 'All motors across all thrust classes (excluding no-thrust)';
         }
 
         updateBrandFilterOptions();
@@ -1543,12 +1570,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const kpiActive = document.getElementById('kpi-active-class-val');
         if (kpiActive) {
-            if (state.filterByCategory) {
+            if (state.filterByCategory && state.filterByCategory !== 'all') {
                 const cat = state.categories.find(c => c.id === state.filterByCategory);
                 kpiActive.textContent = cat ? cat.name : '-';
             } else {
-                kpiActive.textContent = state.categories.length > 0
-                    ? `All ${state.categories.length} classes`
+                const realCategories = state.categories.filter(c => c.id !== 'all');
+                kpiActive.textContent = realCategories.length > 0
+                    ? `All ${realCategories.length} classes`
                     : '-';
             }
         }
@@ -1720,7 +1748,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderCharts() {
         // Filter motors to match the active category filter (or use all if none selected)
-        const motors = state.filterByCategory
+        const motors = (state.filterByCategory && state.filterByCategory !== 'all')
             ? state.motors.filter(m => m.categoryId === state.filterByCategory)
             : state.motors;
         // updateKpis(motors); // Removed to prevent overwriting server-side filtered KPI calculations with paginated subset

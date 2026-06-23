@@ -12,18 +12,14 @@ async function initData(req, res) {
   const LIMIT = 15;
   try {
     const catsStmt = sqliteDb.prepare('SELECT id, name, description FROM categories ORDER BY name');
-    const countsStmt = sqliteDb.prepare(`SELECT category_id, COUNT(*) AS cnt FROM motors 
-                                         WHERE max_thrust NOT IN ('0', '0.0', '0.00', '0.000', '0.000 kg', '0 kg', '0 g', '0kg', '0g', '') AND max_thrust IS NOT NULL
-                                         GROUP BY category_id`);
+    const countsStmt = sqliteDb.prepare('SELECT category_id, COUNT(*) AS cnt FROM motors GROUP BY category_id');
     const schemaStmt = sqliteDb.prepare('SELECT * FROM custom_specs_schema ORDER BY created_at');
     const motorsStmt = sqliteDb.prepare(`
       SELECT id, category_id, motor_name, company, max_thrust,
              recommended_esc, recommended_propeller,
              link_motor, link_esc, link_propeller, custom_parameters, uploaded_by,
              main_image, gallery_images
-      FROM motors 
-      WHERE max_thrust NOT IN ('0', '0.0', '0.00', '0.000', '0.000 kg', '0 kg', '0 g', '0kg', '0g', '') AND max_thrust IS NOT NULL
-      ORDER BY max_thrust ASC LIMIT ?
+      FROM motors ORDER BY max_thrust ASC LIMIT ?
     `);
 
     const catsRows = catsStmt.all();
@@ -66,7 +62,7 @@ async function initData(req, res) {
 
 async function getMotors(req, res) {
   try {
-    const data = await querySQLiteTable('motors', { ...req.query, exclude_zero_thrust: 'true' });
+    const data = await querySQLiteTable('motors', req.query);
     res.json(data);
   } catch (e) {
     res.status(500).json({ error: e.message });

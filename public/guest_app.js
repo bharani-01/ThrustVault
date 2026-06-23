@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let state = {
         motors: [],
         categories: [],
-        activeCategory: null,
+        activeCategory: 'all',
         searchQuery: '',
         filterCompany: 'all',
         sortBy: 'motor-asc',
@@ -183,7 +183,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         try {
-            const motorRes = await fetch(`/api/guest/motors?category_id=eq.${state.activeCategory}`);
+            const url = state.activeCategory === 'all'
+                ? (state.noThrustCategoryId ? `/api/guest/motors?category_id=neq.${state.noThrustCategoryId}` : '/api/guest/motors')
+                : `/api/guest/motors?category_id=eq.${state.activeCategory}`;
+            const motorRes = await fetch(url);
             if (!motorRes.ok) throw new Error(`Motors fetch failed: HTTP ${motorRes.status}`);
             const motors = await motorRes.json();
             
@@ -222,11 +225,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 return match ? parseInt(match[1], 10) : 9999;
             };
 
-            state.categories = (categories || []).map(c => ({
-                id: c.id,
-                name: c.name,
-                desc: c.description
-            })).sort((a, b) => parseMinWeight(a.name) - parseMinWeight(b.name));
+            const noThrustCat = (categories || []).find(c => c.name === 'No Thrust');
+            if (noThrustCat) {
+                state.noThrustCategoryId = noThrustCat.id;
+            }
+
+            state.categories = (categories || [])
+                .filter(c => c.name !== 'No Thrust')
+                .map(c => ({
+                    id: c.id,
+                    name: c.name,
+                    desc: c.description
+                })).sort((a, b) => parseMinWeight(a.name) - parseMinWeight(b.name));
+            
+            state.categories.unshift({
+                id: 'all',
+                name: 'All Motors',
+                desc: 'All motors across all thrust classes (excluding no-thrust)'
+            });
             
             // Fetch category IDs only to compute counts
             const countRes = await fetch('/api/guest/motors?select=category_id');
@@ -234,10 +250,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const categoryIds = await countRes.json();
                 state.categoryCounts = {};
                 (categoryIds || []).forEach(m => {
-                    if (m.category_id) {
+                    if (m.category_id && (!state.noThrustCategoryId || m.category_id !== state.noThrustCategoryId)) {
                         state.categoryCounts[m.category_id] = (state.categoryCounts[m.category_id] || 0) + 1;
                     }
                 });
+                state.categoryCounts['all'] = Object.values(state.categoryCounts).reduce((a, b) => a + b, 0);
             } else {
                 state.categoryCounts = {};
             }
@@ -259,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (state.categories.length > 0) {
                 if (!state.activeCategory || !state.categories.some(c => c.id === state.activeCategory)) {
-                    state.activeCategory = state.categories[0].id;
+                    state.activeCategory = 'all';
                 }
             } else {
                 state.activeCategory = null;
@@ -344,11 +361,19 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        elements.catBadge.textContent = cat.name;
-        elements.catTitle.textContent = `${cat.name} Class`;
-        elements.catDesc.textContent = cat.desc || `${cat.name} Thrust Stand Motors`;
+        if (cat.id === 'all') {
+            elements.catBadge.textContent = "All";
+            elements.catTitle.textContent = "Motor Catalog";
+            elements.catDesc.textContent = "All motors across all thrust classes (excluding no-thrust)";
+        } else {
+            elements.catBadge.textContent = cat.name;
+            elements.catTitle.textContent = `${cat.name} Class`;
+            elements.catDesc.textContent = cat.desc || `${cat.name} Thrust Stand Motors`;
+        }
         
-        const catMotors = state.motors.filter(m => m.categoryId === cat.id);
+        const catMotors = (cat.id === 'all')
+            ? state.motors
+            : state.motors.filter(m => m.categoryId === cat.id);
         
         // Update Brand Filter Dropdown Options
         updateBrandFilterOptions(catMotors);
@@ -1154,7 +1179,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderCharts() {
         const cat = state.categories.find(c => c.id === state.activeCategory);
-        const catMotors = state.motors.filter(m => m.categoryId === state.activeCategory);
+        const catMotors = (state.activeCategory === 'all')
+            ? state.motors
+            : state.motors.filter(m => m.categoryId === state.activeCategory);
         
         updateKpis(catMotors, cat);
         renderBrandTreemap(catMotors);

@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let state = {
         motors: [],
         categories: [],
-        activeCategory: null,
+        activeCategory: 'all',
         searchQuery: '',
         filterCompany: 'all',
         sortBy: 'motor-asc',
@@ -369,6 +369,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 desc: c.description
             }));
             
+            state.categories.unshift({
+                id: 'all',
+                name: 'All Motors',
+                desc: 'All motors across all thrust classes'
+            });
+            
             const motorRes = await fetch('/api/admin/motors');
             if (!motorRes.ok) throw new Error("Failed to load motors");
             const motors = await motorRes.json();
@@ -411,7 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 sessionStorage.removeItem('activeCategory');
             } else if (state.categories.length > 0) {
                 if (!state.activeCategory || !state.categories.some(c => c.id === state.activeCategory)) {
-                    state.activeCategory = state.categories[0].id;
+                    state.activeCategory = 'all';
                 }
             } else {
                 state.activeCategory = null;
@@ -739,14 +745,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!elements.catList) return;
         elements.catList.innerHTML = '';
         state.categories.forEach(cat => {
-            const count = state.motors.filter(m => m.categoryId === cat.id).length;
+            const count = (cat.id === 'all')
+                ? state.motors.length
+                : state.motors.filter(m => m.categoryId === cat.id).length;
             const div = document.createElement('div');
+            const isAll = cat.id === 'all';
             div.className = `category-tab ${state.activeCategory === cat.id ? 'active' : ''}`;
             div.innerHTML = `
                 <span>${cat.name}</span>
                 <div style="display:flex; align-items:center; gap:5px;">
                     <span class="cat-count">${count}</span>
-                    <button class="btn-delete-cat" data-id="${cat.id}" title="Delete Category"><i data-lucide="trash-2" style="width:14px;"></i></button>
+                    ${isAll ? '' : `<button class="btn-delete-cat" data-id="${cat.id}" title="Delete Category"><i data-lucide="trash-2" style="width:14px;"></i></button>`}
                 </div>
             `;
             
@@ -761,46 +770,41 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             
             const delBtn = div.querySelector('.btn-delete-cat');
-            delBtn.onclick = async (e) => {
-                e.stopPropagation();
-                const confirmDelete = await customConfirm(
-                    "Delete Category?",
-                    `Are you sure you want to delete the category "${cat.name}"? All specifications inside it will be permanently deleted.`
-                );
-                if (confirmDelete) {
-                    try {
-                        const res = await fetch(`/api/admin/categories/${cat.id}`, {
-                            method: 'DELETE'
-                        });
-                        if (!res.ok) {
-                            const errData = await res.json();
-                            throw new Error(errData.error || `HTTP ${res.status}`);
+            if (delBtn) {
+                delBtn.onclick = async (e) => {
+                    e.stopPropagation();
+                    const confirmDelete = await customConfirm(
+                        "Delete Category?",
+                        `Are you sure you want to delete the category "${cat.name}"? All specifications inside it will be permanently deleted.`
+                    );
+                    if (confirmDelete) {
+                        try {
+                            const res = await fetch(`/api/admin/categories/${cat.id}`, {
+                                method: 'DELETE'
+                            });
+                            if (!res.ok) {
+                                const errData = await res.json();
+                                throw new Error(errData.error || `HTTP ${res.status}`);
+                            }
+                            logUserActivity(session.email, session.role, 'Category Deleted', `Deleted category: ${cat.name}`);
+                            
+                            // Fallback active category
+                            state.activeCategory = state.categories.find(c => c.id !== cat.id)?.id || null;
+                            await fetchData();
+                        } catch (err) {
+                            console.error("Error deleting category:", err);
+                            alert("Failed to delete category: " + err.message);
                         }
-                        logUserActivity(session.email, session.role, 'Category Deleted', `Deleted category: ${cat.name}`);
-                        
-                        // Fallback active category
-                        state.activeCategory = state.categories.find(c => c.id !== cat.id)?.id || null;
-                        await fetchData();
-                    } catch (err) {
-                        console.error("Error deleting category:", err);
-                        alert("Failed to delete category: " + err.message);
                     }
-                }
-            };
+                };
+            }
             elements.catList.appendChild(div);
         });
-
-        // Add static All Motors tab
-        const allTab = document.createElement('div');
-        allTab.className = 'category-tab';
-        allTab.innerHTML = '<span>All Motors</span>';
-        allTab.onclick = () => {
-            window.location.href = '/admin/explorer';
-        };
-        elements.catList.appendChild(allTab);
         
         const catSelect = document.getElementById('form-motor-category');
-        catSelect.innerHTML = state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        catSelect.innerHTML = state.categories
+            .filter(c => c.id !== 'all')
+            .map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     }
 
     // Main Content Rendering
@@ -818,11 +822,19 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        elements.catBadge.textContent = cat.name;
-        elements.catTitle.textContent = `${cat.name} Class`;
-        elements.catDesc.textContent = cat.desc || `${cat.name} Thrust Stand Motors`;
+        if (cat.id === 'all') {
+            elements.catBadge.textContent = "All";
+            elements.catTitle.textContent = "Motor Catalog";
+            elements.catDesc.textContent = "All motors across all thrust classes";
+        } else {
+            elements.catBadge.textContent = cat.name;
+            elements.catTitle.textContent = `${cat.name} Class`;
+            elements.catDesc.textContent = cat.desc || `${cat.name} Thrust Stand Motors`;
+        }
         
-        const catMotors = state.motors.filter(m => m.categoryId === cat.id);
+        const catMotors = (cat.id === 'all')
+            ? state.motors
+            : state.motors.filter(m => m.categoryId === cat.id);
         
         updateBrandFilterOptions(catMotors);
         
@@ -1263,7 +1275,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderCharts() {
         const cat = state.categories.find(c => c.id === state.activeCategory);
-        const catMotors = state.motors.filter(m => m.categoryId === state.activeCategory);
+        const catMotors = (state.activeCategory === 'all')
+            ? state.motors
+            : state.motors.filter(m => m.categoryId === state.activeCategory);
         
         updateKpis(catMotors, cat);
         renderBrandTreemap(catMotors);
@@ -1919,7 +1933,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('thrust-conversion-preview').textContent = '';
         document.getElementById('modal-title').innerHTML = `<i data-lucide="plus-circle"></i> Add New Motor Entry`;
         document.getElementById('form-motor-index').value = '';
-        document.getElementById('form-motor-category').value = state.activeCategory || '';
+        const defaultCatId = (state.activeCategory === 'all')
+            ? (state.categories.find(c => c.id !== 'all')?.id || '')
+            : (state.activeCategory || '');
+        document.getElementById('form-motor-category').value = defaultCatId;
         renderCustomFieldsInMotorForm();
         openModal(elements.motorModal);
         lucide.createIcons();
@@ -2118,7 +2135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function runCustomExport(format, columns) {
         const cat = state.categories.find(c => c.id === state.activeCategory);
         let exportMotors = state.motors;
-        if (cat) {
+        if (cat && cat.id !== 'all') {
             exportMotors = exportMotors.filter(m => m.categoryId === cat.id);
         }
         
