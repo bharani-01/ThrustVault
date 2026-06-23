@@ -54,6 +54,11 @@ async function querySQLiteTable(table, params) {
   const whereParts = [];
   const vals = [];
 
+  if (params.exclude_zero_thrust) {
+    whereParts.push(`"max_thrust" NOT IN ('0', '0.0', '0.00', '0.000', '0.000 kg', '0 kg', '0 g', '0kg', '0g', '') AND "max_thrust" IS NOT NULL`);
+    delete params.exclude_zero_thrust;
+  }
+
   for (const [k, v] of Object.entries(params)) {
     if (RESERVED.has(k)) continue;
     const f = buildSQLiteFilter(k, v);
