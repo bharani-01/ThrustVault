@@ -452,3 +452,43 @@ SET field_name = EXCLUDED.field_name,
     field_unit = EXCLUDED.field_unit;
 
 
+-- Alter motors table to support images
+ALTER TABLE public.motors ADD COLUMN IF NOT EXISTS main_image TEXT;
+ALTER TABLE public.motors ADD COLUMN IF NOT EXISTS gallery_images JSONB DEFAULT '[]'::jsonb;
+
+-- ESCs table
+CREATE TABLE IF NOT EXISTS public.escs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    brand VARCHAR(255) NOT NULL,
+    price VARCHAR(100),
+    currency VARCHAR(50),
+    url TEXT,
+    sku VARCHAR(255),
+    main_image TEXT,
+    gallery_images JSONB DEFAULT '[]'::jsonb,
+    custom_parameters JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    CONSTRAINT uq_esc_name_brand UNIQUE (name, brand)
+);
+
+-- Propellers table
+CREATE TABLE IF NOT EXISTS public.propellers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    brand VARCHAR(255) NOT NULL,
+    price VARCHAR(100),
+    currency VARCHAR(50),
+    url TEXT,
+    sku VARCHAR(255),
+    main_image TEXT,
+    gallery_images JSONB DEFAULT '[]'::jsonb,
+    custom_parameters JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    CONSTRAINT uq_prop_name_brand UNIQUE (name, brand)
+);
+
+CREATE INDEX IF NOT EXISTS idx_escs_brand ON escs(brand);
+CREATE INDEX IF NOT EXISTS idx_propellers_brand ON propellers(brand);

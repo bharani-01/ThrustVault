@@ -12,7 +12,7 @@ async function syncPostgresToSqlite() {
     // 1. Fetch all records from Postgres
     const [cats, motors, specs, runs, points] = await Promise.all([
       pool.query('SELECT id, name, description, created_at, updated_at FROM categories'),
-      pool.query('SELECT id, category_id, motor_name, company, max_thrust, recommended_esc, recommended_propeller, link_motor, link_esc, link_propeller, custom_parameters, uploaded_by, created_at, updated_at FROM motors'),
+      pool.query('SELECT id, category_id, motor_name, company, max_thrust, recommended_esc, recommended_propeller, link_motor, link_esc, link_propeller, custom_parameters, uploaded_by, created_at, updated_at, main_image, gallery_images FROM motors'),
       pool.query('SELECT id, field_key, field_name, field_type, field_unit, created_at FROM custom_specs_schema'),
       pool.query('SELECT id, motor_id, propeller_model, esc_model, battery_info, test_conducted_by, uploaded_by, tested_at, created_at FROM motor_test_runs'),
       pool.query('SELECT id, test_run_id, throttle, voltage, current, power, thrust_g, rpm, efficiency, temperature, extra_data, created_at FROM motor_test_data_points'),
@@ -68,7 +68,9 @@ async function syncPostgresToSqlite() {
           custom_parameters TEXT,
           uploaded_by TEXT,
           created_at TEXT,
-          updated_at TEXT
+          updated_at TEXT,
+          main_image TEXT,
+          gallery_images TEXT
         )
       `);
 
@@ -144,8 +146,8 @@ async function syncPostgresToSqlite() {
       `);
 
       const insertMotor = sqliteDb.prepare(`
-        INSERT INTO motors (id, category_id, motor_name, company, max_thrust, recommended_esc, recommended_propeller, link_motor, link_esc, link_propeller, custom_parameters, uploaded_by, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO motors (id, category_id, motor_name, company, max_thrust, recommended_esc, recommended_propeller, link_motor, link_esc, link_propeller, custom_parameters, uploaded_by, created_at, updated_at, main_image, gallery_images)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       const insertSpec = sqliteDb.prepare(`
@@ -175,11 +177,13 @@ async function syncPostgresToSqlite() {
 
       for (const row of motors.rows) {
         const customParams = typeof row.custom_parameters === 'object' ? JSON.stringify(row.custom_parameters) : row.custom_parameters;
+        const galleryImgs = typeof row.gallery_images === 'object' ? JSON.stringify(row.gallery_images) : row.gallery_images;
         try {
           insertMotor.run(
             safeVal(row.id), safeVal(row.category_id), safeVal(row.motor_name), safeVal(row.company), safeVal(row.max_thrust),
             safeVal(row.recommended_esc), safeVal(row.recommended_propeller), safeVal(row.link_motor), safeVal(row.link_esc), safeVal(row.link_propeller),
-            safeVal(customParams), safeVal(row.uploaded_by), safeVal(row.created_at), safeVal(row.updated_at)
+            safeVal(customParams), safeVal(row.uploaded_by), safeVal(row.created_at), safeVal(row.updated_at),
+            safeVal(row.main_image), safeVal(galleryImgs)
           );
         } catch (e) {
           console.error('[Sync Error] Failed inserting motor row:', row);
