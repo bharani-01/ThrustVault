@@ -98,7 +98,7 @@
     // Build chat panel container
     const panel = document.createElement('div');
     panel.id = 'dyno-panel';
-    panel.className = 'fixed bottom-24 right-6 z-50 w-[380px] md:w-[410px] h-[550px] bg-white/95 dark:bg-[#0c101a]/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden hidden dyno-window-animate';
+    panel.className = 'fixed bottom-24 right-6 z-50 w-[420px] max-w-[95vw] md:w-[520px] h-[680px] bg-white/95 dark:bg-[#0c101a]/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden hidden dyno-window-animate';
 
     // Panel Header
     const header = document.createElement('div');
@@ -215,6 +215,9 @@
             messagesContainer.appendChild(bubble);
         });
         scrollToBottom();
+        if (window.lucide) {
+            lucide.createIcons();
+        }
     }
 
     function createBubble(role, content) {
@@ -222,11 +225,17 @@
         const wrapper = document.createElement('div');
         wrapper.className = `flex ${isUser ? 'justify-end' : 'justify-start'} w-full items-start gap-2.5`;
 
-        // Render markdown-like lists and bold texts safely
+        // Render markdown-like lists, bold texts, and links safely
         let formattedText = content
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
             .replace(/`([^`\n]+)`/g, '<code class="bg-slate-100 dark:bg-slate-800 text-pink-600 dark:text-pink-400 px-1 py-0.5 rounded text-xs">$1</code>')
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+                if (url.startsWith('thrustvault://')) {
+                    return `<a href="#" data-action="open-motor" data-url="${url}" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold inline-flex items-center gap-1"><i data-lucide="external-link" class="w-3.5 h-3.5 inline-block"></i>${text}</a>`;
+                }
+                return `<a href="${url}" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline font-semibold">${text}</a>`;
+            })
             .replace(/\n\n/g, '<br/><br/>')
             .replace(/\n/g, '<br/>');
 
@@ -237,6 +246,25 @@
         
         bubble.innerHTML = formattedText;
         wrapper.appendChild(bubble);
+
+        // Bind clicks on open-motor actions
+        bubble.querySelectorAll('a[data-action="open-motor"]').forEach(link => {
+            link.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const url = link.dataset.url;
+                const match = url.match(/id=([^&]+)/);
+                if (match && match[1]) {
+                    const motorId = match[1];
+                    if (window.openMotorDetails) {
+                        window.openMotorDetails(motorId);
+                    } else {
+                        console.warn('[Dyno Copilot] window.openMotorDetails is not defined.');
+                    }
+                }
+            };
+        });
+
         return wrapper;
     }
 

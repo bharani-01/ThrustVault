@@ -14,6 +14,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const emailEl = document.getElementById('session-email');
     if (emailEl) emailEl.textContent = email;
 
+    window.openMotorDetails = (motorId) => {
+        if (window.showCustomAuthModal) {
+            window.showCustomAuthModal("Sign In is required to view detailed motor profiles and testing telemetry charts. Sign in now?", '/login');
+        } else {
+            if (confirm("Sign In is required to view detailed motor profiles and testing telemetry charts. Sign in now?")) {
+                window.location.href = '/login';
+            }
+        }
+    };
+
     // XSS Escaping and URL Sanitization Utilities
     function escapeHTML(str) {
         if (str === null || str === undefined) return '';
@@ -189,7 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 linkEsc: m.link_esc,
                 linkProp: m.link_propeller,
                 custom_parameters: m.custom_parameters || {},
-                uploaded_by: m.uploaded_by
+                uploaded_by: m.uploaded_by,
+                mainImage: m.main_image,
+                galleryImages: m.gallery_images
             }));
         } catch (e) {
             console.error("Error loading motors:", e);
@@ -439,9 +451,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const linksHtml = links.length > 0 ? links.join(' ') : '-';
             
+            let imageHtml = '';
+            if (m.mainImage && m.mainImage.startsWith('http')) {
+                imageHtml = `
+                    <div class="motor-thumbnail mx-auto">
+                        <img src="${sanitizeUrl(m.mainImage)}" alt="${escapeHTML(m.motor)}" class="w-full h-full object-cover">
+                    </div>
+                `;
+            } else {
+                imageHtml = `<div class="motor-thumbnail mx-auto" style="${thumbStyle}">${initials}</div>`;
+            }
+            
             tr.innerHTML = `
-                <td class="py-3 px-2 text-center"><input type="checkbox" class="compare-cb rounded border-slate-300 dark:border-slate-700 dark:bg-slate-900 text-[#003366] dark:text-blue-500 focus:ring-[#003366]/20" data-id="${m.id}" ${isChecked ? 'checked' : ''}></td>
-                <td class="py-3 px-2 text-center"><div class="motor-thumbnail mx-auto" style="${thumbStyle}">${initials}</div></td>
+                <td class="py-3 px-2 text-center"><input type="checkbox" class="compare-cb rounded border-slate-300 dark:border-slate-700 dark:bg-slate-950 text-[#003366] dark:text-blue-500 focus:ring-[#003366]/20" data-id="${m.id}" ${isChecked ? 'checked' : ''}></td>
+                <td class="py-3 px-2 text-center">${imageHtml}</td>
                 <td class="py-3 px-2"><a href="#" class="motor-profile-link text-[#003366] hover:text-[#001e40] dark:text-[#a7c8ff] dark:hover:text-[#d5e3ff] font-semibold" data-id="${m.id}">${escapeHTML(m.motor)}</a></td>
                 <td class="py-3 px-2 text-slate-600 dark:text-slate-400">${escapeHTML(m.company)}</td>
                 <td class="py-3 px-2 text-slate-800 dark:text-slate-200"><strong>${escapeHTML(kv)}</strong></td>
@@ -1418,12 +1441,95 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    // Bind share button
+    const shareBtn = document.getElementById('btn-profile-share');
+    if (shareBtn) {
+        shareBtn.onclick = () => {
+            const motorName = document.getElementById('profile-motor-name').textContent;
+            const shareUrl = `${window.location.origin}/share/motor/${encodeURIComponent(motorName)}`;
+            navigator.clipboard.writeText(shareUrl)
+                .then(() => {
+                    const originalHTML = shareBtn.innerHTML;
+                    shareBtn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-green-500"></i> Copied!`;
+                    if (window.lucide) window.lucide.createIcons();
+                    setTimeout(() => {
+                        shareBtn.innerHTML = originalHTML;
+                        if (window.lucide) window.lucide.createIcons();
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Failed to copy share link:', err);
+                });
+        };
+    }
+
     async function showMotorProfile(motorId) {
         const m = state.motors.find(x => x.id === motorId);
         if (!m) return;
 
         const overlay = document.getElementById('motor-profile-overlay');
         overlay.style.display = 'flex';
+
+        // Load image preview gallery
+        const profileImageCard = document.getElementById('profile-image-card');
+        const profileMainImage = document.getElementById('profile-main-image');
+        const profileGalleryThumbs = document.getElementById('profile-gallery-thumbnails');
+
+        if (profileImageCard && profileMainImage && profileGalleryThumbs) {
+            const images = [];
+            if (m.mainImage && m.mainImage.startsWith('http')) {
+                images.push(m.mainImage);
+            }
+            
+            let gallery = [];
+            if (Array.isArray(m.galleryImages)) {
+                gallery = m.galleryImages;
+            } else if (typeof m.galleryImages === 'string') {
+                try {
+                    gallery = JSON.parse(m.galleryImages);
+                } catch (e) {}
+            }
+            
+            if (Array.isArray(gallery)) {
+                gallery.forEach(img => {
+                    if (img && img.startsWith('http') && !images.includes(img)) {
+                        images.push(img);
+                    }
+                });
+            }
+
+            if (images.length > 0) {
+                profileImageCard.style.display = 'flex';
+                profileMainImage.src = sanitizeUrl(images[0]);
+                profileMainImage.alt = escapeHTML(m.motor);
+                
+                profileGalleryThumbs.innerHTML = '';
+                if (images.length > 1) {
+                    profileGalleryThumbs.style.display = 'flex';
+                    images.forEach((img, idx) => {
+                        const btn = document.createElement('button');
+                        btn.className = `w-12 h-12 rounded border-2 transition-all overflow-hidden flex-shrink-0 focus:outline-none ${idx === 0 ? 'border-blue-600 dark:border-blue-500' : 'border-transparent hover:border-slate-350'}`;
+                        btn.innerHTML = `<img src="${sanitizeUrl(img)}" class="w-full h-full object-cover">`;
+                        btn.onclick = () => {
+                            profileMainImage.src = sanitizeUrl(img);
+                            // Update border state
+                            Array.from(profileGalleryThumbs.children).forEach((c, cIdx) => {
+                                if (cIdx === idx) {
+                                    c.className = 'w-12 h-12 rounded border-2 transition-all overflow-hidden flex-shrink-0 focus:outline-none border-blue-600 dark:border-blue-500';
+                                } else {
+                                    c.className = 'w-12 h-12 rounded border-2 transition-all overflow-hidden flex-shrink-0 focus:outline-none border-transparent hover:border-slate-350';
+                                }
+                            });
+                        };
+                        profileGalleryThumbs.appendChild(btn);
+                    });
+                } else {
+                    profileGalleryThumbs.style.display = 'none';
+                }
+            } else {
+                profileImageCard.style.display = 'none';
+            }
+        }
 
         document.getElementById('profile-motor-name').textContent = m.motor;
         document.getElementById('profile-brand-badge').textContent = m.company;

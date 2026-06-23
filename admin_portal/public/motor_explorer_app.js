@@ -539,6 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <th>Max Thrust Output</th>
                             <th>ESC</th>
                             <th>Propeller</th>
+                            <th style="width:60px; text-align:right;">Actions</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -579,6 +580,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td><span class="badge-thrust" style="background: rgba(13, 148, 136, 0.08); border-color: rgba(13, 148, 136, 0.2); color: #0d9488; font-weight:600;">${escapeHTML(m.thrust)}</span></td>
                         <td>${escapeHTML(m.esc || '-')}</td>
                         <td>${escapeHTML(m.prop || '-')}</td>
+                        <td style="text-align:right; white-space:nowrap;">
+                            <button class="btn-share text-slate-400 hover:text-[#003366] dark:hover:text-[#a7c8ff] transition-colors" data-type="motor" data-name="${escapeHTML(m.motor)}" title="Share Motor Spec Link" style="background:none; border:none; cursor:pointer;"><i data-lucide="share-2" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></i></button>
+                        </td>
                     `;
 
                     tr.onclick = (e) => {
@@ -601,7 +605,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     div.innerHTML = `
                         <input type="checkbox" class="explorer-cb" data-id="${m.id}" ${isChecked ? 'checked' : ''}>
                         <i data-lucide="cpu" style="width:16px; height:16px; color:var(--text-secondary); flex-shrink:0;"></i>
-                        <span style="font-size:0.85rem; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;"><strong>${escapeHTML(m.motor)}</strong> <span style="color:var(--text-secondary);">(${escapeHTML(m.company)})</span></span>
+                        <span style="font-size:0.85rem; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex:1;"><strong>${escapeHTML(m.motor)}</strong> <span style="color:var(--text-secondary);">(${escapeHTML(m.company)})</span></span>
+                        <button class="btn-share text-slate-400 hover:text-[#003366] dark:hover:text-[#a7c8ff] transition-colors" data-type="motor" data-name="${escapeHTML(m.motor)}" title="Share Motor Spec Link" style="background:none; border:none; cursor:pointer; margin-left:auto;"><i data-lucide="share-2" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></i></button>
                     `;
 
                     div.onclick = (e) => {
@@ -632,6 +637,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span style="font-size:0.85rem; font-weight:600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${escapeHTML(m.motor)}</span>
                             <span style="font-size:0.75rem; color:var(--text-secondary); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${escapeHTML(m.company)} &nbsp;·&nbsp; ${escapeHTML(m.thrust)}</span>
                         </div>
+                        <button class="btn-share text-slate-400 hover:text-[#003366] dark:hover:text-[#a7c8ff] transition-colors" data-type="motor" data-name="${escapeHTML(m.motor)}" title="Share Motor Spec Link" style="background:none; border:none; cursor:pointer;"><i data-lucide="share-2" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></i></button>
                     `;
 
                     div.onclick = (e) => {
@@ -656,8 +662,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const thumbStyle = `background: hsl(${hue}, 80%, 95%); color: hsl(${hue}, 80%, 40%); border: 1px solid hsl(${hue}, 80%, 85%);`;
 
                     div.innerHTML = `
-                        <div style="align-self:flex-start; margin-bottom: -15px;">
+                        <div style="align-self:stretch; display:flex; justify-content:space-between; align-items:center; margin-bottom: -15px;">
                             <input type="checkbox" class="explorer-cb" data-id="${m.id}" ${isChecked ? 'checked' : ''}>
+                            <button class="btn-share text-slate-400 hover:text-[#003366] dark:hover:text-[#a7c8ff] transition-colors" data-type="motor" data-name="${escapeHTML(m.motor)}" title="Share Motor Spec Link" style="background:none; border:none; cursor:pointer; padding:0;"><i data-lucide="share-2" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></i></button>
                         </div>
                         <div class="large-icon-thumbnail" style="${thumbStyle}">${initials}</div>
                         <div style="display:flex; flex-direction:column; width:100%; min-width:0; gap:2px;">
@@ -692,6 +699,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             groupDiv.appendChild(itemsContainer);
             contentArea.appendChild(groupDiv);
+        });
+
+        // Wire up share button click handlers
+        contentArea.querySelectorAll('.btn-share').forEach(btn => {
+            btn.onclick = (event) => {
+                event.stopPropagation();
+                const name = btn.dataset.name;
+                const type = btn.dataset.type;
+                const shareUrl = `${window.location.origin}/share/${type}/${encodeURIComponent(name)}`;
+                if (window.showShareModal) {
+                    window.showShareModal(type, name, shareUrl);
+                } else {
+                    navigator.clipboard.writeText(shareUrl).then(() => alert('Link copied to clipboard!'));
+                }
+            };
         });
 
         lucide.createIcons();

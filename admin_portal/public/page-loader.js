@@ -263,6 +263,7 @@
     // 3. Initialize loader components on DOMContentLoaded
     document.addEventListener('DOMContentLoaded', () => {
         // Inject progress bar
+        /*
         const pb = document.createElement('div');
         pb.id = 'tv-progress-bar';
         document.body.appendChild(pb);
@@ -289,6 +290,7 @@
         loaderContainer.appendChild(overlay);
 
         startProgress(pb);
+        */
 
         // Sidebar handler
         const sidebarEl = document.querySelector('.sidebar');
@@ -526,7 +528,8 @@
     window.addEventListener('load', revealPage);
     setTimeout(revealPage, 800);
 
-    // 5. Intercept link navigation to trigger slide-out animations
+    // 5. Intercept link navigation (Disabled to remove custom loading transitions)
+    /*
     document.addEventListener('click', (e) => {
         const anchor = e.target.closest('a');
         if (!anchor) return;
@@ -600,6 +603,7 @@
             }, 200);
         }
     });
+    */
 
     // 6. Handle back-forward cache restores
     window.addEventListener('pageshow', (event) => {

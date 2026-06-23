@@ -2,7 +2,7 @@
 const pool = require('../config/db');
 
 const SAFE = /^[a-zA-Z0-9_]+$/;
-const RESERVED = new Set(['select', 'order', 'limit', 'offset']);
+const RESERVED = new Set(['select', 'order', 'limit', 'offset', 'search']);
 
 function buildFilter(col, val, startIdx) {
   if (!SAFE.test(col)) throw new Error(`Unsafe column: ${col}`);
@@ -54,6 +54,14 @@ async function queryTable(table, method, payload, params) {
       whereParts.push(f.clause);
       vals.push(...f.vals);
       idx = f.idx;
+    }
+
+    if (params.search) {
+      const searchVal = `%${params.search.trim().replace(/\*/g, '%')}%`;
+      const ph = `$${idx}`;
+      whereParts.push(`("motor_name" ILIKE ${ph} OR "company" ILIKE ${ph} OR "recommended_esc" ILIKE ${ph} OR "recommended_propeller" ILIKE ${ph})`);
+      vals.push(searchVal);
+      idx++;
     }
 
     let sql = `SELECT ${cols} FROM "${table}"`;

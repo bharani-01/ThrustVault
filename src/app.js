@@ -77,6 +77,34 @@ app.get('/explorer', (req, res) => {
   res.redirect('/demo/dashboard');
 });
 
+app.get(['/escs', '/escs/:model', '/esc/:model'], (req, res) => {
+  const role = req.session.role;
+  if (role && ['admin', 'user'].includes(role)) {
+    return res.sendFile(path.join(PUBLIC, 'esc_explorer.html'));
+  }
+  res.redirect('/login');
+});
+
+app.get(['/propellers', '/propellers/:model', '/propeller/:model'], (req, res) => {
+  const role = req.session.role;
+  if (role && ['admin', 'user'].includes(role)) {
+    return res.sendFile(path.join(PUBLIC, 'propeller_explorer.html'));
+  }
+  res.redirect('/login');
+});
+
+app.get('/finder', (req, res) => {
+  const role = req.session.role;
+  if (role && ['admin', 'user'].includes(role)) {
+    return res.sendFile(path.join(PUBLIC, 'motor_finder.html'));
+  }
+  res.redirect('/demo/dashboard');
+});
+
+app.get(['/share/motor/:name', '/share/esc/:name', '/share/propeller/:name'], (req, res) => {
+  res.sendFile(path.join(PUBLIC, 'share.html'));
+});
+
 // Demo Page routes
 app.get('/demo/dashboard', (req, res) => {
   res.sendFile(path.join(PUBLIC, 'guest_dashboard.html'));

@@ -12,5 +12,6 @@ router.get('/custom-specs', guestLimiter, guestController.getCustomSpecs);
 router.get('/motor-test-runs', guestLimiter, guestController.getMotorTestRuns);
 router.get('/motor-test-data-points', guestLimiter, guestController.getMotorTestDataPoints);
 router.post('/log-activity', guestController.logActivity);
+router.get('/share/:type/:name', guestLimiter, guestController.getShareItem);
 
 module.exports = router;

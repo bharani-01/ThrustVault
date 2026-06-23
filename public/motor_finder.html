@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <base href="/">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Motor Finder | ThrustVault</title>
+    
+    <link rel="icon" type="image/webp" href="favicon_light.webp" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/webp" href="favicon_dark.webp" media="(prefers-color-scheme: dark)">
+
+    <!-- Tailwind CSS with Forms and Container Queries -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="style.css?v=2.1">
+    
+    <!-- Lucide Icons -->
+    <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+
+    <!-- Page Loader Transition Script -->
+    <script src="page-loader.js?v=2.1"></script>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            800: "#1c1c1e",
+                            850: "#111111",
+                            900: "#0c0c0c",
+                            950: "#000000"
+                        },
+                        "primary-container": "#003366",
+                        "surface-container-high": "#e7e8e9",
+                        "tertiary": "#381300",
+                        "surface-bright": "#f8f9fa",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "inverse-surface": "#2e3132",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#001b3c",
+                        "on-surface": "#191c1d",
+                        primary: "#2563eb",
+                        secondary: "#475569"
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "sans-serif"],
+                        mono: ["JetBrains Mono", "monospace"],
+                        heading: ["Outfit", "sans-serif"]
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        .blueprint-grid {
+            background-image: linear-gradient(rgba(0, 51, 102, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 51, 102, 0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+        [data-theme="dark"] .blueprint-grid {
+            background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        }
+        .hero-title-mask {
+            background: linear-gradient(to right, #001e40, #003366);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        [data-theme="dark"] .hero-title-mask {
+            background: linear-gradient(to right, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .step-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .step-card:hover {
+            transform: translateY(-1.5px);
+        }
+        .step-card.active {
+            border-color: #2563eb;
+            background-color: rgba(37, 99, 235, 0.05);
+            box-shadow: 0 4px 15px -3px rgba(37, 99, 235, 0.12);
+        }
+        .chat-bubble {
+            max-width: 85%;
+            border-radius: 14px;
+        }
+        .chat-bubble.assistant {
+            border-top-left-radius: 4px;
+        }
+        .chat-bubble.user {
+            border-top-right-radius: 4px;
+        }
+        /* Custom scrollbar adjustments */
+        .scrollable-card-grid {
+            max-height: 480px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .scrollable-card-grid::-webkit-scrollbar {
+            width: 5px;
+        }
+        .scrollable-card-grid::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        [data-theme="dark"] .scrollable-card-grid::-webkit-scrollbar-thumb {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="bg-[#f8f9fa] dark:bg-slate-950 text-slate-800 dark:text-slate-100 relative min-h-screen flex flex-col">
+    <!-- Blueprint background shader grid overlay -->
+    <div class="fixed inset-0 w-full h-full pointer-events-none blueprint-grid z-0"></div>
+
+    <div class="app-container relative z-10 flex flex-col flex-1">
+        <!-- Sidebar Navigation (Horizontal Top Navbar template) -->
+        <aside class="sidebar w-full h-[70px] bg-white dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/80 shadow-sm flex items-center justify-between px-6 md:px-8 z-50 shrink-0" data-sidebar="user">
+            <!-- Sidebar Placeholder Skeletons -->
+            <div class="sidebar-skeleton-wrapper flex items-center justify-between w-full h-full">
+                <div class="h-8 w-32 bg-slate-200 rounded animate-pulse"></div>
+                <div class="flex gap-4 items-center">
+                    <div class="h-8 w-24 bg-slate-200 rounded animate-pulse"></div>
+                    <div class="h-8 w-24 bg-slate-200 rounded animate-pulse"></div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="h-8 w-8 rounded-full bg-slate-200 animate-pulse"></div>
+                    <div class="flex flex-col gap-1">
+                        <div class="h-3 w-16 bg-slate-200 rounded animate-pulse"></div>
+                        <div class="h-2 w-8 bg-slate-200 rounded animate-pulse"></div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="main-content-wrapper flex flex-col flex-1 overflow-hidden">
+            <main class="main-content flex-1 flex flex-col overflow-y-auto px-4 md:px-8 py-6 w-full mx-auto max-w-[1500px]">
+                
+                <!-- Page Top Header -->
+                <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-slate-200/50 dark:border-slate-800 pb-5">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="px-2 py-0.5 rounded text-[11px] font-bold font-mono uppercase tracking-wider bg-blue-500/10 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 inline-block">
+                                Propulsion Matrix
+                            </span>
+                            <span class="text-xs text-slate-400 dark:text-slate-400 font-medium">Build Planner</span>
+                        </div>
+                        <h2 class="text-2xl font-extrabold text-[#001e40] dark:text-slate-100 tracking-tight">
+                            <span class="hero-title-mask">Propulsion Assistant & Motor Finder</span>
+                        </h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1 max-w-xl">
+                            Configure your custom payload weights, estimate cell battery coefficients, and find matches.
+                        </p>
+                    </div>
+                    
+                    <!-- Top Step Indicator -->
+                    <div class="flex items-center gap-2 text-xs font-semibold text-slate-400" id="wizard-steps-indicator">
+                        <span id="indicator-step-1" class="text-blue-600 dark:text-blue-400 font-bold">1. Application</span>
+                        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                        <span id="indicator-step-2">2. Parameters</span>
+                        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                        <span id="indicator-step-3">3. Review</span>
+                        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                        <span id="indicator-step-4">4. Recommendations</span>
+                    </div>
+                </header>
+
+                <!-- ================= WIZARD PAGES ================= -->
+
+                <!-- PAGE 1: SELECT APPLICATION -->
+                <div id="wizard-page-1" class="space-y-6">
+                    <!-- Search and Not Sure Grid Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                        <div class="md:col-span-2 relative">
+                            <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                            <input type="text" id="app-search-input" oninput="filterApplications()" placeholder="Search from 100+ drone applications (e.g., pesticide, mapping, videography)..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 outline-none text-sm font-medium focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all dark:text-white">
+                        </div>
+                        <button onclick="toggleDynoChat(true)" class="w-full bg-[#003366] hover:bg-[#002244] dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-xl p-3 flex items-center justify-center gap-2 text-sm font-bold shadow-md hover:shadow-lg transition-all focus:outline-none">
+                            <i data-lucide="cpu" class="w-4.5 h-4.5 text-blue-300"></i>
+                            Not Sure? Ask Dyno
+                        </button>
+                    </div>
+
+                    <!-- Scrollable Grid of Sub-apps -->
+                    <div class="scrollable-card-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pb-2" id="subapps-container">
+                        <!-- Populated dynamically by JS -->
+                    </div>
+                </div>
+
+                <!-- PAGE 2: CONFIGURE DETAILS -->
+                <div id="wizard-page-2" class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/80 shadow-sm rounded-xl p-6 hidden space-y-6">
+                    <div>
+                        <h3 class="text-lg font-extrabold text-[#001e40] dark:text-slate-100 flex items-center gap-2">
+                            <i data-lucide="sliders" class="w-5 h-5 text-blue-500"></i>
+                            Configure Propulsion Parameters
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-1">Specify detailed weights and physical limitations to match with motors.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Column 1: Layout & Battery -->
+                        <div class="space-y-4">
+                            <div class="flex flex-col">
+                                <label for="input-layout" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider mb-2">Motor Layout Config *</label>
+                                <select id="input-layout" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:border-blue-500 outline-none">
+                                    <option value="4" selected>Quadcopter (4 motors)</option>
+                                    <option value="6">Hexacopter (6 motors)</option>
+                                    <option value="8">Octocopter (8 motors)</option>
+                                    <option value="8">Coaxial X8 (8 motors)</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col">
+                                <label for="input-battery" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider mb-2">Battery Cells & Capacity *</label>
+                                <select id="input-battery" onchange="onBatteryChanged()" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:border-blue-500 outline-none">
+                                    <option value="1S">1S LiPo (Tiny Whoop ~300-450mAh)</option>
+                                    <option value="2S">2S LiPo (Micro Whoop ~450-850mAh)</option>
+                                    <option value="3S">3S LiPo (Cinewhoop ~650-1100mAh)</option>
+                                    <option value="4S">4S LiPo (Freestyle ~1300-1500mAh)</option>
+                                    <option value="5S">5S LiPo (Freestyle ~1300mAh)</option>
+                                    <option value="6S_small" selected>6S LiPo Small (Freestyle/Long Range ~1300-1500mAh)</option>
+                                    <option value="6S_large">6S LiPo Large (Cruiser ~4000-6200mAh)</option>
+                                    <option value="8S">8S LiPo (X-Class ~1100mAh)</option>
+                                    <option value="12S">12S LiPo (Heavy Lift ~5000-10000mAh)</option>
+                                    <option value="14S">14S LiPo (Agriculture ~40000mAh)</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col">
+                                <label for="input-battery-weight" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider mb-2">Estimated Battery Weight (g) *</label>
+                                <input type="number" id="input-battery-weight" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:border-blue-500 outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Column 2: Weights -->
+                        <div class="space-y-4">
+                            <div class="flex flex-col">
+                                <label for="input-chassis-weight" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider mb-2">Frame / Chassis Dry Weight (g) *</label>
+                                <input type="number" id="input-chassis-weight" placeholder="e.g. 3500" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:border-blue-500 outline-none">
+                            </div>
+                            <div class="flex flex-col">
+                                <label for="input-payload-weight" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider mb-2">Payload Weight (Cameras/Sprayers) (g) *</label>
+                                <input type="number" id="input-payload-weight" placeholder="e.g. 1500" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:border-blue-500 outline-none">
+                            </div>
+                            <div class="flex flex-col">
+                                <label for="input-motor-weight" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider mb-2">Estimated Single Motor Weight (g) *</label>
+                                <input type="number" id="input-motor-weight" placeholder="e.g. 45" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:border-blue-500 outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Column 3: Preferences -->
+                        <div class="space-y-4">
+                            <div class="flex flex-col">
+                                <label for="input-propeller-limit" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider mb-2">Max Propeller Size Limit (inches)</label>
+                                <input type="number" id="input-propeller-limit" placeholder="e.g. 5, 15, 30 (Optional)" step="any" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:border-blue-500 outline-none">
+                            </div>
+                            <div class="flex flex-col">
+                                <label for="input-brand" class="text-xs font-semibold text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider mb-2">Preferred Manufacturer</label>
+                                <select id="input-brand" class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:border-blue-500 outline-none">
+                                    <option value="all" selected>All Manufacturers</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wizard actions -->
+                    <div class="flex justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <button onclick="goToPage(1)" class="px-5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all">
+                            Back
+                        </button>
+                        <button onclick="goToPage(3)" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all">
+                            Continue to Review
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PAGE 3: SUBMISSION OVERVIEW -->
+                <div id="wizard-page-3" class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/80 shadow-sm rounded-xl p-6 hidden space-y-6">
+                    <div>
+                        <h3 class="text-lg font-extrabold text-[#001e40] dark:text-slate-100 flex items-center gap-2">
+                            <i data-lucide="check-square" class="w-5 h-5 text-blue-500"></i>
+                            Review Setup Summary
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-1">Review the estimated weight breakdown and flight targets before searching.</p>
+                    </div>
+
+                    <!-- Weight Breakdown Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Weight items breakdown -->
+                        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-xl p-5 space-y-4">
+                            <h4 class="text-xs font-extrabold text-[#003366] dark:text-blue-300 font-mono uppercase tracking-wide border-b border-slate-200 dark:border-slate-800 pb-2">UAV Weight Profile</h4>
+                            <div class="space-y-2.5 text-xs">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400">Frame / Chassis dry weight:</span>
+                                    <span class="font-mono font-bold" id="summary-chassis">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400">Payload (sensor, camera, sprayer):</span>
+                                    <span class="font-mono font-bold" id="summary-payload">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400">Estimated Battery weight:</span>
+                                    <span class="font-mono font-bold" id="summary-battery">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400">Estimated Motors weight:</span>
+                                    <span class="font-mono font-bold" id="summary-motors">-</span>
+                                </div>
+                                <div class="border-t border-dashed border-slate-200 dark:border-slate-800 pt-2.5 flex justify-between text-sm">
+                                    <span class="font-bold text-[#001e40] dark:text-slate-150">Total All-Up Weight (AUW):</span>
+                                    <span class="font-mono font-extrabold text-blue-600 dark:text-blue-400" id="summary-total-auw">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Safety Calculations -->
+                        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-xl p-5 space-y-4 flex flex-col justify-between">
+                            <div class="space-y-4">
+                                <h4 class="text-xs font-extrabold text-[#003366] dark:text-blue-300 font-mono uppercase tracking-wide border-b border-slate-200 dark:border-slate-800 pb-2">Calculated Propulsion Targets</h4>
+                                <div class="space-y-2 text-xs">
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-400">Target Thrust-to-Weight Ratio:</span>
+                                        <span class="font-bold text-[#001e40] dark:text-slate-100" id="summary-twr">-</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-400">Required Max System Thrust:</span>
+                                        <span class="font-bold text-[#001e40] dark:text-slate-100" id="summary-total-thrust">-</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-400">Required Max Thrust per Motor:</span>
+                                        <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="summary-target-thrust">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-[10.5px] leading-relaxed text-slate-400 italic">
+                                Note: High thrust-to-weight targets ensure safety margins for stability and winds, and keep the motor running in its most efficient throttle curve (approx. 40-50% hover throttle).
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wizard actions -->
+                    <div class="flex justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <button onclick="goToPage(2)" class="px-5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all">
+                            Back
+                        </button>
+                        <button onclick="goToPage(4)" class="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all">
+                            Confirm & Search Motors
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PAGE 4: RESULTS -->
+                <div id="wizard-page-4" class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/80 shadow-sm rounded-xl p-6 hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-lg font-extrabold text-[#001e40] dark:text-slate-100 flex items-center gap-2">
+                                <i data-lucide="award" class="w-5 h-5 text-emerald-500"></i>
+                                Top Recommended Motors
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-1">Matched against your specific payload AUW and voltage parameters.</p>
+                        </div>
+                        <button onclick="goToPage(1)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg transition-all self-start">
+                            Start Over
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto w-full">
+                        <table class="w-full min-w-[900px] text-sm text-left border-collapse" id="recommendations-table">
+                            <thead>
+                                <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-xs font-mono uppercase tracking-wider">
+                                    <th class="py-3 px-3 text-center w-10">
+                                        <i data-lucide="git-compare" class="w-4 h-4 mx-auto" title="Select for comparison"></i>
+                                    </th>
+                                    <th class="py-3 px-3">Suitability Match</th>
+                                    <th class="py-3 px-3">Motor Model</th>
+                                    <th class="py-3 px-3">Brand</th>
+                                    <th class="py-3 px-3 text-center">Actual TWR</th>
+                                    <th class="py-3 px-3 text-center">Hover Throttle</th>
+                                    <th class="py-3 px-3">Flight Assessment</th>
+                                    <th class="py-3 px-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recommendations-list-rows" class="divide-y divide-slate-100 dark:divide-slate-850">
+                                <!-- Recommendations will be populated here dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- DYNO CHAT SLIDE OVERLAY PANEL (Dyno Assistant) -->
+    <div id="dyno-chat-drawer" class="fixed inset-y-0 right-0 w-[420px] max-w-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl z-[100] flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out">
+        <!-- Chat Header -->
+        <div class="bg-[#003366] text-white p-4 flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center">
+                    <i data-lucide="cpu" class="w-4 h-4 text-blue-300"></i>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold font-heading uppercase tracking-wide">Dyno Assistant</h3>
+                    <p class="text-[10px] text-slate-300">Clarify your build requirements</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="btn-clear-chat" class="p-1 hover:bg-white/10 rounded text-slate-355 hover:text-white" title="Clear Chat History">
+                    <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+                </button>
+                <button onclick="toggleDynoChat(false)" class="p-1 hover:bg-white/10 rounded text-slate-355 hover:text-white" title="Close Panel">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Messages view container -->
+        <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 flex flex-col bg-slate-50/50 dark:bg-slate-950/20">
+            <!-- Messages will be rendered here dynamically -->
+        </div>
+
+        <!-- Chat Loading state -->
+        <div id="chat-loading-indicator" class="hidden px-4 py-2 border-t border-slate-100 dark:border-slate-850 bg-white/70 dark:bg-slate-900/70 text-xs text-slate-400 flex items-center gap-2 shrink-0">
+            <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+            <span>Dyno is calculating parameters...</span>
+        </div>
+
+        <!-- Chat Input bar -->
+        <div class="p-3 border-t border-slate-150 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+            <form id="chat-input-form" class="flex gap-2" onsubmit="event.preventDefault(); sendChatMessage();">
+                <input type="text" id="chat-message-input" autocomplete="off" placeholder="Ask Dyno: 'I want a photography drone'" class="flex-1 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-lg py-2.5 px-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none dark:text-white">
+                <button type="submit" class="bg-[#003366] hover:bg-[#002244] dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg p-2.5 flex items-center justify-center shrink-0">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Side Drawer details specs modal (Motor Spec Sheet Drawer) -->
+    <div id="motor-details-drawer" class="fixed inset-y-0 right-0 w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl z-[1000] flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out">
+        <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-[#003366] text-white">
+            <div>
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider" id="drawer-motor-name">-</h3>
+                <span class="text-[10px] text-slate-355" id="drawer-motor-brand">-</span>
+            </div>
+            <button onclick="closeDetailsDrawer()" class="p-1 hover:bg-white/10 rounded text-slate-300 hover:text-white">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+            <div>
+                <span class="text-[10px] text-slate-400 block uppercase font-mono mb-1">Thrust Class</span>
+                <span id="drawer-thrust-class" class="font-bold text-[#001e40] dark:text-slate-100">-</span>
+            </div>
+            <div>
+                <span class="text-[10px] text-slate-400 block uppercase font-mono mb-1">Max Thrust</span>
+                <span id="drawer-max-thrust" class="font-bold text-[#001e40] dark:text-slate-100">-</span>
+            </div>
+            <div>
+                <span class="text-[10px] text-slate-400 block uppercase font-mono mb-1">Recommended ESC</span>
+                <span id="drawer-esc" class="font-bold text-[#001e40] dark:text-slate-100">-</span>
+            </div>
+            <div>
+                <span class="text-[10px] text-slate-400 block uppercase font-mono mb-1">Recommended Propeller</span>
+                <span id="drawer-propeller" class="font-bold text-[#001e40] dark:text-slate-100">-</span>
+            </div>
+            <div>
+                <span class="text-[10px] text-slate-400 block uppercase font-mono mb-1">Documentation References</span>
+                <div id="drawer-links" class="flex flex-col gap-2 mt-2">
+                    <!-- Links -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script details -->
+    <script>
+        // Battery Specs & Weight Lookup
+        const batteryWeightLookup = {
+            '1S': 12,
+            '2S': 30,
+            '3S': 80,
+            '4S': 165,
+            '5S': 192,
+            '6S_small': 235,
+            '6S_large': 650,
+            '8S': 257,
+            '12S': 1350,
+            '14S': 5000
+        };
+
+        // Application Categories & Detailed Taxonomy
+        const categoriesData = [
+            {
+                name: "Agriculture 🌱",
+                key: "agriculture",
+                items: [
+                    { name: "Crop health monitoring", profile: "agriculture_light" },
+                    { name: "Precision pesticide spraying", profile: "agriculture_heavy" },
+                    { name: "Fertilizer spraying", profile: "agriculture_heavy" },
+                    { name: "Seed spreading", profile: "agriculture_heavy" },
+                    { name: "Irrigation leak detection", profile: "agriculture_light" },
+                    { name: "Livestock tracking", profile: "agriculture_light" },
+                    { name: "Crop yield estimation", profile: "agriculture_light" },
+                    { name: "Weed detection", profile: "agriculture_light" },
+                    { name: "Farm boundary mapping", profile: "agriculture_light" },
+                    { name: "Plantation management", profile: "agriculture_light" }
+                ]
+            },
+            {
+                name: "Construction 🏗️",
+                key: "construction",
+                items: [
+                    { name: "Land surveying", profile: "survey_mapping" },
+                    { name: "Topographic mapping", profile: "survey_mapping" },
+                    { name: "Construction progress tracking", profile: "construction_inspection" },
+                    { name: "Earthwork volume calculations", profile: "survey_mapping" },
+                    { name: "Building inspections", profile: "construction_inspection" },
+                    { name: "Roof inspections", profile: "construction_inspection" },
+                    { name: "Bridge inspections", profile: "construction_inspection" },
+                    { name: "Highway inspections", profile: "construction_inspection" },
+                    { name: "Railway inspections", profile: "construction_inspection" },
+                    { name: "Dam inspections", profile: "construction_inspection" }
+                ]
+            },
+            {
+                name: "Energy & Utilities ⚡",
+                key: "energy",
+                items: [
+                    { name: "Power line inspection", profile: "construction_inspection" },
+                    { name: "Transmission tower inspection", profile: "construction_inspection" },
+                    { name: "Solar farm inspection", profile: "construction_inspection" },
+                    { name: "Wind turbine inspection", profile: "construction_inspection" },
+                    { name: "Oil pipeline monitoring", profile: "construction_inspection" },
+                    { name: "Gas pipeline leak detection", profile: "construction_inspection" },
+                    { name: "Substation inspection", profile: "construction_inspection" },
+                    { name: "Thermal hotspot detection", profile: "construction_inspection" },
+                    { name: "Offshore platform inspection", profile: "construction_inspection" },
+                    { name: "Utility asset management", profile: "construction_inspection" }
+                ]
+            },
+            {
+                name: "Public Safety 🚨",
+                key: "safety",
+                items: [
+                    { name: "Search and rescue missions", profile: "public_safety_sar" },
+                    { name: "Missing person searches", profile: "public_safety_sar" },
+                    { name: "Fire monitoring", profile: "public_safety_sar" },
+                    { name: "Wildfire mapping", profile: "public_safety_sar" },
+                    { name: "Flood assessment", profile: "public_safety_sar" },
+                    { name: "Disaster response", profile: "public_safety_sar" },
+                    { name: "Accident scene reconstruction", profile: "public_safety_sar" },
+                    { name: "Crowd monitoring", profile: "public_safety_sar" },
+                    { name: "Border surveillance", profile: "public_safety_sar" },
+                    { name: "Coastal surveillance", profile: "public_safety_sar" }
+                ]
+            },
+            {
+                name: "Logistics 🚚",
+                key: "logistics",
+                items: [
+                    { name: "Parcel delivery", profile: "logistics_delivery" },
+                    { name: "Medical supply delivery", profile: "logistics_delivery" },
+                    { name: "Blood transport", profile: "logistics_delivery" },
+                    { name: "Vaccine transport", profile: "logistics_delivery" },
+                    { name: "Emergency medicine delivery", profile: "logistics_delivery" },
+                    { name: "Ship-to-shore delivery", profile: "logistics_delivery" },
+                    { name: "Warehouse inventory counting", profile: "agriculture_light" },
+                    { name: "Industrial campus logistics", profile: "agriculture_light" },
+                    { name: "Remote village deliveries", profile: "logistics_delivery" },
+                    { name: "Spare parts transport", profile: "logistics_delivery" }
+                ]
+            },
+            {
+                name: "Environment 🌍",
+                key: "environment",
+                items: [
+                    { name: "Wildlife monitoring", profile: "environmental_monitor" },
+                    { name: "Anti-poaching patrols", profile: "environmental_monitor" },
+                    { name: "Forest health monitoring", profile: "environmental_monitor" },
+                    { name: "Deforestation tracking", profile: "environmental_monitor" },
+                    { name: "Water quality monitoring", profile: "environmental_monitor" },
+                    { name: "Air pollution measurement", profile: "environmental_monitor" },
+                    { name: "Coastal erosion analysis", profile: "environmental_monitor" },
+                    { name: "Glacier monitoring", profile: "environmental_monitor" },
+                    { name: "Wetland mapping", profile: "environmental_monitor" },
+                    { name: "Marine animal surveys", profile: "environmental_monitor" }
+                ]
+            },
+            {
+                name: "Commercial & Industrial 🏢",
+                key: "industrial",
+                items: [
+                    { name: "Factory inspections", profile: "construction_inspection" },
+                    { name: "Mining surveys", profile: "industrial_heavy" },
+                    { name: "Quarry volume measurement", profile: "industrial_heavy" },
+                    { name: "Stockpile calculations", profile: "industrial_heavy" },
+                    { name: "Telecom tower inspections", profile: "construction_inspection" },
+                    { name: "Port monitoring", profile: "construction_inspection" },
+                    { name: "Warehouse security", profile: "construction_inspection" },
+                    { name: "Industrial safety audits", profile: "construction_inspection" },
+                    { name: "Facility surveillance", profile: "construction_inspection" },
+                    { name: "Asset inventory management", profile: "construction_inspection" }
+                ]
+            },
+            {
+                name: "Media 🎥",
+                key: "media",
+                items: [
+                    { name: "Movie filming", profile: "media_filming" },
+                    { name: "Sports broadcasting", profile: "media_filming" },
+                    { name: "Wedding videography", profile: "media_light" },
+                    { name: "News coverage", profile: "media_light" },
+                    { name: "Real estate photography", profile: "media_light" },
+                    { name: "Tourism promotion videos", profile: "media_light" },
+                    { name: "Live event streaming", profile: "media_light" },
+                    { name: "Documentary filming", profile: "media_filming" },
+                    { name: "Advertising shoots", profile: "media_filming" },
+                    { name: "Virtual property tours", profile: "media_light" }
+                ]
+            },
+            {
+                name: "Transportation 🛣️",
+                key: "transportation",
+                items: [
+                    { name: "Traffic monitoring", profile: "construction_inspection" },
+                    { name: "Road condition assessment", profile: "construction_inspection" },
+                    { name: "Smart city monitoring", profile: "construction_inspection" },
+                    { name: "Parking management", profile: "construction_inspection" },
+                    { name: "Railway track inspections", profile: "construction_inspection" },
+                    { name: "Airport perimeter security", profile: "construction_inspection" },
+                    { name: "Port operations monitoring", profile: "construction_inspection" },
+                    { name: "Vehicle counting", profile: "construction_inspection" },
+                    { name: "Logistics yard management", profile: "construction_inspection" },
+                    { name: "Toll road inspections", profile: "construction_inspection" }
+                ]
+            },
+            {
+                name: "Specialized Applications 🔬",
+                key: "specialized",
+                items: [
+                    { name: "Thermal inspections", profile: "specialized_scientific" },
+                    { name: "Radiation monitoring", profile: "specialized_scientific" },
+                    { name: "Hazardous chemical assessment", profile: "specialized_scientific" },
+                    { name: "Archaeological surveys", profile: "specialized_scientific" },
+                    { name: "3D digital twin creation", profile: "specialized_scientific" },
+                    { name: "Communication relay during disasters", profile: "specialized_scientific" },
+                    { name: "Internet connectivity in remote areas", profile: "specialized_scientific" },
+                    { name: "Scientific research data collection", profile: "specialized_scientific" },
+                    { name: "Meteorological measurements", profile: "specialized_scientific" },
+                    { name: "Autonomous security patrols", profile: "specialized_scientific" }
+                ]
+            }
+        ];
+
+        // Engineering Profiles Mapped to characteristics
+        const profiles = {
+            agriculture_heavy: { twr: 1.9, dryWeight: 14000, payload: 20000, battery: '12S', motors: 8, motorWeight: 650 },
+            agriculture_light: { twr: 2.2, dryWeight: 3500, payload: 1000, battery: '6S_small', motors: 4, motorWeight: 75 },
+            survey_mapping: { twr: 2.2, dryWeight: 3500, payload: 1500, battery: '6S_large', motors: 4, motorWeight: 110 },
+            construction_inspection: { twr: 2.5, dryWeight: 2000, payload: 800, battery: '6S_small', motors: 4, motorWeight: 45 },
+            industrial_heavy: { twr: 2.0, dryWeight: 8000, payload: 15000, battery: '12S', motors: 6, motorWeight: 450 },
+            logistics_delivery: { twr: 2.0, dryWeight: 8000, payload: 5000, battery: '12S', motors: 6, motorWeight: 350 },
+            environmental_monitor: { twr: 2.3, dryWeight: 2500, payload: 800, battery: '6S_small', motors: 4, motorWeight: 60 },
+            media_filming: { twr: 2.5, dryWeight: 1800, payload: 1500, battery: '6S_small', motors: 4, motorWeight: 50 },
+            media_light: { twr: 3.5, dryWeight: 650, payload: 150, battery: '4S', motors: 4, motorWeight: 32 },
+            public_safety_sar: { twr: 2.4, dryWeight: 3000, payload: 1000, battery: '6S_small', motors: 4, motorWeight: 85 },
+            specialized_scientific: { twr: 2.2, dryWeight: 3000, payload: 1200, battery: '6S_small', motors: 4, motorWeight: 90 }
+        };
+
+        let activeStep = 1;
+        let selectedSubappName = '';
+        let selectedProfileKey = '';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Load theme & validation
+            const activeTheme = localStorage.getItem('thrustvault_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', activeTheme);
+
+            const session = JSON.parse(localStorage.getItem('thrustvault_session'));
+            if (!session || !['admin', 'user'].includes(session.role)) {
+                localStorage.removeItem('thrustvault_session');
+                window.location.href = '/login';
+                return;
+            }
+
+            // Bind email avatar
+            const initials = document.getElementById('user-avatar-initials');
+            if (initials && session.email) {
+                initials.textContent = session.email.charAt(0).toUpperCase();
+            }
+
+            // Sync Compare State
+            state.compareList = JSON.parse(sessionStorage.getItem('thrustvault_compare_list') || '[]');
+
+            // Bind clear chat handler
+            document.getElementById('btn-clear-chat').onclick = () => {
+                if (confirm('Clear Dyno chat history?')) {
+                    localStorage.removeItem('thrustvault_finder_chat_history');
+                    state.chatHistory = [];
+                    renderChatMessages();
+                    addWelcomeMessage();
+                }
+            };
+
+            // Render Applications
+            renderSubapps();
+
+            // Load Database Verified Motors
+            await bootstrapFinderData();
+
+            // Load dyno cached conversations
+            loadChatHistory();
+
+            // Show page 1 initial wizard view
+            goToPage(1);
+        });
+
+        let state = {
+            motors: [],
+            categories: [],
+            chatHistory: [],
+            compareList: []
+        };
+
+        async function bootstrapFinderData() {
+            try {
+                const initRes = await fetch('/api/init-data');
+                if (!initRes.ok) throw new Error('Failed to load metadata');
+                const init = await initRes.json();
+                state.categories = init.categories || [];
+
+                const motorsRes = await fetch('/api/motors?limit=150&order=max_thrust.asc');
+                if (motorsRes.ok) {
+                    const data = await motorsRes.json();
+                    state.motors = data || [];
+                }
+
+                // Populate brand dropdown list
+                populateBrandDropdown();
+            } catch (err) {
+                console.error('[Finder Bootstrap Error]', err);
+            }
+        }
+
+        function populateBrandDropdown() {
+            const dropdown = document.getElementById('input-brand');
+            if (!dropdown || !state.motors.length) return;
+
+            const manufacturers = [...new Set(state.motors.map(m => m.company))]
+                .filter(Boolean)
+                .map(c => c.trim())
+                .sort((a, b) => a.localeCompare(b));
+
+            dropdown.innerHTML = '<option value="all">All Manufacturers</option>' + 
+                manufacturers.map(m => `<option value="${m}">${m}</option>`).join('');
+        }
+
+        // Render Page 1 Applications as a flat alphabetical grid
+        function renderSubapps() {
+            const container = document.getElementById('subapps-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const allItems = [];
+            categoriesData.forEach(cat => {
+                const categoryCleanName = cat.name.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDFFF]/g, '').trim().toLowerCase();
+                cat.items.forEach(item => {
+                    allItems.push({
+                        name: item.name,
+                        profile: item.profile,
+                        category: cat.name,
+                        categorySearch: categoryCleanName
+                    });
+                });
+            });
+
+            // Sort alphabetically by name
+            allItems.sort((a, b) => a.name.localeCompare(b.name));
+
+            // Render cards
+            allItems.forEach(item => {
+                const card = document.createElement('button');
+                card.onclick = () => selectSubapp(item.name, item.profile);
+                card.className = 'subapp-card flex items-center justify-start text-left p-2.5 rounded-lg border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-slate-950 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition-all font-semibold text-xs focus:outline-none';
+                card.dataset.category = item.categorySearch;
+                card.dataset.profile = item.profile.toLowerCase();
+                
+                card.innerHTML = `<span class="truncate-text">${item.name}</span>`;
+                container.appendChild(card);
+            });
+        }
+
+        function filterApplications() {
+            const query = document.getElementById('app-search-input').value.trim().toLowerCase();
+            const cards = document.querySelectorAll('.subapp-card');
+
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                const category = card.dataset.category || '';
+                const profile = card.dataset.profile || '';
+                if (text.includes(query) || category.includes(query) || profile.includes(query)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function selectSubapp(subappName, profileKey) {
+            selectedSubappName = subappName;
+            selectedProfileKey = profileKey;
+
+            // Highlight chosen item in Step 1 list
+            document.querySelectorAll('.subapp-card').forEach(c => {
+                c.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+            });
+
+            // Transition directly to page 2 and preload
+            preloadPage2Parameters(profileKey);
+            goToPage(2);
+        }
+
+        function preloadPage2Parameters(profileKey) {
+            const profile = profiles[profileKey];
+            if (!profile) return;
+
+            document.getElementById('input-layout').value = profile.motors;
+            document.getElementById('input-battery').value = profile.battery;
+            document.getElementById('input-chassis-weight').value = profile.dryWeight;
+            document.getElementById('input-payload-weight').value = profile.payload;
+            document.getElementById('input-motor-weight').value = profile.motorWeight;
+            
+            // Set battery weight
+            const batWeight = batteryWeightLookup[profile.battery] || 0;
+            document.getElementById('input-battery-weight').value = batWeight;
+
+            // Clear propeller limits
+            document.getElementById('input-propeller-limit').value = '';
+        }
+
+        function onBatteryChanged() {
+            const cells = document.getElementById('input-battery').value;
+            const weight = batteryWeightLookup[cells] || 0;
+            document.getElementById('input-battery-weight').value = weight;
+        }
+
+        // Navigate wizard pages
+        function goToPage(pageNumber) {
+            activeStep = pageNumber;
+
+            // Toggle step visibility
+            for (let i = 1; i <= 4; i++) {
+                const el = document.getElementById('wizard-page-' + i);
+                if (i === pageNumber) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+
+                // Adjust indicator highlighting
+                const ind = document.getElementById('indicator-step-' + i);
+                if (ind) {
+                    if (i === pageNumber) {
+                        ind.className = 'text-blue-600 dark:text-blue-400 font-bold';
+                    } else if (i < pageNumber) {
+                        ind.className = 'text-slate-500 dark:text-slate-400 font-medium';
+                    } else {
+                        ind.className = 'text-slate-400 font-semibold';
+                    }
+                }
+            }
+
+            // Run intermediate checks or results compiling
+            if (pageNumber === 3) {
+                runSummaryCalculations();
+            } else if (pageNumber === 4) {
+                calculateAndRecommend();
+            }
+        }
+
+        // Summary Calculations (Page 3)
+        let computedAuw = 0;
+        let computedTwr = 0;
+        let computedTotalThrust = 0;
+        let computedTargetThrustPerMotor = 0;
+
+        function runSummaryCalculations() {
+            const motorsCount = parseInt(document.getElementById('input-layout').value, 10);
+            const chassisWeight = parseFloat(document.getElementById('input-chassis-weight').value) || 0;
+            const payloadWeight = parseFloat(document.getElementById('input-payload-weight').value) || 0;
+            const batteryWeight = parseFloat(document.getElementById('input-battery-weight').value) || 0;
+            const singleMotorWeight = parseFloat(document.getElementById('input-motor-weight').value) || 0;
+
+            const totalMotorWeight = singleMotorWeight * motorsCount;
+            computedAuw = chassisWeight + payloadWeight + batteryWeight + totalMotorWeight;
+
+            // Load safety profile TWR multiplier
+            const profile = profiles[selectedProfileKey] || { twr: 2.2 };
+            computedTwr = profile.twr;
+
+            computedTotalThrust = computedAuw * computedTwr;
+            computedTargetThrustPerMotor = computedTotalThrust / motorsCount;
+
+            // Render summary breakdown
+            document.getElementById('summary-chassis').textContent = chassisWeight + ' g';
+            document.getElementById('summary-payload').textContent = payloadWeight + ' g';
+            document.getElementById('summary-battery').textContent = batteryWeight + ' g';
+            document.getElementById('summary-motors').textContent = `${totalMotorWeight} g (${motorsCount}x ${singleMotorWeight}g)`;
+            
+            document.getElementById('summary-total-auw').textContent = (computedAuw >= 1000) ? (computedAuw / 1000).toFixed(2) + ' kg' : computedAuw + ' g';
+            
+            document.getElementById('summary-twr').textContent = computedTwr.toFixed(1) + ' : 1';
+            document.getElementById('summary-total-thrust').textContent = (computedTotalThrust >= 1000) ? (computedTotalThrust / 1000).toFixed(2) + ' kg' : computedTotalThrust.toFixed(0) + ' g';
+            document.getElementById('summary-target-thrust').textContent = (computedTargetThrustPerMotor >= 1000) ? (computedTargetThrustPerMotor / 1000).toFixed(2) + ' kg' : computedTargetThrustPerMotor.toFixed(0) + ' g';
+        }
+
+        // Match Results Scoring and Flight Safety Calculations (Page 4)
+        function calculateAndRecommend() {
+            const motorsCount = parseInt(document.getElementById('input-layout').value, 10);
+            const batteryConfig = document.getElementById('input-battery').value;
+            const propSizeLimit = parseFloat(document.getElementById('input-propeller-limit').value);
+            const brandPreference = document.getElementById('input-brand').value;
+
+            const chassisWeight = parseFloat(document.getElementById('input-chassis-weight').value) || 0;
+            const payloadWeight = parseFloat(document.getElementById('input-payload-weight').value) || 0;
+            const batteryWeight = parseFloat(document.getElementById('input-battery-weight').value) || 0;
+
+            const tbody = document.getElementById('recommendations-list-rows');
+            tbody.innerHTML = '';
+
+            const recommendations = [];
+
+            state.motors.forEach(m => {
+                // Parse Motor Weight
+                let motorWeightVal = m.custom_parameters?.weight || m.custom_parameters?.motor_weight;
+                if (!motorWeightVal) {
+                    // Fallback to estimated user input motor weight
+                    motorWeightVal = parseFloat(document.getElementById('input-motor-weight').value) || 30;
+                } else {
+                    motorWeightVal = parseFloat(motorWeightVal);
+                    if (isNaN(motorWeightVal)) motorWeightVal = 30;
+                }
+
+                // Compute exact AUW with this specific motor weight
+                const specificMotorWeightTotal = motorWeightVal * motorsCount;
+                const specificAuw = chassisWeight + payloadWeight + batteryWeight + specificMotorWeightTotal;
+
+                // Max Thrust of Motor
+                const motorThrustKg = parseThrustToKg(m.max_thrust);
+                if (motorThrustKg === 0) return; // skip if cannot parse
+
+                // Actual System TWR (Thrust-to-weight)
+                const totalSystemThrustKg = motorThrustKg * motorsCount;
+                const specificAuwKg = specificAuw / 1000;
+                const actualTwr = totalSystemThrustKg / specificAuwKg;
+
+                // Hover Throttle estimate
+                const hoverThrottle = (1 / actualTwr) * 100;
+
+                // Score matching
+                let score = 100;
+
+                // 1. Target TWR check
+                const targetTwr = computedTwr || 2.2;
+                if (actualTwr < targetTwr) {
+                    const diff = (targetTwr - actualTwr) / targetTwr;
+                    score -= diff * 110;
+                } else if (actualTwr > targetTwr * 2.5) {
+                    // Oversized motor safety penalty
+                    score -= 25;
+                }
+
+                // 2. Voltage Cell check
+                const voltage = m.custom_parameters?.voltage || '';
+                const reBat = m.custom_parameters?.recommended_battery || '';
+                const specsText = (m.motor + ' ' + m.max_thrust + ' ' + reBat + ' ' + voltage).toLowerCase();
+                
+                let batterySeries = batteryConfig;
+                if (batteryConfig === '6S_small' || batteryConfig === '6S_large') {
+                    batterySeries = '6S';
+                }
+                const batNum = batterySeries.replace('S', '');
+                const hasBatteryReference = specsText.includes(batterySeries.toLowerCase()) || 
+                                            specsText.includes(batNum + 's') || 
+                                            specsText.includes(batNum + ' cell');
+                if (!hasBatteryReference) {
+                    score -= 15;
+                }
+
+                // 3. Stator KV compatibility checks
+                const kvMatch = m.motor.match(/kv\s*(\d+)/i) || m.motor.match(/(\d+)\s*kv/i);
+                if (kvMatch) {
+                    const kv = parseInt(kvMatch[1], 10);
+                    if (batterySeries === '6S') {
+                        if (kv > 2100) score -= 35;
+                        if (kv < 800 && selectedProfileKey.includes('light')) score -= 25;
+                    } else if (batterySeries === '4S') {
+                        if (kv < 1800 && selectedProfileKey.includes('light')) score -= 25;
+                    } else if (['12S', '14S'].includes(batterySeries)) {
+                        if (kv > 250) score -= 50;
+                    }
+                }
+
+                // 4. Propeller Size restriction
+                if (!isNaN(propSizeLimit) && propSizeLimit > 0) {
+                    const propSpec = (m.recommended_propeller || '').toLowerCase();
+                    const propNum = propSpec.match(/(\d+)/);
+                    if (propNum) {
+                        const pSize = parseInt(propNum[1], 10);
+                        if (pSize > propSizeLimit) {
+                            score -= 60; // Cannot fit propeller on the frame!
+                        }
+                    }
+                }
+
+                // 5. Brand preference
+                if (brandPreference !== 'all' && m.company !== brandPreference) {
+                    score -= 40;
+                }
+
+                // Clamp score
+                score = Math.max(0, Math.min(100, Math.round(score)));
+
+                if (score > 10) {
+                    recommendations.push({
+                        motor: m,
+                        score: score,
+                        actualTwr: actualTwr,
+                        hoverThrottle: hoverThrottle,
+                        specificWeight: motorWeightVal
+                    });
+                }
+            });
+
+            // Sort by score
+            recommendations.sort((a, b) => b.score - a.score);
+
+            const topRecs = recommendations.slice(0, 15);
+            if (topRecs.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="py-6 text-center text-xs text-slate-400 font-semibold italic">
+                            No motors matched these requirements. Try expanding your weight bounds or removing manufacturer preferences.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            topRecs.forEach(rec => {
+                const m = rec.motor;
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-900/60 transition-colors border-b border-slate-100 dark:border-slate-850';
+
+                // Safety labels
+                let statusBadge = '';
+                if (rec.actualTwr < 1.0) {
+                    statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">🔴 Cannot Lift</span>';
+                } else if (rec.actualTwr < 1.5) {
+                    statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400">⚠️ Under-powered</span>';
+                } else if (rec.actualTwr < 2.0) {
+                    statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 font-mono">🟡 Marginal</span>';
+                } else {
+                    statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">🟢 Optimal</span>';
+                }
+
+                // Match score badge color
+                let scoreColor = 'bg-rose-500/10 text-rose-600 dark:text-rose-400';
+                if (rec.score >= 85) scoreColor = 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
+                else if (rec.score >= 60) scoreColor = 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
+
+                const isChecked = state.compareList.includes(m.id) ? 'checked' : '';
+
+                tr.innerHTML = `
+                    <td class="py-3 px-3 text-center">
+                        <input type="checkbox" data-id="${m.id}" onchange="toggleCompare(this)" ${isChecked} class="rounded border-slate-355 focus:ring-blue-500 text-blue-600">
+                    </td>
+                    <td class="py-3 px-3">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${scoreColor}">${rec.score}% Match</span>
+                    </td>
+                    <td class="py-3 px-3 font-bold text-[#001e40] dark:text-slate-100">${m.motor}</td>
+                    <td class="py-3 px-3 font-semibold text-slate-500">${m.company}</td>
+                    <td class="py-3 px-3 text-center font-mono font-extrabold text-[#001e40] dark:text-slate-100">${rec.actualTwr.toFixed(2)} : 1</td>
+                    <td class="py-3 px-3 text-center font-mono font-semibold text-slate-600 dark:text-slate-300">${rec.hoverThrottle.toFixed(0)}%</td>
+                    <td class="py-3 px-3">${statusBadge}</td>
+                    <td class="py-3 px-3 text-right">
+                        <button onclick="openDetailsDrawer('${m.id}')" class="px-3 py-1 bg-slate-50 dark:bg-slate-800 hover:bg-[#003366] hover:text-white rounded border border-slate-200 dark:border-slate-700 transition-all text-xs font-bold">
+                            Details
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            lucide.createIcons();
+        }
+
+        // Details drawer controls
+        function openDetailsDrawer(motorId) {
+            const m = state.motors.find(x => x.id === motorId);
+            if (!m) return;
+
+            document.getElementById('drawer-motor-name').textContent = m.motor;
+            document.getElementById('drawer-motor-brand').textContent = m.company;
+            
+            const cat = state.categories.find(c => c.id === m.categoryId);
+            document.getElementById('drawer-thrust-class').textContent = cat ? cat.name : 'N/A';
+            document.getElementById('drawer-max-thrust').textContent = m.thrust;
+            document.getElementById('drawer-esc').textContent = m.esc || 'None';
+            document.getElementById('drawer-propeller').textContent = m.prop || 'None';
+
+            const linksDiv = document.getElementById('drawer-links');
+            linksDiv.innerHTML = '';
+
+            const links = [
+                { url: m.linkMotor, label: 'Official Motor Specs', icon: 'cpu' },
+                { url: m.linkEsc, label: 'Recommended ESC Specs', icon: 'zap' },
+                { url: m.linkProp, label: 'Recommended Prop Specs', icon: 'wind' }
+            ];
+
+            let hasLinks = false;
+            links.forEach(l => {
+                if (l.url) {
+                    hasLinks = true;
+                    const a = document.createElement('a');
+                    a.href = l.url;
+                    a.target = '_blank';
+                    a.className = 'flex items-center justify-between p-2 rounded bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 text-blue-600 dark:text-blue-400 font-semibold no-underline';
+                    a.innerHTML = `
+                        <span><i data-lucide="${l.icon}" class="w-3.5 h-3.5 inline-block mr-1.5"></i> ${l.label}</span>
+                        <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+                    `;
+                    linksDiv.appendChild(a);
+                }
+            });
+
+            if (!hasLinks) {
+                linksDiv.innerHTML = '<span class="text-slate-400 italic">No reference links configured.</span>';
+            }
+
+            document.getElementById('motor-details-drawer').classList.remove('translate-x-full');
+            lucide.createIcons();
+        }
+
+        function closeDetailsDrawer() {
+            document.getElementById('motor-details-drawer').classList.add('translate-x-full');
+        }
+
+        function toggleCompare(checkbox) {
+            const motorId = checkbox.dataset.id;
+            let list = JSON.parse(sessionStorage.getItem('thrustvault_compare_list') || '[]');
+            if (checkbox.checked) {
+                if (!list.includes(motorId)) {
+                    if (list.length >= 3) {
+                        alert('You can select a maximum of 3 motors for comparison.');
+                        checkbox.checked = false;
+                        return;
+                    }
+                    list.push(motorId);
+                }
+            } else {
+                list = list.filter(id => id !== motorId);
+            }
+            sessionStorage.setItem('thrustvault_compare_list', JSON.stringify(list));
+            state.compareList = list;
+
+            // Notify dashboard navbar comparisons
+            window.dispatchEvent(new CustomEvent('compareListUpdated'));
+        }
+
+        function toggleDynoChat(show) {
+            const chatEl = document.getElementById('dyno-chat-drawer');
+            if (show) chatEl.classList.remove('translate-x-full');
+            else chatEl.classList.add('translate-x-full');
+        }
+
+        // =====================================
+        // DYNO CHAT PERSISTENCE MEMORY CACHE
+        // =====================================
+        function loadChatHistory() {
+            const cached = localStorage.getItem('thrustvault_finder_chat_history');
+            if (cached) {
+                try {
+                    state.chatHistory = JSON.parse(cached);
+                    renderChatMessages();
+                } catch (e) {
+                    state.chatHistory = [];
+                    addWelcomeMessage();
+                }
+            } else {
+                addWelcomeMessage();
+            }
+        }
+
+        function saveChatHistory() {
+            localStorage.setItem('thrustvault_finder_chat_history', JSON.stringify(state.chatHistory));
+        }
+
+        function addWelcomeMessage() {
+            state.chatHistory = [{
+                role: 'assistant',
+                content: `Hi! I am Dyno, your UAV Propulsion Calculator assistant. If you're not sure which parameters match your application, let's configure them together.
+                
+                What are you trying to accomplish with your drone? (e.g., spraying crops, LiDAR surveying, mirrorless cinema filming, parcel delivery, or nano indoor flight)?`
+            }];
+            renderChatMessages();
+            saveChatHistory();
+        }
+
+        function renderChatMessages() {
+            const container = document.getElementById('chat-messages-container');
+            container.innerHTML = '';
+
+            state.chatHistory.forEach(msg => {
+                const bubble = document.createElement('div');
+                const isAssistant = msg.role === 'assistant';
+
+                bubble.className = `p-3.5 text-xs leading-relaxed chat-bubble ${
+                    isAssistant 
+                        ? 'assistant bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 self-start' 
+                        : 'user bg-[#003366] text-white self-end'
+                }`;
+
+                let text = msg.content;
+                // Strip CONFIG output tags
+                text = text.replace(/\[CONFIG:[\s\S]*?\]/, '').trim();
+
+                bubble.innerHTML = text
+                    .replace(/\n/g, '<br>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+                container.appendChild(bubble);
+            });
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-message-input');
+            const query = input.value.trim();
+            if (!query) return;
+
+            state.chatHistory.push({ role: 'user', content: query });
+            renderChatMessages();
+            saveChatHistory();
+            input.value = '';
+
+            const loader = document.getElementById('chat-loading-indicator');
+            loader.classList.remove('hidden');
+
+            try {
+                // Prepend system prompt to guide LLM response format
+                const systemPromptContext = `[Instructions: You are Dyno, the UAV Propulsion Specialist. Help the user identify their drone layout: Use-case (racing, cinematic, survey, heavy_lift, or agriculture), Battery cells (e.g. 4S, 6S_small, 6S_large, 12S, 14S), Frame dry weight (g), Payload weight (g), Motors count, and Expected single motor weight (g). Ask only ONE clarifying question at a time. Be brief. Once you have enough metrics, append: [CONFIG: {"application":"agricultural_heavy","battery":"12S","dryWeight":14000,"payload":20000,"motors":8,"motorWeight":650}]. Do not generate CONFIG if details are missing. Keep asking questions.]`;
+
+                const payloadMessages = state.chatHistory.map((m, idx) => {
+                    if (idx === 0) {
+                        return { role: m.role, content: systemPromptContext + "\n\n" + m.content };
+                    }
+                    return m;
+                });
+
+                const res = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: payloadMessages })
+                });
+
+                if (!res.ok) throw new Error('API server failed');
+                const data = await res.json();
+                const reply = data.reply || "I encountered an error calculating. Try again.";
+
+                state.chatHistory.push({ role: 'assistant', content: reply });
+                renderChatMessages();
+                saveChatHistory();
+
+                // Intercept dynamic configurator tags
+                const configMatch = reply.match(/\[CONFIG:\s*(\{[\s\S]*?\})\s*\]/);
+                if (configMatch) {
+                    try {
+                        const autoconfig = JSON.parse(configMatch[1]);
+                        applyDynoConfig(autoconfig);
+                    } catch (err) {
+                        console.error('Failed to parse Dyno autoconfiguration:', err);
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                state.chatHistory.push({ role: 'assistant', content: "Sorry, I am facing connectivity issues. Please inspect the network settings." });
+                renderChatMessages();
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+
+        function applyDynoConfig(config) {
+            if (!config) return;
+
+            // Pre-load Page 2
+            if (config.application) {
+                selectedSubappName = config.application;
+                // Determine profile key from configuration usecase
+                let matchedProfile = 'media_light';
+                for (const cat of categoriesData) {
+                    const item = cat.items.find(i => i.name.toLowerCase().includes(config.application.toLowerCase()));
+                    if (item) {
+                        matchedProfile = item.profile;
+                        break;
+                    }
+                }
+                selectedProfileKey = matchedProfile;
+            }
+
+            setTimeout(() => {
+                if (config.motors) document.getElementById('input-layout').value = config.motors;
+                if (config.battery) {
+                    document.getElementById('input-battery').value = config.battery;
+                    // Auto weight
+                    const w = batteryWeightLookup[config.battery] || 0;
+                    document.getElementById('input-battery-weight').value = w;
+                }
+                if (config.dryWeight) document.getElementById('input-chassis-weight').value = config.dryWeight;
+                if (config.payload) document.getElementById('input-payload-weight').value = config.payload;
+                if (config.motorWeight) document.getElementById('input-motor-weight').value = config.motorWeight;
+
+                // Close chat panel
+                toggleDynoChat(false);
+
+                // Transition to summary page (Page 3)
+                goToPage(3);
+
+                // Alert notification bubble
+                state.chatHistory.push({
+                    role: 'assistant',
+                    content: `💡 **Dyno Configurator**: Form successfully updated using our chat! Please review the summary calculations and click "Confirm & Search Motors" when ready.`
+                });
+                renderChatMessages();
+                saveChatHistory();
+            }, 100);
+        }
+    </script>
+</body>
+</html>

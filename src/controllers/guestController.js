@@ -1,6 +1,8 @@
 'use strict';
 const sqliteDb = require('../config/sqlite');
 const { querySQLiteTable } = require('../utils/sqliteQueryBuilder');
+const pool = require('../config/db');
+
 
 /**
  * Bootstrap data query to get categories, motor counts, custom parameters schema,
@@ -15,7 +17,8 @@ async function initData(req, res) {
     const motorsStmt = sqliteDb.prepare(`
       SELECT id, category_id, motor_name, company, max_thrust,
              recommended_esc, recommended_propeller,
-             link_motor, link_esc, link_propeller, custom_parameters, uploaded_by
+             link_motor, link_esc, link_propeller, custom_parameters, uploaded_by,
+             main_image, gallery_images
       FROM motors ORDER BY max_thrust ASC LIMIT ?
     `);
 
@@ -34,6 +37,11 @@ async function initData(req, res) {
       if (copy.custom_parameters && typeof copy.custom_parameters === 'string') {
         try {
           copy.custom_parameters = JSON.parse(copy.custom_parameters);
+        } catch (e) {}
+      }
+      if (copy.gallery_images && typeof copy.gallery_images === 'string') {
+        try {
+          copy.gallery_images = JSON.parse(copy.gallery_images);
         } catch (e) {}
       }
       return copy;
@@ -124,6 +132,69 @@ async function logActivity(req, res) {
   }
 }
 
+async function getShareItem(req, res) {
+  const { type, name } = req.params;
+  
+  if (!type || !name) {
+    return res.status(400).json({ error: 'Type and name parameters are required.' });
+  }
+
+  const validTypes = ['motor', 'esc', 'propeller'];
+  if (!validTypes.includes(type.toLowerCase())) {
+    return res.status(400).json({ error: `Invalid type. Must be one of: ${validTypes.join(', ')}` });
+  }
+
+  try {
+    let queryResult;
+    if (type.toLowerCase() === 'motor') {
+      const sql = `
+        SELECT m.*, c.name AS category_name
+        FROM public.motors m
+        LEFT JOIN public.categories c ON m.category_id = c.id
+        WHERE LOWER(m.motor_name) = LOWER($1)
+      `;
+      queryResult = await pool.query(sql, [name]);
+    } else if (type.toLowerCase() === 'esc') {
+      const sql = `
+        SELECT *
+        FROM public.escs
+        WHERE LOWER(name) = LOWER($1)
+      `;
+      queryResult = await pool.query(sql, [name]);
+    } else if (type.toLowerCase() === 'propeller') {
+      const sql = `
+        SELECT *
+        FROM public.propellers
+        WHERE LOWER(name) = LOWER($1)
+      `;
+      queryResult = await pool.query(sql, [name]);
+    }
+
+    if (!queryResult || queryResult.rows.length === 0) {
+      return res.status(404).json({ error: `${type} with name "${name}" not found.` });
+    }
+
+    const item = queryResult.rows[0];
+
+    // Safely parse JSON properties if they are strings
+    if (item.custom_parameters && typeof item.custom_parameters === 'string') {
+      try {
+        item.custom_parameters = JSON.parse(item.custom_parameters);
+      } catch (e) {}
+    }
+    if (item.gallery_images && typeof item.gallery_images === 'string') {
+      try {
+        item.gallery_images = JSON.parse(item.gallery_images);
+      } catch (e) {}
+    }
+
+    res.json(item);
+  } catch (e) {
+    console.error('[guest-get-share-item]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+}
+
 module.exports = {
   initData,
   getMotors,
@@ -132,4 +203,6 @@ module.exports = {
   getMotorTestRuns,
   getMotorTestDataPoints,
   logActivity,
+  getShareItem,
 };
+

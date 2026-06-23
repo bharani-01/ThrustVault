@@ -36,6 +36,78 @@
             flex: 1 !important;
             padding-right: 8px;
         }
+        
+        /* Motor Profile Image Gallery Styles */
+        .profile-image-gallery-card {
+            background: var(--bg-panel, #ffffff);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: var(--radius-lg, 12px);
+            padding: 20px;
+            box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.05));
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 24px;
+            transition: all 0.25s ease;
+        }
+
+        .profile-image-gallery-card:hover {
+            box-shadow: var(--shadow-lg, 0 4px 6px rgba(0,0,0,0.05));
+            border-color: rgba(37, 99, 235, 0.2);
+        }
+
+        .profile-image-main-wrap {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background: var(--bg-base, #f8fafc);
+            border-radius: var(--radius-md, 8px);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(226, 232, 240, 0.4);
+        }
+
+        .profile-image-main-wrap img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .profile-image-thumbnails {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 4px 0;
+            justify-content: center;
+        }
+
+        .profile-image-thumb-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 2px solid transparent;
+            cursor: pointer;
+            background: var(--bg-base, #f8fafc);
+            padding: 0;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .profile-image-thumb-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-image-thumb-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .profile-image-thumb-btn.active {
+            border-color: var(--primary-color, #2563eb);
+        }
     </style>
     <!-- Page Loader Transition Script -->
     <script src="page-loader.js?v=2.2"></script>
@@ -811,9 +883,14 @@
     <!-- Motor Profile View Overlay -->
     <div class="motor-profile-overlay" id="motor-profile-overlay" style="display: none;">
         <div class="profile-header-bar">
-            <button class="btn-profile-back" id="btn-motor-profile-back">
-                <i data-lucide="arrow-left"></i> Back to Catalog
-            </button>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <button class="btn-profile-back" id="btn-motor-profile-back">
+                    <i data-lucide="arrow-left"></i> Back to Catalog
+                </button>
+                <button class="btn-secondary-sm" id="btn-profile-share" style="padding:6px 12px; font-size:0.75rem; display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--primary-color); border-color:var(--primary-color);">
+                    <i data-lucide="share-2" style="width:14px; height:14px;"></i> Share
+                </button>
+            </div>
             <div class="profile-header-title-container">
                 <h2 id="profile-motor-name">Motor Model Name</h2>
                 <div class="profile-header-badges">
@@ -826,6 +903,14 @@
         <div class="profile-content-grid">
             <!-- Left Side: Motor Specifications -->
             <div class="profile-left-column">
+                <!-- Image Gallery Card -->
+                <div class="profile-image-gallery-card" id="profile-image-card" style="display: none;">
+                    <div class="profile-image-main-wrap">
+                        <img id="profile-main-image" src="" alt="Motor Spec Image">
+                    </div>
+                    <div id="profile-gallery-thumbnails" class="profile-image-thumbnails"></div>
+                </div>
+
                 <!-- Core Specs Card -->
                 <div class="profile-card">
                     <h3><i data-lucide="info"></i> Specifications</h3>
@@ -992,6 +1077,7 @@
     </div>
 
     <!-- JavaScript -->
+    <script src="share_modal.js"></script>
     <script src="admin_app.js?v=1.8"></script>
     <!-- Onboarding Tour -->
     <script src="onboarding.js"></script>

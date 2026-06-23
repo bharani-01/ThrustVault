@@ -14,7 +14,112 @@ const ACL = {
   motor_test_runs: { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
   motor_test_data_points: { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
   draft_test_runs: { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
+  escs: { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['admin'] },
+  propellers: { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['admin'] },
 };
+
+let cachedDashboardStats = null;
+
+async function getOrCalculateStats() {
+  if (cachedDashboardStats) {
+    return cachedDashboardStats;
+  }
+
+  try {
+    const res = await pool.query('SELECT max_thrust, recommended_esc, motor_name, custom_parameters FROM motors');
+    const allMotors = res.rows;
+
+    const totalMotors = allMotors.length;
+
+    function parseThrustToKg(thrustStr) {
+      if (!thrustStr) return 0;
+      const normalized = String(thrustStr).trim().toLowerCase().replace(/\s+/g, '');
+      const match = normalized.match(/^([0-9.]+)(kg|g)?$/);
+      if (match) {
+        const val = parseFloat(match[1]);
+        const unit = match[2] || 'kg';
+        return unit === 'g' ? val / 1000 : val;
+      }
+      const numbers = normalized.match(/[0-9.]+/);
+      if (numbers) {
+        const val = parseFloat(numbers[0]);
+        return (normalized.includes('g') && !normalized.includes('kg')) ? val / 1000 : val;
+      }
+      return 0;
+    }
+
+    let minThrust = Infinity;
+    let maxThrust = -Infinity;
+    allMotors.forEach(m => {
+      const parsed = parseThrustToKg(m.max_thrust);
+      if (parsed > 0) {
+        if (parsed < minThrust) minThrust = parsed;
+        if (parsed > maxThrust) maxThrust = parsed;
+      }
+    });
+
+    let minThrustVal = 0;
+    let maxThrustVal = 0;
+    let thrustRangeStr = 'N/A';
+    let maxThrustStr = 'N/A';
+
+    if (minThrust !== Infinity && maxThrust !== -Infinity) {
+      minThrustVal = minThrust;
+      maxThrustVal = maxThrust;
+      thrustRangeStr = minThrust === maxThrust 
+        ? `${minThrust.toFixed(2)} kg` 
+        : `${minThrust.toFixed(2)} – ${maxThrust.toFixed(2)} kg`;
+      maxThrustStr = `${maxThrust.toFixed(2)} kg`;
+    }
+
+    let sRatings = [];
+    allMotors.forEach(m => {
+      const customParams = m.custom_parameters || {};
+      const v = (customParams.voltage || customParams.voltage_v || customParams.operating_voltage)
+        ? String(customParams.voltage || customParams.voltage_v || customParams.operating_voltage)
+        : '';
+      const esc = m.recommended_esc || '';
+      const name = m.motor_name || '';
+      
+      const match = v.match(/(\d+)s/i) || esc.match(/(\d+)s/i) || name.match(/(\d+)s/i);
+      if (match) {
+        sRatings.push(parseInt(match[1], 10));
+      }
+    });
+
+    let voltageRangeStr = 'N/A';
+    if (sRatings.length > 0) {
+      const minS = Math.min(...sRatings);
+      const maxS = Math.max(...sRatings);
+      voltageRangeStr = minS === maxS ? `${minS}S` : `${minS}S – ${maxS}S`;
+    }
+
+    cachedDashboardStats = {
+      total_motors: totalMotors,
+      min_thrust: minThrustVal,
+      max_thrust: maxThrustVal,
+      thrust_range: thrustRangeStr,
+      max_thrust_str: maxThrustStr,
+      voltage_range: voltageRangeStr
+    };
+
+    return cachedDashboardStats;
+  } catch (err) {
+    console.error('Error calculating stats:', err);
+    return {
+      total_motors: 0,
+      min_thrust: 0,
+      max_thrust: 0,
+      thrust_range: 'N/A',
+      max_thrust_str: 'N/A',
+      voltage_range: 'N/A'
+    };
+  }
+}
+
+function invalidateStatsCache() {
+  cachedDashboardStats = null;
+}
 
 /**
  * Bootstrap data query to get categories, motor counts, custom parameters schema,
@@ -23,14 +128,17 @@ const ACL = {
 async function initData(req, res) {
   const LIMIT = 15;
   try {
-    const [cats, counts, schema, motors] = await Promise.all([
+    const [cats, counts, schema, motors, kpis, brandsQuery] = await Promise.all([
       pool.query('SELECT id, name, description FROM categories ORDER BY name'),
       pool.query('SELECT category_id, COUNT(*)::int AS cnt FROM motors GROUP BY category_id'),
       pool.query('SELECT * FROM custom_specs_schema ORDER BY created_at'),
       pool.query(`SELECT id, category_id, motor_name, company, max_thrust,
                          recommended_esc, recommended_propeller,
-                         link_motor, link_esc, link_propeller, custom_parameters, uploaded_by
+                         link_motor, link_esc, link_propeller, custom_parameters, uploaded_by,
+                         main_image, gallery_images
                   FROM motors ORDER BY max_thrust ASC LIMIT $1`, [LIMIT]),
+      getOrCalculateStats(),
+      pool.query("SELECT DISTINCT company FROM motors WHERE company IS NOT NULL AND company != '' ORDER BY company")
     ]);
 
     const categoryCounts = {};
@@ -44,6 +152,8 @@ async function initData(req, res) {
       custom_schema: schema.rows,
       first_motors: motors.rows,
       has_more: motors.rows.length >= LIMIT,
+      dashboard_stats: kpis,
+      brands: brandsQuery.rows.map(r => r.company).filter(Boolean)
     });
   } catch (e) {
     console.error('[init-data]', e.message);
@@ -55,7 +165,20 @@ async function initData(req, res) {
 
 async function getMotors(req, res) {
   try {
-    res.json(await queryTable('motors', 'GET', null, req.query));
+    const qp = { ...req.query };
+    
+    // Fetch total count without limit, offset, or order using a lightweight id select
+    delete qp.limit;
+    delete qp.offset;
+    delete qp.order;
+    qp.select = 'id';
+    
+    const allMatching = await queryTable('motors', 'GET', null, qp);
+    const totalCount = allMatching.length;
+    
+    const data = await queryTable('motors', 'GET', null, req.query);
+    res.setHeader('X-Total-Count', totalCount);
+    res.json(data);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -65,7 +188,44 @@ async function createMotor(req, res) {
   try {
     // Dynamic tracking of uploader
     const payload = { ...req.body, uploaded_by: req.session.email };
+    invalidateStatsCache();
     res.json(await queryTable('motors', 'POST', payload, null));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
+// ── ESCs ─────────────────────────────────────────────────────────────────────
+
+async function getEscs(req, res) {
+  try {
+    res.json(await queryTable('escs', 'GET', null, req.query));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
+async function createEsc(req, res) {
+  try {
+    res.json(await queryTable('escs', 'POST', req.body, null));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
+// ── Propellers ───────────────────────────────────────────────────────────────
+
+async function getPropellers(req, res) {
+  try {
+    res.json(await queryTable('propellers', 'GET', null, req.query));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
+async function createPropeller(req, res) {
+  try {
+    res.json(await queryTable('propellers', 'POST', req.body, null));
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -79,6 +239,7 @@ async function updateRecommendations(req, res) {
   });
   if (!Object.keys(payload).length) return res.status(400).json({ error: 'No valid fields' });
   try {
+    invalidateStatsCache();
     res.json(await queryTable('motors', 'PATCH', payload, { id: `eq.${req.params.id}` }));
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -557,6 +718,9 @@ async function dbProxy(req, res) {
     }
 
     const data = await queryTable(table, m, payload, qp);
+    if (table === 'motors' && ['POST', 'PATCH', 'DELETE'].includes(m)) {
+      invalidateStatsCache();
+    }
     if (table === 'user_onboarding' && m === 'GET') {
       return res.json(data.length ? data[0] : { user_id: uid, pages_progress: {}, tour_completed: false });
     }
@@ -570,6 +734,10 @@ module.exports = {
   initData,
   getMotors,
   createMotor,
+  getEscs,
+  createEsc,
+  getPropellers,
+  createPropeller,
   updateRecommendations,
   getCategories,
   createCategory,

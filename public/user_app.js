@@ -13,6 +13,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const emailEl = document.getElementById('session-email');
     if (emailEl) emailEl.textContent = email;
 
+    window.openMotorDetails = (motorId) => {
+        if (typeof showMotorProfile === 'function') {
+            showMotorProfile(motorId);
+        } else {
+            console.error('[ThrustVault] showMotorProfile is not defined in user scope.');
+        }
+    };
+
     // XSS Escaping and URL Sanitization Utilities
     function escapeHTML(str) {
         if (str === null || str === undefined) return '';
@@ -192,7 +200,9 @@ document.addEventListener('DOMContentLoaded', () => {
         pageSize: 15,
         categoryCounts: {},
         displayLimit: 8,
-        totalFiltered: 0
+        totalFiltered: 0,
+        dashboardStats: null,
+        allMotorsLoaded: false
     };
 
     // DOM Elements
@@ -502,7 +512,9 @@ document.addEventListener('DOMContentLoaded', () => {
             linkEsc: m.link_esc,
             linkProp: m.link_propeller,
             custom_parameters: m.custom_parameters || {},
-            uploaded_by: m.uploaded_by
+            uploaded_by: m.uploaded_by,
+            mainImage: m.main_image,
+            galleryImages: m.gallery_images
         };
     }
 
@@ -558,22 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showLoadingBadge(loaded) {
-        let badge = document.getElementById('motors-loading-badge');
-        if (!badge) {
-            badge = document.createElement('div');
-            badge.id = 'motors-loading-badge';
-            badge.style.cssText = [
-                'position:fixed', 'bottom:20px', 'left:50%', 'transform:translateX(-50%)',
-                'background:var(--bg-card)', 'border:1px solid var(--border-color)',
-                'border-radius:20px', 'padding:7px 16px', 'font-size:0.78rem',
-                'color:var(--text-muted)', 'box-shadow:var(--shadow-md)',
-                'display:flex', 'align-items:center', 'gap:8px', 'z-index:9000',
-                'transition:opacity 0.3s'
-            ].join(';');
-            document.body.appendChild(badge);
-        }
-        badge.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:var(--primary-color);animation:pulse 1.2s ease-in-out infinite;display:inline-block;"></span> Loading motors… ${loaded} so far`;
-        badge.style.opacity = '1';
+        // Disabled to prevent showing progressive loading badge as stats are loaded instantly from server cache
     }
 
     function hideLoadingBadge() {
@@ -584,17 +581,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function loadCachedKpis() {
+        const cached = localStorage.getItem('thrustvault_user_dashboard_stats');
+        if (cached) {
+            try {
+                const stats = JSON.parse(cached);
+                state.dashboardStats = stats;
+                
+                const kpiTotal = document.getElementById('kpi-total-motors-val');
+                if (kpiTotal) kpiTotal.textContent = stats.total_motors;
+                
+                const kpiAvg = document.getElementById('kpi-avg-thrust-val');
+                if (kpiAvg) kpiAvg.textContent = stats.thrust_range;
+                
+                const kpiMax = document.getElementById('kpi-max-thrust-val');
+                if (kpiMax) kpiMax.textContent = stats.max_thrust_str;
+                
+                const kpiVoltage = document.getElementById('kpi-voltage-val');
+                if (kpiVoltage) kpiVoltage.textContent = stats.voltage_range;
+            } catch (e) {
+                console.error('[ThrustVault] Error parsing cached dashboard stats:', e);
+            }
+        }
+    }
+
     // Data Fetching from Database — single round-trip bootstrap
     async function fetchData() {
         try {
             const INITIAL_LIMIT = 15;
-            const BATCH_SIZE    = 50;
             state.allMotorsLoaded = false;
 
             // ── ONE request → server fetches 4 things in parallel internally ──
             const initRes = await fetch('/api/init-data');
             if (!initRes.ok) throw new Error('Failed to load init data');
             const init = await initRes.json();
+            
+            // Save dashboard stats in state
+            state.dashboardStats = init.dashboard_stats || null;
+            if (state.dashboardStats) {
+                localStorage.setItem('thrustvault_user_dashboard_stats', JSON.stringify(state.dashboardStats));
+            }
 
             // ── Categories ─────────────────────────────────────────────────
             const parseMinWeight = (name) => {
@@ -611,31 +637,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // ── Custom schema ──────────────────────────────────────────────
             state.customSchema = init.custom_schema || [];
 
+            // Store brands list from server
+            state.brands = init.brands || [];
+
             // ── First 15 motors → render immediately ──────────────────────
             const firstBatch = init.first_motors || [];
             state.motors = firstBatch.map(mapMotor);
-            renderApp();                              // ← first render ~1.5s
-            if (firstBatch.length > 0) showLoadingBadge(firstBatch.length);
-
-            if (!init.has_more) {
-                state.allMotorsLoaded = true;
-                hideLoadingBadge();
-                return;
-            }
-
-            // ── Background: load remaining motors in batches ───────────────
-            let offset = INITIAL_LIMIT;
-            while (true) {
-                const res = await fetch(`/api/motors?limit=${BATCH_SIZE}&offset=${offset}&order=max_thrust.asc`);
-                if (!res.ok) break;
-                const batch = await res.json();
-                if (!batch || batch.length === 0) break;
-                state.motors = [...state.motors, ...batch.map(mapMotor)];
-                offset += batch.length;
-                showLoadingBadge(state.motors.length);
-                renderApp();
-                if (batch.length < BATCH_SIZE) break;
-            }
+            
+            state.totalFiltered = state.dashboardStats ? state.dashboardStats.total_motors : state.motors.length;
 
             state.allMotorsLoaded = true;
             hideLoadingBadge();
@@ -643,6 +652,116 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (e) {
             console.error('Error fetching data from Database:', e);
+        }
+    }
+
+    async function loadMotorsFromServer() {
+        try {
+            const params = new URLSearchParams();
+            params.append('limit', state.pageSize);
+            params.append('offset', (state.currentPage - 1) * state.pageSize);
+            
+            let dbSort = 'max_thrust.asc';
+            if (state.sortBy === 'motor-asc') {
+                dbSort = 'motor_name.asc';
+            } else if (state.sortBy === 'motor-desc') {
+                dbSort = 'motor_name.desc';
+            } else if (state.sortBy === 'company-asc') {
+                dbSort = 'company.asc';
+            } else if (state.sortBy === 'thrust-desc') {
+                dbSort = 'max_thrust.desc';
+            } else if (state.sortBy === 'thrust-asc') {
+                dbSort = 'max_thrust.asc';
+            }
+            params.append('order', dbSort);
+            
+            if (state.filterByCategory) {
+                params.append('category_id', `eq.${state.filterByCategory}`);
+            }
+            if (state.filterCompany && state.filterCompany !== 'all') {
+                params.append('company', `eq.${state.filterCompany}`);
+            }
+            if (state.searchQuery) {
+                params.append('search', state.searchQuery);
+            }
+            
+            const res = await fetch(`/api/motors?${params.toString()}`);
+            if (!res.ok) throw new Error('Failed to load motors');
+            
+            const data = await res.json();
+            state.motors = (data || []).map(mapMotor);
+            
+            const totalCountHeader = res.headers.get('X-Total-Count');
+            if (totalCountHeader !== null) {
+                state.totalFiltered = parseInt(totalCountHeader, 10);
+            } else {
+                state.totalFiltered = state.motors.length;
+            }
+            
+            renderApp();
+            
+            const hasFilter = state.searchQuery || state.filterByCategory || (state.filterCompany && state.filterCompany !== 'all');
+            if (hasFilter) {
+                fetchFilterKpis(params);
+            } else {
+                updateKpis(null);
+            }
+        } catch (e) {
+            console.error('Error loading motors from server:', e);
+        }
+    }
+
+    async function fetchFilterKpis(params) {
+        try {
+            const kpiParams = new URLSearchParams(params);
+            kpiParams.delete('limit');
+            kpiParams.delete('offset');
+            kpiParams.delete('order');
+            kpiParams.set('select', 'id,max_thrust,company,recommended_esc,custom_parameters,motor_name,category_id');
+            
+            const res = await fetch(`/api/motors?${kpiParams.toString()}`);
+            if (!res.ok) throw new Error('Failed to fetch KPIs');
+            const data = await res.json();
+            const mapped = (data || []).map(mapMotor);
+            updateKpis(mapped);
+        } catch (e) {
+            console.error('Failed to fetch filter KPIs:', e);
+        }
+    }
+
+    async function fetchExportMotors() {
+        try {
+            const params = new URLSearchParams();
+            if (state.filterByCategory) {
+                params.append('category_id', `eq.${state.filterByCategory}`);
+            }
+            if (state.filterCompany && state.filterCompany !== 'all') {
+                params.append('company', `eq.${state.filterCompany}`);
+            }
+            if (state.searchQuery) {
+                params.append('search', state.searchQuery);
+            }
+            let dbSort = 'max_thrust.asc';
+            if (state.sortBy === 'motor-asc') {
+                dbSort = 'motor_name.asc';
+            } else if (state.sortBy === 'motor-desc') {
+                dbSort = 'motor_name.desc';
+            } else if (state.sortBy === 'company-asc') {
+                dbSort = 'company.asc';
+            } else if (state.sortBy === 'thrust-desc') {
+                dbSort = 'max_thrust.desc';
+            } else if (state.sortBy === 'thrust-asc') {
+                dbSort = 'max_thrust.asc';
+            }
+            params.append('order', dbSort);
+            
+            const res = await fetch(`/api/motors?${params.toString()}`);
+            if (!res.ok) throw new Error('Failed to fetch export data');
+            const data = await res.json();
+            return (data || []).map(mapMotor);
+        } catch (e) {
+            console.error('Failed to fetch export motors:', e);
+            return [];
         }
     }
 
@@ -654,6 +773,10 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStats();
         updateComparisonDrawer();
         updateManufacturerSuggestions();
+        const hasFilter = state.searchQuery || state.filterByCategory || (state.filterCompany && state.filterCompany !== 'all');
+        if (!hasFilter) {
+            updateKpis(null);
+        }
         lucide.createIcons();
         checkUrlForDeepLink();
     }
@@ -693,7 +816,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.currentPage = 1;
                 elements.searchInput.value = '';
                 elements.searchClear.style.display = 'none';
-                renderApp();
+                loadMotorsFromServer();
             };
             
             const delBtn = div.querySelector('.btn-delete-cat');
@@ -714,8 +837,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         logUserActivity(session.email, session.role, 'Category Deleted', `Deleted category: ${cat.name}`);
                         
-                        const remainingMotors = state.motors.filter(m => m.categoryId !== cat.id);
-                        state.compareItems = state.compareItems.filter(id => remainingMotors.some(m => m.id === id));
+                        state.compareItems = state.compareItems.filter(id => {
+                            const m = state.compareMotorsCache && state.compareMotorsCache[id];
+                            return m ? m.categoryId !== cat.id : true;
+                        });
                         
                         if (state.filterByCategory === cat.id) {
                             state.filterByCategory = null;
@@ -737,13 +862,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Main Content Rendering
     function renderMainContent() {
-        // Show all motors — optionally filtered by sidebar category click
-        let allMotors = state.motors;
-
         // Category sidebar filter
         if (state.filterByCategory) {
             const cat = state.categories.find(c => c.id === state.filterByCategory);
-            allMotors = allMotors.filter(m => m.categoryId === state.filterByCategory);
             if (elements.catBadge) elements.catBadge.textContent = cat ? cat.name : 'Filtered';
             if (elements.catTitle) elements.catTitle.textContent = cat ? `${cat.name} Class` : 'Filtered';
             if (elements.catDesc) elements.catDesc.textContent = cat ? (cat.desc || `${cat.name} thrust class motors`) : '';
@@ -753,48 +874,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (elements.catDesc) elements.catDesc.textContent = 'All motors across all thrust classes';
         }
 
-        updateBrandFilterOptions(allMotors);
+        updateBrandFilterOptions();
 
-        let filteredMotors = [...allMotors];
+        // Stats based on current list
+        calculateCategoryQuickStats(state.motors);
 
-        if (state.filterCompany !== 'all') {
-            filteredMotors = filteredMotors.filter(m => m.company === state.filterCompany);
+        if (elements.filteredCountBadge) {
+            elements.filteredCountBadge.textContent = `${state.totalFiltered} displayed`;
         }
 
-        if (state.searchQuery) {
-            const q = state.searchQuery.toLowerCase();
-            filteredMotors = filteredMotors.filter(m =>
-                m.motor.toLowerCase().includes(q) ||
-                m.company.toLowerCase().includes(q) ||
-                (m.esc && m.esc.toLowerCase().includes(q)) ||
-                (m.prop && m.prop.toLowerCase().includes(q))
-            );
-        }
-
-        // Apply Sorting — default: sort by thrust ascending
-        filteredMotors.sort((a, b) => {
-            if (state.sortBy === 'motor-asc') {
-                return a.motor.localeCompare(b.motor);
-            } else if (state.sortBy === 'motor-desc') {
-                return b.motor.localeCompare(a.motor);
-            } else if (state.sortBy === 'company-asc') {
-                return a.company.localeCompare(b.company);
-            } else if (state.sortBy === 'thrust-desc') {
-                return parseThrustToKg(b.thrust) - parseThrustToKg(a.thrust);
-            } else if (state.sortBy === 'thrust-asc') {
-                return parseThrustToKg(a.thrust) - parseThrustToKg(b.thrust);
-            }
-            // Default: sort by thrust ascending
-            return parseThrustToKg(a.thrust) - parseThrustToKg(b.thrust);
-        });
-
-        // Stats based on all motors
-        calculateCategoryQuickStats(allMotors);
-
-        elements.filteredCountBadge.textContent = `${filteredMotors.length} displayed`;
-
-        state.totalFiltered = filteredMotors.length;
-        const totalItems = filteredMotors.length;
+        const totalItems = state.totalFiltered;
         const totalPages = Math.ceil(totalItems / state.pageSize);
         if (state.currentPage > totalPages) {
             state.currentPage = totalPages || 1;
@@ -802,8 +891,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.currentPage < 1) {
             state.currentPage = 1;
         }
-        const startIndex = (state.currentPage - 1) * state.pageSize;
-        const paginatedMotors = filteredMotors.slice(startIndex, startIndex + state.pageSize);
 
         if (totalItems === 0) {
             elements.tableEmptyState.style.display = 'block';
@@ -814,7 +901,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         elements.motorsTableBody.innerHTML = '';
-        paginatedMotors.forEach((m) => {
+        state.motors.forEach((m) => {
             const tr = document.createElement('tr');
             tr.className = 'hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors';
             const isChecked = state.compareItems.includes(m.id);
@@ -856,9 +943,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const linksHtml = links.length > 0 ? links.join(' ') : '-';
 
+            let imageHtml = '';
+            if (m.mainImage && m.mainImage.startsWith('http')) {
+                imageHtml = `
+                    <div class="motor-thumbnail flex-shrink-0">
+                        <img src="${sanitizeUrl(m.mainImage)}" alt="${escapeHTML(m.motor)}" class="w-full h-full object-cover">
+                    </div>
+                `;
+            } else {
+                imageHtml = `<div class="motor-thumbnail flex-shrink-0" style="${thumbStyle}">${initials}</div>`;
+            }
+
             tr.innerHTML = `
                 <td class="py-3 px-2 text-center"><input type="checkbox" class="compare-cb rounded border-slate-300 dark:border-slate-700 dark:bg-slate-900 text-[#003366] dark:text-blue-500 focus:ring-[#003366]/20" data-id="${m.id}" ${isChecked ? 'checked' : ''}></td>
-                <td class="py-3 px-2"><a href="#" class="motor-profile-link text-[#003366] hover:text-[#001e40] dark:text-[#a7c8ff] dark:hover:text-[#d5e3ff] font-semibold" data-id="${m.id}">${escapeHTML(m.motor)}</a></td>
+                <td class="py-3 px-2">
+                    <div class="flex items-center gap-3">
+                        ${imageHtml}
+                        <a href="#" class="motor-profile-link text-[#003366] hover:text-[#001e40] dark:text-[#a7c8ff] dark:hover:text-[#d5e3ff] font-semibold" data-id="${m.id}">${escapeHTML(m.motor)}</a>
+                    </div>
+                </td>
                 <td class="py-3 px-2 text-slate-600 dark:text-slate-400">${escapeHTML(m.company)}</td>
                 <td class="py-3 px-2 text-slate-800 dark:text-slate-200"><strong>${escapeHTML(kv)}</strong></td>
                 <td class="py-3 px-2"><span class="badge-thrust px-2 py-0.5 text-xs rounded-full" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); color: var(--primary-color);">${escapeHTML(voltage)}</span></td>
@@ -867,6 +970,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="py-3 px-2 text-slate-600 dark:text-slate-400 text-xs max-w-[130px] truncate" title="${escapeHTML(m.esc || '-')}">${escapeHTML(m.esc || '-')}</td>
                 <td class="py-3 px-2 text-center"><div class="action-links flex items-center justify-center gap-1.5">${linksHtml}</div></td>
                 <td class="py-3 px-2 text-right" style="vertical-align:middle; white-space:nowrap;">
+                    <button class="btn-share text-slate-400 hover:text-[#003366] dark:hover:text-[#a7c8ff] transition-colors mr-2" data-name="${escapeHTML(m.motor)}" title="Share Motor Spec Link" style="background:none; border:none; cursor:pointer;"><i data-lucide="share-2" style="width:14px;height:14px;display:inline-block;"></i></button>
                     <button class="btn-edit text-slate-400 hover:text-[#003366] dark:hover:text-[#a7c8ff] transition-colors" data-id="${m.id}" title="Edit Recommendations"><i data-lucide="edit-2" style="width:14px;height:14px;display:inline-block;"></i></button>
                 </td>
             `;
@@ -878,7 +982,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         bindRowActions();
         if (elements.verificationNotesSection) elements.verificationNotesSection.style.display = 'none';
-        renderPagination(totalItems, paginatedMotors.length);
+        renderPagination(totalItems, state.motors.length);
     }
 
     function renderPagination(totalItems, displayedCount) {
@@ -1013,6 +1117,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         return;
                     }
                     state.compareItems.push(id);
+                    const m = state.motors.find(x => x.id === id);
+                    if (m) {
+                        state.compareMotorsCache = state.compareMotorsCache || {};
+                        state.compareMotorsCache[id] = m;
+                    }
                 } else {
                     state.compareItems = state.compareItems.filter(item => item !== id);
                 }
@@ -1038,6 +1147,20 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         });
 
+        // Motor share button click handlers
+        elements.motorsTableBody.querySelectorAll('.btn-share').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const motorName = btn.dataset.name;
+                const shareUrl = `${window.location.origin}/share/motor/${encodeURIComponent(motorName)}`;
+                if (window.showShareModal) {
+                    window.showShareModal('motor', motorName, shareUrl);
+                } else {
+                    navigator.clipboard.writeText(shareUrl).then(() => alert('Link copied to clipboard!'));
+                }
+            };
+        });
+
         // Motor profile click handlers
         elements.motorsTableBody.querySelectorAll('.motor-profile-link').forEach(link => {
             link.onclick = (e) => {
@@ -1047,9 +1170,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function updateBrandFilterOptions(catMotors) {
+    function updateBrandFilterOptions() {
         const currentVal = elements.filterCompanySelect.value;
-        const brands = [...new Set(catMotors.map(m => m.company))].sort();
+        const brands = (state.brands || []).sort();
         
         elements.filterCompanySelect.innerHTML = '<option value="all">All Brands</option>' + 
             brands.map(b => `<option value="${b}">${b}</option>`).join('');
@@ -1136,7 +1259,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (elements.compareItemsContainer) {
                 elements.compareItemsContainer.innerHTML = state.compareItems.map(id => {
-                    const m = state.motors.find(x => x.id === id);
+                    const m = state.motors.find(x => x.id === id) || (state.compareMotorsCache && state.compareMotorsCache[id]);
                     if (!m) return '';
                     return `
                         <div class="compare-item">
@@ -1178,7 +1301,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (elements.btnCompareNow) {
         elements.btnCompareNow.onclick = () => {
             if (state.compareItems.length === 0) return;
-            const selected = state.compareItems.map(id => state.motors.find(m => m.id === id)).filter(Boolean);
+            const selected = state.compareItems.map(id => state.motors.find(m => m.id === id) || (state.compareMotorsCache && state.compareMotorsCache[id])).filter(Boolean);
             
             let customRowsHtml = '';
             if (state.customSchema && state.customSchema.length > 0) {
@@ -1262,6 +1385,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (state.compareItems.length < 3) {
                             cb.checked = true;
                             state.compareItems.push(id);
+                            const m = state.motors.find(x => x.id === id);
+                            if (m) {
+                                state.compareMotorsCache = state.compareMotorsCache || {};
+                                state.compareMotorsCache[id] = m;
+                            }
                         } else {
                             cb.checked = false;
                         }
@@ -1341,21 +1469,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateKpis(allMotors) {
+        // If we have no active filters, keep/use server cached stats
+        const hasFilter = state.searchQuery || state.filterByCategory || (state.filterCompany && state.filterCompany !== 'all');
+        if (!hasFilter && state.dashboardStats) {
+            const kpiTotal = document.getElementById('kpi-total-motors-val');
+            if (kpiTotal) kpiTotal.textContent = state.dashboardStats.total_motors;
+            
+            const kpiAvg = document.getElementById('kpi-avg-thrust-val');
+            if (kpiAvg) kpiAvg.textContent = state.dashboardStats.thrust_range;
+            
+            const kpiMax = document.getElementById('kpi-max-thrust-val');
+            if (kpiMax) kpiMax.textContent = state.dashboardStats.max_thrust_str;
+            
+            const kpiVoltage = document.getElementById('kpi-voltage-val');
+            if (kpiVoltage) kpiVoltage.textContent = state.dashboardStats.voltage_range;
+            
+            return;
+        }
+
         const kpiTotal = document.getElementById('kpi-total-motors-val');
         if (kpiTotal) kpiTotal.textContent = allMotors.length;
         
         const kpiAvg = document.getElementById('kpi-avg-thrust-val');
         if (kpiAvg) {
-            let sumThrust = 0;
-            let countThrust = 0;
+            let minThrust = Infinity;
+            let maxThrust = -Infinity;
             allMotors.forEach(m => {
                 const parsed = parseThrustToKg(m.thrust);
                 if (parsed > 0) {
-                    sumThrust += parsed;
-                    countThrust++;
+                    if (parsed < minThrust) minThrust = parsed;
+                    if (parsed > maxThrust) maxThrust = parsed;
                 }
             });
-            kpiAvg.textContent = countThrust > 0 ? `${(sumThrust / countThrust).toFixed(2)} kg` : 'N/A';
+            if (minThrust !== Infinity && maxThrust !== -Infinity) {
+                kpiAvg.textContent = minThrust === maxThrust 
+                    ? `${minThrust.toFixed(2)} kg` 
+                    : `${minThrust.toFixed(2)} – ${maxThrust.toFixed(2)} kg`;
+            } else {
+                kpiAvg.textContent = 'N/A';
+            }
         }
         
         const kpiMax = document.getElementById('kpi-max-thrust-val');
@@ -1571,7 +1723,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const motors = state.filterByCategory
             ? state.motors.filter(m => m.categoryId === state.filterByCategory)
             : state.motors;
-        updateKpis(motors);
+        // updateKpis(motors); // Removed to prevent overwriting server-side filtered KPI calculations with paginated subset
         renderBrandTreemap(motors);
         renderTop10Motors(motors);
         renderInsights(motors);
@@ -1652,59 +1804,66 @@ document.addEventListener('DOMContentLoaded', () => {
         return escaped.replace(new RegExp(`(${q})`, 'gi'), '<mark>$1</mark>');
     }
 
-    function showSearchSuggestions(query) {
+    async function showSearchSuggestions(query) {
         activeSuggestionIndex = -1;
         const q = (query || '').trim();
         if (q.length < 1) { suggestionsEl.style.display = 'none'; return; }
 
-        const scored = state.motors
-            .map(m => { const cat = state.categories.find(c => c.id === m.categoryId); return { motor: m, cat, score: scoreMotor(m, q) }; })
-            .filter(x => x.score > 0)
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 8);
-
-        if (scored.length === 0) {
-            suggestionsEl.innerHTML = `<div class="suggestion-no-results">No motors match "<strong>${escH(q)}</strong>"</div>`;
-            suggestionsEl.style.display = 'block';
-            return;
-        }
-
-        const items = scored.map((x, idx) => {
-            const { motor: m, cat } = x;
-            const catName = cat ? cat.name : 'Uncategorized';
-            const initials = (m.motor || '?').charAt(0).toUpperCase();
-            return `<div class="suggestion-item" data-idx="${idx}" data-motor-id="${escH(m.id)}" data-cat-id="${escH(m.categoryId)}">
-                <div class="suggestion-item-icon">${initials}</div>
-                <div class="suggestion-item-body">
-                    <div class="suggestion-motor-name">${highlightMatch(m.motor, q)}</div>
-                    <div class="suggestion-motor-meta">${highlightMatch(m.company, q)}${m.esc ? ' &nbsp;·&nbsp; ESC: ' + escH(m.esc) : ''}</div>
-                </div>
-                <span class="suggestion-thrust-badge">${escH(catName)}</span>
-            </div>`;
-        }).join('');
-
-        suggestionsEl.innerHTML = `<div class="suggestion-header">Suggestions &nbsp;·&nbsp; ${scored.length} match${scored.length !== 1 ? 'es' : ''} across all categories</div>${items}`;
-        suggestionsEl.style.display = 'block';
-
-        suggestionsEl.querySelectorAll('.suggestion-item').forEach(item => {
-            item.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                const catId = item.dataset.catId;
-                const motorName = scored[parseInt(item.dataset.idx)].motor.motor;
-                if (catId && catId !== state.activeCategory) {
-                    state.activeCategory = catId;
-                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-                    const catBtn = document.querySelector(`.category-btn[data-cat-id="${catId}"]`);
-                    if (catBtn) catBtn.classList.add('active');
-                }
-                elements.searchInput.value = motorName;
-                state.searchQuery = motorName;
-                elements.searchClear.style.display = 'block';
-                suggestionsEl.style.display = 'none';
-                state.currentPage = 1;
-                renderMainContent();
+        try {
+            const res = await fetch(`/api/motors?limit=8&search=${encodeURIComponent(q)}`);
+            if (!res.ok) throw new Error("Failed to fetch suggestions");
+            const data = await res.json();
+            const matchingMotors = (data || []).map(mapMotor);
+            
+            const scored = matchingMotors.map(m => {
+                const cat = state.categories.find(c => c.id === m.categoryId);
+                return { motor: m, cat };
             });
-        });
+
+            if (scored.length === 0) {
+                suggestionsEl.innerHTML = `<div class="suggestion-no-results">No motors match "<strong>${escH(q)}</strong>"</div>`;
+                suggestionsEl.style.display = 'block';
+                return;
+            }
+
+            const items = scored.map((x, idx) => {
+                const { motor: m, cat } = x;
+                const catName = cat ? cat.name : 'Uncategorized';
+                const initials = (m.motor || '?').charAt(0).toUpperCase();
+                return `<div class="suggestion-item" data-idx="${idx}" data-motor-id="${escH(m.id)}" data-cat-id="${escH(m.categoryId)}">
+                    <div class="suggestion-item-icon">${initials}</div>
+                    <div class="suggestion-item-body">
+                        <div class="suggestion-motor-name">${highlightMatch(m.motor, q)}</div>
+                        <div class="suggestion-motor-meta">${highlightMatch(m.company, q)}${m.esc ? ' &nbsp;·&nbsp; ESC: ' + escH(m.esc) : ''}</div>
+                    </div>
+                    <span class="suggestion-thrust-badge">${escH(catName)}</span>
+                </div>`;
+            }).join('');
+
+            suggestionsEl.innerHTML = `<div class="suggestion-header">Suggestions &nbsp;·&nbsp; ${scored.length} match${scored.length !== 1 ? 'es' : ''} across all categories</div>${items}`;
+            suggestionsEl.style.display = 'block';
+
+            suggestionsEl.querySelectorAll('.suggestion-item').forEach(item => {
+                item.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    const catId = item.dataset.catId;
+                    const selectedMotor = scored[parseInt(item.dataset.idx)].motor;
+                    const motorName = selectedMotor.motor;
+                    
+                    if (catId && catId !== state.filterByCategory) {
+                        state.filterByCategory = catId;
+                    }
+                    elements.searchInput.value = motorName;
+                    state.searchQuery = motorName;
+                    elements.searchClear.style.display = 'block';
+                    suggestionsEl.style.display = 'none';
+                    state.currentPage = 1;
+                    loadMotorsFromServer();
+                });
+            });
+        } catch (err) {
+            console.error("Error showing search suggestions:", err);
+        }
     }
 
     document.addEventListener('click', (e) => {
@@ -1719,13 +1878,13 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.filterCompanySelect.addEventListener('change', (e) => {
         state.filterCompany = e.target.value;
         state.currentPage = 1;
-        renderMainContent();
+        loadMotorsFromServer();
     });
 
     elements.sortSelect.addEventListener('change', (e) => {
         state.sortBy = e.target.value;
         state.currentPage = 1;
-        renderMainContent();
+        loadMotorsFromServer();
     });
 
     elements.btnClearFilters.addEventListener('click', () => {
@@ -1735,7 +1894,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.searchInput.value = '';
         elements.searchClear.style.display = 'none';
         elements.filterCompanySelect.value = 'all';
-        renderMainContent();
+        loadMotorsFromServer();
     });
 
     const btnPrevPage = document.getElementById('btn-prev-page');
@@ -1743,7 +1902,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnPrevPage.addEventListener('click', () => {
             if (state.currentPage > 1) {
                 state.currentPage--;
-                renderMainContent();
+                loadMotorsFromServer();
             }
         });
     }
@@ -1754,7 +1913,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const totalPages = Math.ceil(state.totalFiltered / state.pageSize);
             if (state.currentPage < totalPages) {
                 state.currentPage++;
-                renderMainContent();
+                loadMotorsFromServer();
             }
         });
     }
@@ -1764,7 +1923,7 @@ document.addEventListener('DOMContentLoaded', () => {
         paginationLimitSelect.addEventListener('change', (e) => {
             state.pageSize = parseInt(e.target.value, 10) || 15;
             state.currentPage = 1;
-            renderMainContent();
+            loadMotorsFromServer();
         });
     }
 
@@ -1797,65 +1956,83 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Exports & Imports
-    if (elements.btnExportJSON) elements.btnExportJSON.onclick = () => {
-        const backup = { categories: state.categories, motors: state.motors, customSchema: state.customSchema || [] };
-        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `thrustvault_backup_${new Date().toISOString().slice(0,10)}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
+    if (elements.btnExportJSON) elements.btnExportJSON.onclick = async () => {
+        try {
+            const exportMotors = await fetchExportMotors();
+            const backup = { categories: state.categories, motors: exportMotors, customSchema: state.customSchema || [] };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `thrustvault_backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error("Export JSON failed:", e);
+            alert("Export failed: " + e.message);
+        }
     };
 
-    if (elements.btnExportCSV) elements.btnExportCSV.onclick = () => {
-        const headers = ['Category Name', 'Category Description', 'Motor Model Name', 'Manufacturer', 'Max Thrust', 'Recommended ESC', 'Recommended Propeller', 'Motor Link', 'ESC Link', 'Propeller Link'];
-        const customHeaders = (state.customSchema || []).map(f => `${f.field_name} [${f.field_key}]`);
-        const allHeaders = [...headers, ...customHeaders];
-        
-        const rows = state.motors.map(m => {
-            const cat = state.categories.find(c => c.id === m.categoryId);
-            const row = [cat ? cat.name : '', '', m.motor, m.company, m.thrust, m.esc || '', m.prop || '', m.linkMotor || '', m.linkEsc || '', m.linkProp || ''];
+    if (elements.btnExportCSV) elements.btnExportCSV.onclick = async () => {
+        try {
+            const exportMotors = await fetchExportMotors();
+            const headers = ['Category Name', 'Category Description', 'Motor Model Name', 'Manufacturer', 'Max Thrust', 'Recommended ESC', 'Recommended Propeller', 'Motor Link', 'ESC Link', 'Propeller Link'];
+            const customHeaders = (state.customSchema || []).map(f => `${f.field_name} [${f.field_key}]`);
+            const allHeaders = [...headers, ...customHeaders];
             
-            const customVals = m.custom_parameters || {};
-            (state.customSchema || []).forEach(f => {
-                row.push(customVals[f.field_key] !== undefined ? customVals[f.field_key] : '');
+            const rows = exportMotors.map(m => {
+                const cat = state.categories.find(c => c.id === m.categoryId);
+                const row = [cat ? cat.name : '', '', m.motor, m.company, m.thrust, m.esc || '', m.prop || '', m.linkMotor || '', m.linkEsc || '', m.linkProp || ''];
+                
+                const customVals = m.custom_parameters || {};
+                (state.customSchema || []).forEach(f => {
+                    row.push(customVals[f.field_key] !== undefined ? customVals[f.field_key] : '');
+                });
+                return row.map(val => `"${val.toString().replace(/"/g, '""')}"`);
             });
-            return row.map(val => `"${val.toString().replace(/"/g, '""')}"`);
-        });
-        const csvContent = [allHeaders.join(','), ...rows.map(r => r.join(','))].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `thrustvault_catalog_${new Date().toISOString().slice(0,10)}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+            const csvContent = [allHeaders.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `thrustvault_catalog_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error("Export CSV failed:", e);
+            alert("Export failed: " + e.message);
+        }
     };
 
-    if (elements.btnExportXlsx) elements.btnExportXlsx.onclick = () => {
-        const headers = ['Category Name', 'Category Description', 'Motor Model Name', 'Manufacturer', 'Max Thrust', 'Recommended ESC', 'Recommended Propeller', 'Motor Link', 'ESC Link', 'Propeller Link'];
-        const customHeaders = (state.customSchema || []).map(f => `${f.field_name} [${f.field_key}]`);
-        const allHeaders = [...headers, ...customHeaders];
-        
-        const rows = state.motors.map(m => {
-            const cat = state.categories.find(c => c.id === m.categoryId);
-            const row = [cat ? cat.name : '', cat ? cat.desc : '', m.motor, m.company, m.thrust, m.esc || '', m.prop || '', m.linkMotor || '', m.linkEsc || '', m.linkProp || ''];
+    if (elements.btnExportXlsx) elements.btnExportXlsx.onclick = async () => {
+        try {
+            const exportMotors = await fetchExportMotors();
+            const headers = ['Category Name', 'Category Description', 'Motor Model Name', 'Manufacturer', 'Max Thrust', 'Recommended ESC', 'Recommended Propeller', 'Motor Link', 'ESC Link', 'Propeller Link'];
+            const customHeaders = (state.customSchema || []).map(f => `${f.field_name} [${f.field_key}]`);
+            const allHeaders = [...headers, ...customHeaders];
             
-            const customVals = m.custom_parameters || {};
-            (state.customSchema || []).forEach(f => {
-                row.push(customVals[f.field_key] !== undefined ? customVals[f.field_key] : '');
+            const rows = exportMotors.map(m => {
+                const cat = state.categories.find(c => c.id === m.categoryId);
+                const row = [cat ? cat.name : '', cat ? cat.desc : '', m.motor, m.company, m.thrust, m.esc || '', m.prop || '', m.linkMotor || '', m.linkEsc || '', m.linkProp || ''];
+                
+                const customVals = m.custom_parameters || {};
+                (state.customSchema || []).forEach(f => {
+                    row.push(customVals[f.field_key] !== undefined ? customVals[f.field_key] : '');
+                });
+                return row;
             });
-            return row;
-        });
-        
-        const data = [allHeaders, ...rows];
-        const ws = XLSX.utils.aoa_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Catalog');
-        XLSX.writeFile(wb, `thrustvault_catalog_${new Date().toISOString().slice(0,10)}.xlsx`);
-        
-        logUserActivity(session.email, session.role, 'Exported Data', 'Exported full catalog as Excel workbook.');
+            
+            const data = [allHeaders, ...rows];
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Catalog');
+            XLSX.writeFile(wb, `thrustvault_catalog_${new Date().toISOString().slice(0,10)}.xlsx`);
+            
+            logUserActivity(session.email, session.role, 'Exported Data', 'Exported full catalog as Excel workbook.');
+        } catch (e) {
+            console.error("Export XLSX failed:", e);
+            alert("Export failed: " + e.message);
+        }
     };
 
     if (elements.btnDownloadTemplate) elements.btnDownloadTemplate.onclick = () => {
@@ -2156,11 +2333,17 @@ document.addEventListener('DOMContentLoaded', () => {
             custom_parameters: customParams
         };
 
-        const isDuplicate = state.motors.some(m => 
-            m.id !== id &&
-            m.company.toLowerCase() === motorData.company.toLowerCase() && 
-            m.motor.toLowerCase() === motorData.motor_name.toLowerCase()
-        );
+        let isDuplicate = false;
+        try {
+            const dupRes = await fetch(`/api/motors?motor_name=eq.${encodeURIComponent(motorData.motor_name)}&company=eq.${encodeURIComponent(motorData.company)}`);
+            if (dupRes.ok) {
+                const dupData = await dupRes.json();
+                isDuplicate = dupData.some(m => m.id !== id);
+            }
+        } catch (err) {
+            console.error("Duplicate check failed:", err);
+        }
+
         if (isDuplicate) {
             alert(`A motor named "${motorData.motor_name}" from manufacturer "${motorData.company}" already exists in the database.`);
             return;
@@ -2462,7 +2645,7 @@ document.addEventListener('DOMContentLoaded', () => {
         openModal(elements.customExportModal);
     };
 
-    if (elements.customExportForm) elements.customExportForm.onsubmit = (e) => {
+    if (elements.customExportForm) elements.customExportForm.onsubmit = async (e) => {
         e.preventDefault();
         const format = document.getElementById('export-format').value;
         const checkedBoxes = Array.from(document.querySelectorAll('#export-columns-selector input[type="checkbox"]:checked')).map(cb => cb.value);
@@ -2472,26 +2655,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        runCustomExport(format, checkedBoxes);
+        await runCustomExport(format, checkedBoxes);
         closeModal(elements.customExportModal);
     };
 
-    function runCustomExport(format, columns) {
-        const cat = state.categories.find(c => c.id === state.activeCategory);
-        let exportMotors = state.motors;
-        if (cat) {
-            exportMotors = exportMotors.filter(m => m.categoryId === cat.id);
-        }
-        
-        if (state.filterCompany !== 'all') {
-            exportMotors = exportMotors.filter(m => m.company === state.filterCompany);
-        }
-        if (state.searchQuery) {
-            const q = state.searchQuery.toLowerCase();
-            exportMotors = exportMotors.filter(m => 
-                m.motor.toLowerCase().includes(q) || 
-                m.company.toLowerCase().includes(q)
-            );
+    async function runCustomExport(format, columns) {
+        let exportMotors = [];
+        try {
+            exportMotors = await fetchExportMotors();
+        } catch (e) {
+            console.error("Custom export fetch failed:", e);
+            alert("Export failed: " + e.message);
+            return;
         }
 
         const headers = [];
@@ -2817,7 +2992,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function exportProfileDatasheet(format) {
         const motorId = state.activeProfileMotorId;
         if (!motorId) return;
-        const m = state.motors.find(x => x.id === motorId);
+        const m = state.activeProfileMotor || state.motors.find(x => x.id === motorId) || (state.compareMotorsCache && state.compareMotorsCache[motorId]);
         if (!m) return;
 
         const cat = state.categories.find(c => c.id === m.categoryId);
@@ -2897,7 +3072,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function exportProfileTestRuns(format) {
         const motorId = state.activeProfileMotorId;
         if (!motorId) return;
-        const m = state.motors.find(x => x.id === motorId);
+        const m = state.activeProfileMotor || state.motors.find(x => x.id === motorId) || (state.compareMotorsCache && state.compareMotorsCache[motorId]);
         if (!m) return;
 
         const runs = state.activeProfileRuns || [];
@@ -3047,6 +3222,28 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    // Bind share button
+    const shareBtn = document.getElementById('btn-profile-share');
+    if (shareBtn) {
+        shareBtn.onclick = () => {
+            const motorName = document.getElementById('profile-motor-name').textContent;
+            const shareUrl = `${window.location.origin}/share/motor/${encodeURIComponent(motorName)}`;
+            navigator.clipboard.writeText(shareUrl)
+                .then(() => {
+                    const originalHTML = shareBtn.innerHTML;
+                    shareBtn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-green-500"></i> Copied!`;
+                    if (window.lucide) window.lucide.createIcons();
+                    setTimeout(() => {
+                        shareBtn.innerHTML = originalHTML;
+                        if (window.lucide) window.lucide.createIcons();
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Failed to copy share link:', err);
+                });
+        };
+    }
+
     // Dropdown triggers logic
     const exportDatasheetToggle = document.getElementById('btn-profile-export-datasheet-toggle');
     const menuDatasheet = document.getElementById('menu-profile-export-datasheet');
@@ -3107,8 +3304,22 @@ document.addEventListener('DOMContentLoaded', () => {
             window.switchChartTab('performance');
         }
 
-        const m = state.motors.find(x => x.id === motorId);
+        let m = state.motors.find(x => x.id === motorId) || (state.compareMotorsCache && state.compareMotorsCache[motorId]);
+        if (!m) {
+            try {
+                const res = await fetch(`/api/motors?id=eq.${motorId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.length > 0) {
+                        m = mapMotor(data[0]);
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching motor profile from server:", err);
+            }
+        }
         if (!m) return;
+        state.activeProfileMotor = m;
 
         if (!skipPushState) {
             history.pushState({ motorId: motorId }, '', '/dashboard/' + encodeURIComponent(m.motor));
@@ -3116,6 +3327,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const overlay = document.getElementById('motor-profile-overlay');
         overlay.style.display = 'flex';
+
+        // Load image preview gallery
+        const profileImageCard = document.getElementById('profile-image-card');
+        const profileMainImage = document.getElementById('profile-main-image');
+        const profileGalleryThumbs = document.getElementById('profile-gallery-thumbnails');
+
+        if (profileImageCard && profileMainImage && profileGalleryThumbs) {
+            const images = [];
+            if (m.mainImage && m.mainImage.startsWith('http')) {
+                images.push(m.mainImage);
+            }
+            
+            let gallery = [];
+            if (Array.isArray(m.galleryImages)) {
+                gallery = m.galleryImages;
+            } else if (typeof m.galleryImages === 'string') {
+                try {
+                    gallery = JSON.parse(m.galleryImages);
+                } catch (e) {}
+            }
+            
+            if (Array.isArray(gallery)) {
+                gallery.forEach(img => {
+                    if (img && img.startsWith('http') && !images.includes(img)) {
+                        images.push(img);
+                    }
+                });
+            }
+
+            if (images.length > 0) {
+                profileImageCard.style.display = 'flex';
+                profileMainImage.src = sanitizeUrl(images[0]);
+                profileMainImage.alt = escapeHTML(m.motor);
+                
+                profileGalleryThumbs.innerHTML = '';
+                if (images.length > 1) {
+                    profileGalleryThumbs.style.display = 'flex';
+                    images.forEach((img, idx) => {
+                        const btn = document.createElement('button');
+                        btn.className = `w-12 h-12 rounded border-2 transition-all overflow-hidden flex-shrink-0 focus:outline-none ${idx === 0 ? 'border-blue-600 dark:border-blue-500' : 'border-transparent hover:border-slate-350'}`;
+                        btn.innerHTML = `<img src="${sanitizeUrl(img)}" class="w-full h-full object-cover">`;
+                        btn.onclick = () => {
+                            profileMainImage.src = sanitizeUrl(img);
+                            // Update border state
+                            Array.from(profileGalleryThumbs.children).forEach((c, cIdx) => {
+                                if (cIdx === idx) {
+                                    c.className = 'w-12 h-12 rounded border-2 transition-all overflow-hidden flex-shrink-0 focus:outline-none border-blue-600 dark:border-blue-500';
+                                } else {
+                                    c.className = 'w-12 h-12 rounded border-2 transition-all overflow-hidden flex-shrink-0 focus:outline-none border-transparent hover:border-slate-350';
+                                }
+                            });
+                        };
+                        profileGalleryThumbs.appendChild(btn);
+                    });
+                } else {
+                    profileGalleryThumbs.style.display = 'none';
+                }
+            } else {
+                profileImageCard.style.display = 'none';
+            }
+        }
 
         document.getElementById('profile-motor-name').textContent = m.motor;
         document.getElementById('profile-brand-badge').textContent = m.company;
@@ -3538,6 +3810,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            loadCachedKpis();
             await fetchData();
         } catch (e) {
             console.error("Initialization failed", e);
@@ -3593,11 +3866,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const searchClear = elements.searchClear;
         if (!searchInput) return;
 
+        let searchDebounceTimeout;
         searchInput.addEventListener('input', (e) => {
             state.searchQuery = e.target.value;
             if (searchClear) searchClear.style.display = state.searchQuery ? 'block' : 'none';
             state.displayLimit = 8;
-            renderMainContent();
+            clearTimeout(searchDebounceTimeout);
+            searchDebounceTimeout = setTimeout(() => {
+                state.currentPage = 1;
+                loadMotorsFromServer();
+            }, 300);
             showSearchSuggestions(state.searchQuery);
         });
 
@@ -3624,7 +3902,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (suggestionsEl) suggestionsEl.style.display = 'none';
                 activeSuggestionIndex = -1;
                 state.displayLimit = 8;
-                renderMainContent();
+                state.currentPage = 1;
+                loadMotorsFromServer();
             });
         }
     }
@@ -3651,26 +3930,61 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let hasCheckedDeepLink = false;
-    function checkUrlForDeepLink() {
+    async function checkUrlForDeepLink() {
         if (hasCheckedDeepLink) return;
         const pathParts = window.location.pathname.split('/');
         const motorNameParam = pathParts[2] ? decodeURIComponent(pathParts[2]) : null;
-        if (motorNameParam && state.motors && state.motors.length > 0) {
-            const m = state.motors.find(x => x.motor.toLowerCase() === motorNameParam.toLowerCase() || `${x.company} ${x.motor}`.toLowerCase() === motorNameParam.toLowerCase());
+        if (motorNameParam) {
+            hasCheckedDeepLink = true;
+            let m = state.motors.find(x => x.motor.toLowerCase() === motorNameParam.toLowerCase() || `${x.company} ${x.motor}`.toLowerCase() === motorNameParam.toLowerCase());
+            if (!m) {
+                try {
+                    const res = await fetch(`/api/motors?motor_name=eq.${encodeURIComponent(motorNameParam)}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.length > 0) {
+                            m = mapMotor(data[0]);
+                        }
+                    }
+                    if (!m) {
+                        const searchRes = await fetch(`/api/motors?limit=1&search=${encodeURIComponent(motorNameParam)}`);
+                        if (searchRes.ok) {
+                            const data = await searchRes.json();
+                            if (data && data.length > 0) {
+                                m = mapMotor(data[0]);
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error loading deep link motor:", err);
+                }
+            }
             if (m) {
-                hasCheckedDeepLink = true;
                 showMotorProfile(m.id, true);
             }
-        } else if (!motorNameParam) {
+        } else {
             hasCheckedDeepLink = true;
         }
     }
 
-    window.addEventListener('popstate', (e) => {
+    window.addEventListener('popstate', async (e) => {
         const pathParts = window.location.pathname.split('/');
         const motorNameParam = pathParts[2] ? decodeURIComponent(pathParts[2]) : null;
         if (motorNameParam) {
-            const m = state.motors.find(x => x.motor.toLowerCase() === motorNameParam.toLowerCase() || `${x.company} ${x.motor}`.toLowerCase() === motorNameParam.toLowerCase());
+            let m = state.motors.find(x => x.motor.toLowerCase() === motorNameParam.toLowerCase() || `${x.company} ${x.motor}`.toLowerCase() === motorNameParam.toLowerCase());
+            if (!m) {
+                try {
+                    const res = await fetch(`/api/motors?motor_name=eq.${encodeURIComponent(motorNameParam)}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.length > 0) {
+                            m = mapMotor(data[0]);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error fetching motor in popstate:", err);
+                }
+            }
             if (m) {
                 showMotorProfile(m.id, true);
             }

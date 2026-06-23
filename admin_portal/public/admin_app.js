@@ -384,7 +384,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 linkMotor: m.link_motor,
                 linkEsc: m.link_esc,
                 linkProp: m.link_propeller,
-                custom_parameters: m.custom_parameters || {}
+                custom_parameters: m.custom_parameters || {},
+                mainImage: m.main_image,
+                galleryImages: m.gallery_images
             }));
 
             // Fetch dynamic schema custom definitions
@@ -917,6 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td><div class="action-links">${linksHtml}</div></td>
                 <td style="text-align: right; vertical-align: middle; white-space: nowrap;">
                     <div class="row-actions">
+                        <button class="btn-share" data-name="${escapeHTML(m.motor)}" title="Share Motor Spec Link"><i data-lucide="share-2" style="width:14px;height:14px;"></i></button>
                         <button class="btn-edit" data-id="${m.id}" title="Edit Specifications"><i data-lucide="edit-2" style="width:14px;height:14px;"></i></button>
                         <button class="btn-delete" data-id="${m.id}" title="Delete Motor"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                     </div>
@@ -999,6 +1002,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderCustomFieldsInMotorForm(m);
                 openModal(elements.motorModal);
                 lucide.createIcons();
+            };
+        });
+
+        // Motor share button click handlers
+        elements.motorsTableBody.querySelectorAll('.btn-share').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const motorName = btn.dataset.name;
+                const shareUrl = `${window.location.origin}/share/motor/${encodeURIComponent(motorName)}`;
+                if (window.showShareModal) {
+                    window.showShareModal('motor', motorName, shareUrl);
+                } else {
+                    navigator.clipboard.writeText(shareUrl).then(() => alert('Link copied to clipboard!'));
+                }
             };
         });
 
@@ -2340,12 +2357,114 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    // Bind share button
+    const shareBtn = document.getElementById('btn-profile-share');
+    if (shareBtn) {
+        shareBtn.onclick = () => {
+            const motorName = document.getElementById('profile-motor-name').textContent;
+            const shareUrl = `${window.location.origin}/share/motor/${encodeURIComponent(motorName)}`;
+            navigator.clipboard.writeText(shareUrl)
+                .then(() => {
+                    const originalHTML = shareBtn.innerHTML;
+                    shareBtn.innerHTML = `<i data-lucide="check" style="width:14px; height:14px; color:#22c55e;"></i> Copied!`;
+                    if (window.lucide) window.lucide.createIcons();
+                    setTimeout(() => {
+                        shareBtn.innerHTML = originalHTML;
+                        if (window.lucide) window.lucide.createIcons();
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Failed to copy share link:', err);
+                });
+        };
+    }
+
+    function escapeHTML(str) {
+        if (!str) return '';
+        return str.toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function sanitizeUrl(url) {
+        if (!url) return '';
+        const clean = url.trim();
+        if (clean.startsWith('javascript:') || clean.startsWith('data:') || clean.startsWith('vbscript:')) {
+            return '';
+        }
+        return clean;
+    }
+
     async function showMotorProfile(motorId) {
         const m = state.motors.find(x => x.id === motorId);
         if (!m) return;
 
         const overlay = document.getElementById('motor-profile-overlay');
         overlay.style.display = 'flex';
+
+        // Load image preview gallery
+        const profileImageCard = document.getElementById('profile-image-card');
+        const profileMainImage = document.getElementById('profile-main-image');
+        const profileGalleryThumbs = document.getElementById('profile-gallery-thumbnails');
+
+        if (profileImageCard && profileMainImage && profileGalleryThumbs) {
+            const images = [];
+            if (m.mainImage && m.mainImage.startsWith('http')) {
+                images.push(m.mainImage);
+            }
+            
+            let gallery = [];
+            if (Array.isArray(m.galleryImages)) {
+                gallery = m.galleryImages;
+            } else if (typeof m.galleryImages === 'string') {
+                try {
+                    gallery = JSON.parse(m.galleryImages);
+                } catch (e) {}
+            }
+            
+            if (Array.isArray(gallery)) {
+                gallery.forEach(img => {
+                    if (img && img.startsWith('http') && !images.includes(img)) {
+                        images.push(img);
+                    }
+                });
+            }
+
+            if (images.length > 0) {
+                profileImageCard.style.display = 'flex';
+                profileMainImage.src = sanitizeUrl(images[0]);
+                profileMainImage.alt = escapeHTML(m.motor);
+                
+                profileGalleryThumbs.innerHTML = '';
+                if (images.length > 1) {
+                    profileGalleryThumbs.style.display = 'flex';
+                    images.forEach((img, idx) => {
+                        const btn = document.createElement('button');
+                        btn.className = `profile-image-thumb-btn ${idx === 0 ? 'active' : ''}`;
+                        btn.innerHTML = `<img src="${sanitizeUrl(img)}">`;
+                        btn.onclick = () => {
+                            profileMainImage.src = sanitizeUrl(img);
+                            // Update border/active state
+                            Array.from(profileGalleryThumbs.children).forEach((c, cIdx) => {
+                                if (cIdx === idx) {
+                                    c.classList.add('active');
+                                } else {
+                                    c.classList.remove('active');
+                                }
+                            });
+                        };
+                        profileGalleryThumbs.appendChild(btn);
+                    });
+                } else {
+                    profileGalleryThumbs.style.display = 'none';
+                }
+            } else {
+                profileImageCard.style.display = 'none';
+            }
+        }
 
         document.getElementById('profile-motor-name').textContent = m.motor;
         document.getElementById('profile-brand-badge').textContent = m.company;

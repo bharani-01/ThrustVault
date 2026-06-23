@@ -92,12 +92,17 @@ async function querySQLiteTable(table, params) {
     const stmt = sqliteDb.prepare(sql);
     const rows = stmt.all(...vals);
 
-    // SQLite returns parsed objects but we need to ensure custom_parameters and extra_data are parsed to JSON objects to match Postgres structure
+    // SQLite returns parsed objects but we need to ensure custom_parameters, gallery_images, and extra_data are parsed to JSON objects to match Postgres structure
     return rows.map(r => {
       const copy = { ...r };
       if (copy.custom_parameters && typeof copy.custom_parameters === 'string') {
         try {
           copy.custom_parameters = JSON.parse(copy.custom_parameters);
+        } catch (e) {}
+      }
+      if (copy.gallery_images && typeof copy.gallery_images === 'string') {
+        try {
+          copy.gallery_images = JSON.parse(copy.gallery_images);
         } catch (e) {}
       }
       if (copy.extra_data && typeof copy.extra_data === 'string') {

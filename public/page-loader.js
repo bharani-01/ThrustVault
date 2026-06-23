@@ -55,6 +55,7 @@
     // Detect if page has a sidebar (all routes except landing, login, and access request)
     const hasSidebar = path.includes('/admin/') || path.includes('/user/') || path.includes('/guest/') ||
                        path.includes('dashboard') || path.includes('analytics') || path.includes('explorer') ||
+                       path.includes('finder') ||
                        path.includes('users') || path.includes('requests') || path.includes('schema') ||
                        path.includes('exports') || path.includes('imports') || path.includes('audit');
     const transitionSelector = hasSidebar ? '.main-content-wrapper' : 'body';
@@ -191,7 +192,7 @@
         }
     `;
     document.documentElement.appendChild(style);
-    document.documentElement.classList.add('tv-loading-state');
+    // document.documentElement.classList.add('tv-loading-state');
 
     // State trackers
     let progressInterval = null;
@@ -318,6 +319,7 @@
     // 3. Initialize loader components on DOMContentLoaded
     document.addEventListener('DOMContentLoaded', () => {
         // Inject progress bar
+        /*
         const pb = document.createElement('div');
         pb.id = 'tv-progress-bar';
         document.body.appendChild(pb);
@@ -344,6 +346,7 @@
         loaderContainer.appendChild(overlay);
 
         startProgress(pb);
+        */
 
         // Sidebar handler
         const sidebarEl = document.querySelector('.sidebar');
@@ -551,6 +554,7 @@
         // 3b. Background session validation check
         const isProtectedRoute = path.includes('/admin/') || path.includes('/user/') || path.includes('/guest/') ||
                                  path.includes('dashboard') || path.includes('analytics') || path.includes('explorer') ||
+                                 path.includes('finder') ||
                                  path.includes('users') || path.includes('requests') || path.includes('schema') ||
                                  path.includes('exports') || path.includes('imports') || path.includes('audit');
         
@@ -608,7 +612,8 @@
     window.addEventListener('load', revealPage);
     setTimeout(revealPage, 800);
 
-    // 5. Intercept link navigation to trigger slide-out animations
+    // 5. Intercept link navigation (Disabled to remove custom loading transitions)
+    /*
     document.addEventListener('click', (e) => {
         const anchor = e.target.closest('a');
         if (!anchor) return;
@@ -655,6 +660,7 @@
             const textEl = overlay.querySelector('.tv-loader-text');
             if (textEl) {
                 if (href.includes('analytics')) textEl.textContent = 'Analyzing Curation Matrix';
+                else if (href.includes('finder')) textEl.textContent = 'Configuring Propulsion Matrix';
                 else if (href.includes('users')) textEl.textContent = 'Syncing Profile Registry';
                 else if (href.includes('requests')) textEl.textContent = 'Retrieving Credentials';
                 else if (href.includes('schema')) textEl.textContent = 'Parsing Template Columns';
@@ -682,6 +688,7 @@
             }, 200);
         }
     });
+    */
 
     // 6. Handle back-forward cache restores
     window.addEventListener('pageshow', (event) => {

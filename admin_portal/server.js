@@ -61,7 +61,9 @@ const tableMap = {
   'user_onboarding': 'user_onboarding',
   'user-onboarding': 'user_onboarding',
   'system_settings': 'system_settings',
-  'system-settings': 'system_settings'
+  'system-settings': 'system_settings',
+  'escs': 'escs',
+  'propellers': 'propellers'
 };
 
 // Route security middleware checking for active session + 'admin' role
@@ -116,6 +118,8 @@ app.get('/admin/exports', (req, res) => res.sendFile(path.join(__dirname, 'publi
 app.get('/admin/imports', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin_imports.html')));
 app.get('/admin/analytics', (req, res) => res.sendFile(path.join(__dirname, 'public', 'performance_analytics.html')));
 app.get('/admin/explorer', (req, res) => res.sendFile(path.join(__dirname, 'public', 'motor_explorer.html')));
+app.get(['/admin/escs', '/admin/escs/:model', '/admin/esc/:model'], (req, res) => res.sendFile(path.join(__dirname, 'public', 'esc_explorer.html')));
+app.get(['/admin/propellers', '/admin/propellers/:model', '/admin/propeller/:model'], (req, res) => res.sendFile(path.join(__dirname, 'public', 'propeller_explorer.html')));
 
 // ── Authentication APIs ──────────────────────────────────────────────────────────
 

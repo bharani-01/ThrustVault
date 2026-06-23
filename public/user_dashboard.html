@@ -690,8 +690,8 @@
                     <span id="category-top-company">0</span>
                 </div>
 
-                <!-- High-Performance Metrics Dashboard Row (5 Cards) -->
-                <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                <!-- High-Performance Metrics Dashboard Row (4 Cards) -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <!-- Total Motors -->
                     <div class="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/80 shadow-sm rounded-xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300" id="kpi-total-motors">
                         <div class="flex justify-between items-start">
@@ -706,17 +706,17 @@
                         </div>
                     </div>
 
-                    <!-- Average Thrust -->
+                    <!-- Min-Max Thrust -->
                     <div class="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/80 shadow-sm rounded-xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300" id="kpi-avg-thrust">
                         <div class="flex justify-between items-start">
-                            <span class="text-slate-500 dark:text-slate-400 font-label-mono text-[11px] font-semibold uppercase tracking-wider">Avg Thrust</span>
+                            <span class="text-slate-500 dark:text-slate-400 font-label-mono text-[11px] font-semibold uppercase tracking-wider">Min-Max Thrust</span>
                             <div class="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-1.5"><i data-lucide="activity" class="w-4 h-4"></i></div>
                         </div>
                         <div class="mt-4">
                             <div class="text-2xl md:text-3xl font-extrabold text-[#001e40] dark:text-slate-100 tracking-tight" id="kpi-avg-thrust-val">
                                 <span class="h-8 w-20 bg-slate-200 dark:bg-slate-800 rounded animate-pulse inline-block"></span>
                             </div>
-                            <span class="text-xs text-slate-400 font-medium mt-1 block">Thrust mean value</span>
+                            <span class="text-xs text-slate-400 font-medium mt-1 block">Thrust range</span>
                         </div>
                     </div>
 
@@ -747,20 +747,6 @@
                             <span class="text-xs text-slate-400 font-medium mt-1 block">Supported LiPo cells</span>
                         </div>
                     </div>
-
-                    <!-- Data Integrity -->
-                    <div class="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/80 shadow-sm rounded-xl p-4 md:p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300" id="kpi-completeness">
-                        <div class="flex justify-between items-start">
-                            <span class="text-slate-500 dark:text-slate-400 font-label-mono text-[11px] font-semibold uppercase tracking-wider">Data Integrity</span>
-                            <div class="text-purple-500 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 rounded-lg p-1.5"><i data-lucide="check-circle" class="w-4 h-4"></i></div>
-                        </div>
-                        <div class="mt-4">
-                            <div class="text-2xl md:text-3xl font-extrabold text-[#001e40] dark:text-slate-100 tracking-tight" id="kpi-completeness-val">
-                                <span class="h-8 w-16 bg-slate-200 dark:bg-slate-800 rounded animate-pulse inline-block"></span>
-                            </div>
-                            <span class="text-xs text-slate-400 font-medium mt-1 block">Spec completeness</span>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Hidden inputs/labels to support dynamic script calls -->
@@ -776,9 +762,6 @@
                             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 border-b border-slate-100 dark:border-slate-800 pb-4">
                                 <div class="flex items-center gap-3">
                                     <h3 class="font-extrabold text-[#001e40] dark:text-slate-100 text-[17px]">Motor Specifications</h3>
-                                    <span id="filtered-count-badge" class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                                        0 displayed
-                                    </span>
                                 </div>
                                 <div class="flex flex-wrap items-center gap-3">
                                     <!-- Brand Filter dropdown -->
@@ -1257,9 +1240,14 @@
     <div class="motor-profile-overlay fixed inset-0 bg-white dark:bg-slate-950 z-[1000] flex-col overflow-y-auto" id="motor-profile-overlay" style="display: none;">
         <!-- Header bar -->
         <div class="bg-white dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800 shadow-sm sticky top-0 z-50 px-6 md:px-12 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <button class="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider hover:text-[#003366] dark:hover:text-[#a7c8ff] transition-colors focus:outline-none" id="btn-profile-back">
-                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Catalog
-            </button>
+            <div class="flex items-center gap-4">
+                <button class="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider hover:text-[#003366] dark:hover:text-[#a7c8ff] transition-colors focus:outline-none" id="btn-profile-back">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Catalog
+                </button>
+                <button class="flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 font-label-mono uppercase tracking-wider hover:text-[#003366] dark:hover:text-[#a7c8ff] transition-colors focus:outline-none border border-blue-200 dark:border-blue-900/50 rounded px-2.5 py-1 bg-blue-50/50 dark:bg-blue-950/10" id="btn-profile-share">
+                    <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share
+                </button>
+            </div>
             
             <!-- Multiple Export Dropdowns Menu -->
             <div class="flex items-center gap-3 justify-center">
@@ -1322,6 +1310,14 @@
         <div class="max-w-[1800px] w-full mx-auto px-6 md:px-12 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10 blueprint-grid flex-1">
             <!-- Left Column: Motor Specs (4 cols) -->
             <div class="lg:col-span-4 flex flex-col gap-6">
+                <!-- Image Gallery Card -->
+                <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-xl p-5 hover:shadow-md transition-shadow duration-300 flex flex-col gap-4" id="profile-image-card" style="display: none;">
+                    <div class="w-full aspect-square bg-slate-50 dark:bg-slate-950 rounded-lg overflow-hidden flex items-center justify-center border border-slate-200/40 dark:border-slate-800/80">
+                        <img id="profile-main-image" src="" alt="Motor Spec Image" class="w-full h-full object-contain">
+                    </div>
+                    <div id="profile-gallery-thumbnails" class="flex gap-2 mt-3 overflow-x-auto py-1 justify-center"></div>
+                </div>
+
                 <!-- Core specs -->
                 <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-xl p-5 hover:shadow-md transition-shadow duration-300">
                     <h3 class="font-bold text-[#001e40] dark:text-slate-100 text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5 uppercase font-sans tracking-wide">
@@ -1526,6 +1522,7 @@
     </div>>
 
     <!-- App JavaScript Controller Scripts -->
+    <script src="share_modal.js"></script>
     <script src="user_app.js?v=2.2"></script>
     <script src="onboarding.js"></script>
     <script src="ai_copilot.js"></script>

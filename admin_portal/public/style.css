@@ -455,7 +455,9 @@ button:active { transform: scale(0.98); }
 .action-links a.disabled { color: #cbd5e1; pointer-events: none; }
 
 .row-actions { display: inline-flex; gap: 10px; justify-content: flex-end; align-items: center; vertical-align: middle; }
-.btn-edit, .btn-delete { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 4px; }
+.btn-edit, .btn-delete, .btn-share { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 4px; }
+.btn-share { color: var(--text-muted); }
+.btn-share:hover { background: #eff6ff; color: var(--primary-color); }
 .btn-edit { color: var(--accent-color); }
 .btn-edit:hover { background: #eff6ff; }
 .btn-delete { color: var(--danger-color); }

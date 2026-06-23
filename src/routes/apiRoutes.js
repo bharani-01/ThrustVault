@@ -31,6 +31,14 @@ router.get('/custom-specs', requireRole('admin', 'user'), dataController.getCust
 router.post('/custom-specs', requireRole('admin', 'user'), dataController.createCustomSpec);
 router.delete('/custom-specs/:id', requireRole('admin', 'user'), dataController.deleteCustomSpec);
 
+// ESCs routes
+router.get('/escs', requireRole('admin', 'user'), dataController.getEscs);
+router.post('/escs', requireRole('admin', 'user'), dataController.createEsc);
+
+// Propellers routes
+router.get('/propellers', requireRole('admin', 'user'), dataController.getPropellers);
+router.post('/propellers', requireRole('admin', 'user'), dataController.createPropeller);
+
 // Onboarding routes
 router.get('/onboarding', requireRole('admin', 'user'), dataController.getOnboarding);
 router.post('/onboarding', requireRole('admin', 'user'), dataController.saveOnboarding);

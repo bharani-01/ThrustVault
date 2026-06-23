@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Shared Specifications | ThrustVault</title>
+    
+    <link rel="icon" type="image/webp" href="/favicon_light.webp" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/webp" href="/favicon_dark.webp" media="(prefers-color-scheme: dark)">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="/libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
+    <!-- Chart.js (used for Motor Telemetry) -->
+    <script src="/libs/chart.umd.js" onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/chart.js';"></script>
+
+    <!-- Tailwind CSS with Forms and Container Queries -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            800: "#1c1c1e",
+                            850: "#111111",
+                            900: "#0c0c0c",
+                            950: "#000000"
+                        },
+                        "primary-container": "#003366",
+                        "surface-container-high": "#e7e8e9",
+                        "tertiary": "#381300",
+                        "surface-bright": "#f8f9fa",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "inverse-surface": "#2e3132",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#001b3c",
+                        "on-surface": "#191c1d",
+                        "surface-container-low": "#f3f4f5",
+                        "tertiary-fixed": "#ffdbca",
+                        "background": "#f8f9fa",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb690",
+                        "surface-container-highest": "#e1e3e4",
+                        "surface-tint": "#3a5f94",
+                        "inverse-primary": "#a7c8ff",
+                        "on-tertiary-fixed-variant": "#723610",
+                        "outline-variant": "#c3c6d1",
+                        "on-surface-variant": "#43474f",
+                        "outline": "#737780",
+                        "secondary": "#505f76",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "on-tertiary-container": "#d8885c",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#a7c8ff",
+                        "secondary-container": "#d0e1fb",
+                        "primary-fixed": "#d5e3ff",
+                        "secondary-fixed": "#d3e4fe",
+                        "surface-container": "#edeeef",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "on-secondary-fixed": "#0b1c30",
+                        "inverse-on-surface": "#f0f1f2",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#54647a",
+                        "on-background": "#191c1d",
+                        "on-primary-container": "#799dd6",
+                        "on-error-container": "#93000a",
+                        "primary": "#001e40",
+                        "surface-dim": "#d9dadb",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#592300",
+                        "on-tertiary-fixed": "#341100",
+                        "surface": "#f8f9fa",
+                        "surface-variant": "#e1e3e4"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    }
+                }
+            }
+        };
+    </script>
+    
+    <link rel="stylesheet" href="/style.css?v=2.2">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .blueprint-grid {
+            background-image: linear-gradient(rgba(0, 51, 102, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 51, 102, 0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+        [data-theme="dark"] .blueprint-grid {
+            background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        }
+        .theme-toggle-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .theme-toggle-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--primary-color);
+        }
+        [data-theme="dark"] .theme-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #60a5fa;
+        }
+    </style>
+    
+    <script>
+        // Init theme immediately before loading DOM to avoid flickering
+        const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+</head>
+<body class="bg-[#f8f9fa] dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col relative selection:bg-[#003366] selection:text-white">
+    <!-- Blueprint Grid Background Shader -->
+    <div class="fixed inset-0 w-full h-full pointer-events-none blueprint-grid z-0"></div>
+
+    <div class="relative z-10 flex flex-col flex-1">
+        <!-- Header Bar -->
+        <header class="w-full h-[70px] bg-white dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/80 shadow-sm flex items-center justify-between px-6 md:px-12 sticky top-0 z-50">
+            <a href="/demo/dashboard" class="flex items-center gap-3" style="text-decoration: none;">
+                <img src="/logo_light.webp" alt="ThrustVault Logo" class="h-8 block dark:hidden">
+                <img src="/logo_dark.webp" alt="ThrustVault Logo" class="h-8 hidden dark:block">
+            </a>
+            
+            <div class="flex items-center gap-4">
+                <!-- Theme Toggle -->
+                <button class="theme-toggle-btn" id="btn-theme-toggle" title="Toggle Theme">
+                    <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
+                    <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
+                </button>
+                
+                <a href="/demo/dashboard" class="btn-primary flex items-center gap-2" style="font-size: 0.85rem; padding: 8px 16px; border-radius: 8px; text-decoration: none;">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col items-center justify-center p-4 md:p-8 max-w-7xl w-full mx-auto">
+            <!-- Loading Indicator -->
+            <div id="loading-state" class="flex flex-col items-center justify-center py-20">
+                <div class="w-12 h-12 border-4 border-[#003366] border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-sm text-slate-500 dark:text-slate-400 font-medium mt-4">Retrieving shared specifications...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="error-state" class="hidden flex-col items-center justify-center py-20 text-center max-w-md" style="display: none;">
+                <i data-lucide="alert-triangle" class="w-16 h-16 text-rose-500 mb-4 animate-bounce"></i>
+                <h2 class="text-xl font-extrabold text-slate-900 dark:text-slate-100">Failed to Load Specifications</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-2" id="error-message">The link may be broken or the item might have been deleted.</p>
+                <a href="/demo/dashboard" class="btn-primary mt-6 flex items-center gap-2" style="text-decoration: none;">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Return to Safety
+                </a>
+            </div>
+
+            <!-- Shared Item Content -->
+            <div id="shared-content" class="hidden w-full flex-col gap-6" style="display: none;">
+                <!-- Main Header Badge Card -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-2xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span id="item-type-badge" class="px-2.5 py-0.5 rounded text-[11px] font-bold font-label-mono uppercase tracking-wider bg-[#003366]/10 dark:bg-blue-950/40 text-[#003366] dark:text-[#a7c8ff] inline-block">
+                                Motor
+                            </span>
+                            <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">Public Access Specs</span>
+                        </div>
+                        <h1 id="item-name" class="text-2xl md:text-3xl font-extrabold text-[#001e40] dark:text-white tracking-tight">Emax Eco II 2207 KV1900</h1>
+                        <p id="item-sub" class="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">Manufactured by <span class="font-bold text-[#001e40] dark:text-slate-200" id="item-brand">Emax</span></p>
+                    </div>
+                </div>
+
+                <!-- Specs Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
+                    <!-- Left Spec Drawer Section (4 cols) -->
+                    <div class="lg:col-span-4 flex flex-col gap-6">
+                        <!-- Specifications details -->
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-2xl p-5">
+                            <h3 class="font-bold text-[#001e40] dark:text-white text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5 uppercase tracking-wide">
+                                <i data-lucide="info" class="w-5 h-5 text-[#003366] dark:text-blue-400"></i>
+                                General Specs
+                            </h3>
+                            <table class="w-full text-xs border-collapse">
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-300 font-medium" id="specs-table-body">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Custom parameters -->
+                        <div id="custom-parameters-card" class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-2xl p-5" style="display: none;">
+                            <h3 class="font-bold text-[#001e40] dark:text-white text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5 uppercase tracking-wide">
+                                <i data-lucide="sliders" class="w-5 h-5 text-[#003366] dark:text-blue-400"></i>
+                                Custom Parameters
+                            </h3>
+                            <table class="w-full text-xs border-collapse">
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-300 font-medium" id="custom-specs-table-body">
+                                    <!-- Dynamic custom content -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Document links -->
+                        <div id="documentation-card" class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-2xl p-5" style="display: none;">
+                            <h3 class="font-bold text-[#001e40] dark:text-white text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5 uppercase tracking-wide">
+                                <i data-lucide="link" class="w-5 h-5 text-[#003366] dark:text-blue-400"></i>
+                                Links & Resources
+                            </h3>
+                            <div class="flex flex-col gap-2.5" id="links-container">
+                                <!-- Dynamic links -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Main Content Section (8 cols) -->
+                    <div class="lg:col-span-8 flex flex-col gap-6" id="right-column-container">
+                        <!-- MOTOR SPECIFIC SECTION -->
+                        <div id="motor-telemetry-section" class="flex flex-col gap-6 w-full" style="display: none;">
+                            <!-- Summary stats -->
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-2xl p-5">
+                                <h3 class="font-bold text-[#001e40] dark:text-white text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5 uppercase tracking-wide">
+                                    <i data-lucide="activity" class="w-5 h-5 text-[#003366] dark:text-blue-400"></i>
+                                    Telemetry Summary
+                                </h3>
+                                <div class="grid grid-cols-3 gap-3 text-center">
+                                    <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200/40 dark:border-slate-850 p-4 rounded-xl">
+                                        <span class="block text-slate-400 dark:text-slate-500 text-[10px] font-semibold font-label-mono uppercase tracking-wider">Telemetry Runs</span>
+                                        <span class="text-2xl font-extrabold text-[#001e40] dark:text-slate-100 mt-1 block" id="telemetry-runs-count">0</span>
+                                    </div>
+                                    <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200/40 dark:border-slate-850 p-4 rounded-xl">
+                                        <span class="block text-slate-400 dark:text-slate-500 text-[10px] font-semibold font-label-mono uppercase tracking-wider">Peak Thrust</span>
+                                        <span class="text-lg md:text-xl font-extrabold text-[#001e40] dark:text-slate-100 mt-1 block leading-normal" id="telemetry-max-thrust">-</span>
+                                    </div>
+                                    <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200/40 dark:border-slate-850 p-4 rounded-xl">
+                                        <span class="block text-slate-400 dark:text-slate-500 text-[10px] font-semibold font-label-mono uppercase tracking-wider">Max Efficiency</span>
+                                        <span class="text-lg md:text-xl font-extrabold text-[#001e40] dark:text-slate-100 mt-1 block leading-normal" id="telemetry-max-eff">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Telemetry Runs List -->
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-2xl p-5">
+                                <h3 class="font-bold text-[#001e40] dark:text-white text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5 uppercase tracking-wide">
+                                    <i data-lucide="history" class="w-5 h-5 text-[#003366] dark:text-blue-400"></i>
+                                    Telemetry Runs Catalog
+                                </h3>
+                                <div class="flex flex-col gap-2 max-h-40 overflow-y-auto text-sm" id="telemetry-runs-list">
+                                    <!-- List of test runs -->
+                                </div>
+                            </div>
+
+                            <!-- Active Telemetry Details -->
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-2xl p-5 flex flex-col" id="telemetry-details-card" style="display: none;">
+                                <div class="border-b border-slate-100 dark:border-slate-800 pb-3.5 mb-5">
+                                    <h4 class="font-extrabold text-[#001e40] dark:text-white text-[15px]" id="telemetry-active-title">Telemetry Run Details</h4>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1" id="telemetry-active-meta"></p>
+                                </div>
+
+                                <!-- Charts Grid -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div class="border border-slate-250/30 dark:border-slate-800/80 p-3 rounded-lg flex flex-col h-56 bg-slate-50/40 dark:bg-slate-950/40">
+                                        <h5 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">Throttle vs Time</h5>
+                                        <div class="flex-1 min-h-0 relative"><canvas id="chartThrottleTime"></canvas></div>
+                                    </div>
+                                    <div class="border border-slate-250/30 dark:border-slate-800/80 p-3 rounded-lg flex flex-col h-56 bg-slate-50/40 dark:bg-slate-950/40">
+                                        <h5 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">Thrust vs RPM</h5>
+                                        <div class="flex-1 min-h-0 relative"><canvas id="chartThrustRpm"></canvas></div>
+                                    </div>
+                                    <div class="border border-slate-250/30 dark:border-slate-800/80 p-3 rounded-lg flex flex-col h-56 bg-slate-50/40 dark:bg-slate-950/40">
+                                        <h5 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">Current vs RPM</h5>
+                                        <div class="flex-1 min-h-0 relative"><canvas id="chartCurrentRpm"></canvas></div>
+                                    </div>
+                                    <div class="border border-slate-250/30 dark:border-slate-800/80 p-3 rounded-lg flex flex-col h-56 bg-slate-50/40 dark:bg-slate-950/40">
+                                        <h5 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">System Efficiency vs RPM</h5>
+                                        <div class="flex-1 min-h-0 relative"><canvas id="chartSystemEffRpm"></canvas></div>
+                                    </div>
+                                </div>
+
+                                <!-- Raw Telemetry Rows -->
+                                <div class="mt-6 border-t border-slate-100 dark:border-slate-800 pt-5">
+                                    <h5 class="font-bold text-[#001e40] dark:text-white text-sm mb-3">Raw Telemetry Log</h5>
+                                    <div class="overflow-x-auto w-full">
+                                        <table class="w-full text-xs text-left border-collapse">
+                                            <thead>
+                                                <tr class="border-b border-slate-250 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-label-mono uppercase tracking-wider">
+                                                    <th class="py-2.5 px-3">Throttle (%)</th>
+                                                    <th class="py-2.5 px-3">Voltage (V)</th>
+                                                    <th class="py-2.5 px-3">Current (A)</th>
+                                                    <th class="py-2.5 px-3">Power (W)</th>
+                                                    <th class="py-2.5 px-3">Thrust (g)</th>
+                                                    <th class="py-2.5 px-3">RPM</th>
+                                                    <th class="py-2.5 px-3">Efficiency (g/W)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="telemetry-rows" class="divide-y divide-slate-150 dark:divide-slate-800/60 text-[#001e40] dark:text-slate-200 font-medium">
+                                                <!-- Rows injected -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Empty Telemetry State -->
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-2xl p-10 flex flex-col items-center justify-center text-center" id="telemetry-empty-state">
+                                <i data-lucide="database-backup" class="w-12 h-12 text-slate-350 dark:text-slate-600 mb-4 animate-pulse"></i>
+                                <h4 class="font-bold text-[#001e40] dark:text-white text-[15px]">No Recorded Telemetry Data</h4>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 max-w-sm">This motor profile contains no registered telemetry test data in the public cloud catalog.</p>
+                            </div>
+                        </div>
+
+                        <!-- ESC/PROPELLER SPECIFIC SECTION -->
+                        <div id="general-info-section" class="flex flex-col gap-6 w-full" style="display: none;">
+                            <!-- Description Card -->
+                            <div id="info-desc-card" class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-2xl p-5" style="display: none;">
+                                <h3 class="font-bold text-[#001e40] dark:text-white text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5 uppercase tracking-wide">
+                                    <i data-lucide="file-text" class="w-5 h-5 text-[#003366] dark:text-blue-400"></i>
+                                    Product Description
+                                </h3>
+                                <div id="info-desc-text" class="text-sm leading-relaxed text-slate-600 dark:text-slate-300 whitespace-pre-line">
+                                    <!-- Filled dynamically -->
+                                </div>
+                            </div>
+
+                            <!-- Product Gallery -->
+                            <div id="info-gallery-card" class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-2xl p-5" style="display: none;">
+                                <h3 class="font-bold text-[#001e40] dark:text-white text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5 uppercase tracking-wide">
+                                    <i data-lucide="image" class="w-5 h-5 text-[#003366] dark:text-blue-400"></i>
+                                    Product Gallery
+                                </h3>
+                                <div id="info-gallery-container" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <!-- Images dynamically injected -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="w-full py-6 mt-12 border-t border-slate-200/50 dark:border-slate-800 text-center text-xs text-slate-400">
+            &copy; 2026 ThrustVault Propulsion Intelligence Hub. All rights reserved.
+        </footer>
+    </div>
+
+    <!-- Page Logic Script -->
+    <script src="/share_app.js?v=2.2"></script>
+</body>
+</html>
