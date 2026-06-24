@@ -52,15 +52,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeView = document.getElementById(viewId);
         if (activeView) {
             activeView.style.display = 'block';
-            // Force reflow
-            activeView.offsetHeight;
+            activeView.offsetHeight; // Force reflow
             activeView.classList.add('active');
         }
 
-        if (title) document.getElementById('login-card-title').innerHTML = title;
-        if (subtitle) document.getElementById('login-card-subtitle').textContent = subtitle;
-
-        if (window.lucide) window.lucide.createIcons();
+        const titleEl    = document.getElementById('login-card-title');
+        const subtitleEl = document.getElementById('login-card-subtitle');
+        if (title    && titleEl)    titleEl.innerHTML       = title;
+        if (subtitle && subtitleEl) subtitleEl.textContent  = subtitle;
     }
 
     // Caps Lock Warning Handler
@@ -68,21 +67,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const warning = document.getElementById(warningId);
         if (!warning) return;
         if (e.getModifierState && e.getModifierState('CapsLock')) {
-            warning.style.display = 'flex';
+            warning.classList.add('show');
         } else {
-            warning.style.display = 'none';
+            warning.classList.remove('show');
         }
     };
 
     const clearCapsLock = (warningId) => {
         const warning = document.getElementById(warningId);
-        if (warning) warning.style.display = 'none';
+        if (warning) warning.classList.remove('show');
     };
 
     const pwFields = [
-        { id: 'login-password', warn: 'caps-warning-login-password' },
-        { id: 'reset-password', warn: 'caps-warning-reset-password' },
-        { id: 'reset-password-confirm', warn: 'caps-warning-reset-password-confirm' }
+        { id: 'login-password',        warn: 'caps-warning-login' },
+        { id: 'reset-password',        warn: 'caps-warning-reset' },
+        { id: 'reset-password-confirm', warn: 'caps-warning-reset-confirm' }
     ];
 
     pwFields.forEach(field => {
@@ -118,24 +117,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const resetPwInput = document.getElementById('reset-password');
-    const resetPwStrength = document.getElementById('strength-reset-password');
+    const resetPwInput    = document.getElementById('reset-password');
+    const resetPwStrength  = document.getElementById('strength-container');
     if (resetPwInput && resetPwStrength) {
-        const fill = resetPwStrength.querySelector('.strength-bar-fill');
-        const text = resetPwStrength.querySelector('.strength-label-text');
+        const fill = document.getElementById('strength-fill');
+        const text = document.getElementById('strength-text');
 
         resetPwInput.addEventListener('input', () => {
             const val = resetPwInput.value;
             if (!val) {
-                resetPwStrength.style.display = 'none';
+                resetPwStrength.classList.remove('show');
                 return;
             }
-            resetPwStrength.style.display = 'flex';
+            resetPwStrength.classList.add('show');
             const res = evaluateStrength(val);
-            fill.style.width = res.width;
-            fill.style.backgroundColor = res.color;
-            text.textContent = res.text;
-            text.style.color = res.color;
+            if (fill) { fill.style.width = res.width; fill.style.backgroundColor = res.color; }
+            if (text) { text.textContent = res.text; text.style.color = res.color; }
         });
     }
 
@@ -144,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (linkGotoForgot) {
         linkGotoForgot.onclick = (e) => {
             e.preventDefault();
-            switchView('view-forgot-email', 'Forgot <span>Password</span>', 'Enter your email to request a verification OTP code.');
+            switchView('view-forgot-email', 'Forgot <span>Password</span>', 'Enter your email to receive a verification code.');
         };
     }
 
@@ -181,10 +178,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert("Login failed: " + (data.error || "Unknown error"));
                 submitBtn.disabled = false;
                 submitBtn.classList.remove('loading');
-                submitBtn.innerHTML = 'Sign In <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>';
+                submitBtn.innerHTML = 'Sign In <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
                 emailInput.disabled = false;
                 passwordInput.disabled = false;
-                if (window.lucide) window.lucide.createIcons();
                 return;
             }
 

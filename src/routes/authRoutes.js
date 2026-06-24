@@ -10,4 +10,8 @@ router.post('/forgot-password', authController.forgotPassword);
 router.post('/verify-otp', authController.verifyOtp);
 router.post('/reset-password', authController.resetPassword);
 
+// Google / Cognito federation
+router.get('/google', authController.googleOAuthRedirect);
+router.get('/cognito/callback', authController.cognitoCallback);
+
 module.exports = router;

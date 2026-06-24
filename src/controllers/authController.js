@@ -1,5 +1,6 @@
 'use strict';
 const crypto = require('crypto');
+const https  = require('https');
 const pool = require('../config/db');
 const {
   cognito,
@@ -52,9 +53,28 @@ async function login(req, res) {
 
     const role = normaliseRole(profile.role);
 
-    // Sync PostgreSQL user profile ID if needed
+    // Sync PostgreSQL user profile ID if needed (post-restore: auth.users may be missing this UID)
     if (profile.id !== uid) {
-      pool.query('UPDATE user_profiles SET id = $1 WHERE email = $2', [uid, email]).catch(console.error);
+      (async () => {
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+          // Ensure auth.users row exists for this Cognito UID before updating the FK
+          await client.query(`
+            INSERT INTO auth.users (id, email)
+            VALUES ($1, $2)
+            ON CONFLICT (id) DO NOTHING
+          `, [uid, email]);
+          await client.query('UPDATE user_profiles SET id = $1 WHERE email = $2', [uid, email]);
+          await client.query('COMMIT');
+          console.log(`[Auth Sync] Synced Cognito UID for ${email}`);
+        } catch (syncErr) {
+          await client.query('ROLLBACK');
+          console.error('[Auth Sync] Failed to sync user ID:', syncErr.message);
+        } finally {
+          client.release();
+        }
+      })();
     }
 
     setSession(req, { email, role, uid, token: accessToken });
@@ -125,6 +145,120 @@ async function resetPassword(req, res) {
   } catch (e) { res.status(400).json({ error: e.message }); }
 }
 
+// ── Google / Cognito Federation ───────────────────────────────────────────────
+
+function googleOAuthRedirect(req, res) {
+  const domain      = process.env.COGNITO_DOMAIN;
+  const clientId    = process.env.COGNITO_CLIENT_ID;
+  const baseUrl     = process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 8000}`;
+  const redirectUri = encodeURIComponent(`${baseUrl}/api/auth/cognito/callback`);
+  const scopes      = encodeURIComponent('email openid profile');
+
+  const url = `${domain}/oauth2/authorize` +
+    `?identity_provider=Google` +
+    `&redirect_uri=${redirectUri}` +
+    `&response_type=code` +
+    `&client_id=${clientId}` +
+    `&scope=${scopes}`;
+
+  res.redirect(url);
+}
+
+async function cognitoCallback(req, res) {
+  const { code, error } = req.query;
+
+  if (error || !code) {
+    console.error('[Cognito Callback] Error from Cognito:', error);
+    return res.redirect('/login?error=google_cancelled');
+  }
+
+  try {
+    const domain       = process.env.COGNITO_DOMAIN;
+    const clientId     = process.env.COGNITO_CLIENT_ID;
+    const clientSecret = process.env.COGNITO_CLIENT_SECRET;
+    const baseUrl      = process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 8000}`;
+    const redirectUri  = `${baseUrl}/api/auth/cognito/callback`;
+
+    // Exchange authorization code for tokens
+    const tokenData = await exchangeCodeForTokens({ domain, clientId, clientSecret, redirectUri, code });
+    const { id_token } = tokenData;
+    if (!id_token) throw new Error('No id_token returned from Cognito');
+
+    // Decode JWT payload (base64url) — Cognito already validated via HTTPS
+    const payloadB64 = id_token.split('.')[1];
+    const payload    = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+
+    const email = payload.email;
+    const uid   = payload.sub;
+    if (!email) throw new Error('No email in Cognito ID token');
+
+    // Look up or auto-provision user in user_profiles with 'user' role
+    let profile = await getProfileFromDB(email);
+    if (!profile) {
+      const username = email.split('@')[0] + '_' + uid.substring(0, 4);
+      await pool.query(
+        `INSERT INTO public.user_profiles (id, email, role, username, created_at)
+         VALUES ($1, $2, 'user', $3, NOW())
+         ON CONFLICT (email) DO NOTHING`,
+        [uid, email, username]
+      );
+      profile = await getProfileFromDB(email);
+    }
+
+    if (!profile) throw new Error('Failed to resolve user profile');
+
+    const role = normaliseRole(profile.role);
+    setSession(req, { email, role, uid, token: id_token });
+
+    console.log(`[Google SSO] Signed in: ${email} (${role})`);
+    res.redirect('/dashboard');
+
+  } catch (err) {
+    console.error('[Cognito Callback] Error:', err.message);
+    res.redirect('/login?error=google_failed');
+  }
+}
+
+function exchangeCodeForTokens({ domain, clientId, clientSecret, redirectUri, code }) {
+  return new Promise((resolve, reject) => {
+    const body = new URLSearchParams({
+      grant_type:   'authorization_code',
+      client_id:    clientId,
+      redirect_uri: redirectUri,
+      code,
+    }).toString();
+
+    const auth    = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const url     = new URL(`${domain}/oauth2/token`);
+    const options = {
+      hostname: url.hostname,
+      port: 443,
+      path: url.pathname,
+      method: 'POST',
+      headers: {
+        'Content-Type':   'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(body),
+        'Authorization':  `Basic ${auth}`,
+      },
+    };
+
+    const req = https.request(options, (resp) => {
+      let data = '';
+      resp.on('data', chunk => data += chunk);
+      resp.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.error) reject(new Error(parsed.error_description || parsed.error));
+          else resolve(parsed);
+        } catch (e) { reject(e); }
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
 module.exports = {
   login,
   logout,
@@ -132,4 +266,6 @@ module.exports = {
   forgotPassword,
   verifyOtp,
   resetPassword,
+  googleOAuthRedirect,
+  cognitoCallback,
 };

@@ -8,248 +8,609 @@
     <meta name="description" content="Apply for database console access to ThrustVault's UAV powertrain and test run records. Review applications are processed securely."/>
     <meta name="keywords" content="ThrustVault request access, signup, join thrustvault, propulsion database registration"/>
     <meta name="robots" content="noindex, follow"/>
-    <link rel="canonical" href="https://thrustvault.reude.tech/request_access"/>
+    <link rel="canonical" href="https://thrustvault.bharani-01.xyz/request_access"/>
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website"/>
-    <meta property="og:url" content="https://thrustvault.reude.tech/request_access"/>
+    <meta property="og:url" content="https://thrustvault.bharani-01.xyz/request_access"/>
     <meta property="og:title" content="Request Access | ThrustVault"/>
-    <meta property="og:description" content="Apply for database console access to ThrustVault's UAV powertrain and test run records. Review applications are processed securely."/>
-    <meta property="og:image" content="https://thrustvault.reude.tech/feature_catalog.webp"/>
+    <meta property="og:description" content="Apply for database console access to ThrustVault's UAV powertrain and test run records."/>
+    <meta property="og:image" content="https://thrustvault.bharani-01.xyz/feature_catalog.webp"/>
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary"/>
-    <meta name="twitter:url" content="https://thrustvault.reude.tech/request_access"/>
+    <meta name="twitter:url" content="https://thrustvault.bharani-01.xyz/request_access"/>
     <meta name="twitter:title" content="Request Access | ThrustVault"/>
     <meta name="twitter:description" content="Apply for database console access to ThrustVault's UAV powertrain and test run records."/>
-    <meta name="twitter:image" content="https://thrustvault.reude.tech/feature_catalog.webp"/>
-    
+    <meta name="twitter:image" content="https://thrustvault.bharani-01.xyz/feature_catalog.webp"/>
+
     <link rel="icon" type="image/webp" href="favicon_light.webp" media="(prefers-color-scheme: light)">
     <link rel="icon" type="image/webp" href="favicon_dark.webp" media="(prefers-color-scheme: dark)">
 
-    <!-- Tailwind CSS with Forms and Container Queries -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    
+
     <!-- Lucide Icons -->
     <script src="libs/lucide.min.js" onerror="this.onerror=null; this.src='https://unpkg.com/lucide@latest';"></script>
-    
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    "colors": {
-                        "primary-container": "#003366",
-                        "surface-container-high": "#e7e8e9",
-                        "surface-bright": "#f8f9fa",
-                        "on-surface": "#191c1d",
-                        "background": "#f8f9fa",
-                        "on-primary": "#ffffff",
-                        "outline-variant": "#c3c6d1",
-                        "outline": "#737780",
-                        "secondary": "#505f76",
-                        "primary": "#001e40",
-                        "surface": "#f8f9fa"
-                    },
-                    "borderRadius": {
-                        "DEFAULT": "0.125rem",
-                        "lg": "0.25rem",
-                        "xl": "0.5rem",
-                        "full": "0.75rem"
-                    },
-                    "fontFamily": {
-                        "display-lg": ["Inter", "sans-serif"],
-                        "label-mono": ["JetBrains Mono", "monospace"],
-                        "body-sm": ["Inter", "sans-serif"],
-                        "body-base": ["Inter", "sans-serif"],
-                        "button": ["Inter", "sans-serif"]
-                    }
-                }
-            }
-        }
-    </script>
-    
+
     <style>
+        * { box-sizing: border-box; }
+
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8f9fa;
-            color: #191c1d;
+            margin: 0; padding: 0;
+            min-height: 100vh;
+            display: flex;
             -webkit-font-smoothing: antialiased;
         }
-        
-        .blueprint-grid {
-            background-image: linear-gradient(#003366 1px, transparent 1px), linear-gradient(90deg, #003366 1px, transparent 1px);
-            background-size: 48px 48px;
-        }
-        
-        .spinner-dual {
-            display: inline-block;
+
+        /* ── Split layout ── */
+        .split-layout { display: flex; width: 100%; min-height: 100vh; }
+
+        /* ── LEFT PANEL ── */
+        .left-panel {
+            display: none;
             position: relative;
-            width: 18px;
-            height: 18px;
-            border: 2px solid transparent;
-            border-top-color: #ffffff;
-            border-bottom-color: #ffffff;
+            flex: 0 0 52%;
+            overflow: hidden;
+            background: #001228;
+        }
+
+        @media (min-width: 1024px) {
+            .left-panel { display: flex; flex-direction: column; }
+        }
+
+        .left-panel-bg {
+            position: absolute;
+            inset: 0;
+            background-image: url('login_hero.png');
+            background-size: cover;
+            background-position: center 20%;
+            opacity: 0.55;
+        }
+
+        .left-panel-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                135deg,
+                rgba(0, 18, 40, 0.92) 0%,
+                rgba(0, 30, 64, 0.75) 50%,
+                rgba(0, 51, 102, 0.60) 100%
+            );
+        }
+
+        .blueprint-overlay {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(96,165,250,0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(96,165,250,0.06) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+        }
+
+        .left-panel-content {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 3rem 3.5rem;
+        }
+
+        .left-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 100px;
+            padding: 6px 14px;
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.75);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            backdrop-filter: blur(8px);
+            width: fit-content;
+        }
+
+        .left-headline {
+            font-size: clamp(1.875rem, 3vw, 2.5rem);
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+            margin: 2rem 0 1.25rem;
+        }
+
+        .left-headline span {
+            background: linear-gradient(90deg, #60a5fa, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .left-desc {
+            font-size: 0.9375rem;
+            color: rgba(255,255,255,0.55);
+            line-height: 1.7;
+            max-width: 360px;
+        }
+
+        /* Process steps on left for request_access */
+        .process-steps {
+            margin-top: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .process-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 0 0 28px 0;
+            position: relative;
+        }
+
+        .process-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 16px;
+            top: 36px;
+            bottom: 0;
+            width: 1.5px;
+            background: linear-gradient(to bottom, rgba(96,165,250,0.4), rgba(96,165,250,0.05));
+        }
+
+        .step-num {
+            width: 33px;
+            height: 33px;
             border-radius: 50%;
-            animation: tv-spin-dual 0.8s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+            background: rgba(96,165,250,0.15);
+            border: 1.5px solid rgba(96,165,250,0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #60a5fa;
+            flex-shrink: 0;
+            z-index: 1;
         }
 
-        @keyframes tv-spin-dual {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .step-content strong {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: rgba(255,255,255,0.9);
+            margin-top: 6px;
         }
 
-        .login-btn.loading {
+        .step-content span {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.4);
+            line-height: 1.5;
+        }
+
+        .left-access-badge {
+            margin-top: auto;
+            background: rgba(52,211,153,0.08);
+            border: 1px solid rgba(52,211,153,0.2);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .left-access-badge svg { flex-shrink: 0; }
+
+        .left-access-badge p {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .left-access-badge strong { color: #34d399; }
+
+        /* ── RIGHT PANEL ── */
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2.5rem 1.5rem;
+            background: #f8f9fa;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .right-panel::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0,51,102,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .form-card {
+            width: 100%;
+            max-width: 440px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Logo */
+        .logo-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .logo-wrap img { height: 36px; width: auto; }
+
+        .page-title {
+            text-align: center;
+            font-size: 1.375rem;
+            font-weight: 800;
+            color: #001e40;
+            letter-spacing: -0.02em;
+            margin: 0 0 0.35rem;
+        }
+
+        .page-title span {
+            background: linear-gradient(90deg, #003366, #2563eb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            text-align: center;
+            font-size: 0.8125rem;
+            color: #64748b;
+            margin: 0 0 2rem;
+            font-weight: 500;
+        }
+
+        /* Form */
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1rem; }
+
+        .form-label {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .input-wrap { position: relative; display: flex; align-items: center; }
+
+        .input-wrap svg.input-icon {
+            position: absolute;
+            left: 13px;
+            color: #94a3b8;
+            width: 15px;
+            height: 15px;
+            pointer-events: none;
+        }
+
+        .form-input {
+            width: 100%;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 11px 16px 11px 40px;
+            font-size: 0.875rem;
+            color: #1e293b;
+            outline: none;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-input:focus {
+            border-color: #003366;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(0,51,102,0.08);
+        }
+
+        .form-input::placeholder { color: #cbd5e1; }
+
+        textarea.form-input {
+            padding-left: 16px;
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, #003366 0%, #001e40 100%);
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 14px rgba(0,30,64,0.3);
+            margin-top: 0.5rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-submit:hover {
+            box-shadow: 0 6px 20px rgba(0,30,64,0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-submit:active { transform: translateY(0); }
+
+        .btn-submit.loading {
             background: linear-gradient(90deg, #002244, #003366, #002244) !important;
             background-size: 200% 100% !important;
             animation: tv-shimmer-btn 1.5s infinite linear !important;
             pointer-events: none !important;
-            opacity: 0.9;
         }
 
         @keyframes tv-shimmer-btn {
             0% { background-position: -100% 0; }
             100% { background-position: 100% 0; }
         }
+
+        .spinner-dual {
+            display: inline-block;
+            width: 16px; height: 16px;
+            border: 2px solid transparent;
+            border-top-color: #fff;
+            border-bottom-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.2s;
+            margin-top: 1.25rem;
+        }
+
+        .back-link:hover { color: #003366; }
+
+        /* Success state */
+        .success-view { display: none; text-align: center; }
+
+        .success-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #f0fdf4;
+            border: 1.5px solid #bbf7d0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 4px 16px rgba(52,211,153,0.15);
+        }
+
+        .success-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #001e40;
+            margin: 0 0 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .success-desc {
+            font-size: 0.875rem;
+            color: #64748b;
+            line-height: 1.65;
+            margin: 0 0 2rem;
+        }
     </style>
-    <!-- Page Loader Transition Script -->
+
+    <!-- Page Loader -->
     <script src="page-loader.js?v=2.1"></script>
 </head>
 
-<body class="min-h-screen w-screen m-0 p-0 flex items-center justify-center bg-[#f8f9fa] relative overflow-hidden select-none px-4 py-12">
-    
-    <!-- Blueprint lines backdrop (Matching landing page) -->
-    <div class="absolute inset-0 pointer-events-none z-0 opacity-[0.05] blueprint-grid"></div>
+<body>
+<div class="split-layout">
 
-    <!-- Ambient Glow Blobs -->
-    <div class="absolute top-1/4 left-1/4 w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-blue-100/30 rounded-full filter blur-[100px] md:blur-[130px] pointer-events-none z-0"></div>
-    <div class="absolute bottom-1/4 right-1/4 w-[450px] md:w-[650px] h-[450px] md:h-[650px] bg-emerald-50/20 rounded-full filter blur-[100px] md:blur-[130px] pointer-events-none z-0"></div>
+    <!-- ═══════════════════ LEFT PANEL ═══════════════════ -->
+    <div class="left-panel">
+        <div class="left-panel-bg"></div>
+        <div class="blueprint-overlay"></div>
+        <div class="left-panel-overlay"></div>
 
-    <!-- Centered Glassmorphic Card Container -->
-    <div class="login-container w-full max-w-[460px] bg-white/75 backdrop-blur-lg border border-slate-200/60 shadow-xl rounded-2xl p-8 md:p-10 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 relative z-10">
-        
-        <!-- Logo & Header -->
-        <div class="login-header text-center mb-8">
-            <div class="login-logo flex justify-center mb-4">
-                <img src="logo_light.webp" alt="ThrustVault Logo" class="h-10 w-auto">
+        <div class="left-panel-content">
+            <div class="left-badge">
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" fill="#60a5fa"/><circle cx="5" cy="5" r="2" fill="#fff"/></svg>
+                Access Request Portal
             </div>
-            <h2 id="page-title" class="font-display-lg text-lg md:text-xl font-bold text-[#001e40] leading-tight tracking-tight">
-                Request <span class="bg-gradient-to-r from-[#003366] to-blue-600 bg-clip-text text-transparent">Access</span>
-            </h2>
-            <p id="page-subtitle" class="text-xs text-slate-500 font-medium mt-2">Submit details to request a database user account.</p>
-        </div>
 
-        <!-- Request Form View -->
-        <div id="view-form" class="space-y-5">
-            <form id="request-access-form" class="space-y-5">
-                <div class="form-group flex flex-col gap-2">
-                    <label for="request-fullname" class="text-xs font-semibold text-slate-500 font-label-mono uppercase tracking-wider">Full Name</label>
-                    <div class="input-with-icon relative flex items-center">
-                        <input type="text" id="request-fullname" required placeholder="e.g. John Doe" class="w-full bg-slate-50/50 border border-slate-200 rounded-lg py-3 px-4 pl-11 text-sm outline-none transition-all focus:border-[#003366] focus:bg-white focus:ring-4 focus:ring-[#003366]/10">
-                        <i data-lucide="user" class="absolute left-4 text-slate-400 w-4 h-4"></i>
+            <h1 class="left-headline">
+                Get Access to<br>
+                <span>ThrustVault</span><br>
+                Database
+            </h1>
+
+            <p class="left-desc">
+                ThrustVault is a curated propulsion intelligence platform for UAV engineers, researchers, and manufacturers. Apply for access below.
+            </p>
+
+            <!-- Process steps -->
+            <div class="process-steps">
+                <div class="process-step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <strong>Submit Your Request</strong>
+                        <span>Fill in your details and reason for access.</span>
                     </div>
                 </div>
-
-                <div class="form-group flex flex-col gap-2">
-                    <label for="request-email" class="text-xs font-semibold text-slate-500 font-label-mono uppercase tracking-wider">Email Address</label>
-                    <div class="input-with-icon relative flex items-center">
-                        <input type="email" id="request-email" required placeholder="e.g. john@company.com" class="w-full bg-slate-50/50 border border-slate-200 rounded-lg py-3 px-4 pl-11 text-sm outline-none transition-all focus:border-[#003366] focus:bg-white focus:ring-4 focus:ring-[#003366]/10">
-                        <i data-lucide="mail" class="absolute left-4 text-slate-400 w-4 h-4"></i>
+                <div class="process-step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <strong>Admin Review</strong>
+                        <span>Our team verifies your application within 24 hours.</span>
                     </div>
                 </div>
-
-                <div class="form-group flex flex-col gap-2">
-                    <label for="request-justification" class="text-xs font-semibold text-slate-500 font-label-mono uppercase tracking-wider">Justification / Reason</label>
-                    <textarea id="request-justification" class="justification-textarea w-full bg-slate-50/50 border border-slate-200 rounded-lg py-3 px-4 text-sm outline-none transition-all focus:border-[#003366] focus:bg-white focus:ring-4 focus:ring-[#003366]/10 min-h-[100px] resize-y" required placeholder="Why do you require access to ThrustVault? Specify team or project."></textarea>
+                <div class="process-step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <strong>Get Full Access</strong>
+                        <span>Receive your credentials and start exploring the database.</span>
+                    </div>
                 </div>
+            </div>
 
-                <button type="submit" class="login-btn w-full bg-[#003366] hover:bg-[#001e40] text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 focus:ring-4 focus:ring-[#003366]/20">
-                    Submit Request <i data-lucide="send" class="w-4 h-4"></i>
-                </button>
-            </form>
-
-            <div class="text-center mt-6 text-sm text-slate-500 border-t border-slate-100 pt-5">
-                <a href="/login" class="text-xs font-semibold text-slate-500 hover:text-[#003366] transition-colors inline-flex items-center gap-1.5">
-                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Sign In
-                </a>
+            <div class="left-access-badge">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <p><strong>Free for researchers & engineers.</strong> ThrustVault access is available for legitimate UAV development and research use.</p>
             </div>
         </div>
-
-        <!-- Request Success View -->
-        <div id="view-success" style="display: none;">
-            <div class="success-card text-center py-6 flex flex-col items-center">
-                <div class="success-icon-wrapper w-16 h-16 rounded-full bg-emerald-50 text-emerald-500 border border-emerald-200 flex items-center justify-center mb-6 shadow-md shadow-emerald-100/50">
-                    <i data-lucide="check" class="w-8 h-8"></i>
-                </div>
-                <h3 class="font-display-lg text-lg font-bold text-[#001e40] mb-2 uppercase">Request Submitted</h3>
-                <p class="text-sm text-slate-500 leading-relaxed mb-8">
-                    Your access request has been recorded. An email confirmation has been sent to you. Our administrators will review your application shortly.
-                </p>
-                <a href="/login" class="login-btn w-full bg-[#003366] hover:bg-[#001e40] text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 focus:ring-4 focus:ring-[#003366]/20 no-underline">
-                    Return to Sign In <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                </a>
-            </div>
-        </div>
-
     </div>
 
-    <!-- Script Logic -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (window.lucide) window.lucide.createIcons();
+    <!-- ═══════════════════ RIGHT PANEL ═══════════════════ -->
+    <div class="right-panel">
+        <div class="form-card">
 
-            const requestForm = document.getElementById('request-access-form');
-            if (requestForm) {
-                requestForm.onsubmit = async (e) => {
-                    e.preventDefault();
-                    
-                    const fullName = document.getElementById('request-fullname').value.trim();
-                    const email = document.getElementById('request-email').value.trim();
-                    const justification = document.getElementById('request-justification').value.trim();
+            <!-- Logo -->
+            <div class="logo-wrap">
+                <img src="logo_light.webp" alt="ThrustVault Logo">
+            </div>
 
-                    const submitBtn = requestForm.querySelector('button[type="submit"]');
-                    submitBtn.disabled = true;
-                    submitBtn.classList.add('loading');
-                    submitBtn.innerHTML = '<div class="spinner-dual"></div> Submitting Request...';
+            <h1 id="page-title" class="page-title">Request <span>Access</span></h1>
+            <p id="page-subtitle" class="page-subtitle">Submit your details to request a database user account.</p>
 
-                    try {
-                        const res = await fetch('/api/public/request-access', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                fullName,
-                                email,
-                                justification
-                            })
-                        });
+            <!-- Request Form -->
+            <div id="view-form">
+                <form id="request-access-form">
 
-                        if (!res.ok) {
-                            const data = await res.json();
-                            throw new Error(data.error || `HTTP ${res.status}`);
-                        }
+                    <div class="form-group">
+                        <label class="form-label" for="request-fullname">Full Name</label>
+                        <div class="input-wrap">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <input type="text" id="request-fullname" class="form-input" required placeholder="e.g. John Doe">
+                        </div>
+                    </div>
 
-                        // Show success view
-                        document.getElementById('view-form').style.display = 'none';
-                        document.getElementById('view-success').style.display = 'block';
-                        document.getElementById('page-title').innerHTML = 'Request <span class="bg-gradient-to-r from-[#003366] to-blue-600 bg-clip-text text-transparent">Submitted</span>';
-                        document.getElementById('page-subtitle').textContent = 'Your application has been received successfully.';
-                        if (window.lucide) window.lucide.createIcons();
+                    <div class="form-group">
+                        <label class="form-label" for="request-email">Email Address</label>
+                        <div class="input-wrap">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                            <input type="email" id="request-email" class="form-input" required placeholder="e.g. john@company.com">
+                        </div>
+                    </div>
 
-                    } catch (err) {
-                        console.error("Submission failed:", err);
-                        alert("Failed to submit request: " + err.message);
-                        submitBtn.disabled = false;
-                        submitBtn.classList.remove('loading');
-                        submitBtn.innerHTML = 'Submit Request <i data-lucide="send" style="width: 16px; height: 16px;"></i>';
-                        if (window.lucide) window.lucide.createIcons();
+                    <div class="form-group">
+                        <label class="form-label" for="request-justification">Justification / Reason</label>
+                        <div class="input-wrap" style="align-items:flex-start;">
+                            <textarea id="request-justification" class="form-input" required placeholder="Why do you require access to ThrustVault? Specify team or project."></textarea>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="submit-btn">
+                        Submit Request
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                </form>
+
+                <div style="text-align:center;">
+                    <a href="/login" class="back-link">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                        Back to Sign In
+                    </a>
+                </div>
+            </div>
+
+            <!-- Success View -->
+            <div id="view-success" class="success-view">
+                <div class="success-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <h2 class="success-title">Request Submitted</h2>
+                <p class="success-desc">
+                    Your access request has been recorded. An email confirmation has been sent to you. Our administrators will review your application shortly.
+                </p>
+                <a href="/login" class="btn-submit" style="text-decoration:none;">
+                    Return to Sign In
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) window.lucide.createIcons();
+
+        const requestForm = document.getElementById('request-access-form');
+        if (requestForm) {
+            requestForm.onsubmit = async (e) => {
+                e.preventDefault();
+
+                const fullName      = document.getElementById('request-fullname').value.trim();
+                const email         = document.getElementById('request-email').value.trim();
+                const justification = document.getElementById('request-justification').value.trim();
+                const submitBtn     = document.getElementById('submit-btn');
+
+                submitBtn.disabled = true;
+                submitBtn.classList.add('loading');
+                submitBtn.innerHTML = '<div class="spinner-dual"></div> Submitting...';
+
+                try {
+                    const res = await fetch('/api/public/request-access', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fullName, email, justification })
+                    });
+
+                    if (!res.ok) {
+                        const data = await res.json();
+                        throw new Error(data.error || `HTTP ${res.status}`);
                     }
-                };
-            }
-        });
-    </script>
+
+                    document.getElementById('view-form').style.display    = 'none';
+                    document.getElementById('view-success').style.display = 'block';
+                    document.getElementById('page-title').innerHTML       = 'Request <span style="background: linear-gradient(90deg, #003366, #2563eb); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Submitted</span>';
+                    document.getElementById('page-subtitle').textContent  = 'Your application has been received successfully.';
+
+                } catch (err) {
+                    console.error('Submission failed:', err);
+                    alert('Failed to submit request: ' + err.message);
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('loading');
+                    submitBtn.innerHTML = 'Submit Request <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+                }
+            };
+        }
+    });
+</script>
 </body>
 </html>
