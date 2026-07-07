@@ -20,6 +20,19 @@ async function main() {
   console.log('🔌 Connecting to PostgreSQL database to run migrations...');
   const client = await pool.connect();
   try {
+    // 0. Ensure auth schema and auth.uid() function exist
+    console.log('⏳ Ensuring auth schema and auth.uid() stub exist...');
+    await client.query('CREATE SCHEMA IF NOT EXISTS auth;');
+    await client.query(`
+      CREATE OR REPLACE FUNCTION auth.uid()
+      RETURNS UUID AS $$
+      BEGIN
+        RETURN NULL;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+    console.log('✅ Auth schema and stub verified.');
+
     // 1. Run database/schema.sql
     console.log('⏳ Applying core schema (database/schema.sql)...');
     const schemaSql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
