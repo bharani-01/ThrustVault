@@ -49,7 +49,7 @@ BEGIN
 END $$;
 
 CREATE TABLE IF NOT EXISTS public.user_profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
     role VARCHAR(50) NOT NULL CHECK (role IN ('guest', 'intern', 'admin')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
@@ -286,7 +286,9 @@ CREATE TABLE IF NOT EXISTS public.motor_test_runs (
     propeller_model VARCHAR(255) NOT NULL,
     esc_model VARCHAR(255),
     battery_info VARCHAR(255),
+    ambient_temperature_c NUMERIC,
     test_conducted_by VARCHAR(255),
+    extra_columns JSONB DEFAULT '[]'::jsonb,
     tested_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -310,6 +312,21 @@ CREATE TABLE IF NOT EXISTS public.motor_test_data_points (
 -- Enable indexing for performance
 CREATE INDEX IF NOT EXISTS idx_motor_test_runs_motor_id ON public.motor_test_runs(motor_id);
 CREATE INDEX IF NOT EXISTS idx_motor_test_data_points_run_id ON public.motor_test_data_points(test_run_id);
+
+-- Draft test runs for spreadsheet imports
+CREATE TABLE IF NOT EXISTS public.draft_test_runs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    motor_model VARCHAR(255) NOT NULL,
+    propeller_model VARCHAR(255),
+    esc_model VARCHAR(255),
+    battery_info VARCHAR(255),
+    ambient_temperature_c NUMERIC,
+    test_conducted_by VARCHAR(255),
+    tested_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    extra_columns JSONB DEFAULT '[]'::jsonb,
+    data_points JSONB DEFAULT '[]'::jsonb NOT NULL
+);
 
 -- Enable RLS
 ALTER TABLE public.motor_test_runs ENABLE ROW LEVEL SECURITY;
@@ -408,7 +425,7 @@ CREATE TRIGGER update_access_requests_updated_at BEFORE UPDATE ON public.access_
 
 -- Create user_onboarding Table
 CREATE TABLE IF NOT EXISTS public.user_onboarding (
-    user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id UUID PRIMARY KEY REFERENCES public.user_profiles(id) ON DELETE CASCADE,
     tour_completed BOOLEAN DEFAULT FALSE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );

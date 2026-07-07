@@ -13,3 +13,12 @@ venv/
 AWS
 *.db
 database/*.db
+admin_portal/
+scratch/
+old-backups/
+runs_split/
+*.csv
+copilot_all_prompts_*.json
+~$*.docx
+*.docx
+.agents/

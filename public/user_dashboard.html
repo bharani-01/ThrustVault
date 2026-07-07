@@ -683,13 +683,6 @@
                     </div>
                 </header>
 
-                <!-- Dynamic Metrics Category Quick Stats -->
-                <div class="hidden">
-                    <span id="category-motors-count">0</span>
-                    <span id="category-avg-thrust">0</span>
-                    <span id="category-top-company">0</span>
-                </div>
-
                 <!-- High-Performance Metrics Dashboard Row (4 Cards) -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <!-- Total Motors -->
@@ -749,12 +742,26 @@
                     </div>
                 </div>
 
-                <!-- Hidden inputs/labels to support dynamic script calls -->
-                <div class="hidden" id="kpi-brands"><span id="kpi-brands-val">0</span></div>
-                <div class="hidden" id="kpi-active-class"><span id="kpi-active-class-val">0</span></div>
-
                 <!-- Main Layout Container (Table & Compare Drawer Sidebar) -->
                 <div class="flex flex-col lg:flex-row items-start gap-6 w-full mt-3">
+                    <!-- Left Sidebar: Thrust Levels Catalog Filter -->
+                    <div class="w-full lg:w-64 shrink-0 flex flex-col gap-4">
+                        <div class="bg-white dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 shadow-sm rounded-xl p-5">
+                            <h3 class="font-extrabold text-[#001e40] dark:text-slate-100 text-[15px] mb-4 border-b border-slate-100 dark:border-slate-800 pb-2.5 flex items-center gap-1.5 uppercase tracking-wide">
+                                <i data-lucide="sliders" class="w-4 h-4 text-[#003366] dark:text-blue-400"></i>
+                                Thrust Levels
+                            </h3>
+                            <div id="category-list-container" class="flex flex-col gap-2">
+                                <!-- Dynamic Categories will be injected here -->
+                            </div>
+                            <div class="border-t border-slate-100 dark:border-slate-800 pt-4 mt-4">
+                                <button class="w-full bg-[#003366] hover:bg-[#002244] dark:bg-blue-600 dark:hover:bg-blue-700 text-white text-xs font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer focus:outline-none" id="btn-add-category">
+                                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Level
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Left Side Table Grid -->
                     <div class="flex-1 min-w-0 w-full">
                         <div class="bg-white dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 shadow-sm rounded-xl overflow-hidden p-5">
@@ -897,11 +904,6 @@
                     </div>
                 </div>
 
-                <!-- Hidden verification notes container to support scripts queries -->
-                <section class="hidden" id="verification-notes-section">
-                    <div id="verification-notes-toggle"><span class="notes-chevron"></span></div>
-                    <table class="w-full text-xs text-left"><tbody id="verification-notes-rows"></tbody></table>
-                </section>
             </main>
         </div>
     </div>
@@ -1012,6 +1014,131 @@
                                     <label for="form-prop-link" class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Propeller Spec Link</label>
                                     <input type="url" id="form-prop-link" placeholder="https://..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-3.5 text-sm outline-none transition-all focus:border-[#003366] focus:dark:border-blue-500 focus:bg-white focus:dark:bg-slate-900 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400 font-medium">
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Motor Specifications -->
+                    <div class="border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
+                        <h4 class="text-xs font-bold text-[#001e40] dark:text-slate-200 font-label-mono uppercase tracking-wider mb-3 flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5 text-slate-400"></i> Motor Specifications</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">SKU</label>
+                                <input type="text" id="form-motor-sku" placeholder="e.g. TM-U12-KV120" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">KV Rating</label>
+                                <input type="number" id="form-motor-kv" placeholder="e.g. 120" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Stator Size</label>
+                                <input type="text" id="form-motor-stator" placeholder="e.g. 2306, 4014" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">No. of Poles</label>
+                                <input type="number" id="form-motor-poles" placeholder="e.g. 14" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Winding Type</label>
+                                <input type="text" id="form-motor-winding" placeholder="e.g. 12N14P" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Operating Voltage</label>
+                                <input type="text" id="form-motor-voltage" placeholder="e.g. 6S–12S" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Motor Type</label>
+                                <select id="form-motor-type" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500">
+                                    <option value="">— Select —</option>
+                                    <option value="Brushless Outrunner">Brushless Outrunner</option>
+                                    <option value="Brushless Inrunner">Brushless Inrunner</option>
+                                    <option value="Brushed">Brushed</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Intended Use</label>
+                                <select id="form-motor-use" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500">
+                                    <option value="">— Select —</option>
+                                    <option value="FPV Racing">FPV Racing</option>
+                                    <option value="Freestyle">Freestyle</option>
+                                    <option value="Aerial Photography">Aerial Photography</option>
+                                    <option value="Heavy-Lift">Heavy-Lift</option>
+                                    <option value="Agricultural">Agricultural</option>
+                                    <option value="Long Range">Long Range</option>
+                                    <option value="Industrial">Industrial</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Bearing Type</label>
+                                <input type="text" id="form-motor-bearing" placeholder="e.g. Dual Ball Bearing" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Weight (g)</label>
+                                <input type="number" id="form-motor-weight" step="any" placeholder="e.g. 168" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Motor OD (mm)</label>
+                                <input type="number" id="form-motor-od" step="any" placeholder="e.g. 54.0" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Motor Height (mm)</label>
+                                <input type="number" id="form-motor-height" step="any" placeholder="e.g. 38.5" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Shaft Diameter (mm)</label>
+                                <input type="number" id="form-motor-shaft" step="any" placeholder="e.g. 8" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Mount Pattern (mm)</label>
+                                <input type="text" id="form-motor-mount" placeholder="e.g. 25x25" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Screw Type</label>
+                                <input type="text" id="form-motor-screw" placeholder="e.g. M3" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Wire Gauge (AWG)</label>
+                                <input type="text" id="form-motor-wire" placeholder="e.g. 16 AWG" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">IP Rating</label>
+                                <input type="text" id="form-motor-ip" placeholder="e.g. IP55" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Max Power (W)</label>
+                                <input type="number" id="form-motor-maxpower" step="any" placeholder="e.g. 3500" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Max Continuous Current (A)</label>
+                                <input type="number" id="form-motor-maxcurrent" step="any" placeholder="e.g. 40" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Max Burst Current (A)</label>
+                                <input type="number" id="form-motor-burstcurrent" step="any" placeholder="e.g. 55" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">No-Load Current (A)</label>
+                                <input type="number" id="form-motor-noload" step="any" placeholder="e.g. 0.8" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Internal Resistance (mΩ)</label>
+                                <input type="number" id="form-motor-resistance" step="any" placeholder="e.g. 28" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Compat. ESC Current (A)</label>
+                                <input type="text" id="form-motor-escrating" placeholder="e.g. 40–80A" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Compat. Prop Size Range</label>
+                                <input type="text" id="form-motor-proprange" placeholder="e.g. 18"–24"" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-[11px] font-semibold text-slate-400 font-label-mono uppercase tracking-wider mb-1.5">Price (USD)</label>
+                                <input type="text" id="form-motor-price" placeholder="e.g. $89.99" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm outline-none focus:border-[#003366] focus:dark:border-blue-500 focus:ring-4 focus:ring-[#003366]/10 placeholder-slate-400">
                             </div>
                         </div>
                     </div>
@@ -1307,7 +1434,7 @@
             </div>
         </div>
 
-        <div class="max-w-[1800px] w-full mx-auto px-6 md:px-12 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10 blueprint-grid flex-1">
+        <div class="max-w-[1800px] w-full mx-auto px-6 md:px-12 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10 flex-1">
             <!-- Left Column: Motor Specs (4 cols) -->
             <div class="lg:col-span-4 flex flex-col gap-6">
                 <!-- Image Gallery Card -->
@@ -1346,6 +1473,19 @@
                                 <td class="py-2.5 text-slate-400 dark:text-slate-500 font-label-mono uppercase tracking-wider">Uploaded By</td>
                                 <td class="py-2.5 text-right font-bold text-[#001e40] dark:text-slate-100" id="profile-spec-uploader">-</td>
                             </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Motor Specifications -->
+                <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-xl p-5 hover:shadow-md transition-shadow duration-300" id="profile-motor-specs-card" style="display: none;">
+                    <h3 class="font-bold text-[#001e40] dark:text-slate-100 text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5 uppercase font-sans tracking-wide">
+                        <i data-lucide="cpu" class="w-4.5 h-4.5 text-[#003366] dark:text-[#a7c8ff]"></i>
+                        Motor Specifications
+                    </h3>
+                    <table class="w-full text-xs border-collapse">
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-300 font-medium" id="profile-motor-specs-table">
+                            <!-- Dynamic specifications injected -->
                         </tbody>
                     </table>
                 </div>
@@ -1519,7 +1659,7 @@
                 </div>
             </div>
         </div>
-    </div>>
+    </div>
 
     <!-- App JavaScript Controller Scripts -->
     <script src="share_modal.js"></script>

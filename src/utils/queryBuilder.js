@@ -42,7 +42,35 @@ async function queryTable(table, method, payload, params) {
     let cols = '*';
     if (params.select) {
       cols = params.select.split(',')
-        .map(c => { const t = c.trim(); if (!SAFE.test(t)) throw new Error(`Unsafe col: ${t}`); return `"${t}"`; })
+        .map(c => {
+          const t = c.trim();
+          if (table === 'motors' && t === 'operating_voltage') {
+            return `(custom_parameters->>'operating_voltage') AS "operating_voltage"`;
+          }
+          if (table === 'motors' && t === 'kv_rating') {
+            return `(custom_parameters->>'kv_rating') AS "kv_rating"`;
+          }
+          if (table === 'escs' && t === 'continuous_current') {
+            return `(custom_parameters->>'continuous_current_a') AS "continuous_current"`;
+          }
+          if (table === 'escs' && t === 'peak_current') {
+            return `(custom_parameters->>'peak_current_a') AS "peak_current"`;
+          }
+          if (table === 'escs' && t === 'input_voltage') {
+            return `(custom_parameters->>'voltage_range') AS "input_voltage"`;
+          }
+          if (table === 'propellers' && t === 'diameter') {
+            return `(custom_parameters->>'diameter') AS "diameter"`;
+          }
+          if (table === 'propellers' && t === 'pitch') {
+            return `(custom_parameters->>'pitch') AS "pitch"`;
+          }
+          if (table === 'propellers' && t === 'material') {
+            return `(custom_parameters->>'material') AS "material"`;
+          }
+          if (!SAFE.test(t)) throw new Error(`Unsafe col: ${t}`);
+          return `"${t}"`;
+        })
         .join(', ');
     }
 
@@ -50,7 +78,11 @@ async function queryTable(table, method, payload, params) {
     let idx = 1;
     for (const [k, v] of Object.entries(params)) {
       if (RESERVED.has(k)) continue;
-      const f = buildFilter(k, v, idx);
+      let colKey = k;
+      if (table === 'motor_test_data_points' && k === 'run_id') {
+        colKey = 'test_run_id';
+      }
+      const f = buildFilter(colKey, v, idx);
       whereParts.push(f.clause);
       vals.push(...f.vals);
       idx = f.idx;
@@ -59,7 +91,13 @@ async function queryTable(table, method, payload, params) {
     if (params.search) {
       const searchVal = `%${params.search.trim().replace(/\*/g, '%')}%`;
       const ph = `$${idx}`;
-      whereParts.push(`("motor_name" ILIKE ${ph} OR "company" ILIKE ${ph} OR "recommended_esc" ILIKE ${ph} OR "recommended_propeller" ILIKE ${ph})`);
+      if (table === 'motors') {
+        whereParts.push(`("motor_name" ILIKE ${ph} OR "company" ILIKE ${ph} OR "recommended_esc" ILIKE ${ph} OR "recommended_propeller" ILIKE ${ph})`);
+      } else if (table === 'escs' || table === 'propellers') {
+        whereParts.push(`("name" ILIKE ${ph} OR "brand" ILIKE ${ph} OR "sku" ILIKE ${ph})`);
+      } else {
+        whereParts.push(`("name" ILIKE ${ph} OR "email" ILIKE ${ph})`);
+      }
       vals.push(searchVal);
       idx++;
     }
@@ -74,8 +112,19 @@ async function queryTable(table, method, payload, params) {
         const parts = item.trim().split('.');
         const col   = parts[0];
         const dir   = parts[1] === 'desc' ? 'DESC' : 'ASC';
-        if (!SAFE.test(col)) throw new Error(`Unsafe order col: ${col}`);
-        orderClauses.push(`"${col}" ${dir}`);
+        
+        if (table === 'escs' && col === 'continuous_current') {
+          orderClauses.push(`NULLIF(custom_parameters->>'continuous_current_a', '')::numeric ${dir}`);
+        } else if (table === 'escs' && col === 'peak_current') {
+          orderClauses.push(`NULLIF(custom_parameters->>'peak_current_a', '')::numeric ${dir}`);
+        } else if (table === 'propellers' && col === 'diameter') {
+          orderClauses.push(`NULLIF(custom_parameters->>'diameter', '')::numeric ${dir}`);
+        } else if (table === 'propellers' && col === 'pitch') {
+          orderClauses.push(`NULLIF(custom_parameters->>'pitch', '')::numeric ${dir}`);
+        } else {
+          if (!SAFE.test(col)) throw new Error(`Unsafe order col: ${col}`);
+          orderClauses.push(`"${col}" ${dir}`);
+        }
       }
       if (orderClauses.length) {
         sql += ` ORDER BY ${orderClauses.join(', ')}`;

@@ -86,6 +86,77 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function getValueCaseInsensitive(obj, keys) {
+        if (!obj) return undefined;
+        const normalizedObj = {};
+        for (const [k, v] of Object.entries(obj)) {
+            normalizedObj[k.toLowerCase().replace(/[\s_-]+/g, '')] = v;
+        }
+        for (const key of keys) {
+            const cleanKey = key.toLowerCase().replace(/[\s_-]+/g, '');
+            if (normalizedObj[cleanKey] !== undefined) {
+                return normalizedObj[cleanKey];
+            }
+        }
+        return undefined;
+    }
+
+    function parseCurrent(esc) {
+        const params = esc.custom_parameters || {};
+        const keys = ['continuous_current_a', 'continuous_current', 'current_a', 'current', 'max_current', 'max_current_a', 'amperage'];
+        const valRaw = getValueCaseInsensitive(params, keys);
+        if (valRaw !== undefined) {
+            const val = parseFloat(valRaw);
+            if (!isNaN(val)) return val;
+        }
+        // Fallback to parsing from name
+        const match = esc.name.match(/(\d+)\s*A/i);
+        if (match) return parseFloat(match[1]);
+        return 0;
+    }
+
+    function parseVoltage(esc) {
+        const params = esc.custom_parameters || {};
+        const keys = ['voltage', 'voltage_range', 'voltage_range_s', 'cells', 'lipo_cells', 'input_voltage'];
+        const valRaw = getValueCaseInsensitive(params, keys);
+        if (valRaw !== undefined) {
+            const val = String(valRaw);
+            const match = val.match(/(\d+)\s*S/i) || val.match(/(\d+)-(\d+)\s*S/i);
+            if (match) return parseFloat(match[1]);
+        }
+        // Fallback to name
+        const match = esc.name.match(/\b(\d+S)\b/i) || esc.name.match(/\b(\d+-\d+S)\b/i);
+        if (match) {
+            const digitMatch = match[0].match(/\d+/);
+            if (digitMatch) return parseFloat(digitMatch[0]);
+        }
+        return 0;
+    }
+
+    function parseDiameter(prop) {
+        const params = prop.custom_parameters || {};
+        const keys = ['diameter', 'diameter_in', 'diameter_inch', 'propeller_diameter', 'size', 'diameter_mm'];
+        
+        for (const key of keys) {
+            const valRaw = getValueCaseInsensitive(params, [key]);
+            if (valRaw !== undefined) {
+                let val = parseFloat(valRaw);
+                if (key === 'diameter_mm' && !isNaN(val)) {
+                    val = val / 25.4; // Convert mm to inches
+                }
+                if (!isNaN(val)) return val;
+            }
+        }
+        // Fallback to name (e.g. "G30x10.5", "KDE-CF245-DP 24.5", "MF2211")
+        const nameClean = prop.name.replace(/[a-zA-Z]/g, ' ').trim();
+        const matches = nameClean.match(/(\d+(\.\d+)?)/g);
+        if (matches && matches.length > 0) {
+            const val = parseFloat(matches[0]);
+            if (val >= 3 && val <= 65) return val;
+        }
+        return 0;
+    }
+
     // ---------------------------------------------------------
     // FETCH DATA
     // ---------------------------------------------------------
@@ -125,8 +196,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 itemBrand.textContent = item.brand;
             }
 
+            const customDataObj = item.custom_parameters || {};
+
             // Populate Specs Table
             specsTableBody.innerHTML = '';
+            
+            const techCard = document.getElementById('technical-specifications-card');
+            const techTableBody = document.getElementById('tech-specs-table-body');
+            const techTitleText = document.getElementById('tech-specs-title-text');
+            const techTitleIcon = document.querySelector('#tech-specs-title i');
+            
+            let techSpecConfigs = [];
+            let standardKeys = new Set();
+
             if (type === 'motor') {
                 const rows = [
                     { label: 'Manufacturer', val: item.company },
@@ -173,6 +255,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 generalInfoSection.style.display = 'none';
                 motorTelemetrySection.style.display = 'flex';
                 await loadMotorTelemetry(item.id);
+
+                const getVal = (keys) => getValueCaseInsensitive(customDataObj, keys);
+                techSpecConfigs = [
+                    { label: 'SKU', val: getVal(['sku']), unit: '' },
+                    { label: 'KV Rating', val: getVal(['kv_rating', 'kv']), unit: '' },
+                    { label: 'Stator Size', val: getVal(['stator_size']), unit: '' },
+                    { label: 'No. of Poles', val: getVal(['num_poles', 'no_of_poles', 'poles']), unit: '' },
+                    { label: 'Winding Type', val: getVal(['winding_type']), unit: '' },
+                    { label: 'Operating Voltage', val: getVal(['operating_voltage', 'voltage']), unit: '' },
+                    { label: 'Motor Type', val: getVal(['motor_type']), unit: '' },
+                    { label: 'Intended Use', val: getVal(['intended_use']), unit: '' },
+                    { label: 'Bearing Type', val: getVal(['bearing_type']), unit: '' },
+                    { label: 'Weight', val: getVal(['weight_g', 'weight', 'motor_weight']), unit: ' g' },
+                    { label: 'Motor OD', val: getVal(['motor_diameter_od', 'motor_od_mm', 'motor_od']), unit: ' mm' },
+                    { label: 'Motor Height', val: getVal(['motor_height_mm', 'motor_height']), unit: ' mm' },
+                    { label: 'Shaft Diameter', val: getVal(['shaft_diameter_mm', 'shaft_diameter']), unit: ' mm' },
+                    { label: 'Mount Pattern', val: getVal(['motor_holes_mount_diameter', 'mount_pattern_mm', 'mount_pattern']), unit: '' },
+                    { label: 'Screw Type', val: getVal(['screw_type']), unit: '' },
+                    { label: 'Wire Gauge', val: getVal(['wire_gauge', 'wire_gauge_awg', 'wire', 'awg']), unit: '' },
+                    { label: 'IP Rating', val: getVal(['ip_rating']), unit: '' },
+                    { label: 'Max Power', val: getVal(['max_power_w', 'max_power']), unit: ' W' },
+                    { label: 'Max Continuous Current', val: getVal(['max_continuous_current_a', 'max_continuous_current']), unit: ' A' },
+                    { label: 'Max Burst Current', val: getVal(['max_burst_current_a', 'max_burst_current']), unit: ' A' },
+                    { label: 'No-Load Current', val: getVal(['no_load_current_a', 'no_load_current']), unit: ' A' },
+                    { label: 'Internal Resistance', val: getVal(['internal_resistance_mohm', 'internal_resistance']), unit: ' mΩ' },
+                    { label: 'Compat. ESC Current', val: getVal(['compatible_esc_current', 'compat_esc_current_a', 'compat_esc_current']), unit: '' },
+                    { label: 'Compat. Prop Size Range', val: getVal(['compatible_prop_size', 'compat_prop_size_range']), unit: '' },
+                    { label: 'Price', val: getVal(['price']), unit: '' }
+                ];
+                standardKeys = new Set(['sku', 'kv_rating', 'kv', 'stator_size', 'num_poles', 'no_of_poles', 'poles', 'winding_type', 'operating_voltage', 'voltage', 'motor_type', 'intended_use', 'bearing_type', 'weight_g', 'weight', 'motor_weight', 'motor_diameter_od', 'motor_od_mm', 'motor_od', 'motor_height_mm', 'motor_height', 'shaft_diameter_mm', 'shaft_diameter', 'motor_holes_mount_diameter', 'mount_pattern_mm', 'mount_pattern', 'screw_type', 'wire_gauge', 'wire_gauge_awg', 'wire', 'awg', 'ip_rating', 'max_power_w', 'max_power', 'max_continuous_current_a', 'max_continuous_current', 'max_burst_current_a', 'max_burst_current', 'no_load_current_a', 'no_load_current', 'internal_resistance_mohm', 'internal_resistance', 'compatible_esc_current', 'compat_esc_current_a', 'compat_esc_current', 'compatible_prop_size', 'compat_prop_size_range', 'price']);
 
             } else {
                 // ESC or Propeller
@@ -241,15 +353,97 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     infoGalleryCard.style.display = 'none';
                 }
+
+                const getVal = (keys) => getValueCaseInsensitive(customDataObj, keys);
+                if (type === 'esc') {
+                    techSpecConfigs = [
+                        { label: 'Continuous Current', val: parseCurrent(item) ? parseCurrent(item) : getVal(['continuous_current_a', 'continuous_current']), unit: ' A' },
+                        { label: 'Burst Current', val: getVal(['burst_current_a', 'burst_current', 'max_current_burst']), unit: ' A' },
+                        { label: 'Voltage Range', val: parseVoltage(item) ? parseVoltage(item) + ' S' : getVal(['voltage_range', 'input_voltage', 'voltage']), unit: '' },
+                        { label: 'BEC Output', val: getVal(['bec', 'bec_output']), unit: '' },
+                        { label: 'Resistance', val: getVal(['resistance', 'resistance_mohm']), unit: ' mΩ' },
+                        { label: 'Firmware', val: getVal(['firmware']), unit: '' },
+                        { label: 'Protocol', val: getVal(['protocol']), unit: '' },
+                        { label: 'Telemetry', val: (() => { const v = getVal(['telemetry']); return v === true || v === 'true' ? 'Yes' : v === false || v === 'false' ? 'No' : v; })(), unit: '' },
+                        { label: 'Bidirectional DSHOT', val: (() => { const v = getVal(['bidir', 'bidirectional_dshot']); return v === true || v === 'true' ? 'Yes' : v === false || v === 'false' ? 'No' : v; })(), unit: '' },
+                        { label: 'Cooling', val: getVal(['cooling']), unit: '' },
+                        { label: 'Connector', val: getVal(['connector', 'connector_type']), unit: '' },
+                        { label: 'Wire Gauge', val: getVal(['wire_gauge', 'wire', 'awg']), unit: '' },
+                        { label: 'Recommended Use', val: getVal(['recommended_for', 'use', 'application']), unit: '' },
+                        { label: 'Weight', val: getVal(['weight', 'weight_g']), unit: ' g' },
+                        { label: 'PCB Size', val: getVal(['pcb_size', 'size']), unit: '' }
+                    ];
+                    standardKeys = new Set(['continuous_current_a', 'continuous_current', 'current_a', 'current', 'max_current', 'max_current_a', 'amperage', 'burst_current_a', 'burst_current', 'max_current_burst', 'voltage_range', 'input_voltage', 'voltage', 'bec', 'bec_output', 'resistance', 'resistance_mohm', 'firmware', 'protocol', 'telemetry', 'bidir', 'bidirectional_dshot', 'cooling', 'connector', 'connector_type', 'wire_gauge', 'wire', 'awg', 'recommended_for', 'use', 'application', 'weight', 'weight_g', 'pcb_size', 'size']);
+                } else {
+                    techSpecConfigs = [
+                        { label: 'Diameter', val: parseDiameter(item) ? parseDiameter(item) : getVal(['diameter', 'diameter_in', 'diameter_inch', 'propeller_diameter']), unit: ' in' },
+                        { label: 'Pitch', val: getVal(['pitch', 'pitch_in', 'pitch_inch']), unit: ' in' },
+                        { label: 'Blade Count', val: getVal(['blades', 'blade_count']), unit: '' },
+                        { label: 'Shaft Bore', val: getVal(['shaft_bore', 'shaft_bore_mm']), unit: ' mm' },
+                        { label: 'Chord Width', val: getVal(['chord', 'chord_width', 'blade_chord']), unit: ' mm' },
+                        { label: 'Hub Diameter', val: getVal(['hub', 'hub_diameter']), unit: ' mm' },
+                        { label: 'Folding Prop', val: (() => { const v = getVal(['folding', 'folding_prop']); return v === true || v === 'true' ? 'Yes' : v === false || v === 'false' ? 'No' : v; })(), unit: '' },
+                        { label: 'Material', val: getVal(['material']), unit: '' },
+                        { label: 'Stiffness', val: getVal(['stiffness', 'stiffness_rating']), unit: '' },
+                        { label: 'Finish', val: getVal(['finish']), unit: '' },
+                        { label: 'Color Options', val: getVal(['colors', 'color_options']), unit: '' },
+                        { label: 'Max RPM', val: getVal(['max_rpm', 'rpm']), unit: '' },
+                        { label: 'Max Thrust', val: getVal(['max_thrust_g', 'thrust']), unit: ' g' },
+                        { label: 'Hover Efficiency', val: getVal(['efficiency', 'hover_efficiency']), unit: ' g/W' },
+                        { label: 'Noise Level', val: getVal(['noise', 'noise_level']), unit: ' dB' },
+                        { label: 'Weight per Blade', val: getVal(['weight_blade', 'weight_per_blade']), unit: ' g' },
+                        { label: 'Total Weight', val: getVal(['weight_total', 'total_weight']), unit: ' g' },
+                        { label: 'Balance Quality', val: getVal(['balance', 'balance_quality']), unit: '' },
+                        { label: 'Recommended KV', val: getVal(['kv', 'recommended_kv']), unit: '' },
+                        { label: 'Motor Size Range', val: getVal(['motor_size', 'recommended_motor_size']), unit: '' },
+                        { label: 'Recommended Use', val: getVal(['recommended_for', 'use']), unit: '' },
+                        { label: 'Adapter Included', val: (() => { const v = getVal(['prop_adapter', 'adapter_included']); return v === true || v === 'true' ? 'Yes' : v === false || v === 'false' ? 'No' : v; })(), unit: '' }
+                    ];
+                    standardKeys = new Set(['diameter', 'diameter_in', 'diameter_inch', 'propeller_diameter', 'size', 'diameter_mm', 'pitch', 'pitch_in', 'pitch_inch', 'blades', 'blade_count', 'shaft_bore', 'shaft_bore_mm', 'chord', 'chord_width', 'blade_chord', 'hub', 'hub_diameter', 'folding', 'folding_prop', 'material', 'stiffness', 'stiffness_rating', 'finish', 'colors', 'color_options', 'max_rpm', 'rpm', 'max_thrust_g', 'thrust', 'efficiency', 'hover_efficiency', 'noise', 'noise_level', 'weight_blade', 'weight_per_blade', 'weight_total', 'total_weight', 'balance', 'balance_quality', 'kv', 'recommended_kv', 'motor_size', 'recommended_motor_size', 'recommended_for', 'use', 'prop_adapter', 'adapter_included']);
+                }
+            }
+
+            // Render Technical Specifications
+            if (techCard && techTableBody) {
+                techTableBody.innerHTML = '';
+                let hasTechSpecs = false;
+                techSpecConfigs.forEach(cfg => {
+                    if (cfg.val !== null && cfg.val !== undefined && cfg.val !== '') {
+                        hasTechSpecs = true;
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="py-2.5 text-slate-400 font-label-mono uppercase tracking-wider">${escapeHTML(cfg.label)}</td>
+                            <td class="py-2.5 text-right font-bold text-[#001e40] dark:text-slate-200">${escapeHTML(String(cfg.val))}${cfg.unit}</td>
+                        `;
+                        techTableBody.appendChild(tr);
+                    }
+                });
+                techCard.style.display = hasTechSpecs ? 'block' : 'none';
+                
+                if (techTitleText && techTitleIcon) {
+                    if (type === 'motor') {
+                        techTitleText.textContent = 'Motor Specifications';
+                        techTitleIcon.className = '';
+                        techTitleIcon.setAttribute('data-lucide', 'cpu');
+                    } else if (type === 'esc') {
+                        techTitleText.textContent = 'ESC Specifications';
+                        techTitleIcon.className = '';
+                        techTitleIcon.setAttribute('data-lucide', 'zap');
+                    } else {
+                        techTitleText.textContent = 'Propeller Specifications';
+                        techTitleIcon.className = '';
+                        techTitleIcon.setAttribute('data-lucide', 'wind');
+                    }
+                }
             }
 
             // Custom specifications rows
             customSpecsTableBody.innerHTML = '';
             let hasCustomData = false;
-            const customDataObj = item.custom_parameters || {};
             
             if (customSchema && customSchema.length > 0) {
                 customSchema.forEach(field => {
+                    if (standardKeys.has(field.key)) return; // Skip standard keys to avoid duplicates
                     const val = customDataObj[field.key];
                     if (val !== undefined && val !== null && val !== '') {
                         hasCustomData = true;
@@ -268,7 +462,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const schemaKeys = (customSchema || []).map(f => f.key);
             const excludedKeys = ['description', 'breadcrumbs', 'category', 'custom_parameters', 'gallery_images', 'main_image'];
             Object.keys(customDataObj).forEach(key => {
-                if (!schemaKeys.includes(key) && !excludedKeys.includes(key)) {
+                const cleanKey = key.toLowerCase().replace(/[\s_-]+/g, '');
+                if (!schemaKeys.includes(key) && !excludedKeys.includes(key) && !standardKeys.has(key) && !standardKeys.has(cleanKey)) {
                     const val = customDataObj[key];
                     if (val !== undefined && val !== null && val !== '') {
                         hasCustomData = true;

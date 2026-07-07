@@ -40,6 +40,7 @@
     <style>
         .modal-container {
             max-height: 90vh !important;
+            width: min(1080px, calc(100vw - 32px)) !important;
             display: flex !important;
             flex-direction: column !important;
         }
@@ -48,11 +49,23 @@
             flex-direction: column !important;
             overflow: hidden !important;
             flex: 1 !important;
+            gap: 16px !important;
         }
         .modal-container .modal-body {
             overflow-y: auto !important;
             flex: 1 !important;
             padding-right: 8px;
+        }
+        .form-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
+            margin-top: 4px;
+            margin-bottom: 8px;
         }
         .suggestions-wrapper {
             position: relative;
@@ -253,22 +266,14 @@
             </div>
             <form id="esc-form">
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label for="form-esc-name">ESC Name *</label>
-                        <input type="text" id="form-esc-name" required placeholder="e.g., Flame 80A 12S">
-                    </div>
-                    <div class="form-group">
-                        <label for="form-esc-brand">Brand *</label>
-                        <input type="text" id="form-esc-brand" required placeholder="e.g., T-Motor">
-                    </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="form-esc-price">Price</label>
-                            <input type="text" id="form-esc-price" placeholder="e.g., 129.99">
+                            <label for="form-esc-name">ESC Name *</label>
+                            <input type="text" id="form-esc-name" required placeholder="e.g., Flame 80A 12S">
                         </div>
                         <div class="form-group">
-                            <label for="form-esc-currency">Currency</label>
-                            <input type="text" id="form-esc-currency" placeholder="e.g., USD">
+                            <label for="form-esc-brand">Brand *</label>
+                            <input type="text" id="form-esc-brand" required placeholder="e.g., T-Motor">
                         </div>
                     </div>
                     <div class="form-row">
@@ -281,9 +286,139 @@
                             <input type="url" id="form-esc-url" placeholder="https://...">
                         </div>
                     </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-esc-price">Price</label>
+                            <input type="text" id="form-esc-price" placeholder="e.g., 129.99">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-esc-currency">Currency</label>
+                            <input type="text" id="form-esc-currency" placeholder="e.g., USD">
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label for="form-esc-image">Main Image URL</label>
                         <input type="url" id="form-esc-image" placeholder="https://...">
+                    </div>
+
+                    <div class="form-section-title">Electrical Specs</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-esc-continuous-current">Continuous Current (A)</label>
+                            <input type="number" id="form-esc-continuous-current" step="any" placeholder="e.g., 60">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-esc-burst-current">Burst Current (A)</label>
+                            <input type="number" id="form-esc-burst-current" step="any" placeholder="e.g., 80">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-esc-voltage">Voltage Range</label>
+                            <input type="text" id="form-esc-voltage" placeholder="e.g., 3-6S, 6-12S">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-esc-bec">BEC Output</label>
+                            <input type="text" id="form-esc-bec" placeholder="e.g., 5V/3A or None">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-esc-resistance">Resistance (m&#x3A9;)</label>
+                            <input type="number" id="form-esc-resistance" step="any" placeholder="e.g., 0.8">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-esc-protocol">Protocol</label>
+                            <select id="form-esc-protocol">
+                                <option value="">— Select —</option>
+                                <option>PWM</option>
+                                <option>Oneshot125</option>
+                                <option>Multishot</option>
+                                <option>DSHOT150</option>
+                                <option>DSHOT300</option>
+                                <option>DSHOT600</option>
+                                <option>DSHOT1200</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-section-title">Features</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-esc-firmware">Firmware</label>
+                            <select id="form-esc-firmware">
+                                <option value="">— Select —</option>
+                                <option>BLHeli_32</option>
+                                <option>BLHeli_S</option>
+                                <option>AM32</option>
+                                <option>VESC</option>
+                                <option>Proprietary</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-esc-connector">Connector Type</label>
+                            <input type="text" id="form-esc-connector" placeholder="e.g., 4mm Bullet, XT60">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-esc-size">PCB Size (mm)</label>
+                            <input type="text" id="form-esc-size" placeholder="e.g., 46x36">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-esc-weight">Weight (g)</label>
+                            <input type="number" id="form-esc-weight" step="any" placeholder="e.g., 38">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-esc-cooling">Cooling</label>
+                            <select id="form-esc-cooling">
+                                <option value="">— Select —</option>
+                                <option>Passive</option>
+                                <option>Heatsink</option>
+                                <option>Active Fan</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-esc-ip">IP Rating</label>
+                            <input type="text" id="form-esc-ip" placeholder="e.g., IP55">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-esc-telemetry">Telemetry</label>
+                            <select id="form-esc-telemetry">
+                                <option value="">— Select —</option>
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-esc-bidir">Bidirectional DSHOT</label>
+                            <select id="form-esc-bidir">
+                                <option value="">— Select —</option>
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-esc-wire">Wire Gauge (AWG)</label>
+                            <input type="text" id="form-esc-wire" placeholder="e.g., 16 AWG">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-esc-use">Recommended For</label>
+                            <select id="form-esc-use">
+                                <option value="">— Select —</option>
+                                <option>FPV Racing</option>
+                                <option>Freestyle</option>
+                                <option>Heavy-Lift</option>
+                                <option>Industrial</option>
+                                <option>Long Range</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -339,6 +474,16 @@
                     </div>
                 </div>
 
+                <!-- Technical Details Card -->
+                <div id="profile-technical-card" class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-xl p-5" style="display:none; box-sizing: border-box; background: var(--bg-surface); border-radius: var(--radius-lg);">
+                    <h3 class="font-bold text-primary dark:text-white text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5 uppercase tracking-wide" style="margin:0;">
+                        <i data-lucide="sliders" style="width:18px; height:18px; color: var(--primary-color);"></i> Technical Details
+                    </h3>
+                    <div id="profile-technical-specs" style="display:flex; flex-direction:column; gap:12px; box-sizing: border-box;">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+
                 <!-- Product Link Card -->
                 <div id="profile-links-card" class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-xl p-5" style="display:none; box-sizing: border-box; background: var(--bg-surface); border-radius: var(--radius-lg);">
                     <h3 class="font-bold text-primary dark:text-white text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5 uppercase tracking-wide" style="margin:0;">
@@ -375,7 +520,7 @@
                 <!-- Custom Scraped Specs Card -->
                 <div id="profile-custom-card" class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-xl p-5" style="display:none; box-sizing: border-box; background: var(--bg-surface); border-radius: var(--radius-lg);">
                     <h3 class="font-bold text-primary dark:text-white text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5 uppercase tracking-wide" style="margin:0;">
-                        <i data-lucide="table" style="width:18px; height:18px; color: var(--primary-color);"></i> Custom Parameters
+                        <i data-lucide="table" style="width:18px; height:18px; color: var(--primary-color);"></i> All Custom Parameters
                     </h3>
                     <div id="profile-custom-specs" style="display:flex; flex-direction:column; gap:8px; box-sizing: border-box;">
                         <!-- Filled dynamically -->

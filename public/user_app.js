@@ -1227,11 +1227,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     validThrustCount++;
                 }
             });
-            if (validThrustCount > 0) {
-                elements.avgThrust.textContent = `${(sumThrust / validThrustCount).toFixed(2)} kg`;
-            } else {
-                elements.avgThrust.textContent = "N/A";
-            }
+            if (elements.avgThrust) elements.avgThrust.textContent = validThrustCount > 0 ? `$\{(sumThrust / validThrustCount).toFixed(2)\} kg` : "N/A";
             
             const brandCounts = {};
             catMotors.forEach(m => { brandCounts[m.company] = (brandCounts[m.company] || 0) + 1; });
@@ -1243,10 +1239,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     topBrand = brand;
                 }
             }
-            elements.topCompany.textContent = topBrand;
+            if (elements.topCompany) elements.topCompany.textContent = topBrand;
         } else {
-            elements.avgThrust.textContent = 'N/A';
-            elements.topCompany.textContent = 'N/A';
+            if (elements.avgThrust) elements.avgThrust.textContent = 'N/A';
+            if (elements.topCompany) elements.topCompany.textContent = 'N/A';
         }
     }
 
@@ -2327,6 +2323,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.motorForm.onsubmit = async (e) => {
         e.preventDefault();
         const id = document.getElementById('form-motor-index').value;
+        const parseFloatOrNull = v => v !== '' && v != null ? parseFloat(v) : null;
         
         // Collect custom parameters
         const customInputs = document.querySelectorAll('.custom-field-input');
@@ -2358,7 +2355,34 @@ document.addEventListener('DOMContentLoaded', () => {
             link_motor: document.getElementById('form-motor-link').value.trim() || null,
             link_esc: document.getElementById('form-esc-link').value.trim() || null,
             link_propeller: document.getElementById('form-prop-link').value.trim() || null,
-            custom_parameters: customParams
+            custom_parameters: {
+                ...customParams,
+                sku:                    document.getElementById('form-motor-sku').value.trim() || null,
+                kv_rating:              parseFloatOrNull(document.getElementById('form-motor-kv').value),
+                stator_size:            document.getElementById('form-motor-stator').value.trim() || null,
+                num_poles:              parseFloatOrNull(document.getElementById('form-motor-poles').value),
+                winding_type:           document.getElementById('form-motor-winding').value.trim() || null,
+                operating_voltage:      document.getElementById('form-motor-voltage').value.trim() || null,
+                motor_type:             document.getElementById('form-motor-type').value || null,
+                intended_use:           document.getElementById('form-motor-use').value || null,
+                bearing_type:           document.getElementById('form-motor-bearing').value.trim() || null,
+                weight_g:               parseFloatOrNull(document.getElementById('form-motor-weight').value),
+                motor_diameter_od:      parseFloatOrNull(document.getElementById('form-motor-od').value),
+                motor_height_mm:        parseFloatOrNull(document.getElementById('form-motor-height').value),
+                shaft_diameter:         parseFloatOrNull(document.getElementById('form-motor-shaft').value),
+                motor_holes_mount_diameter: document.getElementById('form-motor-mount').value.trim() || null,
+                screw_type:             document.getElementById('form-motor-screw').value.trim() || null,
+                wire_gauge:             document.getElementById('form-motor-wire').value.trim() || null,
+                ip_rating:              document.getElementById('form-motor-ip').value.trim() || null,
+                max_power_w:            parseFloatOrNull(document.getElementById('form-motor-maxpower').value),
+                max_continuous_current_a: parseFloatOrNull(document.getElementById('form-motor-maxcurrent').value),
+                max_burst_current_a:    parseFloatOrNull(document.getElementById('form-motor-burstcurrent').value),
+                no_load_current_a:      parseFloatOrNull(document.getElementById('form-motor-noload').value),
+                internal_resistance_mohm: parseFloatOrNull(document.getElementById('form-motor-resistance').value),
+                compatible_esc_current: document.getElementById('form-motor-escrating').value.trim() || null,
+                compatible_prop_size:   document.getElementById('form-motor-proprange').value.trim() || null,
+                price:                  document.getElementById('form-motor-price').value.trim() || null,
+            }
         };
 
         let isDuplicate = false;
@@ -2526,7 +2550,17 @@ document.addEventListener('DOMContentLoaded', () => {
             section.style.display = 'block';
             const customVals = motorObj && motorObj.custom_parameters ? motorObj.custom_parameters : {};
             
+            const standardKeys = new Set([
+                'sku', 'kv_rating', 'stator_size', 'num_poles', 'winding_type', 'operating_voltage',
+                'motor_type', 'intended_use', 'bearing_type', 'weight_g', 'motor_diameter_od',
+                'motor_height_mm', 'shaft_diameter', 'motor_holes_mount_diameter', 'screw_type',
+                'wire_gauge', 'ip_rating', 'max_power_w', 'max_continuous_current_a', 'max_burst_current_a',
+                'no_load_current_a', 'internal_resistance_mohm', 'compatible_esc_current',
+                'compatible_prop_size', 'price'
+            ]);
+
             state.customSchema.forEach(f => {
+                if (standardKeys.has(f.field_key)) return; // Skip standard fields to avoid duplication
                 const val = customVals[f.field_key] !== undefined ? customVals[f.field_key] : '';
                 const formGroup = document.createElement('div');
                 formGroup.className = 'form-group';
@@ -3429,6 +3463,73 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('profile-spec-prop').textContent = m.prop || '-';
         document.getElementById('profile-spec-uploader').textContent = m.uploaded_by || 'System Default';
 
+        // Motor Specifications
+        const motorSpecsTableBody = document.getElementById('profile-motor-specs-table');
+        const motorSpecsCard = document.getElementById('profile-motor-specs-card');
+        const standardKeys = new Set([
+            'sku', 'kv_rating', 'stator_size', 'num_poles', 'winding_type', 'operating_voltage',
+            'motor_type', 'intended_use', 'bearing_type', 'weight_g', 'motor_diameter_od',
+            'motor_height_mm', 'shaft_diameter', 'motor_holes_mount_diameter', 'screw_type',
+            'wire_gauge', 'ip_rating', 'max_power_w', 'max_continuous_current_a', 'max_burst_current_a',
+            'no_load_current_a', 'internal_resistance_mohm', 'compatible_esc_current',
+            'compatible_prop_size', 'price'
+        ]);
+        
+        if (motorSpecsTableBody && motorSpecsCard) {
+            motorSpecsTableBody.innerHTML = '';
+            const params = m.custom_parameters || {};
+            const getVal = (keys) => {
+                for (const k of keys) {
+                    if (params[k] !== undefined && params[k] !== null && params[k] !== '') {
+                        return params[k];
+                    }
+                }
+                return null;
+            };
+
+            const specConfigs = [
+                { label: 'SKU', val: getVal(['sku']), unit: '' },
+                { label: 'KV Rating', val: getVal(['kv_rating', 'kv']), unit: '' },
+                { label: 'Stator Size', val: getVal(['stator_size']), unit: '' },
+                { label: 'No. of Poles', val: getVal(['num_poles', 'no_of_poles', 'poles']), unit: '' },
+                { label: 'Winding Type', val: getVal(['winding_type']), unit: '' },
+                { label: 'Operating Voltage', val: getVal(['operating_voltage', 'voltage']), unit: '' },
+                { label: 'Motor Type', val: getVal(['motor_type']), unit: '' },
+                { label: 'Intended Use', val: getVal(['intended_use']), unit: '' },
+                { label: 'Bearing Type', val: getVal(['bearing_type']), unit: '' },
+                { label: 'Weight', val: getVal(['weight_g', 'weight', 'motor_weight']), unit: ' g' },
+                { label: 'Motor OD', val: getVal(['motor_diameter_od', 'motor_od_mm', 'motor_od']), unit: ' mm' },
+                { label: 'Motor Height', val: getVal(['motor_height_mm', 'motor_height']), unit: ' mm' },
+                { label: 'Shaft Diameter', val: getVal(['shaft_diameter_mm', 'shaft_diameter']), unit: ' mm' },
+                { label: 'Mount Pattern', val: getVal(['motor_holes_mount_diameter', 'mount_pattern_mm', 'mount_pattern']), unit: '' },
+                { label: 'Screw Type', val: getVal(['screw_type']), unit: '' },
+                { label: 'Wire Gauge', val: getVal(['wire_gauge', 'wire_gauge_awg', 'wire', 'awg']), unit: '' },
+                { label: 'IP Rating', val: getVal(['ip_rating']), unit: '' },
+                { label: 'Max Power', val: getVal(['max_power_w', 'max_power']), unit: ' W' },
+                { label: 'Max Continuous Current', val: getVal(['max_continuous_current_a', 'max_continuous_current']), unit: ' A' },
+                { label: 'Max Burst Current', val: getVal(['max_burst_current_a', 'max_burst_current']), unit: ' A' },
+                { label: 'No-Load Current', val: getVal(['no_load_current_a', 'no_load_current']), unit: ' A' },
+                { label: 'Internal Resistance', val: getVal(['internal_resistance_mohm', 'internal_resistance']), unit: ' mΩ' },
+                { label: 'Compat. ESC Current', val: getVal(['compatible_esc_current', 'compat_esc_current_a', 'compat_esc_current']), unit: '' },
+                { label: 'Compat. Prop Size Range', val: getVal(['compatible_prop_size', 'compat_prop_size_range']), unit: '' },
+                { label: 'Price', val: getVal(['price']), unit: '' }
+            ];
+
+            let hasMotorSpecs = false;
+            specConfigs.forEach(cfg => {
+                if (cfg.val !== null && cfg.val !== undefined && cfg.val !== '') {
+                    hasMotorSpecs = true;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="py-2.5 text-slate-400 dark:text-slate-500 font-label-mono uppercase tracking-wider">${escapeHTML(cfg.label)}</td>
+                        <td class="py-2.5 text-right font-bold text-[#001e40] dark:text-slate-100 font-mono">${escapeHTML(String(cfg.val))}${cfg.unit}</td>
+                    `;
+                    motorSpecsTableBody.appendChild(tr);
+                }
+            });
+            motorSpecsCard.style.display = hasMotorSpecs ? 'block' : 'none';
+        }
+
         // Custom parameters
         const customTableBody = document.getElementById('profile-custom-specs-table');
         customTableBody.innerHTML = '';
@@ -3437,6 +3538,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.customSchema && state.customSchema.length > 0) {
             let hasCustomData = false;
             state.customSchema.forEach(field => {
+                if (standardKeys.has(field.field_key)) return; // skip standard specifications
                 const val = m.custom_parameters ? m.custom_parameters[field.key] : null;
                 if (val !== undefined && val !== null && val !== '') {
                     hasCustomData = true;

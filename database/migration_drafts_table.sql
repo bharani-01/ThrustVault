@@ -5,9 +5,11 @@ CREATE TABLE IF NOT EXISTS public.draft_test_runs (
     propeller_model VARCHAR(255),
     esc_model VARCHAR(255),
     battery_info VARCHAR(255),
+    ambient_temperature_c NUMERIC,
     test_conducted_by VARCHAR(255),
     tested_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    extra_columns JSONB DEFAULT '[]'::jsonb,
     data_points JSONB DEFAULT '[]'::jsonb NOT NULL
 );
 

@@ -1,17 +1,14 @@
 'use strict';
 const express = require('express');
-const router = express.Router();
+const router  = express.Router();
 const authController = require('../controllers/authController');
 
-router.post('/login', authController.login);
-router.post('/logout', authController.logout);
-router.get('/session', authController.getSession);
+router.post('/login',           authController.login);
+router.post('/logout',          authController.logout);
+router.get('/session',          authController.getSession);
 router.post('/forgot-password', authController.forgotPassword);
-router.post('/verify-otp', authController.verifyOtp);
-router.post('/reset-password', authController.resetPassword);
-
-// Google / Cognito federation
-router.get('/google', authController.googleOAuthRedirect);
-router.get('/cognito/callback', authController.cognitoCallback);
+router.post('/verify-otp',      authController.verifyOtp);
+router.post('/reset-password',  authController.resetPassword);
+router.post('/change-password', authController.changePassword);
 
 module.exports = router;

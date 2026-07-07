@@ -40,6 +40,7 @@
     <style>
         .modal-container {
             max-height: 90vh !important;
+            width: min(1080px, calc(100vw - 32px)) !important;
             display: flex !important;
             flex-direction: column !important;
         }
@@ -48,11 +49,23 @@
             flex-direction: column !important;
             overflow: hidden !important;
             flex: 1 !important;
+            gap: 16px !important;
         }
         .modal-container .modal-body {
             overflow-y: auto !important;
             flex: 1 !important;
             padding-right: 8px;
+        }
+        .form-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
+            margin-top: 4px;
+            margin-bottom: 8px;
         }
         .suggestions-wrapper {
             position: relative;
@@ -251,6 +264,7 @@
             </div>
             <form id="esc-form">
                 <div class="modal-body">
+                    <div class="form-section-title">Core Details</div>
                     <div class="form-group">
                         <label for="form-esc-name">Propeller Name *</label>
                         <input type="text" id="form-esc-name" required placeholder="e.g., G30x10.5">
@@ -282,6 +296,130 @@
                     <div class="form-group">
                         <label for="form-esc-image">Main Image URL</label>
                         <input type="url" id="form-esc-image" placeholder="https://...">
+                    </div>
+
+                    <div class="form-section-title">Geometry</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-prop-diameter">Diameter (inch)</label>
+                            <input type="number" id="form-prop-diameter" step="any" placeholder="e.g., 30">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-prop-pitch">Pitch (inch)</label>
+                            <input type="number" id="form-prop-pitch" step="any" placeholder="e.g., 10.5">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-prop-blades">Blade Count</label>
+                            <input type="number" id="form-prop-blades" step="1" placeholder="e.g., 2">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-prop-shaft-bore">Shaft Bore (mm)</label>
+                            <input type="number" id="form-prop-shaft-bore" step="any" placeholder="e.g., 6">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-prop-chord">Blade Chord Width (mm)</label>
+                            <input type="number" id="form-prop-chord" step="any" placeholder="e.g., 32">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-prop-hub">Hub Diameter (mm)</label>
+                            <input type="number" id="form-prop-hub" step="any" placeholder="e.g., 42">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-prop-folding">Folding Prop</label>
+                            <select id="form-prop-folding">
+                                <option value="">-- Select --</option>
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="form-prop-material">Material</label>
+                            <input type="text" id="form-prop-material" placeholder="e.g., Carbon Fiber">
+                        </div>
+                    </div>
+
+                    <div class="form-section-title">Build & Performance</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-prop-stiffness">Stiffness Rating</label>
+                            <input type="text" id="form-prop-stiffness" placeholder="e.g., High, Medium">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-prop-finish">Finish</label>
+                            <input type="text" id="form-prop-finish" placeholder="e.g., Matte">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-prop-colors">Color Options</label>
+                            <input type="text" id="form-prop-colors" placeholder="e.g., Black, Grey">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-prop-rpm">Max RPM Rated</label>
+                            <input type="number" id="form-prop-rpm" step="any" placeholder="e.g., 8200">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-prop-thrust">Max Thrust at Rated RPM (g)</label>
+                            <input type="number" id="form-prop-thrust" step="any" placeholder="e.g., 18500">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-prop-efficiency">Hover Efficiency (g/W)</label>
+                            <input type="number" id="form-prop-efficiency" step="any" placeholder="e.g., 11.8">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-prop-noise">Noise Level (dB)</label>
+                            <input type="number" id="form-prop-noise" step="any" placeholder="e.g., 68">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-prop-weight-blade">Weight per Blade (g)</label>
+                            <input type="number" id="form-prop-weight-blade" step="any" placeholder="e.g., 42">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-prop-weight-total">Total Weight (g)</label>
+                            <input type="number" id="form-prop-weight-total" step="any" placeholder="e.g., 84">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-prop-balance">Balance Quality</label>
+                            <input type="text" id="form-prop-balance" placeholder="e.g., Factory Balanced">
+                        </div>
+                    </div>
+
+                    <div class="form-section-title">Compatibility</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-prop-kv">Recommended Motor KV Range</label>
+                            <input type="text" id="form-prop-kv" placeholder="e.g., 140-220 KV">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-prop-size">Recommended Motor Size Range</label>
+                            <input type="text" id="form-prop-size" placeholder="e.g., 2812-3220">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="form-prop-use">Recommended For</label>
+                            <input type="text" id="form-prop-use" placeholder="e.g., Heavy-Lift, Long Range">
+                        </div>
+                        <div class="form-group">
+                            <label for="form-prop-adapter">Prop Adapter Included</label>
+                            <select id="form-prop-adapter">
+                                <option value="">-- Select --</option>
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -325,6 +463,16 @@
                     </div>
                 </div>
 
+                <!-- Performance Card -->
+                <div id="profile-performance-card" class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-xl p-5" style="display:none; box-sizing: border-box; background: var(--bg-surface); border-radius: var(--radius-lg);">
+                    <h3 class="font-bold text-primary dark:text-white text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5 uppercase tracking-wide" style="margin:0;">
+                        <i data-lucide="sliders" style="width:18px; height:18px; color: var(--primary-color);"></i> Performance & Compatibility
+                    </h3>
+                    <div id="profile-performance-specs" style="display:flex; flex-direction:column; gap:12px; box-sizing: border-box;">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+
                 <!-- Product Link Card -->
                 <div id="profile-links-card" class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-xl p-5" style="display:none; box-sizing: border-box; background: var(--bg-surface); border-radius: var(--radius-lg);">
                     <h3 class="font-bold text-primary dark:text-white text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5 uppercase tracking-wide" style="margin:0;">
@@ -361,7 +509,7 @@
                 <!-- Custom Scraped Specs Card -->
                 <div id="profile-custom-card" class="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm rounded-xl p-5" style="display:none; box-sizing: border-box; background: var(--bg-surface); border-radius: var(--radius-lg);">
                     <h3 class="font-bold text-primary dark:text-white text-[15px] border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-1.5 uppercase tracking-wide" style="margin:0;">
-                        <i data-lucide="table" style="width:18px; height:18px; color: var(--primary-color);"></i> Custom Parameters
+                        <i data-lucide="table" style="width:18px; height:18px; color: var(--primary-color);"></i> All Custom Parameters
                     </h3>
                     <div id="profile-custom-specs" style="display:flex; flex-direction:column; gap:8px; box-sizing: border-box;">
                         <!-- Filled dynamically -->

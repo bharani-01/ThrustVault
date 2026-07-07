@@ -19,6 +19,7 @@
     <style>
         .modal-container {
             max-height: 90vh !important;
+            width: min(1080px, calc(100vw - 32px)) !important;
             display: flex !important;
             flex-direction: column !important;
         }
@@ -27,11 +28,23 @@
             flex-direction: column !important;
             overflow: hidden !important;
             flex: 1 !important;
+            gap: 16px !important;
         }
         .modal-container .modal-body {
             overflow-y: auto !important;
             flex: 1 !important;
             padding-right: 8px;
+        }
+        .modal-container .form-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
+            margin-top: 4px;
+            margin-bottom: 8px;
         }
         .suggestions-wrapper {
             position: relative;
@@ -239,6 +252,7 @@
             </div>
             <form id="motor-form">
                 <div class="modal-body">
+                    <div class="form-section-title">Core Details</div>
                     <div class="form-group">
                         <label for="form-motor-name">Motor Model Name *</label>
                         <input type="text" id="form-motor-name" required placeholder="e.g., T-Motor U8 II">
@@ -282,8 +296,7 @@
                         </div>
                     </div>
 
-                    <!-- Custom parameters section -->
-                    <div class="form-divider">Custom Template Parameters</div>
+                    <div class="form-section-title">Custom Template Parameters</div>
                     <div id="dynamic-fields-container" style="display:flex; flex-direction:column; gap:12px;">
                         <!-- Filled dynamically based on schema -->
                     </div>

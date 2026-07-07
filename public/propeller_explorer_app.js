@@ -308,6 +308,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const sku = document.getElementById('form-esc-sku').value.trim();
                 const url = document.getElementById('form-esc-url').value.trim();
                 const mainImage = document.getElementById('form-esc-image').value.trim();
+                const pfn = v => v !== '' && v != null ? parseFloat(v) : null;
+                const boolVal = id => {
+                    const v = document.getElementById(id).value;
+                    return v === 'true' ? true : v === 'false' ? false : null;
+                };
 
                 const payload = {
                     name,
@@ -316,7 +321,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     currency,
                     sku: sku || null,
                     url: url || null,
-                    main_image: mainImage || null
+                    main_image: mainImage || null,
+                    custom_parameters: {
+                        diameter_in: pfn(document.getElementById('form-prop-diameter').value),
+                        pitch_in: pfn(document.getElementById('form-prop-pitch').value),
+                        blade_count: pfn(document.getElementById('form-prop-blades').value),
+                        shaft_bore_mm: pfn(document.getElementById('form-prop-shaft-bore').value),
+                        blade_chord_mm: pfn(document.getElementById('form-prop-chord').value),
+                        hub_diameter_mm: pfn(document.getElementById('form-prop-hub').value),
+                        folding_prop: boolVal('form-prop-folding'),
+                        material: document.getElementById('form-prop-material').value.trim() || null,
+                        stiffness_rating: document.getElementById('form-prop-stiffness').value.trim() || null,
+                        finish: document.getElementById('form-prop-finish').value.trim() || null,
+                        color_options: document.getElementById('form-prop-colors').value.trim() || null,
+                        max_rpm_rated: pfn(document.getElementById('form-prop-rpm').value),
+                        max_thrust_rated_g: pfn(document.getElementById('form-prop-thrust').value),
+                        hover_efficiency_g_w: pfn(document.getElementById('form-prop-efficiency').value),
+                        noise_db: pfn(document.getElementById('form-prop-noise').value),
+                        recommended_motor_kv_range: document.getElementById('form-prop-kv').value.trim() || null,
+                        recommended_motor_size_range: document.getElementById('form-prop-size').value.trim() || null,
+                        recommended_for: document.getElementById('form-prop-use').value.trim() || null,
+                        weight_per_blade_g: pfn(document.getElementById('form-prop-weight-blade').value),
+                        total_weight_g: pfn(document.getElementById('form-prop-weight-total').value),
+                        balance_quality: document.getElementById('form-prop-balance').value.trim() || null,
+                        prop_adapter_included: boolVal('form-prop-adapter')
+                    }
                 };
 
                 try {
@@ -792,9 +821,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Core specs
         const coreSpecsContainer = document.getElementById('profile-core-specs');
+        const performanceCard = document.getElementById('profile-performance-card');
+        const performanceSpecsContainer = document.getElementById('profile-performance-specs');
         const diameter = parseDiameter(prop);
         const priceDisp = prop.price ? `$${prop.price} ${prop.currency}` : '-';
         const prodType = getValueCaseInsensitive(prop.custom_parameters, ['product_type', 'producttype', 'category']) || 'Propeller';
+        const params = prop.custom_parameters || {};
 
         coreSpecsContainer.innerHTML = `
             <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.85rem; padding: 6px 0; border-bottom:1px solid var(--border-color);">
@@ -818,6 +850,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span style="font-weight:600; text-align:right;">${escapeHTML(prodType)}</span>
             </div>
         `;
+
+        if (performanceCard && performanceSpecsContainer) {
+            const renderRow = (label, value) => `
+                <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.85rem; padding: 6px 0; border-bottom:1px solid var(--border-color); gap:12px;">
+                    <span style="color:var(--text-secondary); font-weight:500;">${escapeHTML(label)}</span>
+                    <span style="font-weight:600; text-align:right; word-break:break-word;">${escapeHTML(value || '-')}</span>
+                </div>
+            `;
+            performanceSpecsContainer.innerHTML = [
+                renderRow('Diameter', diameter ? diameter.toFixed(1) + ' in' : '-'),
+                renderRow('Pitch', getValueCaseInsensitive(params, ['pitch', 'pitch_in', 'pitch_inch']) ? `${getValueCaseInsensitive(params, ['pitch', 'pitch_in', 'pitch_inch'])} in` : '-'),
+                renderRow('Blade Count', getValueCaseInsensitive(params, ['blades', 'blade_count']) || '-'),
+                renderRow('Shaft Bore', getValueCaseInsensitive(params, ['shaft_bore', 'shaft_bore_mm']) ? `${getValueCaseInsensitive(params, ['shaft_bore', 'shaft_bore_mm'])} mm` : '-'),
+                renderRow('Chord Width', getValueCaseInsensitive(params, ['chord', 'chord_width', 'blade_chord']) ? `${getValueCaseInsensitive(params, ['chord', 'chord_width', 'blade_chord'])} mm` : '-'),
+                renderRow('Hub Diameter', getValueCaseInsensitive(params, ['hub', 'hub_diameter']) ? `${getValueCaseInsensitive(params, ['hub', 'hub_diameter'])} mm` : '-'),
+                renderRow('Folding Prop', (() => { const v = getValueCaseInsensitive(params, ['folding', 'folding_prop']); return v === true || v === 'true' ? 'Yes' : v === false || v === 'false' ? 'No' : '-'; })()),
+                renderRow('Material', getValueCaseInsensitive(params, ['material']) || '-'),
+                renderRow('Stiffness', getValueCaseInsensitive(params, ['stiffness', 'stiffness_rating']) || '-'),
+                renderRow('Finish', getValueCaseInsensitive(params, ['finish']) || '-'),
+                renderRow('Color Options', getValueCaseInsensitive(params, ['colors', 'color_options']) || '-'),
+                renderRow('Max RPM', getValueCaseInsensitive(params, ['max_rpm', 'rpm']) || '-'),
+                renderRow('Max Thrust', getValueCaseInsensitive(params, ['max_thrust_g', 'thrust']) ? `${getValueCaseInsensitive(params, ['max_thrust_g', 'thrust'])} g` : '-'),
+                renderRow('Hover Efficiency', getValueCaseInsensitive(params, ['efficiency', 'hover_efficiency']) ? `${getValueCaseInsensitive(params, ['efficiency', 'hover_efficiency'])} g/W` : '-'),
+                renderRow('Noise Level', getValueCaseInsensitive(params, ['noise', 'noise_level']) ? `${getValueCaseInsensitive(params, ['noise', 'noise_level'])} dB` : '-'),
+                renderRow('Weight per Blade', getValueCaseInsensitive(params, ['weight_blade', 'weight_per_blade']) ? `${getValueCaseInsensitive(params, ['weight_blade', 'weight_per_blade'])} g` : '-'),
+                renderRow('Total Weight', getValueCaseInsensitive(params, ['weight_total', 'total_weight']) ? `${getValueCaseInsensitive(params, ['weight_total', 'total_weight'])} g` : '-'),
+                renderRow('Balance Quality', getValueCaseInsensitive(params, ['balance', 'balance_quality']) || '-'),
+                renderRow('Recommended KV', getValueCaseInsensitive(params, ['kv', 'recommended_kv']) || '-'),
+                renderRow('Motor Size Range', getValueCaseInsensitive(params, ['motor_size', 'recommended_motor_size']) || '-'),
+                renderRow('Recommended Use', getValueCaseInsensitive(params, ['recommended_for', 'use']) || '-'),
+                renderRow('Adapter Included', (() => { const v = getValueCaseInsensitive(params, ['prop_adapter', 'adapter_included']); return v === true || v === 'true' ? 'Yes' : v === false || v === 'false' ? 'No' : '-'; })()),
+                renderRow('Custom Field Count', String(Object.keys(params).length))
+            ].join('');
+            performanceCard.style.display = 'block';
+        } else if (performanceCard) {
+            performanceCard.style.display = 'none';
+        }
 
         // Links
         const linksCard = document.getElementById('profile-links-card');
@@ -896,8 +965,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
         const normalizedKeysToHide = keysToHide.map(k => k.toLowerCase().replace(/[\s_-]+/g, ''));
 
+
         let customHtml = '';
-        const params = prop.custom_parameters || {};
         
         // Render options separately at the top of custom params if they exist
         const optionsVal = getValueCaseInsensitive(params, ['options']);
@@ -1411,6 +1480,30 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('form-esc-sku').value = prop.sku || '';
         document.getElementById('form-esc-url').value = prop.url || '';
         document.getElementById('form-esc-image').value = prop.main_image || '';
+        const p = prop.custom_parameters || {};
+        const sv = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+        sv('form-prop-diameter', p.diameter_in ?? '');
+        sv('form-prop-pitch', p.pitch_in ?? '');
+        sv('form-prop-blades', p.blade_count ?? '');
+        sv('form-prop-shaft-bore', p.shaft_bore_mm ?? '');
+        sv('form-prop-chord', p.blade_chord_mm ?? '');
+        sv('form-prop-hub', p.hub_diameter_mm ?? '');
+        sv('form-prop-folding', p.folding_prop != null ? String(p.folding_prop) : '');
+        sv('form-prop-material', p.material ?? '');
+        sv('form-prop-stiffness', p.stiffness_rating ?? '');
+        sv('form-prop-finish', p.finish ?? '');
+        sv('form-prop-colors', p.color_options ?? '');
+        sv('form-prop-rpm', p.max_rpm_rated ?? '');
+        sv('form-prop-thrust', p.max_thrust_rated_g ?? '');
+        sv('form-prop-efficiency', p.hover_efficiency_g_w ?? '');
+        sv('form-prop-noise', p.noise_db ?? '');
+        sv('form-prop-kv', p.recommended_motor_kv_range ?? '');
+        sv('form-prop-size', p.recommended_motor_size_range ?? '');
+        sv('form-prop-use', p.recommended_for ?? '');
+        sv('form-prop-weight-blade', p.weight_per_blade_g ?? '');
+        sv('form-prop-weight-total', p.total_weight_g ?? '');
+        sv('form-prop-balance', p.balance_quality ?? '');
+        sv('form-prop-adapter', p.prop_adapter_included != null ? String(p.prop_adapter_included) : '');
 
         openModal(elements.escModal);
     }

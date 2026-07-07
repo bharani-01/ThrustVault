@@ -326,7 +326,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const linkEsc = document.getElementById('form-esc-link').value.trim();
             const linkProp = document.getElementById('form-prop-link').value.trim();
 
-            const customParams = {};
+            const originalMotor = state.motors.find(m => m.id === motorId);
+            const originalParams = originalMotor ? originalMotor.custom_parameters : {};
+            const customParams = { ...originalParams };
             elements.motorForm.querySelectorAll('.custom-field-input').forEach(input => {
                 const key = input.dataset.key;
                 const type = input.dataset.type;
@@ -799,11 +801,52 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.paneMode === 'details') {
             const cat = state.categories.find(c => c.id === motor.category_id || c.id === motor.categoryId);
             const catName = cat ? cat.name : 'Unassigned';
+            const params = motor.custom_parameters || {};
+            const schemaKeys = new Set((state.customSchema || []).map(f => String(f.field_key || '').toLowerCase().replace(/[\s_-]+/g, '')));
+            const hiddenKeys = new Set(['name', 'brand', 'price', 'currency', 'url', 'sku', 'main_image', 'gallery_images', 'product_type', 'max_thrust_g', 'breadcrumbs', 'category', 'specifications_tables', 'technical_drawings', 'specification_images', 'description_images', 'local_technical_drawings', 'local_specification_images', 'test_data', 'description_text', 'description', 'options', 'kv', 'kv_rating', 'stator_size', 'no_of_poles', 'poles', 'winding_type', 'operating_voltage', 'motor_type', 'intended_use', 'bearing_type', 'weight', 'weight_g', 'motor_od', 'motor_od_mm', 'motor_diameter_od', 'motor_diameter_od_mm', 'motor_height', 'motor_height_mm', 'shaft_diameter', 'shaft_diameter_mm', 'mount_pattern', 'mount_pattern_mm', 'screw_type', 'wire_gauge', 'wire_gauge_awg', 'ip_rating', 'max_power', 'max_power_w', 'max_continuous_current', 'max_continuous_current_a', 'max_burst_current', 'max_burst_current_a', 'no_load_current', 'no_load_current_a', 'internal_resistance', 'internal_resistance_mohm', 'compat_esc_current', 'compat_esc_current_a', 'compat_prop_size_range', 'motor_holes_mount_diameter', 'motor_holes_mount_diameter_mm']);
+
+            const getSpecValue = (keys) => getValueCaseInsensitive(params, keys);
+            const specRow = (label, value, unit = '') => `
+                <div style="display:flex; align-items:flex-start; justify-content:space-between; font-size:0.8rem; padding: 4px 0; border-bottom:1px solid var(--border-color); gap:10px;">
+                    <span style="color:var(--text-secondary); font-weight:500; white-space:nowrap; flex-shrink:0;">${escapeHTML(label)}</span>
+                    <span style="font-weight:600; text-align:right; word-break:break-word;">${escapeHTML(value === undefined || value === null || value === '' ? '-' : `${value}${unit}`)}</span>
+                </div>
+            `;
+            const motorSpecRows = [
+                specRow('SKU', getSpecValue(['sku'])),
+                specRow('KV Rating', getSpecValue(['kv_rating', 'kv'])),
+                specRow('Stator Size', getSpecValue(['stator_size'])),
+                specRow('No. of Poles', getSpecValue(['no_of_poles', 'poles'])),
+                specRow('Winding Type', getSpecValue(['winding_type'])),
+                specRow('Operating Voltage', getSpecValue(['operating_voltage', 'voltage'])),
+                specRow('Motor Type', getSpecValue(['motor_type'])),
+                specRow('Intended Use', getSpecValue(['intended_use'])),
+                specRow('Bearing Type', getSpecValue(['bearing_type'])),
+                specRow('Weight', getSpecValue(['weight_g', 'weight', 'motor_weight']), ' g'),
+                specRow('Motor OD', getSpecValue(['motor_od_mm', 'motor_od', 'motor_diameter_od_mm', 'motor_diameter_od']), ' mm'),
+                specRow('Motor Height', getSpecValue(['motor_height_mm', 'motor_height']), ' mm'),
+                specRow('Shaft Diameter', getSpecValue(['shaft_diameter_mm', 'shaft_diameter']), ' mm'),
+                specRow('Mount Pattern', getSpecValue(['mount_pattern_mm', 'mount_pattern']), ' mm'),
+                specRow('Screw Type', getSpecValue(['screw_type'])),
+                specRow('Wire Gauge', getSpecValue(['wire_gauge_awg', 'wire_gauge', 'awg']), ' AWG'),
+                specRow('IP Rating', getSpecValue(['ip_rating'])),
+                specRow('Max Power', getSpecValue(['max_power_w', 'max_power']), ' W'),
+                specRow('Max Continuous Current', getSpecValue(['max_continuous_current_a', 'max_continuous_current']), ' A'),
+                specRow('Max Burst Current', getSpecValue(['max_burst_current_a', 'max_burst_current']), ' A'),
+                specRow('No-Load Current', getSpecValue(['no_load_current_a', 'no_load_current']), ' A'),
+                specRow('Internal Resistance', getSpecValue(['internal_resistance_mohm', 'internal_resistance']), ' mΩ'),
+                specRow('Compat. ESC Current', getSpecValue(['compat_esc_current_a', 'compat_esc_current']), ' A'),
+                specRow('Compat. Prop Size Range', getSpecValue(['compat_prop_size_range'])),
+                specRow('Motor Holes Mount Diameter', getSpecValue(['motor_holes_mount_diameter_mm', 'motor_holes_mount_diameter']), ' mm')
+            ].join('');
             
             // Build custom specifications rows
             let customRows = '';
             if (state.customSchema && state.customSchema.length > 0) {
                 state.customSchema.forEach(f => {
+                    const cleanKey = String(f.field_key || '').toLowerCase().replace(/[\s_-]+/g, '');
+                    if (hiddenKeys.has(cleanKey)) return;
+                    
                     const val = motor.custom_parameters && motor.custom_parameters[f.field_key] !== undefined ? motor.custom_parameters[f.field_key] : '-';
                     let valStr = val;
                     if (f.field_type === 'boolean') {
@@ -820,11 +863,58 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
+            let extraRows = '';
+            Object.keys(params).filter(k => !schemaKeys.has(k.toLowerCase().replace(/[\s_-]+/g, '')) && !hiddenKeys.has(k.toLowerCase().replace(/[\s_-]+/g, ''))).sort().forEach(k => {
+                const val = params[k];
+                let valStr = '';
+                if (typeof val === 'object' && val !== null) {
+                    if (Array.isArray(val)) {
+                        valStr = val.map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)).join(', ');
+                    } else {
+                        valStr = Object.entries(val).map(([subK, subV]) => `${subK}: ${subV}`).join(', ');
+                    }
+                } else if (typeof val === 'boolean') {
+                    valStr = val ? 'Yes' : 'No';
+                } else {
+                    valStr = String(val);
+                }
+                const label = k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                extraRows += `
+                    <div style="display:flex; align-items:flex-start; justify-content:space-between; font-size:0.8rem; padding: 4px 0; border-bottom:1px solid var(--border-color); gap:10px;">
+                        <span style="color:var(--text-secondary); font-weight:500; white-space:nowrap; flex-shrink:0;">${escapeHTML(label)}</span>
+                        <span style="font-weight:600; text-align:right; word-break:break-word;">${escapeHTML(valStr)}</span>
+                    </div>
+                `;
+            });
+
+            const imageCount = Array.isArray(motor.galleryImages) ? motor.galleryImages.length : 0;
+            const hasMainImage = motor.mainImage ? 'Yes' : 'No';
+            const linkCount = [motor.linkMotor, motor.linkEsc, motor.linkProp].filter(Boolean).length;
+
             elements.panelBody.innerHTML = `
                 <div style="display:flex; flex-direction:column; gap:12px;">
                     <button class="btn-secondary" id="btn-share-spec" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; padding: 8px; font-size:0.8rem; cursor:pointer; color: var(--primary-color); border-color: var(--primary-color);">
                         <i data-lucide="share-2" style="width: 14px; height: 14px;"></i> Share Spec Link
                     </button>
+                    <div style="font-size:0.9rem; font-weight:700; margin-bottom:8px;">Record Summary</div>
+                    <div style="display:flex; align-items:flex-start; justify-content:space-between; font-size:0.8rem; padding: 4px 0; border-bottom:1px solid var(--border-color); gap:10px;">
+                        <span style="color:var(--text-secondary); font-weight:500; white-space:nowrap; flex-shrink:0;">Product Link Count</span>
+                        <span style="font-weight:600; text-align:right; word-break:break-word;">${linkCount}</span>
+                    </div>
+                    <div style="display:flex; align-items:flex-start; justify-content:space-between; font-size:0.8rem; padding: 4px 0; border-bottom:1px solid var(--border-color); gap:10px;">
+                        <span style="color:var(--text-secondary); font-weight:500; white-space:nowrap; flex-shrink:0;">Main Image Present</span>
+                        <span style="font-weight:600; text-align:right; word-break:break-word;">${hasMainImage}</span>
+                    </div>
+                    <div style="display:flex; align-items:flex-start; justify-content:space-between; font-size:0.8rem; padding: 4px 0; border-bottom:1px solid var(--border-color); gap:10px;">
+                        <span style="color:var(--text-secondary); font-weight:500; white-space:nowrap; flex-shrink:0;">Gallery Images</span>
+                        <span style="font-weight:600; text-align:right; word-break:break-word;">${imageCount}</span>
+                    </div>
+                    <div style="display:flex; align-items:flex-start; justify-content:space-between; font-size:0.8rem; padding: 4px 0; border-bottom:1px solid var(--border-color); gap:10px;">
+                        <span style="color:var(--text-secondary); font-weight:500; white-space:nowrap; flex-shrink:0;">Custom Fields</span>
+                        <span style="font-weight:600; text-align:right; word-break:break-word;">${Object.keys(params).length}</span>
+                    </div>
+                    <div style="font-size:0.9rem; font-weight:700; margin-top:6px; margin-bottom:8px;">Motor Specifications</div>
+                    ${motorSpecRows}
                     <div style="font-size:0.9rem; font-weight:700; margin-bottom:8px;">Standard Fields</div>
                     <div style="display:flex; align-items:flex-start; justify-content:space-between; font-size:0.8rem; padding: 4px 0; border-bottom:1px solid var(--border-color); gap:10px;">
                         <span style="color:var(--text-secondary); font-weight:500; white-space:nowrap; flex-shrink:0;">Model Name</span>
@@ -856,6 +946,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
 
                     ${customRows ? `<div style="font-size:0.9rem; font-weight:700; margin-top:15px; margin-bottom:8px;">Custom Schema Parameters</div>${customRows}` : ''}
+                    ${extraRows ? `<div style="font-size:0.9rem; font-weight:700; margin-top:15px; margin-bottom:8px;">All Other Custom Parameters</div>${extraRows}` : ''}
                 </div>
             `;
         } else {

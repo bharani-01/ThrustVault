@@ -314,6 +314,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const sku = document.getElementById('form-esc-sku').value.trim();
                 const url = document.getElementById('form-esc-url').value.trim();
                 const mainImage = document.getElementById('form-esc-image').value.trim();
+                const pfn = v => v !== '' && v != null ? parseFloat(v) : null;
+                const boolVal = id => { const v = document.getElementById(id).value; return v === 'true' ? true : v === 'false' ? false : null; };
 
                 const payload = {
                     name,
@@ -322,7 +324,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     currency,
                     sku: sku || null,
                     url: url || null,
-                    main_image: mainImage || null
+                    main_image: mainImage || null,
+                    custom_parameters: {
+                        continuous_current_a:  pfn(document.getElementById('form-esc-continuous-current').value),
+                        burst_current_a:       pfn(document.getElementById('form-esc-burst-current').value),
+                        voltage_range:         document.getElementById('form-esc-voltage').value.trim() || null,
+                        bec:                   document.getElementById('form-esc-bec').value.trim() || null,
+                        resistance_mohm:       pfn(document.getElementById('form-esc-resistance').value),
+                        protocol:              document.getElementById('form-esc-protocol').value || null,
+                        firmware:              document.getElementById('form-esc-firmware').value || null,
+                        connector_type:        document.getElementById('form-esc-connector').value.trim() || null,
+                        size_mm:               document.getElementById('form-esc-size').value.trim() || null,
+                        weight_g:              pfn(document.getElementById('form-esc-weight').value),
+                        cooling:               document.getElementById('form-esc-cooling').value || null,
+                        ip_rating:             document.getElementById('form-esc-ip').value.trim() || null,
+                        telemetry:             boolVal('form-esc-telemetry'),
+                        bidirectional_dshot:   boolVal('form-esc-bidir'),
+                        wire_gauge:            document.getElementById('form-esc-wire').value.trim() || null,
+                        recommended_for:       document.getElementById('form-esc-use').value || null,
+                    }
                 };
 
                 try {
@@ -801,10 +821,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Core specs
         const coreSpecsContainer = document.getElementById('profile-core-specs');
+        const technicalCard = document.getElementById('profile-technical-card');
+        const technicalSpecsContainer = document.getElementById('profile-technical-specs');
         const amp = parseCurrent(esc);
         const volt = parseVoltage(esc);
         const priceDisp = esc.price ? `$${esc.price} ${esc.currency}` : '-';
         const prodType = getValueCaseInsensitive(esc.custom_parameters, ['product_type', 'producttype', 'category']) || 'ESC';
+        const params = esc.custom_parameters || {};
+        const imageKeys = ['gallery_images', 'description_images', 'specification_images', 'technical_drawings', 'local_technical_drawings', 'local_specification_images'];
+        const imageCount = [esc.main_image && esc.main_image.startsWith('http') ? esc.main_image : null, ...imageKeys.flatMap(k => {
+            const val = getValueCaseInsensitive(params, [k]);
+            if (!val) return [];
+            if (Array.isArray(val)) return val.filter(img => typeof img === 'string' && img.startsWith('http'));
+            if (typeof val === 'string') return val.split(',').map(s => s.trim()).filter(img => img.startsWith('http'));
+            return [];
+        })].filter(Boolean).length;
 
         coreSpecsContainer.innerHTML = `
             <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.85rem; padding: 6px 0; border-bottom:1px solid var(--border-color);">
@@ -832,6 +863,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span style="font-weight:600; text-align:right;">${escapeHTML(prodType)}</span>
             </div>
         `;
+
+        if (technicalCard && technicalSpecsContainer) {
+            const renderRow = (label, value) => `
+                <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.85rem; padding: 6px 0; border-bottom:1px solid var(--border-color); gap:12px;">
+                    <span style="color:var(--text-secondary); font-weight:500;">${escapeHTML(label)}</span>
+                    <span style="font-weight:600; text-align:right; word-break:break-word;">${escapeHTML(value || '-')}</span>
+                </div>
+            `;
+            const telemetry = getValueCaseInsensitive(params, ['telemetry']);
+            const bidir = getValueCaseInsensitive(params, ['bidir', 'bidirectional_dshot']);
+            technicalSpecsContainer.innerHTML = [
+                renderRow('Continuous Current', amp ? `${amp} A` : '-'),
+                renderRow('Burst Current', getValueCaseInsensitive(params, ['burst_current_a', 'burst_current', 'max_current_burst']) ? `${getValueCaseInsensitive(params, ['burst_current_a', 'burst_current', 'max_current_burst'])} A` : '-'),
+                renderRow('Voltage Range', getValueCaseInsensitive(params, ['voltage_range', 'input_voltage', 'voltage']) || '-'),
+                renderRow('BEC Output', getValueCaseInsensitive(params, ['bec', 'bec_output']) || '-'),
+                renderRow('Resistance', getValueCaseInsensitive(params, ['resistance', 'resistance_mohm']) ? `${getValueCaseInsensitive(params, ['resistance', 'resistance_mohm'])} mΩ` : '-'),
+                renderRow('Firmware', getValueCaseInsensitive(params, ['firmware']) || '-'),
+                renderRow('Protocol', getValueCaseInsensitive(params, ['protocol']) || '-'),
+                renderRow('Telemetry', telemetry === true || telemetry === 'true' ? 'Yes' : telemetry === false || telemetry === 'false' ? 'No' : '-'),
+                renderRow('Bidirectional DSHOT', bidir === true || bidir === 'true' ? 'Yes' : bidir === false || bidir === 'false' ? 'No' : '-'),
+                renderRow('Cooling', getValueCaseInsensitive(params, ['cooling']) || '-'),
+                renderRow('Connector', getValueCaseInsensitive(params, ['connector', 'connector_type']) || '-'),
+                renderRow('Wire Gauge', getValueCaseInsensitive(params, ['wire_gauge', 'wire', 'awg']) || '-'),
+                renderRow('Recommended Use', getValueCaseInsensitive(params, ['recommended_for', 'use', 'application']) || '-'),
+                renderRow('Weight', getValueCaseInsensitive(params, ['weight', 'weight_g']) ? `${getValueCaseInsensitive(params, ['weight', 'weight_g'])} g` : '-'),
+                renderRow('PCB Size', getValueCaseInsensitive(params, ['pcb_size', 'size']) || '-'),
+                renderRow('Image Count', String(imageCount)),
+                renderRow('Custom Field Count', String(Object.keys(params).length))
+            ].join('');
+            technicalCard.style.display = 'block';
+        } else if (technicalCard) {
+            technicalCard.style.display = 'none';
+        }
 
         // Links
         const linksCard = document.getElementById('profile-links-card');
@@ -866,10 +930,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Parse other potential image fields
-        const imageKeys = [
-            'gallery_images', 'description_images', 'specification_images', 
-            'technical_drawings', 'local_technical_drawings', 'local_specification_images'
-        ];
         imageKeys.forEach(k => {
             const val = getValueCaseInsensitive(esc.custom_parameters, [k]);
             if (val) {
@@ -910,8 +970,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
         const normalizedKeysToHide = keysToHide.map(k => k.toLowerCase().replace(/[\s_-]+/g, ''));
 
+
         let customHtml = '';
-        const params = esc.custom_parameters || {};
         
         // Render options separately at the top of custom params if they exist
         const optionsVal = getValueCaseInsensitive(params, ['options']);
@@ -1446,7 +1506,24 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('form-esc-sku').value = esc.sku || '';
         document.getElementById('form-esc-url').value = esc.url || '';
         document.getElementById('form-esc-image').value = esc.main_image || '';
-
+        const p = esc.custom_parameters || {};
+        const sv = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+        sv('form-esc-continuous-current', p.continuous_current_a ?? '');
+        sv('form-esc-burst-current',      p.burst_current_a ?? '');
+        sv('form-esc-voltage',            p.voltage_range ?? '');
+        sv('form-esc-bec',                p.bec ?? '');
+        sv('form-esc-resistance',         p.resistance_mohm ?? '');
+        sv('form-esc-protocol',           p.protocol ?? '');
+        sv('form-esc-firmware',           p.firmware ?? '');
+        sv('form-esc-connector',          p.connector_type ?? '');
+        sv('form-esc-size',               p.size_mm ?? '');
+        sv('form-esc-weight',             p.weight_g ?? '');
+        sv('form-esc-cooling',            p.cooling ?? '');
+        sv('form-esc-ip',                 p.ip_rating ?? '');
+        sv('form-esc-telemetry',          p.telemetry != null ? String(p.telemetry) : '');
+        sv('form-esc-bidir',              p.bidirectional_dshot != null ? String(p.bidirectional_dshot) : '');
+        sv('form-esc-wire',               p.wire_gauge ?? '');
+        sv('form-esc-use',                p.recommended_for ?? '');
         openModal(elements.escModal);
     }
 

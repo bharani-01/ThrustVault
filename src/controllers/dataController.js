@@ -2,11 +2,10 @@
 const crypto = require('crypto');
 const pool = require('../config/db');
 const { queryTable } = require('../utils/queryBuilder');
-const { cognito } = require('../config/cognito');
 
 // ACL rules for dynamic database table API endpoints (excluding guest read operations which are handled via guestRoutes)
 const ACL = {
-  motors: { POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['admin'] },
+  motors: { POST: ['user', 'admin'], PATCH: ['admin'], DELETE: ['admin'] },
   categories: { POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
   custom_specs_schema: { POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
   access_requests: { GET: ['admin'], POST: ['user', 'admin'], PATCH: ['admin'], DELETE: ['admin'] },
@@ -14,8 +13,9 @@ const ACL = {
   motor_test_runs: { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
   motor_test_data_points: { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
   draft_test_runs: { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['user', 'admin'] },
-  escs: { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['admin'] },
-  propellers: { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['user', 'admin'], DELETE: ['admin'] },
+  escs: { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['admin'], DELETE: ['admin'] },
+  propellers: { GET: ['user', 'admin'], POST: ['user', 'admin'], PATCH: ['admin'], DELETE: ['admin'] },
+  audit_logs: { GET: ['user', 'admin'] },
 };
 
 let cachedDashboardStats = null;
@@ -83,7 +83,10 @@ async function getOrCalculateStats() {
       
       const match = v.match(/(\d+)s/i) || esc.match(/(\d+)s/i) || name.match(/(\d+)s/i);
       if (match) {
-        sRatings.push(parseInt(match[1], 10));
+        const val = parseInt(match[1], 10);
+        if (val >= 1 && val <= 24) {
+          sRatings.push(val);
+        }
       }
     });
 
@@ -199,7 +202,18 @@ async function createMotor(req, res) {
 
 async function getEscs(req, res) {
   try {
-    res.json(await queryTable('escs', 'GET', null, req.query));
+    const qp = { ...req.query };
+    delete qp.limit;
+    delete qp.offset;
+    delete qp.order;
+    qp.select = 'id';
+    const allMatching = await queryTable('escs', 'GET', null, qp);
+    const totalCount = allMatching.length;
+
+    const data = await queryTable('escs', 'GET', null, req.query);
+    res.setHeader('X-Total-Count', totalCount);
+    res.setHeader('Access-Control-Expose-Headers', 'X-Total-Count');
+    res.json(data);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -217,7 +231,18 @@ async function createEsc(req, res) {
 
 async function getPropellers(req, res) {
   try {
-    res.json(await queryTable('propellers', 'GET', null, req.query));
+    const qp = { ...req.query };
+    delete qp.limit;
+    delete qp.offset;
+    delete qp.order;
+    qp.select = 'id';
+    const allMatching = await queryTable('propellers', 'GET', null, qp);
+    const totalCount = allMatching.length;
+
+    const data = await queryTable('propellers', 'GET', null, req.query);
+    res.setHeader('X-Total-Count', totalCount);
+    res.setHeader('Access-Control-Expose-Headers', 'X-Total-Count');
+    res.json(data);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -338,6 +363,7 @@ async function getUserProfiles(req, res) {
 // ── Activity Log ─────────────────────────────────────────────────────────────
 
 async function logActivity(req, res) {
+  if (process.env.auditlog === 'false') return res.json({ success: false, disabled: true });
   const { email, role, action, details } = req.body || {};
   try {
     await pool.query(
@@ -359,7 +385,7 @@ async function logActivity(req, res) {
     res.json({ success: true });
   } catch (e) {
     console.warn('[log-activity]', e.message);
-    res.json({ success: false }); // non-fatal
+    res.json({ success: false });
   }
 }
 
@@ -470,51 +496,12 @@ async function requestAccess(req, res) {
   }
 
   try {
-    const dup = await pool.query('SELECT id FROM user_profiles WHERE email = $1', [email]);
+    const dup = await pool.query('SELECT id FROM public.user_profiles WHERE email = $1', [email]);
     if (dup.rows.length) {
-      // Self-healing: Check if user actually exists in AWS Cognito User Pool.
-      // If they don't, we clean up the stale DB records so registration can proceed.
-      const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
-      let existsInCognito = false;
-      if (USER_POOL_ID) {
-        try {
-          const { ListUsersCommand } = require('@aws-sdk/client-cognito-identity-provider');
-          const listUsersRes = await cognito.send(new ListUsersCommand({
-            UserPoolId: USER_POOL_ID,
-            Filter: `email = "${email}"`
-          }));
-          existsInCognito = listUsersRes.Users && listUsersRes.Users.length > 0;
-        } catch (cognitoErr) {
-          console.warn('[Self-Healing] Failed to list users from Cognito:', cognitoErr.message);
-          // If we fail to check Cognito (e.g. credentials error), we assume they exist to be safe.
-          existsInCognito = true;
-        }
-      }
-
-      if (!existsInCognito) {
-        console.log(`[Self-Healing] User ${email} exists in database but not in Cognito. Cleaning up stale database records...`);
-        const client = await pool.connect();
-        try {
-          await client.query('BEGIN');
-          const userId = dup.rows[0].id;
-          await client.query('DELETE FROM public.user_onboarding WHERE user_id = $1', [userId]);
-          await client.query('DELETE FROM public.user_profiles WHERE id = $1', [userId]);
-          await client.query('DELETE FROM auth.users WHERE id = $1', [userId]);
-          await client.query('DELETE FROM public.access_requests WHERE email = $1', [email]);
-          await client.query('COMMIT');
-        } catch (err) {
-          await client.query('ROLLBACK');
-          console.error('[Self-Healing] DB cleanup error:', err.message);
-          return res.status(500).json({ error: 'Database cleanup failed during self-healing: ' + err.message });
-        } finally {
-          client.release();
-        }
-      } else {
-        return res.status(409).json({ error: 'An account already exists with this email.' });
-      }
+      return res.status(409).json({ error: 'An account already exists with this email.' });
     }
 
-    const pend = await pool.query("SELECT id FROM access_requests WHERE email = $1 AND status = 'pending'", [email]);
+    const pend = await pool.query("SELECT id FROM public.access_requests WHERE email = $1 AND status = 'pending'", [email]);
     if (pend.rows.length) return res.status(409).json({ error: 'A request is already pending for this email.' });
 
     // Check system settings for auto approve
@@ -523,103 +510,29 @@ async function requestAccess(req, res) {
 
     if (autoApprove) {
       const tempPassword = crypto.randomBytes(6).toString('hex') + 'V@' + Math.floor(Math.random() * 100);
-
-      const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
-      if (!USER_POOL_ID) {
-        throw new Error('AWS Cognito User Pool is not configured in environment variables.');
-      }
-
-      let newUid = null;
-      let targetUsername = null;
-      const {
-        AdminCreateUserCommand,
-        AdminSetUserPasswordCommand,
-        ListUsersCommand
-      } = require('@aws-sdk/client-cognito-identity-provider');
-
-      // 1. Create User in Cognito
-      const cogUsername = crypto.randomUUID();
-      try {
-        const createUserRes = await cognito.send(new AdminCreateUserCommand({
-          UserPoolId: USER_POOL_ID,
-          Username: cogUsername,
-          UserAttributes: [
-            { Name: 'email', Value: email },
-            { Name: 'email_verified', Value: 'true' }
-          ],
-          MessageAction: 'SUPPRESS'
-        }));
-        const subAttr = createUserRes.User.Attributes.find(a => a.Name === 'sub');
-        newUid = subAttr ? subAttr.Value : null;
-        targetUsername = createUserRes.User.Username;
-      } catch (cognitoErr) {
-        if (cognitoErr.name === 'UsernameExistsException' || cognitoErr.name === 'AliasExistsException' || cognitoErr.message.includes('exists')) {
-          // User already exists, search by email to retrieve the existing sub/username
-          const listUsersRes = await cognito.send(new ListUsersCommand({
-            UserPoolId: USER_POOL_ID,
-            Filter: `email = "${email}"`
-          }));
-          if (listUsersRes.Users && listUsersRes.Users.length > 0) {
-            targetUsername = listUsersRes.Users[0].Username;
-            const subAttr = listUsersRes.Users[0].Attributes.find(a => a.Name === 'sub');
-            newUid = subAttr ? subAttr.Value : null;
-          } else {
-            throw cognitoErr;
-          }
-        } else {
-          throw cognitoErr;
-        }
-      }
-
-      if (!newUid || !targetUsername) {
-        throw new Error('Failed to retrieve user identifiers from AWS Cognito.');
-      }
-
-      // 2. Set permanent password in Cognito (using Cognito Username)
-      await cognito.send(new AdminSetUserPasswordCommand({
-        UserPoolId: USER_POOL_ID,
-        Username: targetUsername,
-        Password: tempPassword,
-        Permanent: true
-      }));
+      const bcrypt = require('bcryptjs');
+      const hash = await bcrypt.hash(tempPassword, 12);
+      const newUid = crypto.randomUUID();
 
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
 
-        // 0. Clean up any orphaned profile record with the same email if it exists
+        // 1. Insert into auth.users to satisfy foreign key constraints
         await client.query(`
-          DELETE FROM public.user_profiles 
-          WHERE email = $1 AND id NOT IN (SELECT id FROM auth.users)
-        `, [email]);
-
-        // 1. Insert into auth.users
-        await client.query(`
-          INSERT INTO auth.users (
-            instance_id, id, aud, role, email, encrypted_password, 
-            email_confirmed_at, recovery_sent_at, last_sign_in_at, 
-            raw_app_meta_data, raw_user_meta_data, created_at, updated_at, 
-            confirmation_token, email_change, email_change_token_new, recovery_token
-          )
-          VALUES (
-            '00000000-0000-0000-0000-000000000000',
-            $1, 'authenticated', 'authenticated', $2, crypt($3, gen_salt('bf')),
-            now(), now(), now(),
-            '{"provider":"email","providers":["email"]}'::jsonb,
-            json_build_object('role', 'user')::jsonb,
-            now(), now(), '', '', '', ''
-          )
-          ON CONFLICT (id) DO NOTHING
-        `, [newUid, email, tempPassword]);
+          INSERT INTO auth.users (id, email)
+          VALUES ($1, $2)
+          ON CONFLICT (email) DO NOTHING
+        `, [newUid, email]);
 
         // 2. Insert into public.user_profiles (role is 'user' directly now)
         await client.query(`
-          INSERT INTO public.user_profiles (id, email, role)
-          VALUES ($1, $2, 'user')
-          ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, role = EXCLUDED.role
-        `, [newUid, email]);
+          INSERT INTO public.user_profiles (id, email, role, password_hash)
+          VALUES ($1, $2, 'user', $3)
+          ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, password_hash = EXCLUDED.password_hash
+        `, [newUid, email, hash]);
 
-        // 3. Save approved access request
+        // 2. Save approved access request
         await client.query(`
           INSERT INTO public.access_requests (full_name, email, requested_role, justification, status)
           VALUES ($1, $2, 'user', $3, 'approved')
@@ -688,6 +601,7 @@ async function dbProxy(req, res) {
 
   const qp = { ...req.query };
   if (table === 'user_onboarding') qp.user_id = `eq.${uid}`;
+  if (table === 'audit_logs' && role !== 'admin') qp.email = `eq.${req.session.email}`;
 
   try {
     let m = method;
@@ -730,6 +644,380 @@ async function dbProxy(req, res) {
   }
 }
 
+async function getGuestCustomSpecs(req, res) {
+  try {
+    const result = await pool.query('SELECT * FROM public.custom_specs_schema ORDER BY created_at');
+    res.json(result.rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
+async function getGuestShareItem(req, res) {
+  const { type, name } = req.params;
+  
+  if (!type || !name) {
+    return res.status(400).json({ error: 'Type and name parameters are required.' });
+  }
+
+  const validTypes = ['motor', 'esc', 'propeller'];
+  if (!validTypes.includes(type.toLowerCase())) {
+    return res.status(400).json({ error: `Invalid type. Must be one of: ${validTypes.join(', ')}` });
+  }
+
+  try {
+    let queryResult;
+    const decodedName = decodeURIComponent(name).trim();
+
+    if (type.toLowerCase() === 'motor') {
+      const sqlExact = `
+        SELECT m.*, c.name AS category_name
+        FROM public.motors m
+        LEFT JOIN public.categories c ON m.category_id = c.id
+        WHERE LOWER(m.motor_name) = LOWER($1) OR LOWER(m.id::text) = LOWER($1)
+      `;
+      queryResult = await pool.query(sqlExact, [decodedName]);
+
+      if (!queryResult || queryResult.rows.length === 0) {
+        const sqlFuzzy = `
+          SELECT m.*, c.name AS category_name
+          FROM public.motors m
+          LEFT JOIN public.categories c ON m.category_id = c.id
+          WHERE m.motor_name ILIKE $1
+          LIMIT 1
+        `;
+        queryResult = await pool.query(sqlFuzzy, [`%${decodedName}%`]);
+      }
+    } else if (type.toLowerCase() === 'esc') {
+      const sqlExact = `
+        SELECT *
+        FROM public.escs
+        WHERE LOWER(name) = LOWER($1) OR LOWER(id::text) = LOWER($1)
+      `;
+      queryResult = await pool.query(sqlExact, [decodedName]);
+
+      if (!queryResult || queryResult.rows.length === 0) {
+        const sqlFuzzy = `
+          SELECT *
+          FROM public.escs
+          WHERE name ILIKE $1
+          LIMIT 1
+        `;
+        queryResult = await pool.query(sqlFuzzy, [`%${decodedName}%`]);
+      }
+    } else if (type.toLowerCase() === 'propeller') {
+      const sqlExact = `
+        SELECT *
+        FROM public.propellers
+        WHERE LOWER(name) = LOWER($1) OR LOWER(id::text) = LOWER($1)
+      `;
+      queryResult = await pool.query(sqlExact, [decodedName]);
+
+      if (!queryResult || queryResult.rows.length === 0) {
+        const sqlFuzzy = `
+          SELECT *
+          FROM public.propellers
+          WHERE name ILIKE $1
+          LIMIT 1
+        `;
+        queryResult = await pool.query(sqlFuzzy, [`%${decodedName}%`]);
+      }
+    }
+
+    if (!queryResult || queryResult.rows.length === 0) {
+      return res.status(404).json({ error: `${type} with name "${decodedName}" not found.` });
+    }
+
+    const item = queryResult.rows[0];
+
+    // Standardize property names for frontend compatibility
+    item.name = item.name || item.motor_name || item.motor;
+    item.motor_name = item.motor_name || item.name;
+    item.motor = item.motor || item.motor_name || item.name;
+    item.brand = item.brand || item.company;
+    item.company = item.company || item.brand;
+    item.main_image = item.main_image || item.mainImage;
+    item.mainImage = item.mainImage || item.main_image;
+    item.gallery_images = item.gallery_images || item.galleryImages;
+    item.galleryImages = item.galleryImages || item.gallery_images;
+
+    if (item.custom_parameters && typeof item.custom_parameters === 'string') {
+      try {
+        item.custom_parameters = JSON.parse(item.custom_parameters);
+      } catch (e) {}
+    }
+    if (item.gallery_images && typeof item.gallery_images === 'string') {
+      try {
+        item.gallery_images = JSON.parse(item.gallery_images);
+      } catch (e) {}
+    }
+
+    res.json(item);
+  } catch (e) {
+    console.error('[guest-get-share-item]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+}
+
+async function searchGuestMotors(req, res) {
+  const q     = String(req.query.q || '').trim();
+  const limit = Math.min(parseInt(req.query.limit, 10) || 8, 20);
+
+  if (!q || q.length < 2) {
+    return res.json([]);
+  }
+
+  try {
+    const pattern = `%${q}%`;
+    const sql = `
+      SELECT m.id, m.motor_name, m.company, m.max_thrust,
+             m.category_id, c.name AS category_name,
+             m.custom_parameters
+      FROM public.motors m
+      LEFT JOIN public.categories c ON m.category_id = c.id
+      WHERE m.motor_name ILIKE $1 OR m.company ILIKE $1
+      ORDER BY m.motor_name ASC
+      LIMIT $2
+    `;
+    const queryResult = await pool.query(sql, [pattern, limit]);
+    const result = queryResult.rows.map(r => {
+      if (r.custom_parameters && typeof r.custom_parameters === 'string') {
+        try { r.custom_parameters = JSON.parse(r.custom_parameters); } catch (e) {}
+      }
+      return r;
+    });
+    res.json(result);
+  } catch (e) {
+    console.error('[guest-search-motors]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+}
+
+async function getGuestDbTable(req, res) {
+  const table = req.params.table.replace(/-/g, '_');
+  try {
+    const validTables = ['motor_test_runs', 'motor_test_data_points'];
+    if (!validTables.includes(table)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    let sql = `SELECT * FROM public.${table}`;
+    const params = [];
+    if (req.query.motor_id) {
+      sql += ` WHERE motor_id = $1`;
+      params.push(req.query.motor_id.replace(/^eq\./, ''));
+    } else if (req.query.test_run_id) {
+      sql += ` WHERE test_run_id = $1`;
+      params.push(req.query.test_run_id.replace(/^eq\./, ''));
+    }
+    if (req.query.order) {
+      const parts = req.query.order.split('.');
+      sql += ` ORDER BY ${parts[0]} ${parts[1] ? parts[1].toUpperCase() : 'ASC'}`;
+    }
+    if (req.query.limit) {
+      sql += ` LIMIT ${parseInt(req.query.limit, 10)}`;
+    }
+    const resDb = await pool.query(sql, params);
+    res.json(resDb.rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
+async function findItemByName(req, res) {
+  const { name } = req.params;
+  if (!name) return res.status(400).json({ error: 'Missing name parameter' });
+  const decodedName = decodeURIComponent(name).trim();
+  
+  try {
+    // 1. Search in motors
+    let motorRes = await pool.query(
+      `SELECT id, motor_name AS name FROM public.motors WHERE LOWER(motor_name) = LOWER($1) LIMIT 1`,
+      [decodedName]
+    );
+    if (!motorRes.rows.length) {
+      motorRes = await pool.query(
+        `SELECT id, motor_name AS name FROM public.motors WHERE motor_name ILIKE $1 LIMIT 1`,
+        [`%${decodedName}%`]
+      );
+    }
+    if (motorRes.rows.length > 0) {
+      return res.json({ type: 'motor', id: motorRes.rows[0].id, name: motorRes.rows[0].name });
+    }
+
+    // 2. Search in escs
+    const escRes = await pool.query(
+      `SELECT id FROM public.escs WHERE name = $1 OR name ILIKE $1 LIMIT 1`,
+      [name]
+    );
+    if (escRes.rows.length > 0) {
+      return res.json({ type: 'esc', id: escRes.rows[0].id });
+    }
+
+    // 3. Search in propellers
+    const propRes = await pool.query(
+      `SELECT id FROM public.propellers WHERE name = $1 OR name ILIKE $1 LIMIT 1`,
+      [name]
+    );
+    if (propRes.rows.length > 0) {
+      return res.json({ type: 'propeller', id: propRes.rows[0].id });
+    }
+
+    return res.status(404).json({ error: 'Item not found' });
+  } catch (err) {
+    console.error('[find-item-by-name]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+async function findMotorsWizard(req, res) {
+  const {
+    min_kv = 50,
+    max_kv = 25000,
+    min_thrust = 0.01,
+    max_thrust = 50,
+    min_weight = 0,
+    max_weight = 2000,
+    cells = '',
+    brands = '',
+    stator_class = 'all'
+  } = req.query;
+
+  try {
+    const vals = [];
+    const whereParts = [];
+
+    // 1. KV range
+    vals.push(parseFloat(min_kv), parseFloat(max_kv));
+    whereParts.push(`(
+      NULLIF(custom_parameters->>'kv_rating', '')::numeric IS NOT NULL AND
+      NULLIF(custom_parameters->>'kv_rating', '')::numeric >= $${vals.length - 1} AND
+      NULLIF(custom_parameters->>'kv_rating', '')::numeric <= $${vals.length}
+    )`);
+
+    // 2. Thrust range
+    const parsedThrustExpr = `COALESCE(
+      CASE 
+        WHEN max_thrust ILIKE '%g' AND max_thrust NOT ILIKE '%kg' THEN (substring(max_thrust from '^[0-9.]+')::numeric / 1000.0)
+        WHEN max_thrust ILIKE '%kg' THEN substring(max_thrust from '^[0-9.]+')::numeric
+        ELSE NULLIF(substring(max_thrust from '^[0-9.]+'), '')::numeric
+      END, 1.0)`;
+
+    vals.push(parseFloat(min_thrust), parseFloat(max_thrust));
+    whereParts.push(`(${parsedThrustExpr} >= $${vals.length - 1} AND ${parsedThrustExpr} <= $${vals.length})`);
+
+    // 3. Weight range
+    vals.push(parseFloat(min_weight), parseFloat(max_weight));
+    whereParts.push(`(
+      NULLIF(custom_parameters->>'weight_g', '')::numeric IS NULL OR
+      (
+        NULLIF(custom_parameters->>'weight_g', '')::numeric >= $${vals.length - 1} AND
+        NULLIF(custom_parameters->>'weight_g', '')::numeric <= $${vals.length}
+      )
+    )`);
+
+    // 4. Voltage cells
+    if (cells) {
+      const cellArray = String(cells).split(',').map(c => c.trim()).filter(Boolean);
+      if (cellArray.length > 0) {
+        const regexPattern = cellArray.map(c => `${c}s`).join('|');
+        vals.push(regexPattern);
+        whereParts.push(`(custom_parameters->>'operating_voltage' ~* $${vals.length})`);
+      }
+    }
+
+    // 5. Brands
+    if (brands) {
+      const brandArray = String(brands).split(',').map(b => b.trim()).filter(Boolean);
+      if (brandArray.length > 0) {
+        vals.push(brandArray);
+        whereParts.push(`(company = ANY($${vals.length}))`);
+      }
+    }
+
+    // 6. Stator class filter
+    if (stator_class && stator_class !== 'all') {
+      const statorExpr = `CASE
+        WHEN NULLIF(substring(custom_parameters->>'stator_size' from '^\\d{2}'), '')::numeric < 14 THEN 'micro'
+        WHEN NULLIF(substring(custom_parameters->>'stator_size' from '^\\d{2}'), '')::numeric >= 14 AND NULLIF(substring(custom_parameters->>'stator_size' from '^\\d{2}'), '')::numeric < 22 THEN 'mini'
+        WHEN NULLIF(substring(custom_parameters->>'stator_size' from '^\\d{2}'), '')::numeric >= 22 AND NULLIF(substring(custom_parameters->>'stator_size' from '^\\d{2}'), '')::numeric <= 25 THEN 'standard'
+        WHEN NULLIF(substring(custom_parameters->>'stator_size' from '^\\d{2}'), '')::numeric >= 26 THEN 'heavy'
+        ELSE 'standard'
+      END`;
+      vals.push(stator_class);
+      whereParts.push(`(${statorExpr} = $${vals.length})`);
+    }
+
+    let sql = `
+      SELECT id, motor_name, company, max_thrust, recommended_esc, recommended_propeller, custom_parameters
+      FROM public.motors
+    `;
+    if (whereParts.length) {
+      sql += ` WHERE ${whereParts.join(' AND ')}`;
+    }
+    sql += ` ORDER BY motor_name ASC LIMIT 200`;
+
+    const resDb = await pool.query(sql, vals);
+    
+    const results = resDb.rows.map(m => {
+      let sClass = 'standard';
+      const statorSize = m.custom_parameters?.stator_size || m.motor_name || '';
+      const sizeMatch = String(statorSize).match(/(\d{2})\d{2}/);
+      if (sizeMatch) {
+        const diameter = parseInt(sizeMatch[1]);
+        if (diameter < 14) sClass = 'micro';
+        else if (diameter >= 14 && diameter < 22) sClass = 'mini';
+        else if (diameter >= 22 && diameter <= 25) sClass = 'standard';
+        else if (diameter >= 26) sClass = 'heavy';
+      }
+
+      const parseNumber = (val) => {
+        if (val === undefined || val === null) return 0;
+        const match = String(val).match(/([\d\.]+)/);
+        return match ? parseFloat(match[1]) : 0;
+      };
+
+      const convertToKg = (val, unit) => {
+        switch (unit?.toLowerCase()) {
+          case 'g': return val / 1000;
+          case 'n': return val / 9.80665;
+          case 'lb': return val * 0.453592;
+          default: return val;
+        }
+      };
+
+      const rawThrust = m.max_thrust;
+      let kgVal = 1.0;
+      if (rawThrust) {
+        const match = String(rawThrust).trim().match(/^([\d\.]+)\s*(kg|g|n|lb)?/i);
+        if (match) {
+          kgVal = convertToKg(parseFloat(match[1]), match[2] || 'kg');
+        }
+      }
+
+      return {
+        id: m.id,
+        name: m.motor_name,
+        brand: m.company,
+        kv: parseNumber(m.custom_parameters?.kv_rating || 0),
+        voltage: String(m.custom_parameters?.operating_voltage || ''),
+        thrust: kgVal,
+        thrustRaw: m.max_thrust,
+        propeller: m.recommended_propeller || '—',
+        esc: m.recommended_esc || '—',
+        weight: parseNumber(m.custom_parameters?.weight_g || m.custom_parameters?.weight_with_cable || m.custom_parameters?.weight_no_cable || 0),
+        maxPower: parseNumber(m.custom_parameters?.max_power_w || m.custom_parameters?.max_power || 0),
+        maxCurrent: parseNumber(m.custom_parameters?.max_current || m.custom_parameters?.no_load_current || 0),
+        statorClass: sClass
+      };
+    });
+
+    res.json(results);
+  } catch (err) {
+    console.error('[findMotorsWizard Error]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+}
+
 module.exports = {
   initData,
   getMotors,
@@ -752,4 +1040,10 @@ module.exports = {
   requestDemo,
   requestAccess,
   dbProxy,
+  getGuestCustomSpecs,
+  getGuestShareItem,
+  searchGuestMotors,
+  getGuestDbTable,
+  findItemByName,
+  findMotorsWizard,
 };

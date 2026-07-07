@@ -1,31 +1,7 @@
 // page-loader.js
 // Handles premium, lightweight page loading, transition animations, and persistent sidebar UX
 (function() {
-    // Intercept fetch calls for guest users globally to call /api/guest/... SQLite endpoints
-    const originalFetch = window.fetch;
-    window.fetch = function(input, init) {
-        let url = typeof input === 'string' ? input : (input && input.url);
-        const sessionStr = localStorage.getItem('thrustvault_session');
-        let isGuest = false;
-        if (sessionStr) {
-            try {
-                const s = JSON.parse(sessionStr);
-                isGuest = s.role === 'guest';
-            } catch(e) {}
-        } else {
-            isGuest = true;
-        }
 
-        if (isGuest && typeof url === 'string' && url.startsWith('/api/') && !url.startsWith('/api/auth/') && !url.startsWith('/api/guest/') && !url.startsWith('/api/public/') && !url.startsWith('/api/request-demo')) {
-            const newUrl = url.replace('/api/', '/api/guest/');
-            if (typeof input === 'string') {
-                input = newUrl;
-            } else {
-                input = new Request(newUrl, input);
-            }
-        }
-        return originalFetch(input, init);
-    };
 
     // Immediately set data-theme to prevent flash
     const isLandingPage = window.location.pathname === '/' || 
@@ -53,7 +29,7 @@
     }
 
     // Detect if page has a sidebar (all routes except landing, login, and access request)
-    const hasSidebar = path.includes('/admin/') || path.includes('/user/') || path.includes('/guest/') ||
+    const hasSidebar = path.includes('/admin/') || path.includes('/user/') ||
                        path.includes('dashboard') || path.includes('analytics') || path.includes('explorer') ||
                        path.includes('finder') ||
                        path.includes('users') || path.includes('requests') || path.includes('schema') ||
@@ -288,7 +264,7 @@
                     sidebarRole = 'user';
                 }
                 
-                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}_v2.2`;
+                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}_v2.3`;
                 const cachedHTML = sessionStorage.getItem(cacheKey);
                 if (cachedHTML) {
                     const existingScript = sidebarEl.querySelector('script');
@@ -514,7 +490,7 @@
                 initializeSidebarEvents(sidebarEl, sidebarRole);
             } else {
                 // First load: fetch, cache, and then render
-                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}_v2.2`;
+                const cacheKey = `thrustvault_sidebar_html_${sidebarRole}_v2.3`;
                 fetch(`sidebar_${sidebarRole}.html`)
                     .then(res => {
                         if (!res.ok) throw new Error("Failed to load sidebar template");
@@ -552,7 +528,7 @@
         }
 
         // 3b. Background session validation check
-        const isProtectedRoute = path.includes('/admin/') || path.includes('/user/') || path.includes('/guest/') ||
+        const isProtectedRoute = path.includes('/admin/') || path.includes('/user/') ||
                                  path.includes('dashboard') || path.includes('analytics') || path.includes('explorer') ||
                                  path.includes('finder') ||
                                  path.includes('users') || path.includes('requests') || path.includes('schema') ||
@@ -564,12 +540,7 @@
                 .then(sessionRes => {
                     if (!sessionRes.logged_in) {
                         localStorage.removeItem('thrustvault_session');
-                        const isGuestAllowedPage = path.endsWith('/dashboard') || path.includes('dashboard') ||
-                                                   path.endsWith('/analytics') || path.includes('analytics') ||
-                                                   path.endsWith('/explorer') || path.includes('explorer');
-                        if (!isGuestAllowedPage) {
-                            window.location.href = '/login';
-                        }
+                        window.location.href = '/login';
                     } else {
                         const sessionData = {
                             email: sessionRes.email,
