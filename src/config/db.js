@@ -2,6 +2,7 @@
 const { Pool } = require('pg');
 
 const isLocal = process.env.DB_HOST === 'localhost' || process.env.DB_HOST === '127.0.0.1';
+const useSSL = process.env.DB_SSL === 'true' || (!isLocal && process.env.DB_SSL !== 'false');
 
 const pool = new Pool({
   host:                   process.env.DB_HOST,
@@ -9,7 +10,7 @@ const pool = new Pool({
   database:               process.env.DB_NAME     || 'postgres',
   user:                   process.env.DB_USER     || 'postgres',
   password:               process.env.DB_PASSWORD,
-  ssl:                    isLocal ? false : { rejectUnauthorized: false },
+  ssl:                    useSSL ? { rejectUnauthorized: false } : false,
   max:                    10,
   idleTimeoutMillis:      30_000,
   connectionTimeoutMillis: 10_000,
