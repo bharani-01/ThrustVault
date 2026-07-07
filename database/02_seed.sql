@@ -34,4 +34,4 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.user_profiles (id, email, role, password_hash, username) VALUES
 ('f1211b85-9e5d-43c0-8d8a-409b5947a945', 'admindemo@thrustvault.in', 'admin', '$2a$12$4VsTLjOR03RSsiPw8RtN/esF6hDk.4hvmkMfv6vNeSwqBZLAJ/uA2', 'admindemo'),
 ('e801f624-0f7a-46c8-90c1-1dcadebb854e', 'userdemo@thrustvault.in', 'user', '$2a$12$4VsTLjOR03RSsiPw8RtN/esF6hDk.4hvmkMfv6vNeSwqBZLAJ/uA2', 'userdemo')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET password_hash = EXCLUDED.password_hash, username = EXCLUDED.username;
