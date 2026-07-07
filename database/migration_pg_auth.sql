@@ -3,8 +3,13 @@
 -- Replaces AWS Cognito with bcrypt password hashes stored in user_profiles
 -- =========================================================================
 
--- Add password_hash column to user_profiles
+-- Add password_hash and username columns to user_profiles
 ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS password_hash TEXT;
+ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS username VARCHAR(255);
+
+-- Ensure the role check constraint supports guest, user, and admin
+ALTER TABLE public.user_profiles DROP CONSTRAINT IF EXISTS user_profiles_role_check;
+ALTER TABLE public.user_profiles ADD CONSTRAINT user_profiles_role_check CHECK (role IN ('guest', 'user', 'admin'));
 
 -- Password reset OTP tokens table
 CREATE TABLE IF NOT EXISTS public.password_reset_tokens (
