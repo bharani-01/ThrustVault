@@ -20,9 +20,30 @@ async function main() {
   console.log('🔌 Connecting to PostgreSQL database to run migrations...');
   const client = await pool.connect();
   try {
-    // 0. Ensure auth schema and auth.uid() function exist
-    console.log('⏳ Ensuring auth schema and auth.uid() stub exist...');
+    // 0. Ensure auth schema, auth.uid() function, and auth.users table exist
+    console.log('⏳ Ensuring auth schema, auth.uid() stub, and auth.users table exist...');
     await client.query('CREATE SCHEMA IF NOT EXISTS auth;');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS auth.users (
+          id UUID PRIMARY KEY,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          encrypted_password VARCHAR(255),
+          email_confirmed_at TIMESTAMP WITH TIME ZONE,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          instance_id UUID,
+          aud VARCHAR(255),
+          role VARCHAR(255),
+          recovery_sent_at TIMESTAMP WITH TIME ZONE,
+          last_sign_in_at TIMESTAMP WITH TIME ZONE,
+          raw_app_meta_data JSONB,
+          raw_user_meta_data JSONB,
+          confirmation_token VARCHAR(255),
+          email_change VARCHAR(255),
+          email_change_token_new VARCHAR(255),
+          recovery_token VARCHAR(255)
+      );
+    `);
     await client.query(`
       CREATE OR REPLACE FUNCTION auth.uid()
       RETURNS UUID AS $$
@@ -31,7 +52,7 @@ async function main() {
       END;
       $$ LANGUAGE plpgsql;
     `);
-    console.log('✅ Auth schema and stub verified.');
+    console.log('✅ Auth schema, users table, and stub verified.');
 
     // 1. Run database/schema.sql
     console.log('⏳ Applying core schema (database/schema.sql)...');
