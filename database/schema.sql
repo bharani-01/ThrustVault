@@ -391,7 +391,7 @@ CREATE TABLE IF NOT EXISTS public.access_requests (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     full_name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    requested_role VARCHAR(50) NOT NULL CHECK (requested_role IN ('guest', 'intern', 'admin')),
+    requested_role VARCHAR(50) NOT NULL CHECK (requested_role IN ('user', 'guest', 'intern', 'admin')),
     justification TEXT,
     status VARCHAR(50) DEFAULT 'pending' NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
